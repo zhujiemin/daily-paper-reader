@@ -1,0 +1,522 @@
+Title: Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics
+
+URL Source: https://arxiv.org/pdf/2609.02097v1
+
+Published Time: Thu, 03 Sep 2026 00:32:42 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics 
+
+## Peifeng Liu 
+
+Guangdong Provincial Key Laboratory of Intelligent Information Processing, Shenzhen Key Laboratory of Media Security Shenzhen University Shenzhen, China 2410043004@mails.szu.edu.cn 
+
+## Bin Li ∗
+
+Guangdong Provincial Key Laboratory of Intelligent Information Processing, Shenzhen Key Laboratory of Media Security, SZU-AFS Joint Innovation Center for AI Technology Shenzhen University Shenzhen, China libin@szu.edu.cn 
+
+## Qingsong Zhang 
+
+Guangdong Provincial Key Laboratory of Intelligent Information Processing, Shenzhen Key Laboratory of Media Security Shenzhen University Shenzhen, China 2230707827@qq.com 
+
+## Yangxin Yu 
+
+Guangdong Provincial Key Laboratory of Intelligent Information Processing, Shenzhen Key Laboratory of Media Security Shenzhen University Shenzhen, China 2453043007@mails.szu.edu.cn 
+
+## Leqing Chen 
+
+Guangdong Provincial Key Laboratory of Intelligent Information Processing, Shenzhen Key Laboratory of Media Security Shenzhen University Shenzhen, China 2400042018@mails.szu.edu.cn 
+
+## Xiaoye Qiu 
+
+Guangdong Provincial Key Laboratory of Intelligent Information Processing, Shenzhen Key Laboratory of Media Security Shenzhen University Shenzhen, China 2553043008@mails.szu.edu.cn 
+
+Abstract 
+
+The rapid progress of AIGC has made text-centric image manipula-tion increasingly accessible, creating new forensic challenges that require not only authenticity detection but also spatial grounding and evidence-based explanation. This paper presents our solution to the GenText-Forensics Challenge at ACM Multimedia 2026. We propose an evidence-guided detector-localizer-reasoner system, where an image-level detector provides a global authenticity prior, a dedicated localizer extracts tampered regions as spatial ground-ing evidence, and an MLLM-based reasoner generates structured forensic reports grounded in this expert forensic evidence. These modules are connected through a cascaded evidence flow: the de-tector gates the subsequent localization and prompting process, the localizer converts tamper responses into grounding boxes, and the reasoner is trained to synthesize the detector decision and local-ized evidence into the final report. As a key part of our method, we introduce iterative difficulty-aware mining to improve localiza-tion quality and apply report-mask consistency post-processing to align report grounding with predicted masks. On the official hidden test set, our system achieves a final score of 0.638 and ranks second in the challenge, validating the effectiveness of the proposed evidence-guided system. The code is available at this https URL. 
+
+> ∗Corresponding author.
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> MM ’26, Rio de Janeiro, Brazil
+> © 2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2213-4/2026/11 https://doi.org/10.1145/3767308.3837699
+
+CCS Concepts 
+
+• Security and privacy → Social aspects of security and pri-vacy .
+
+Keywords 
+
+Text-Centric Image Forensics, Tampering Localization, Multimodal Large Language Models 
+
+ACM Reference Format: 
+
+Peifeng Liu, Bin Li, Qingsong Zhang, Yangxin Yu, Leqing Chen, and Xiaoye Qiu. 2026. Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics. In Proceedings of the 34th ACM International Conference on Multimedia (MM ’26), November 10–14, 2026, Rio de Janeiro, Brazil. ACM, New York, NY, USA, 7 pages. https://doi.org/10.1145/3767308. 3837699 
+
+1 Introduction 
+
+Text-centric images like documents and receipts serve as key evi-dence in daily work. Advanced editing tools [6, 12, 14, 18, 28, 29, 32] enable stealthy text tampering that retains original layouts but mod-ifies critical information such as amounts and timestamps. Tiny altered areas can completely distort evidentiary validity. Thus, text image forensics requires not only authenticity classification but also tampering localization and evidence-based analysis reports. The GenText-Forensics Challenge at ACM Multimedia 2026 for-mulates text-centric image forensics as a unified forensic report generation task based on the RealText-V2 dataset. Given a text-rich image, participants are required to produce a structured Markdown-style report that integrates authenticity judgment, spatial ground-ing, and evidence-based reasoning. The evaluation jointly considers detection, localization, explanation, and report quality. Unlike natural image manipulation [5, 7, 21, 22, 31] or con-ventional low-resolution document tampering detection [23], the arXiv:2609.02097v1 [cs.CV] 2 Sep 2026 MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Peifeng Liu, Bin Li, Qingsong Zhang, Yangxin Yu, Leqing Chen, and Xiaoye Qiu 
+
+RealText-V2 setting focuses on high-resolution text-centric images with dense textual content, complex layouts, and strong seman-tic dependencies. In this setting, forgery evidence is inherently heterogeneous. Image-level cues are encoded in global feature rep-resentations that capture long-range correlations and document-wide statistical deviations, providing a holistic authenticity prior. Region-level traces arise from local edits around modified char-acters or pasted text, such as edge blending defects, background discontinuity, and compression mismatch, requiring precise spa-tial localization. Semantic-level anomalies, such as altered words, numbers, or fields, may further introduce logical contradictions or misleading meanings that require contextual interpretation. These heterogeneous evidence types differ in granularity and fea-ture space, making it difficult for a single model to handle all foren-sic requirements. Dedicated forensic models [3, 9, 13, 20, 23, 25] are effective at capturing low-level tampering traces and producing de-tection scores, heatmaps, or masks, but they generally lack semantic reasoning and structured report-generation capability. In contrast, direct Multimodal Large Language Model (MLLM) [1, 12, 16, 28, 30] inference provides strong semantic understanding and language reasoning, but remains limited in fine-grained visual perception for subtle artifact analysis and precise localization. Guided by these insights, we propose an evidence-guided detector-localizer-reasoner framework that decomposes forensic tasks into specialized modules and aggregates their outputs into a unified report. For image-level judgment, a detector with auxiliary localiza-tion supervision learns global authenticity priors while retaining tampering-sensitive spatial cues. For region-level localization, we present Difficulty-Aware Tamper Localization, which iteratively mines hard samples and error-prone regions, then fine-tunes the model via difficulty-weighted sampling and hard-region cropping. This strategy enhances localization performance on small edits and ambiguous boundaries in high-resolution text-centric forgeries. Powered by the detector’s authenticity prediction and suspicious-region bounding boxes, the LLM reasoner generates a structured forensic report via an evidence-conditioned prompt. Unlike direct MLLM inference, which may produce ungrounded claims from se-mantic priors, our reasoner is strictly constrained by expert module outputs, reducing hallucinations and aligning authenticity judg-ment, spatial localization, and textual analysis. Our system achieved second place in the final evaluation, validating the effectiveness of our design. Overall, our system offers three main advantages: 
+
+• Complementary Expert-LLM Collaboration. Specialized visual models handle detection and localization, while the LLM-based reasoner performs semantic integration and re-port generation. 
+
+• Difficulty-Aware Spatial Evidence Enhancement. The localization strategy mines hard samples and error-centered regions, improving spatial grounding for report generation. 
+
+• Evidence-Grounded Report Generation. Conditioning the reasoner on detector decisions and localized regions improves alignment between generated reports and expert forensic evidence. 
+
+2 Related Work 
+
+Image manipulation detection and localization (IMDL) aims to iden-tify manipulated images and localize tampered regions. Existing methods can be broadly divided into expert forensic models and MLLM-centric models. The former focus on low-level manipulation traces, while the latter introduce multimodal semantic priors for interpretable reasoning. 
+
+Expert Models. Expert forensic models detect manipulation by modeling visual artifacts such as boundary inconsistency, noise mis-match, compression traces, and statistical anomalies. For general image manipulation detection, representative methods exploit RGB-DCT artifacts [13], noise and boundary cues [2], noise-sensitive fingerprints [9], or non-semantic manipulation features [25]. For document image forensics, DTD [23] and FFDN [3] incorporate DCT, wavelet, and frequency-domain cues to improve robustness against post-processing attacks. TFAM [8] fuses local-global con-textual information, while CD-SD [36] and DITL 2 [15] address cross-domain robustness through color-semantic decoupling and frequency-domain adaptation. These methods are effective at pro-ducing detection scores, heatmaps, or masks, but generally lack semantic reasoning and structured report-generation capability. 
+
+MLLM-Centric Models. Recent studies have introduced MLLMs into forgery analysis to enhance semantic understanding and in-terpretability. Methods such as FakeShield [34], ForgeryGPT [17], SIDA [11], and ForgerySleuth [27] combine MLLMs with domain-aware modules, mask-aware extractors, detection/segmentation tokens, or trace encoders to connect low-level forgery cues with high-level reasoning. For text- and document-centric forensics, TVSIP [33] integrates expert-extracted visual artifacts with MLLM-identified semantic conflicts, while VeriChain [26] explores reasoning-chain-based verification. These works show the potential of MLLMs for interpretable forensics. Following this direction, our method further treats detector outputs and localized tamper regions as ex-plicit forensic evidence to condition MLLM reasoning, enabling the final report to be grounded in both global authenticity judgment and spatial localization evidence. 
+
+3 Proposed Solution 3.1 Overview 
+
+As illustrated in Fig. 1 (a), we propose an evidence-guided detector-localizer-reasoner system for text-centric image forensic report generation. Given an input image 𝐼 , the detector first predicts an image-level forgery probability: 
+
+𝑝 det = D ( 𝐼 ), (1) where D (·) denotes the detector. The predicted label ˆ 𝑦 is obtained by thresholding 𝑝 det with 𝜏 det , where ˆ 𝑦 = forged if 𝑝 det ≥ 𝜏 det , and ˆ𝑦 = authentic otherwise. This detector output serves as a global expert prior and controls whether spatial evidence should be further extracted. When the image is predicted as forged, the localizer is activated to produce a tamper probability heatmap 𝐻 = F ( 𝐼 ). The heatmap is then binarized, filtered by connected components, and converted into bounding boxes: 
+
+B = BBox (𝑐 ) | 𝑐 ∈ CC  I(𝐻 ≥ 𝜏 loc ), Area (𝑐 ) ≥ 𝛼 , (2) Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil D
+
+I
+
+N
+
+O
+
+v
+
+3
+
+> ...
+
+(a) Evidence-guided detector-localizer-reasoner system 
+
+(b) Image-Level Forgery Detection  (c) Difficulty-Aware Tampering Localization 
+
+reasoner      
+
+> # FORGERY ANALYSIS REPORT
+> Overall Assessment:
+> [Conclusion]: FORGED
+> [RISK_SCORE]: 94
+> ## DETAILED ANOMALY ANALYSIS
+> ### ANOMALY_001: Visual Clumsy ...
+> [GROUNDING]: [292, 617, 613, 672]
+> [REASON]: Visual inspection of the ...
+> # FORGERY ANALYSIS REPORT
+> Overall Assessment:
+> [Conclusion]: AUTHENTIC
+> [RISK_SCORE]: 0
+> ## DETAILED ANOMALY ANALYSIS
+> No anomalies detected ...
+> authentic forged
+
+detector  localizer  
+
+> Expert forgery detector has analyzed this image and detected 0 bbox(s), indicating it is an
+> authentic image. Please ...
+
+Authentic prompt    
+
+> Expert forgery detector has identified 8potential tampered region(s) at:
+> [[292, 617, 613, 672],
+> [[985, 3074, 1563, 3128], ...] Please ...
+
+Evidence prompt 
+
+image 
+
+ℬ = {𝑏 1, 𝑏 2, … , 𝑏 𝑁 }
+
+> Cls
+> token
+> Patch
+> tokens
+
+𝑫𝑻𝑫  𝒕 
+
+DTD 
+
+Predict Training Set 
+
+Mining Inputs 
+
+> Ground-
+> truth mask
+> 𝑀 𝑖
+> DTD prediction
+> 𝐷 𝑖
+> 𝑡
+> ASCFormer
+> prediction
+> 𝐴 𝑖
+> SparseViT
+> prediction
+> 𝑆 i
+
+Difficulty Mining 
+
+𝑫𝑻𝑫  𝑡+1 
+
+Updated     
+
+> False-negative ratio 𝑟 𝑓𝑛 𝑖
+> False-positive ratio 𝑟 𝑓𝑝 𝑖
+> Missed-component ratio 𝑟 𝑚𝑖𝑠𝑠
+> 𝑖
+> Large-missed indicator
+> 𝑟 𝑙𝑎𝑟𝑔𝑒 𝑖
+> Cross-model disagreement 𝑟 𝑑𝑖𝑠 𝑖
+
+Difficulty Scoring    
+
+> 𝑠 𝑖
+> Easy
+> Medium
+> Hard
+> Difficulty Manifest 𝑀 (𝑡)
+> Hard Region 𝐻 𝑡
+> Classification head
+> Conv
+> Localization head
+
+Image-level classification 
+
+Auxiliary coarse localization 
+
+> 𝑝 𝑑𝑒𝑡
+> 𝐻 𝑐𝑜𝑎𝑟𝑠𝑒
+> Report-Mask Consistency Post-processing
+
+FineTune       
+
+> concat
+> reshape
+> image
+> image
+> trainable
+> main data flow forgery evidence flow
+> authentic flow
+> round t
+> round t+1
+
+Figure 1: Overview of the proposed solution. (a) The evidence-guided detector-localizer-reasoner system for forensic report generation. (b) The image-level forgery detector, where DINOv3 tokens support both authenticity classification and auxiliary coarse localization. (c) The iterative difficulty-aware localization process, which mines hard samples and error-centered crops to improve tamper grounding. 
+
+where 𝜏 loc is the localization threshold and 𝛼 is the minimum area threshold. The resulting bounding boxes B serve as explicit spatial expert evidence for the reasoning stage. The prompt for the MLLM-based reasoner is constructed in a detector-gated manner: 
+
+P =
+
+(Pevi (𝐼, ˆ𝑦, B) , ˆ𝑦 = forged , |B| > 0,
+
+Pauth (𝐼, ˆ𝑦 ), otherwise . (3) Here, Pevi denotes an evidence-conditioned prompt containing localized suspicious regions, while Pauth denotes an authentic-oriented prompt without forced grounding regions. Thus, forged-oriented reasoning is triggered only when both the detector predic-tion and localized expert evidence support it. The initial report is generated by the reasoner: 
+
+𝑅 0 = R (P) , (4) where R (·) denotes the MLLM-based reasoner. To further enforce consistency between report grounding and localization masks, we apply report-mask consistency post-processing: 
+
+𝑅 = Ψrmc (𝑅 0, B) , (5) where Ψrmc (·) refines the [GROUNDING] fields in the generated re-port using localization-derived boxes and supplements missing localized regions when necessary. In this way, the final report is constrained by expert-module evidence from both detection and localization, improving the consis-tency among authenticity judgment, spatial grounding, and evidence-based explanation. 
+
+3.2 Auxiliary Localization-Supervised Image-Level Forgery Detection 
+
+As illustrated in Fig. 1 (b), the detector provides a global authenticity prior for the whole pipeline. We adopt DINOv3 [24] as the visual backbone because its transformer representations can capture long-range visual dependencies in high-resolution text-centric images, while its patch tokens also preserve spatial information useful for tampering-aware supervision. Rather than using the CLS token alone for classification, we concatenate it with the mean-pooled patch tokens to combine the global summary and distributed local responses: 
+
+zimg =
+
+"
+
+zcls ; 1
+
+𝑁 
+
+𝑁 ∑︁ 
+
+𝑖 =1
+
+z𝑖 
+
+#
+
+, (6) where zcls is the CLS token and {z𝑖 }𝑁 𝑖 =1 are the patch tokens. The forged probability is then predicted by a lightweight classification head: 
+
+𝑝 det = 𝜎  𝑓 cls (zimg ) . (7) A classification-only detector may learn image-level separability without preserving spatially discriminative tampering cues. There-fore, we attach an auxiliary convolutional localization head to the MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Peifeng Liu, Bin Li, Qingsong Zhang, Yangxin Yu, Leqing Chen, and Xiaoye Qiu 
+
+patch tokens. The patch tokens are reshaped into a two-dimensional feature map and fed into a lightweight convolutional decoder to predict a coarse tampering heatmap: 
+
+𝐻 coarse = 𝑓 conv 
+
+
+
+Reshape 
+
+
+
+{z𝑖 }𝑁 𝑖 =1
+
+ 
+
+. (8) The detector is trained with a joint objective: 
+
+Ldet = 𝜆 1 LBCE (𝑝 det , 𝑦 ) + 𝜆 2 LCE (𝐻 coarse , 𝑀 )+ 𝜆 3 LDice (𝐻 coarse , 𝑀 ), (9) where 𝑦 is the image-level label and 𝑀 is the ground-truth tam-pering mask. The auxiliary localization head is used to regularize the detector with pixel-level supervision, encouraging the shared backbone to retain tampering-sensitive spatial cues. 
+
+3.3 Difficulty-Aware Tampering Localization 
+
+The localization branch is activated for images classified as forged by the detector, aiming to identify tampered regions for subsequent evidence-conditioned reasoning. However, the difficulty of localiza-tion varies significantly across high-resolution text-centric images. After initial training, many easy samples can already be localized reliably and provide limited additional supervision if repeatedly sampled. In contrast, medium and hard samples, such as small text edits, ambiguous boundaries, confusing backgrounds, and regions with strong model disagreement, are less frequent but contain more informative error signals. Uniform sampling therefore allocates many updates to already learned patterns while insufficiently re-visiting the localizer’s failure cases. This motivates an iterative difficulty-aware mining strategy that converts the current model’s localization errors into targeted fine-tuning samples. As shown in Fig. 1 (c), we adopt DTD [23] as the primary lo-calizer, since it is designed for document tampering localization and captures both visual artifacts and frequency-domain inconsis-tencies. Given an image 𝐼 , DTD predicts a tampering probability map: 
+
+𝐻 = Fdtd (𝐼 ), (10) and is optimized with pixel-level mask supervision: 
+
+Lloc = 𝜆 4 LCE (𝐻, 𝑀 ) + 𝜆 5 LDice (𝐻, 𝑀 ), (11) where 𝑀 denotes the ground-truth tampering mask. We first train a baseline DTD localizer on the RealText-V2 training set. This model serves as the initial state F (0) 
+
+> dtd
+
+for difficulty mining, so that hard samples are defined according to actual localization failures rather than hand-crafted assumptions. At mining round 𝑡 , let 𝐼 𝑖 denote the 𝑖 -th full image in the training set and F (𝑡 ) 
+
+> dtd
+
+denote the current DTD localizer. We run F (𝑡 ) 
+
+> dtd
+
+on 𝐼 𝑖 
+
+and obtain its binary prediction 𝐷 (𝑡 ) 
+
+> 𝑖
+
+. To capture complementary error cues, we also use predictions from ASCFormer [20] and Spar-seViT [25], denoted as 𝐴 𝑖 and 𝑆 𝑖 , respectively. Thus, the mining input for each image is: 
+
+{𝑀 𝑖 , 𝐷 (𝑡 ) 
+
+> 𝑖
+
+, 𝐴 𝑖 , 𝑆 𝑖 }, (12) The mining is conducted at the full-image level, while the extracted error regions are later used to guide crop selection during fine-tuning. Taking 𝑀 𝑖 as reference, we compute the DTD false-negative and false-positive regions: 
+
+𝐹 𝑁 (𝑡 ) 
+
+> 𝑖
+
+= 𝑀 𝑖 \ 𝐷 (𝑡 ) 
+
+> 𝑖
+
+, 𝐹 𝑃 (𝑡 ) 
+
+> 𝑖
+
+= 𝐷 (𝑡 ) 
+
+> 𝑖
+
+\ 𝑀 𝑖 . (13) We then summarize each image by a difficulty score that combines pixel-level errors, component-level missed regions, large-region failures, and cross-model disagreement: 
+
+𝑠 (𝑡 ) 
+
+> 𝑖
+
+= 0.35 𝑟 𝑖  
+
+> fn
+
++ 0.20 𝑟 𝑖  
+
+> miss
+
++ 0.15 𝑟 𝑖 
+
+> large
+
++ 0.15 min (𝑟 𝑖 
+
+> fp
+
+, 1) + 0.15 𝑟 dis (𝐷 (𝑡 ) 
+
+> 𝑖
+
+, 𝐴 𝑖 , 𝑆 𝑖 ), (14) where 𝑟 𝑖  
+
+> fn
+
+and 𝑟 𝑖  
+
+> fp
+
+measure false-negative and false-positive ra-tios, 𝑟 𝑖  
+
+> miss
+
+measures missed connected components, 𝑟 𝑖  
+
+> large
+
+indicates whether a large tampered component is missed, and 𝑟 dis (𝐷 (𝑡 ) 
+
+> 𝑖
+
+, 𝐴 𝑖 , 𝑆 𝑖 ) =
+
+1 − IoU (𝐷 (𝑡 ) 
+
+> 𝑖
+
+, 𝐴 𝑖 ∪ 𝑆 𝑖 ) measures disagreement between DTD and the auxiliary localizers. Based on 𝑠 (𝑡 ) 
+
+> 𝑖
+
+and the localization statistics, each image is as-signed to an easy, medium, or hard group using empirically defined rule-based criteria. These criteria are designed according to the main failure modes observed in the baseline localizer: severe missed tampered regions, excessive false positives, low localization quality, and large connected components being missed. 
+
+𝑔 𝑖 =
+
+
+
+hard , (𝑠 (𝑡 ) 
+
+> 𝑖
+
+≥ 0.60 ) ∨ ( 𝐹 𝑖 < 0.40 ) ∨ ( 𝑟 𝑖  
+
+> fn
+
+> 0.45 )∨( 𝑟 𝑖  
+
+> fp
+
+> 0.80 ) ∨ ( 𝑟 𝑖  
+
+> miss
+
+> 0.50 ) ∨ ( 𝑟 𝑖  
+
+> large
+
+= 1),
+
+easy , (𝑠 (𝑡 ) 
+
+> 𝑖
+
+< 0.25 ) ∧ ( 𝐹 𝑖 ≥ 0.75 ) ∧ ( 𝑅 𝑖 ≥ 0.80 )∧( 𝑟 𝑖  
+
+> fn
+
+≤ 0.15 ) ∧ ( 𝑟 𝑖  
+
+> fp
+
+≤ 0.20 ) ∧ ( 𝑟 𝑖  
+
+> large
+
+= 0),
+
+medium , otherwise .
+
+(15) Here, 𝐹 𝑖 and 𝑅 𝑖 denote the DTD F1-score and recall on image 𝐼 𝑖 , re-spectively. This rule treats samples with severe localization failures as hard, regards only consistently well-localized samples as easy, and assigns the remaining ambiguous cases to the medium group. The mining process produces an image-level difficulty mani-fest M (𝑡 ) = {( 𝐼 𝑖 , 𝑠 (𝑡 ) 
+
+> 𝑖
+
+, 𝑔 𝑖 )} and a region-level hard set H (𝑡 ) =
+
+{( 𝐼 𝑖 , 𝑏 𝑗 𝑖 , 𝑞 𝑗 𝑖 )} , where 𝑏 𝑗 𝑖 is the bounding box of an error component and 𝑞 𝑗 𝑖 denotes its error type, such as false negative, false positive, auxiliary-recovered false negative, or all-model-missed region. Dur-ing fine-tuning, full images are sampled according to fixed group probabilities: 
+
+𝜋 easy = 0.05 , 𝜋 medium = 0.35 , 𝜋 hard = 0.60 . (16) After a full image is selected, a 512 × 512 crop is extracted; for hard samples, the crop is centered around a mined hard region with probability 0 .75, with random jitter applied to avoid repeatedly using the same crop. In each mining-and-fine-tuning stage, we fine-tune the localizer for 30 epochs using M (𝑡 ) and H (𝑡 ) , and select the best checkpoint for the next mining stage. The updated localizer is used to re-predict the training set and refresh the hard samples: 
+
+F (𝑡 +1) 
+
+> dtd
+
+= FineTune 
+
+
+
+F (𝑡 ) 
+
+> dtd
+
+; M (𝑡 ) , H (𝑡 ) 
+
+. (17) This closed-loop procedure allows the localizer to progressively shift its learning focus from the initial failure cases to the remaining hard regions that are still poorly localized after each model update. Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil 
+
+Table 1: Comparison with state-of-the-art methods on the internal validation split. We report detection, localization, explanation, and the reproducible official weighted score. “-” denotes unavailable metrics. SIDA ∗ and TVSIP ∗ denote SIDA [11] and TVSIP [33] implemented with Qwen3-VL-4B [1] as the MLLM. Bold indicates the best performance. Method Detection Localization Explanation Score 
+
+Bal-ACC Wtd-F1 P R F1 IoU CSS BS Trufor 94.60 94.67 78.26 63.95 66.80 54.33 - - -SparseViT 93.67 93.64 63.30 38.92 44.93 33.16 - - -DINOv3-Conv 99.57 99.56 21.08 90.26 30.81 20.41 - - -DINOv3-Mask2Former 99.18 99.11 42.79 88.53 54.77 40.58 - - -Swin-Mask2Former 87.97 86.72 21.39 83.65 31.96 20.51 - - -DTD 95.08 95.53 83.05 70.34 72.49 61.58 - - -ASCFormer 91.15 91.84 81.51 60.96 65.16 53.11 - - -InternVL3.5-4B 96.20 96.29 23.65 23.17 21.68 14.97 90.86 83.96 47.47 Qwen3VL-2B 95.40 95.48 52.94 24.27 29.37 19.14 96.48 84.68 49.00 Qwen3VL-4B 93.92 93.79 41.38 38.80 37.28 26.35 96.40 84.26 51.32 Qwen3VL-8B 98.15 98.15 64.22 32.04 38.74 26.75 96.61 87.49 53.27 SIDA ∗ 96.95 97.04 60.63 35.63 41.73 30.53 89.21 83.58 53.86 TVSIP ∗ 91.85 92.58 54.53 68.13 56.65 43.21 96.20 83.77 57.62 Ours 99.60 99.56 83.71 79.61 79.03 69.93 91.01 80.15 69.86 
+
+3.4 SFT for the Evidence-Conditioned Reasoner 
+
+To make the reasoner follow the evidence provided by expert mod-ules, we construct QA-style SFT data from RealText-V2 image-mask-report triplets. For each image, we convert the tampering mask into normalized bounding boxes in the [0, 999 ] range. Authentic samples are assigned zero boxes, while forged samples include the extracted suspicious boxes in the question. The question 𝑄 𝑖 therefore con-tains the input image and an evidence-aware instruction, asking the reasoner to generate a forensic report based on the provided de-tector/localizer evidence. The answer 𝐴 𝑖 is the challenge-provided reference forensic report, with grounding coordinates normalized to the same format. The resulting SFT dataset is defined as: 
+
+Dsft = {( 𝑄 𝑖 , 𝐴 𝑖 )} 𝑁 𝑖 =1. (18) We fine-tune the reasoner with the standard autoregressive objec-tive: 
+
+Lsft = −∑︁ 
+
+> 𝑖,𝑡
+
+log 𝑝 𝜃 (𝑎 𝑖,𝑡 | 𝑄 𝑖 , 𝑎 𝑖, <𝑡 ), (19) where 𝑎 𝑖,𝑡 denotes the 𝑡 -th token of the target report. 
+
+3.5 Report-Mask Consistency Post-processing 
+
+To improve spatial consistency, we refine the generated report after inference using the final localization mask. Specifically, we parse the report [GROUNDING] boxes and replace each one with the most overlapping box extracted from the localization mask. If the localization mask contains additional boxes not covered by the report, we append them as supplementary anomaly entries. These entries only include localization-derived grounding coordi-nates, with the reason field marked as an expert-module supple-ment. This preserves the original analysis while ensuring better consistency between the report and the predicted mask. 
+
+4 Experiments 4.1 Experimental Setup 
+
+Dataset. We conducted experiments on the official RealText-V2 dataset from the GenText-Forensics Challenge. Since the official test annotations were withheld, we constructed an internal validation split by randomly sampling 10% of real images and 10% of forged images from the training set, with a fixed random seed of 42 for reproducibility; the remaining data was used for training. This split was used for component-level evaluation before submitting the complete system to the official evaluation server. 
+
+State-of-the-Art Methods. To comprehensively evaluate our framework, we compared it with representative methods from three categories. For expert forensic models, we included gen-eral IMDL methods, i.e., TruFor [9] and SparseViT [25], as well as segmentation-based and document-oriented baselines, including DINOv3-Mask2Former [4, 24], Swin-Mask2Former [4, 19], DTD [23], and ASCFormer [20]. For MLLM-centric forensic models, we included SIDA [11] and TVSIP [33]. We further evaluated general-purpose MLLMs, including Qwen3-VL [1] and InternVL3.5 [30]. 
+
+Evaluation Metrics. We assess three dimensions: detection, localization and explanation. Detection metrics include balanced accuracy (Bal-Acc) and weighted F1 (Wtd-F1); localization uses pixel-wise precision, recall, F1 and IoU; explanation is measured via BERTScore (BS) [35] and cosine semantic similarity (CSS). We unify metric calculation for fair baseline comparison. For expert models, detection results use the classification head output with threshold 0.5. Models lacking a classification branch predict authenticity from the maximum value of segmentation masks (threshold 0.5). For MLLM-centric models, we parse authenticity labels and coordinates from generated text, then convert coordinates to binary masks for localization evaluation. The official subjective LLM-based report score is unstable in internal tests. We thus calculate a reproducible MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Peifeng Liu, Bin Li, Qingsong Zhang, Yangxin Yu, Leqing Chen, and Xiaoye Qiu 
+
+Table 2: Ablation study of key components. We evaluate evi-dence guidance, auxiliary localization loss, and report-mask consistency post-processing. Ablation Detection Localization Explanation Bal-ACC Wtd-F1 F1 IoU CSS BS                                         
+
+> Baseline 93.92 93.79 37.28 26.35 96.40 84.26
+> w/o Detector 95.70 95.81 79.35 70.21 90.89 80.17
+> w/o Localizer 99.57 99.56 44.65 32.33 91.05 81.61
+> w/o Aux. Loc. Loss 97.27 97.04 76.30 67.68 91.00 80.08
+> w/o RMC pp. 99.40 99.33 62.98 49.67 91.01 80.20 Full Model 99.60 99.56 79.03 69.93 91.01 80.15
+
+Table 3: Effect of difficulty-aware tampering localization. Ablation P R F1 IoU ΔIoU                     
+
+> DTD Baseline 78.32 72.38 71.67 60.40 –Difficulty Mining (Round 1) 82.40 77.98 77.32 67.38 +6.98 Difficulty Mining (Round 2) 83.71 79.61 79.03 69.93 +9.53 Difficulty Mining (Round 3) 81.17 76.60 75.85 65.54 +5.14
+
+objective partial score using Detection F1, Localization IoU and BERTScore, weighted by official coefficients 0.3, 0.4 and 0.15. 
+
+Implementation Details. All experiments were conducted on four NVIDIA L40 GPUs. For fair comparison, all trainable baselines and our framework were trained on the same training split and evaluated on the same internal validation split. For the detector, we fine-tuned DINOv3 ViT-B/16 [24] at an input resolution of 896 ×1344 for 12 epochs with a batch size of 12, using a backbone learning rate of 1 × 10 −5 and a head learning rate of 1 × 10 −4. For the localizer, we used DTD [23] trained with the proposed Difficulty-Aware Tamper Localization strategy for two mining-and-fine-tuning rounds, i.e., 
+
+𝑡 = 2. For the reasoner, we fine-tuned Qwen3-VL-4B-Instruct [1] via LoRA [10] SFT for 20 epochs. We froze the visual encoder, enabled the MM projector, and only applied LoRA adapters to the LLM backbone, with LoRA rank set to 32 and alpha set to 64. 
+
+4.2 Main Results 
+
+Table 1 presents the overall comparison with expert forensic models, general-purpose MLLMs, and MLLM-centric forensic methods. Our method achieves the best overall score, indicating that the proposed evidence-guided system effectively balances image-level detection, pixel-level localization, and explanation quality. The results show that expert models are generally stronger than general-purpose MLLMs in tamper localization, while MLLMs provide competitive semantic explanation ability but lack reliable fine-grained ground-ing. By combining detector-derived authenticity priors, localization-based spatial evidence, and evidence-conditioned reasoning, our method obtains more balanced performance across all evaluation dimensions. These results validate the effectiveness of using ex-pert forensic evidence to guide MLLM-based report generation for text-centric image forensics. 
+
+4.3 Ablation Studies 
+
+Effect of Evidence Guidance. Table 2 shows that explicit expert evidence is crucial for balanced forensic report generation. The base-line, which relies mainly on direct MLLM reasoning, obtains weak localization performance despite reasonable explanation scores. Re-moving the detector weakens image-level authenticity judgment, while removing the localizer causes a clear drop in spatial ground-ing, showing that global and regional evidence play complementary roles. The full model achieves the best overall balance by combining detector-derived authenticity priors with localization-based spatial evidence, enabling the reasoner to generate reports grounded in expert forensic evidence. 
+
+Effect of Auxiliary Localization Loss. As shown in Table 2, removing the auxiliary localization loss from the detector degrades both detection and localization-related performance. This indicates that image-level classification alone is insufficient for learning tampering-sensitive representations. By introducing coarse mask supervision, the detector is encouraged to preserve local artifact cues while learning global authenticity features, which leads to more stable forged/authentic prediction and better downstream evidence guidance. 
+
+Effect of Difficulty Mining. Table 3 evaluates the effect of iterative difficulty-aware mining. Compared with the DTD baseline, the first mining round brings a clear improvement in all localization metrics, indicating that revisiting hard samples and error-centered regions effectively strengthens the localizer. The second round achieves the best performance, improving IoU by 9.53 points over the baseline, which shows that refreshing the hard sample set after model update helps the localizer focus on remaining failure cases. However, the third round leads to a performance drop, suggesting that excessive hard-sample mining may overemphasize difficult patterns and weaken distribution balance. Therefore, we use the second-round difficulty-mined localizer in the final system. 
+
+Effect of Report-Mask Consistency Post-processing. As shown in Table 2, removing RMC post-processing noticeably low-ers localization metrics but barely affects explanation scores. Since RMC only aligns report grounding boxes with the final mask and supplements missing regions without altering semantic content, this lightweight step effectively improves spatial consistency be-tween reports and mask evidence. 
+
+4.4 Final Challenge Submission 
+
+We apply the complete evidence-guided system to the official hid-den test set of the GenText-Forensics Challenge. Since the test annotations are withheld, we report the official leaderboard result. Our system achieved a final score of 0.638 and ranked second in the final evaluation, demonstrating the effectiveness of the proposed solution under the official challenge protocol. 
+
+5 Conclusion 
+
+We presented an evidence-guided detector-localizer-reasoner sys-tem for the GenText-Forensics Challenge. By combining auxiliary localization loss, difficulty-aware mining, and report-mask consis-tency post-processing, our system achieved 0.638 on the hidden test set and ranked second. We also summarized practical insights from building a coordinated evidence-grounded forensic pipeline. Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil 
+
+Acknowledgments 
+
+This work was supported in part by the National Natural Science Foundation of China (NSFC) under Grant U23B2022, and in part by the Shenzhen Science and Technology Program under Grants JCYJ20250604181211016 and SYSPG20241211174032004. 
+
+References 
+
+[1] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. 2025. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631 (2025). [2] Xinru Chen, Chengbo Dong, Jiaqi Ji, Juan Cao, and Xirong Li. 2021. Image manipulation detection by multi-view multi-scale supervision. In Proceedings of the IEEE/CVF international conference on computer vision . 14185–14193. [3] Zhongxi Chen, Shen Chen, Taiping Yao, Ke Sun, Shouhong Ding, Xianming Lin, Liujuan Cao, and Rongrong Ji. 2024. Enhancing tampered text detection through frequency feature fusion and decomposition. In European Conference on Computer Vision . Springer, 200–217. [4] Bowen Cheng, Ishan Misra, Alexander G Schwing, Alexander Kirillov, and Rohit Girdhar. 2022. Masked-attention mask transformer for universal image segmen-tation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 1290–1299. [5] Tiago José De Carvalho, Christian Riess, Elli Angelopoulou, Helio Pedrini, and Anderson de Rezende Rocha. 2013. Exposing digital image forgeries by illumina-tion color classification. IEEE transactions on information forensics and security 8, 7 (2013), 1182–1194. [6] Chaorui Deng, Deyao Zhu, Kunchang Li, Chenhui Gou, Feng Li, Zeyu Wang, Shu Zhong, Weihao Yu, Xiaonan Nie, Ziang Song, et al. 2025. Emerging properties in unified multimodal pretraining. arXiv preprint arXiv:2505.14683 (2025). [7] Jing Dong, Wei Wang, and Tieniu Tan. 2013. Casia image tampering detection evaluation database. In 2013 IEEE China summit and international conference on signal and information processing . IEEE, 422–426. [8] Li Dong, Weipeng Liang, and Rangding Wang. 2024. Robust text image tampering localization via forgery traces enhancement and multiscale attention. IEEE Transactions on Consumer Electronics 70, 1 (2024), 3495–3507. [9] Fabrizio Guillaro, Davide Cozzolino, Avneesh Sud, Nicholas Dufour, and Luisa Verdoliva. 2023. Trufor: Leveraging all-round clues for trustworthy image forgery detection and localization. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 20606–20615. [10] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Liang Wang, Weizhu Chen, et al. 2022. Lora: Low-rank adaptation of large language models. Iclr 1, 2 (2022), 3. [11] Zhenglin Huang, Jinwei Hu, Xiangtai Li, Yiwei He, Xingyu Zhao, Bei Peng, Baoyuan Wu, Xiaowei Huang, and Guangliang Cheng. 2025. Sida: Social media image deepfake detection, localization and explanation with large multimodal model. In Proceedings of the Computer Vision and Pattern Recognition Conference .28831–28841. [12] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. 2024. Gpt-4o system card. arXiv preprint arXiv:2410.21276 (2024). [13] Myung-Joon Kwon, In-Jae Yu, Seung-Hun Nam, and Heung-Kyu Lee. 2021. CAT-Net: Compression artifact tracing network for detection and localization of image splicing. In Proceedings of the IEEE/CVF winter conference on applications of computer vision . 375–384. [14] Black Forest Labs. 2024. FLUX. https://github.com/black-forest-labs/flux. [15] Songze Li, Yunfei Guo, Shen Chen, Bin Li, Kaiqing Lin, Changsheng Chen, Haodong Li, Taiping Yao, and Shouhong Ding. 2025. DITL2: Dual-Stage In-variance Transfer Learning for Generalizable Document Image Tampering Local-ization. In Proceedings of the 33rd ACM International Conference on Multimedia .82–91. [16] Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. 2024. LLaVA-NeXT: Improved reasoning, OCR, and world knowl-edge. https://llava-vl.github.io/blog/2024-01-30-llava-next/ [17] Jiawei Liu, Fanrui Zhang, Jiaying Zhu, Esther Sun, Qiang Zhang, and Zheng-Jun Zha. 2024. Forgerygpt: Multimodal large language model for explainable image forgery detection and localization. arXiv preprint arXiv:2410.10238 (2024). [18] Shiyu Liu, Yucheng Han, Peng Xing, Fukun Yin, Rui Wang, Wei Cheng, Jiaqi Liao, Yingming Wang, Honghao Fu, Chunrui Han, et al. 2025. Step1x-edit: A practical framework for general image editing. arXiv preprint arXiv:2504.17761 (2025). [19] Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo. 2021. Swin transformer: Hierarchical vision transformer us-ing shifted windows. In Proceedings of the IEEE/CVF international conference on computer vision . 10012–10022. [20] Dongliang Luo, Yuliang Liu, Rui Yang, Xianjin Liu, Jishen Zeng, Yu Zhou, and Xiang Bai. 2025. Toward real text manipulation detection: New dataset and new solution. Pattern Recognition 157 (2025), 110828. [21] Tian-Tsong Ng, Jessie Hsu, and Shih-Fu Chang. 2009. Columbia image splicing detection evaluation dataset. DVMM lab. Columbia Univ CalPhotos Digit Libr 
+
+(2009). [22] Adam Novozamsky, Babak Mahdian, and Stanislav Saic. 2020. IMD2020: A large-scale annotated dataset tailored for detecting manipulated images. In Proceedings of the IEEE/CVF winter conference on applications of computer vision workshops .71–80. [23] Chenfan Qu, Chongyu Liu, Yuliang Liu, Xinhong Chen, Dezhi Peng, Fengjun Guo, and Lianwen Jin. 2023. Towards robust tampered text detection in document image: New dataset and new solution. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 5937–5946. [24] Oriane Siméoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ra-mamonjisoa, Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Hervé Jégou, Patrick Labatut, and Piotr Bojanowski. 2025. DINOv3. arXiv:2508.10104 [cs.CV] https://arxiv.org/abs/2508.10104 [25] Lei Su, Xiaochen Ma, Xuekang Zhu, Chaoqun Niu, Zeyu Lei, and Ji-Zhe Zhou. 2025. Can we get rid of handcrafted feature extractors? sparsevit: Nonsemantics-centered, parameter-efficient image manipulation localization through spare-coding transformer. In Proceedings of the AAAI conference on artificial intelligence ,Vol. 39. 7024–7032. [26] Hao Sun, Yanbo Wang, Junxian Duan, and Ran He. 2025. VeriChain: Reinforced Document Image Forgery Verification via Self-revealing Reasoning Chain. In 
+
+Asian Conference on Pattern Recognition . Springer, 238–249. [27] Zhihao Sun, Haoran Jiang, Haoran Chen, Yixin Cao, Xipeng Qiu, Zuxuan Wu, and Yu-Gang Jiang. 2024. Forgerysleuth: Empowering multimodal large language models for image manipulation detection. arXiv preprint arXiv:2411.19466 (2024). [28] Gemini Team, Rohan Anil, Sebastian Borgeaud, Jean-Baptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, Katie Millican, et al. 2023. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805 (2023). [29] Peng Wang, Yichun Shi, Xiaochen Lian, Zhonghua Zhai, Xin Xia, Xuefeng Xiao, Weilin Huang, and Jianchao Yang. 2025. Seededit 3.0: Fast and high-quality generative image editing. arXiv preprint arXiv:2506.05083 (2025). [30] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. 2025. Internvl3. 5: Ad-vancing open-source multimodal models in versatility, reasoning, and efficiency. 
+
+arXiv preprint arXiv:2508.18265 (2025). [31] Bihan Wen, Ye Zhu, Ramanathan Subramanian, Tian-Tsong Ng, Xuanjing Shen, and Stefan Winkler. 2016. COVERAGE–A novel database for copy-move forgery detection. In 2016 IEEE international conference on image processing (ICIP) . Ieee, 161–165. [32] Chenfei Wu, Jiahao Li, Jingren Zhou, Junyang Lin, Kaiyuan Gao, Kun Yan, Sheng-ming Yin, Shuai Bai, Xiao Xu, Yilei Chen, et al. 2025. Qwen-image technical report. arXiv preprint arXiv:2508.02324 (2025). [33] Guitao Xu, Ziqi Yi, Peirong Zhang, Jiahuan Cao, Shihang Wu, and Lianwen Jin. 2025. From Pixels to Semantics: A Novel MLLM-Driven Approach for Explainable Tampered Text Detection. In Proceedings of the 33rd ACM International Conference on Multimedia . 757–766. [34] Zhipei Xu, Xuanyu Zhang, Runyi Li, Zecheng Tang, Qing Huang, and Jian Zhang. 2024. Fakeshield: Explainable image forgery detection and localization via multi-modal large language models. arXiv preprint arXiv:2410.02761 (2024). [35] Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q Weinberger, and Yoav Artzi. 2019. Bertscore: Evaluating text generation with bert. arXiv preprint arXiv:1904.09675 (2019). [36] Shiqiang Zheng, Changsheng Chen, Shen Chen, Taiping Yao, Shouhong Ding, Bin Li, and Jiwu Huang. 2025. Generalized document tampering localization via color and semantic disentanglement. IEEE Transactions on Circuits and Systems for Video Technology (2025).

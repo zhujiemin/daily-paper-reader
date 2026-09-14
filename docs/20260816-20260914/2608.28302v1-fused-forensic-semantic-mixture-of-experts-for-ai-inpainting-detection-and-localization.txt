@@ -1,0 +1,1728 @@
+FUSED: Forensic–Semantic Mixture-of-Experts for AI Inpainting
+Detection and Localization
+Anton Nuzhdin, Marcel Worring, Ivona Najdenkoska
+Informatics Institute, University of Amsterdam
+Amsterdam, The Netherlands
+anton.nuzhdin@uva.student.nl,
+m.worring@uva.nl, i.najdenkoska@uva.nl
+Abstract
+Diffusion-based inpainting models modify only a localized
+part of an image, while many AI-image detectors rely on
+global artifacts and do not localize. These artifacts vary
+across generators, limiting detector transfer under distribu-
+tion shifts. Recent work shows that restoring the authen-
+tic pixels outside the inpainted region removes these cues
+and can degrade pretrained detectors. To address this, we
+present FUSED, a unified framework for the joint detection
+and localization of AI-generated inpainting. FUSED com-
+bines low-level forensic cues with high-level semantic fea-
+tures using a sparsely-gated Mixture-of-Experts architecture,
+enabling the model to adaptively prioritize the most relevant
+signal for each token. For each input, FUSED predicts both
+an image-level manipulation score and a pixel-level mask of
+the inpainted area. On the OpenSDID cross-generator bench-
+mark, FUSED achieves the best average detection and lo-
+calization, with the largest gains on unseen generators. The
+same model transfers directly to the held-out AutoSplice and
+CocoGlide benchmarks, more than doubling localization per-
+formance. Evaluating each held-out benchmark with and with-
+out the global generator artifact further shows that all evalu-
+ated methods, ours included, partly read the artifact as ev-
+idence of manipulation, and FUSED remains the strongest
+under both conditions. Code and pretrained models are avail-
+able at https://github.com/AntonNuzhdin/FUSED.
+Introduction
+Detecting and localizing AI-generated content has become
+a central problem in image forensics. Diffusion-based image
+inpainting has made AI-generated content rapid, accessible,
+and visually convincing (Rombach et al. 2021; Esser et al.
+2024; Podell et al. 2024; Batifol et al. 2025; Zhao et al.
+2026). In contrast to fully synthetic generation, AI inpaint-
+ing modifies only a localized region of an image, removing,
+inserting, or replacing semantically important content while
+maintaining the realism of the surrounding areas (Verdoliva
+2020). Consequently, a forensic system designed to detect
+such edits must address two interrelated questions: has the
+image been manipulated, and where is the manipulation lo-
+cated. Most detectors take a shortcut around the detection
+vs localization problem. Specifically, detectors tend to rely
+on the global cue that distinguishes real from synthetic im-
+ages in their training data, such as JPEG compression and
+resolution (Grommelt et al. 2024), content and format bi-
+Figure 1: Prior forensic-semantic detectors combine foren-
+sic and semantic features using a global image-level fusion.
+FUSED instead routes each token to a sparse set of experts,
+enabling token-level fusion and improving robustness to un-
+seen generators.
+ases (Guillaro et al. 2025), or frequency misalignment (Chen
+et al. 2025). In inpainting, the VAE trace is exactly such a cue:
+latent diffusion models process the entire image through a
+variational autoencoder (VAE) (Kingma and Welling 2013),
+leaving a spectral trace across the whole frame, including the
+background (Nebioglu, Bilgiç, and Popescu 2026). Recent
+work, such as the Inpainting-Exchange intervention (INP-
+X) (Nebioglu, Bilgiç, and Popescu 2026), investigates this
+by showing that restoring the authentic pixels outside the
+edited region reduces strong detectors to chance. Detection
+must, therefore, rest on the synthesized region itself.
+Reliance on shortcuts becomes unsustainable under trans-
+fer, where new generators arrive without retraining, and there
+the two kinds of evidence fail in complementary ways. Low-
+level forensic cues localize accurately but generalize poorly
+across generators, while high-level semantic features sur-
+arXiv:2608.28302v1  [cs.CV]  28 Aug 2026
+
+
+vive the generator change yet cannot point to the synthesized
+pixels, so localization suffers even when detection holds.
+Combining the two is by now standard (Guillaro et al. 2023;
+Yan et al. 2024; Cheng et al. 2025), from feature concatena-
+tion (Yan et al. 2024) to adaptive per-image weighting (Cheng
+et al. 2025). In all of them, a single blend serves the whole
+image, while the inpainting is local, so the mixture must
+instead be resolved token by token (Figure 1).
+In this paper, we introduce FUSED, a Forensic-semantic
+Unified Sparse-Expert Detector for the joint detection and
+localization of AI inpainting (Figure 2). A trainable forensic
+branch suppresses semantic content and extracts low-level
+manipulation traces, while a frozen semantic branch pro-
+vides object-level context that remains stable across gener-
+ators. A sparsely-gated Mixture-of-Experts (MoE) (Shazeer
+et al. 2017) fuses the streams by routing each token to se-
+lected experts. Finally, a segmentation bridge decodes the
+tampering mask jointly from the forensic map and the post-
+fusion semantic tokens, extending localization supervision
+to the fusion and routing modules.
+To evaluate our method, we conduct a series of trans-
+fer experiments under three increasingly severe distribution
+shifts from the training source. Following the OpenSDID
+protocol (Wang, Huang, and Hong 2025), all methods are
+trained on images by a single image generator and tested
+on five generators of the same latent-diffusion family, four
+of which are unseen. The same checkpoints are then evalu-
+ated, without any target-domain training, on AutoSplice (Jia
+et al. 2023) and CocoGlide (Guillaro et al. 2023), two in-
+dependently constructed benchmarks whose pixel-space ed-
+itors never pass the image through a latent VAE. Conse-
+quently, no global latent-VAE artifact is present, and suc-
+cessful transfer requires identifying evidence within the ma-
+nipulated region itself. The INP-X benchmark (Nebioglu,
+Bilgiç, and Popescu 2026) provides the same manipulations
+with the artifact present and removed, allowing us to isolate
+how much each transferred decision depends on this cue.
+Together, these evaluations test cross-generator generaliza-
+tion, transfer across editing pipelines, and robustness to the
+removal of global artifacts. All three, however, start from a
+single training generator, leaving open both whether the gains
+of FUSED persist under heterogeneous training and whether
+the model remains effective against more recent high-fidelity
+generators. We therefore also retrain FUSED and MaskCLIP
+on the large-scale multi-generator So-Fake-Set (Huang et al.
+2026) and evaluate them on So-Fake-OOD, which contains
+forgeries from held-out commercial generators.
+In summary, our contributions are: (1) We propose
+FUSED, which couples a forensic branch with a semantic
+one through a sparsely-gated Mixture-of-Experts acting as
+a cross-stream, per-token fusion operator, and a joint seg-
+mentation bridge that extends localization supervision to
+the fusion itself. (2) We demonstrate state-of-the-art per-
+formance in detection and localization from a single train-
+ing source across generator families and under both artifact
+conditions. Furthermore, we show that the advantage per-
+sists under large-scale multi-generator training and on a con-
+temporary OOD benchmark containing held-out commercial
+generators.
+Related Work
+Detecting AI-generated images.
+Most detectors classify
+an image as real or generated based on the statistical fin-
+gerprints of the generator. Early work exploits the spatial
+and spectral artifacts of CNN generators (Wang et al. 2020),
+later refined through up-sampling and neighboring-pixel
+cues (Tan et al. 2024b), frequency-domain analysis (Tan et al.
+2024a; Liu, Qi, and Torr 2020), or any-resolution spectral
+learning (Karageorgiou et al. 2025). Reconstruction-based
+detectors read diffusion images off the generative pipeline it-
+self (Wang et al. 2023; Ricker, Lukovnikov, and Fischer 2024;
+Vasilcoiu et al. 2025), while a parallel line repurposes CLIP
+features as a generic real/fake space (Ojha, Li, and Lee 2023;
+Koutlis and Papadopoulos 2024). Because either cue alone
+has blind spots, recent detectors fuse them: AIDE (Yan et al.
+2024) concatenates patch statistics with a semantic represen-
+tation, and CO-SPY (Cheng et al. 2025) pairs a semantic
+stream with VAE reconstruction residuals. All decide at the
+image level with a single blend of evidence, and none lo-
+calizes, whereas FUSED resolves the mixture per token and
+grounds its decision in a predicted mask.
+Image manipulation detection and localization.
+The set-
+ting of our work is image manipulation detection and local-
+ization, in which a method produces both an image-level
+forgery decision and a per-pixel tampering map. Most ap-
+proaches analyze low-level forensic traces, revealing tam-
+pering through anomaly modeling (Wu, AbdAlmageed, and
+Natarajan 2019), noise and edge streams (Dong et al. 2022),
+compression artifacts (Kwon et al. 2022), spatio-channel cor-
+relation (Liu et al. 2022), object-level transformers (Wang
+et al. 2022), or plain vision transformers (Ma et al. 2023),
+while TruFor (Guillaro et al. 2023) fuses an RGB view with a
+learned noise fingerprint. Most of these methods obtain their
+low-level view from handcrafted extractors, whereas Spar-
+seViT (Su et al. 2025) shows that a sparse attention design
+learns comparable non-semantic features without them. A
+growing subset targets diffusion inpainting directly, empha-
+sizing the localization map through uncertainty-guided learn-
+ing (Ji et al. 2023), multi-feature fusion (Ren et al. 2023),
+contrastive objectives (Niloy, Bhaumik, and Woo 2023), edge
+guidance (Hao et al. 2024), or conditional diffusion used as
+a localizer (Wang et al. 2025). Seeking more robust repre-
+sentations, DeCLIP (Smeu, Oneata, and Oneata 2025) and
+MaskCLIP (Wang, Huang, and Hong 2025) instead read ed-
+its from CLIP (Radford et al. 2021) features, which transfer
+across generators more effectively; yet their localization de-
+clines even where detection remains effective, as our experi-
+ments show in Section .
+A separate line introduces mixture-of-experts routing into
+forensics. MoE-FFD (Kong et al. 2025) and MoNFAP (Miao
+et al. 2025) route among adapter or noise experts for face
+manipulation, Forensic-MoE (Fang et al. 2025) pre-trains
+adapter experts on different synthetic sources, and Omni-
+AID (Guo et al. 2025) routes among content-domain se-
+mantic experts alongside a fixed artifact expert. These meth-
+ods target fully synthetic or face-manipulated imagery, their
+experts operate within a single representation, and special-
+ization is largely imposed by pre-training each expert on a
+
+
+Figure 2: The FUSED architecture. In contrast to the single image-level fusion illustrated in Figure 1, FUSED represents the
+forensic and semantic streams as token sets, concatenates them into a joint sequence, and routes each token through a sparse
+Mixture-of-Experts before cross-stream self-attention. A classification head predicts the image-level manipulation score, while
+a segmentation bridge combines the forensic feature map with the post-fusion semantic tokens to decode the tampering mask.
+predefined data partition. FUSED instead trains end-to-end
+on a single undivided set, letting the router organize the ex-
+perts as a cross-stream, per-token fusion operator between
+two heterogeneous encoders, so we treat these methods as
+design references rather than baselines.
+Shortcut learning in AI-image detection.
+A recurring
+finding is that AI-image detectors succeed for the wrong
+reasons. A line of work documents dataset biases that de-
+tectors latch onto, such as JPEG compression (Grommelt
+et al. 2024), and proposes bias-free training (Guillaro et al.
+2025) or cross-source data alignment (Chen et al. 2025)
+to counter them. For inpainting specifically, the INP-X
+dataset (Nebioglu, Bilgiç, and Popescu 2026) isolates the
+effect by removing the global VAE artifact while preserving
+the synthesized content, after which the accuracy of pre-
+trained detectors collapses, suggesting that robust inpainting
+forensics should be content-aware rather than relying on a
+global real/fake decision. How to stay robust to the exchange
+while keeping detection and localization strong together re-
+mains open. We take this question to the transfer setting and
+measure it directly.
+Methodology
+Overview.
+We address image manipulation analysis as a
+joint detection-and-localization task. Localization relies on
+non-semantic, manipulation-sensitive evidence, whereas ro-
+bust authenticity detection benefits from combining this evi-
+dence with high-level semantic context. Our model, FUSED
+(Figure 2), follows this division of labor: a trainable non-
+semantic encoder learns manipulation-sensitive representa-
+tions, while a frozen semantic backbone provides object-
+level context. To enable token-wise, cross-stream adaptation,
+their token representations are fused through a sparsely gated
+MoE. Given an input x ∈R3×512×512, FUSED produces an
+authenticity logit ˆy and a full-resolution tampering mask ˆS.
+Forensic branch.
+The forensic branch must expose low-
+level manipulation traces while suppressing image content.
+We instantiate it with SparseViT (Su et al. 2025), an im-
+age manipulation encoder that learns non-semantic features.
+It is a four-stage hierarchical transformer that replaces the
+dense global self-attention of a standard ViT (Dosovitskiy
+et al. 2020) with sparse attention. At each layer, the spa-
+tial feature tokens are partitioned into spatially strided, non-
+overlapping groups, and attention is computed only among
+the non-adjacent tokens assigned to the same group. Be-
+cause image semantics require dense, continuous interac-
+tions whereas non-semantic evidence is content-independent
+and breaks only where a manipulation occurs, this sparse de-
+sign suppresses semantic content and surfaces manipulation-
+sensitive, content-independent features. We call this stream
+the forensic branch, as it supplies the low-level content-
+independent evidence. Following the original SparseViT ap-
+proach, we aggregate its multi-scale features {Cj} with
+learnable channel-wise weights γj and layer normalization
+into a single fused forensic map F:
+F = LN
+ X
+j
+γj Cj
+
+.
+(1)
+We then flatten F into a token sequence and summa-
+rize it with an attention-pooling module that cross-attends
+a set of m=8 learnable query latents, yielding a compact
+forensic token set Tsvit ∈Rm×d. The latents are orthog-
+onally initialized and kept complementary during training
+by a diversity penalty Ldiv =
+1
+m(m−1)
+P
+i̸=j
+ ˆt⊤
+i ˆtj
+2 on the
+off-diagonal cosine similarities of the ℓ2-normalized pooled
+tokens ˆti = Tsvit,i/∥Tsvit,i∥.
+Semantic branch.
+The semantic branch must provide an
+object-level context. We instantiate it with a frozen CLIP-
+ConvNeXt-XXL (Ilharco et al. 2021), following AIDE (Yan
+et al. 2024). We use it as a fixed semantic feature extractor:
+
+
+its spatial output of the final-stage (a 16 × 16 grid of feature
+vectors) is projected by a 1×1 convolution to a sequence of
+semantic tokens Tcnx ∈Rnc×d of width d. Freezing this
+branch keeps the trainable parameter count modest and acts
+as a regularizer against overfitting to dataset-specific arti-
+facts.
+Mixture-of-experts fusion.
+The two branches speak dif-
+ferent “languages,” and the manipulations they must explain
+are heterogeneous. Therefore, we route tokens through a
+sparse MoE layer, which allows the model to dedicate dis-
+tinct expert sub-networks to distinct manipulation regimes.
+Concatenating the branch tokens into Z = [ Tsvit; Tcnx ], we
+fuse them by applying the MoE layer before self-attention.
+Z′ = LN(Z + MoE(LN(Z))) ,
+Z′′ = LN(Z′ + MSA(Z′)) .
+(2)
+Thus, per-token expert specialization is resolved first, and
+the subsequent self-attention models the cross-branch inter-
+actions. For each token, a linear router selects the k=2 most
+relevant of E=8 SwiGLU (Shazeer 2020) experts and mixes
+their outputs by the renormalized routing weights,
+MoE(z) =
+X
+i∈K
+˜riei(z),
+˜ri =
+ri
+P
+j∈K rj
+,
+r = softmax(Wrz).
+(3)
+where K indexes the top-k experts. To prevent routing col-
+lapse, we add the standard load-balancing term LMoE =
+E P
+i fiPi, with fi and Pi respectively being the dispatch
+fraction and mean gate probability of expert i.
+Prediction heads and segmentation bridge.
+The authen-
+ticity logit is obtained by pooling the fused tokens Z′′ into a
+classification head. For localization, decoding a mask from
+the forensic map F captures local forensic traces but ignores
+the semantic context of the frozen backbone, and leaves the
+MoE fusion supervised only by the image-level label. The
+segmentation bridge addresses both issues by decoding the
+final mask ˆS jointlyfromthetwostreams:theConvNeXtslice
+Z′′
+cnx is reshaped to its 16×16 grid, upsampled to the resolu-
+tion of F, and concatenated with it along the channel dimen-
+sion. The concatenated features are passed to a convolutional
+decoder D, consisting of two 3×3 Conv–GroupNorm–GELU
+blocks followed by a 1×1 projection:
+ˆS = Up
+
+D
+ [ F ; Up(Z′′
+cnx) ]
+
+.
+(4)
+The bridge fuses forensic evidence and semantic context at
+the feature level. Because the mask is decoded from the post-
+fusion representation, the localization loss also supervises
+the fusion, MoE, and semantic-projection modules.
+Training details.
+The model is trained end-to-end with lo-
+calization, boundary, classification, load-balancing, and di-
+versity terms:
+L = λsegLBCE + λedgeLEDG + λclsLCE
++ λMoELMoE + λdivLdiv.
+(5)
+LEDG is the edge-weighted loss, widely used by previous
+works (Guillaro et al. 2023; Wang, Huang, and Hong 2025;
+Ma et al. 2023). We apply the localization terms only to
+manipulated images, while authentic images are supervised
+by the classification term alone.
+Experiments and Results
+Experimental Setup
+Datasets, protocols, and metrics.
+For the OpenSDID-
+centered evaluation, all methods, including FUSED and ev-
+ery baseline, are trained only on the OpenSDID SD1.5 split
+and tested under three increasingly severe distribution shifts.
+First, following the OpenSDI protocol, all methods are eval-
+uated on the five OpenSDID test generators: SD1.5, which
+is in-domain, and SD2.1, SDXL, SD3, and Flux.1, which
+are unseen (Tables 1 and 2). Second, all methods are evalu-
+ated on AutoSplice, which contains local edits produced by
+DALL-E 2, and CocoGlide, which contains GLIDE inpaint-
+ings of COCO crops (Table 3). Both editors operate in pixel
+space, so neither benchmark contains the global latent-VAE
+artifacts. Third, the INP-X benchmark (Nebioglu, Bilgiç, and
+Popescu 2026), generated using Kandinsky 2.2, OpenJour-
+ney, and Stable Diffusion v1.4, holds the manipulation fixed
+and varies only the global artifact, providing each inpainted
+image with the artifact present, INP, and removed, INP-X
+(Table 4). The generators, source data, and exchange opera-
+tion are all unseen during training. Beyond these three shifts,
+we test whether the advantage of FUSED depends on the
+narrowness of the training source by retraining FUSED and
+MaskCLIP on the multi-generator So-Fake-Set (Huang et al.
+2026) and evaluating on the So-Fake-OOD benchmark.
+Localization is evaluated using per-image pixel F1 and
+IoU, and detection on OpenSDID using F1 and accuracy at a
+fixed threshold of 0.5. OpenSDID averages are unweighted
+means over the five generators. On the held-out benchmarks
+and the INP-X pair, we additionally report ROC-AUC, which,
+unlike accuracy at a fixed threshold, is unaffected by score-
+distribution shift under transfer.
+Baselines.
+The
+evaluation
+includes
+detection-and-
+localization methods from both evidence families. The
+forensic-trace methods are MVSS-Net (Dong et al. 2022),
+CAT-Net (Kwon et al. 2022), PSCC-Net (Liu et al. 2022),
+ObjectFormer (Wang et al. 2022), IML-ViT (Ma et al. 2023),
+and TruFor (Guillaro et al. 2023). The foundation-model
+methods are DeCLIP (Smeu, Oneata, and Oneata 2025) and
+MaskCLIP (Wang, Huang, and Hong 2025). Following the
+OpenSDI protocol (Wang, Huang, and Hong 2025), we also
+report detection-only baselines on OpenSDID (Wang et al.
+2020; Liu, Qi, and Torr 2020; Tan et al. 2024a,b; Ojha, Li,
+and Lee 2023; Koutlis and Papadopoulos 2024). On So-Fake
+we compare against MaskCLIP only, as it is the strongest
+prior method on OpenSDID and the held-out benchmarks.
+Implementation details.
+FUSED uses the architecture de-
+scribed in Section : a trainable SparseViT forensic branch,
+a frozen CLIP-ConvNeXt-XXL semantic branch, 512 × 512
+inputs, sparse MoE fusion with E=8 experts and top-k=2
+routing, and a joint forensic-semantic decoder. The loss
+weights in Eq. (5) are λseg = λcls = 1, λedge = 0.5, and
+λMoE = λdiv = 0.01.
+
+
+Method
+SD1.5
+SD2.1
+SDXL
+SD3
+Flux.1
+Average
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+MVSS-Net (Dong et al. 2022)
+57.9
+65.3
+44.9
+51.8
+14.7
+18.5
+26.9
+32.7
+4.8
+6.4
+29.8
+34.9
+CAT-Net (Kwon et al. 2022)
+66.4
+74.8
+54.6
+62.3
+25.5
+30.7
+35.6
+42.1
+5.0
+6.6
+37.4
+43.3
+PSCC-Net (Liu et al. 2022)
+54.7
+64.2
+36.7
+44.8
+19.7
+26.1
+29.3
+37.3
+8.2
+11.6
+29.7
+36.8
+ObjectFormer (Wang et al. 2022)
+51.2
+65.7
+47.4
+41.4
+7.4
+9.8
+9.4
+12.6
+5.3
+7.3
+24.1
+27.4
+TruFor (Guillaro et al. 2023)
+63.4
+71.0
+54.7
+61.9
+26.6
+31.9
+32.3
+38.5
+7.6
+9.7
+36.9
+42.6
+DeCLIP (Smeu, Oneata, and Oneata 2025)
+37.2
+43.4
+35.7
+41.9
+14.6
+18.2
+27.3
+33.4
+11.2
+14.3
+25.2
+30.3
+IML-ViT (Ma et al. 2023)
+66.5
+73.6
+44.8
+50.6
+21.5
+26.0
+23.6
+28.3
+6.1
+7.9
+32.5
+37.3
+MaskCLIP (Wang, Huang, and Hong 2025)
+67.1
+75.6
+55.5
+62.9
+31.0
+37.0
+43.8
+51.2
+16.2
+20.3
+42.7
+49.4
+FUSED (Ours)
+59.6
+70.5
+52.4
+63.9
+37.5
+48.3
+50.0
+62.1
+22.9
+31.8
+44.5
+55.3
+Table 1: Pixel-level localization on the OpenSDID test generators (per-image pixel F1 and IoU). Bold is best, underline second-
+best. FUSED achieves the best average localization, with its largest margins on the three most distant generators.
+Method
+SD1.5
+SD2.1
+SDXL
+SD3
+Flux.1
+Average
+F1
+Acc.
+F1
+Acc.
+F1
+Acc.
+F1
+Acc.
+F1
+Acc.
+F1
+Acc.
+CNNDetection (Wang et al. 2020)
+84.6
+85.0
+71.6
+75.9
+59.7
+68.7
+56.3
+67.1
+35.7
+57.6
+61.6
+70.9
+GramNet (Liu, Qi, and Torr 2020)
+80.5
+80.4
+74.0
+76.7
+65.3
+70.8
+64.4
+70.3
+52.0
+63.4
+67.2
+72.3
+FreqNet (Tan et al. 2024a)
+75.9
+77.7
+61.0
+68.4
+53.2
+64.0
+53.5
+64.4
+38.5
+57.1
+56.4
+66.3
+NPR (Tan et al. 2024b)
+79.4
+79.3
+81.7
+81.8
+72.1
+74.3
+73.4
+75.5
+67.6
+71.4
+74.9
+76.4
+UniFD (Ojha, Li, and Lee 2023)
+77.5
+77.6
+80.6
+81.9
+70.7
+74.8
+71.1
+75.2
+61.1
+69.1
+72.2
+75.7
+RINE (Koutlis and Papadopoulos 2024)
+91.1
+91.0
+87.5
+88.1
+73.4
+78.8
+72.1
+76.8
+55.9
+67.0
+76.0
+80.3
+MVSS-Net (Dong et al. 2022)
+93.5
+93.7
+79.3
+82.3
+59.9
+70.4
+62.8
+72.1
+27.6
+56.8
+64.6
+75.1
+CAT-Net (Kwon et al. 2022)
+96.2
+96.2
+79.3
+82.5
+64.8
+73.3
+65.3
+73.6
+22.7
+55.3
+65.6
+76.2
+PSCC-Net (Liu et al. 2022)
+96.1
+96.1
+76.9
+80.9
+55.7
+68.8
+59.8
+70.9
+51.8
+67.0
+68.0
+76.8
+ObjectFormer (Wang et al. 2022)
+71.7
+75.2
+66.8
+72.6
+49.2
+62.9
+48.3
+62.5
+37.9
+58.1
+54.8
+66.3
+TruFor (Guillaro et al. 2023)
+90.1
+97.7
+35.9
+55.6
+58.0
+66.4
+59.7
+67.5
+49.1
+61.6
+58.6
+69.8
+DeCLIP (Smeu, Oneata, and Oneata 2025)
+80.7
+78.3
+84.0
+82.8
+70.7
+70.6
+69.9
+68.4
+51.8
+65.6
+71.4
+73.1
+IML-ViT (Ma et al. 2023)
+94.5
+75.7
+69.7
+61.2
+41.0
+50.0
+44.7
+51.2
+18.2
+43.6
+53.6
+56.4
+MaskCLIP (Wang, Huang, and Hong 2025)
+92.6
+92.7
+88.7
+89.5
+78.0
+81.2
+73.1
+78.0
+56.5
+68.5
+77.8
+82.0
+FUSED (Ours)
+93.9
+94.0
+95.4
+95.5
+90.2
+90.8
+89.2
+90.1
+71.2
+77.2
+88.0
+89.5
+Table 2: Image-level detection on the OpenSDID test generators (F1 and accuracy at a fixed threshold of 0.5). Bold indicates
+the best result, and underlining indicates the second-best. FUSED achieves the best average detection.
+Figure 3: Qualitative localization results on the four unseen OpenSDID generators, one per row. On unseen generators, several
+baselines produce empty or fragmented masks, while FUSED more consistently localizes the manipulated region.
+Following the original OpenSDI setting (Wang, Huang,
+and Hong 2025), all methods are trained for 20 epochs.
+FUSED is trained under one fixed random seed using
+AdamW with a learning rate of 3 × 10−4 and an effective
+
+
+batch size of 64 on two NVIDIA H100 GPUs (94 GB each).
+We use the final training epoch as the evaluation checkpoint.
+For the So-Fake experiment, the number of training sam-
+ples varies substantially across generator sources, so we use
+square-root sampling, with the sampling probability of gen-
+erator g proportional to
+p
+Ng, where Ng is its number of
+training examples. Both models are trained for two epochs
+with validation every 10% of the total training steps, and we
+select the checkpoint with the highest validation pixel F1. All
+other model and optimization settings follow the OpenSDID
+experiments.
+Results
+Cross-generator evaluation on OpenSDID.
+FUSED es-
+tablishes a new state of the art on both tasks (Tables 1 and 2).
+For localization, it achieves the highest average IoU and
+pixel F1, 44.5 and 55.3, compared with 42.7 and 49.4 for
+MaskCLIP (Wang, Huang, and Hong 2025).
+The advantage grows with the generator gap. On unseen
+SDXL, SD3, and Flux.1, FUSED improves pixel F1 by 11.3,
+10.9, and 11.5 points. On in-domain SD1.5, MaskCLIP and
+CAT-Net remain stronger, while MaskCLIP obtains the best
+SD2.1 IoU, 55.5 versus 52.4.
+For detection, FUSED achieves an average F1 of 88.0
+and accuracy of 89.5, compared with 77.8 and 82.0 for
+MaskCLIP. The F1 margins reach 16.1 points on SD3 and
+14.7 on Flux.1. Section D of the supplementary material
+shows that FUSED leads MaskCLIP in every edit-size bin,
+while the failures in Section F occur mostly in the smallest
+bins. Overall, FUSED improves cross-generator transfer by
+adaptively balancing forensic and semantic signals.
+Transfer to held-out benchmarks.
+FUSED reaches 51.4
+pixel F1 on AutoSplice and 62.8 on CocoGlide (Table 3),
+improving over CAT-Net, the best previous method, by 18.3
+and 37.2 points, while several baselines drop to single-digit
+scores. Detection under this shift suffers from a threshold
+mismatch: the score distributions move away from the fixed
+threshold of 0.5. The baselines still tend to rank real below
+fake, with ROC-AUC up to 79.5, yet their AutoSplice ac-
+curacy falls to near or below chance (42.0–53.7). FUSED
+obtains the highest ROC-AUC on both benchmarks (89.9
+and 92.4) and remains usable at the fixed threshold on Au-
+toSplice (83.1 accuracy). On CocoGlide the mismatch also
+affects FUSED: its accuracy of 62.6 is the highest among all
+methods but below its ROC-AUC. CAT-Net’s nominally best
+CocoGlide detection F1 comes from a degenerate predictor
+with chance-level ROC-AUC and is excluded from ranking.
+Artifact reliance on the INP-X pair.
+The paired condi-
+tions in Table 4 directly test whether decisions rest on the
+manipulated region or on the global artifact. FUSED obtains
+the highest accuracy and pixel F1 under both conditions.
+Removing the artifact costs it 12.5 accuracy points (80.8 to
+68.3), compared with 18.6 for PSCC-Net, the second-most
+accurate method under INP. MaskCLIP loses only 6.1 points
+but never exceeds 70.5. Every method above chance is more
+accurate with the artifact present, so none of the evaluated
+methods decides fully within the manipulated region. How-
+ever, FUSED remains the strongest under both conditions.
+Figure 4: Per-token utilization of the MoE experts (E=8,
+top-k=2) for the SparseViT token group on the left and the
+ConvNeXt token group on the right. Each bar series corre-
+sponds to one generator, and the dashed line denotes uniform
+utilization, 1/E. All experts remain active, while utilization
+differs between branches and varies across generators.
+Model
+Pix. F1
+IoU
+F1
+AUC
+Acc.
+MaskCLIP
+28.3
+20.5
+87.7
+89.3
+82.4
+FUSED (Ours)
+42.8
+33.6
+89.2
+89.7
+83.9
+Table 6: Transfer to So-Fake-OOD after training on the multi-
+generator So-Fake-Set. FUSED improves on every metric,
+with the largest gains in localization.
+Large-scale OOD transfer on So-Fake.
+Table 6 reports
+transfer to So-Fake-OOD after training on So-Fake-Set.
+FUSED improves on every metric. The image-level detec-
+tion gains are modest, within 1.5 points, while the localiza-
+tion gains are substantially larger: +14.5 points in pixel F1
+and +13.1 points in IoU. FUSED therefore remains ahead on
+both tasks when trained on a heterogeneous multi-generator
+source and evaluated on held-out contemporary commercial
+generators. Section G of the supplementary material provides
+qualitative examples.
+Qualitative Analysis.
+Figure 3 compares predicted masks
+across four unseen OpenSDID generators. Under generator
+shifts, forensic baselines fail first: MVSS-Net, TruFor, CAT-
+Net, and ObjectFormer return empty or near-empty masks,
+whereas PSCC-Net and IML-ViT produce fragmented pre-
+dictions. The CLIP-based MaskCLIP and DeCLIP keep pro-
+ducing coherent masks, but these are coarse and often extend
+beyond the edit. FUSED remains closest to the ground truth,
+recovering the overall shape without collapse. Sections A–
+C of the supplementary material extend this comparison to
+further OpenSDID, fully synthetic, and small-edit examples.
+Ablation Studies
+Component ablation.
+We remove each of the four compo-
+nents of FUSED individually, retrain each resulting variant
+on the SD1.5 split using the same training recipe, and eval-
+uate all variants on every generator (Table 5). Removing the
+frozen CLIP-ConvNeXt branch causes the largest decrease
+on both tasks, reducing the average localization pixel F1 to
+19.1 and detection F1 to 76.6. This confirms that the semantic
+branch provides an important foundation for both tasks.
+Removing the segmentation bridge reduces average local-
+ization pixel F1 from 55.3 to 36.2, while affecting detec-
+
+
+Model
+AutoSplice
+CocoGlide
+Pix. F1
+IoU
+F1
+AUC
+Acc.
+Pix. F1
+IoU
+F1
+AUC
+Acc.
+MVSS-Net (Dong et al. 2022)
+7.7
+5.4
+42.6
+75.2
+53.7
+3.7
+2.9
+14.7
+65.5
+53.5
+PSCC-Net (Liu et al. 2022)
+7.8
+5.5
+14.2
+58.8
+42.4
+11.3
+9.0
+14.0
+64.4
+53.1
+IML-ViT (Ma et al. 2023)
+15.8
+11.3
+27.9
+50.7
+43.7
+6.0
+4.7
+1.9
+76.0
+50.1
+ObjectFormer (Wang et al. 2022)
+11.0
+7.9
+18.3
+50.4
+42.0
+4.1
+3.1
+3.8
+57.2
+50.3
+TruFor (Guillaro et al. 2023)
+16.5
+11.9
+18.1
+69.5
+43.0
+23.8
+19.8
+2.7
+79.5
+50.5
+CAT-Net (Kwon et al. 2022)
+33.1
+21.2
+45.3
+51.7
+47.7
+25.6
+16.3
+N/A†
+50.0
+49.5
+DeCLIP (Smeu, Oneata, and Oneata 2025)
+18.1
+13.5
+17.7
+74.3
+43.4
+12.9
+10.3
+13.8
+70.9
+52.5
+MaskCLIP (Wang, Huang, and Hong 2025)
+8.0
+5.9
+36.3
+73.1
+51.1
+10.7
+9.0
+29.8
+74.9
+58.1
+FUSED (Ours)
+51.4
+38.9
+86.2
+89.9
+83.1
+62.8
+51.5
+40.6
+92.4
+62.6
+Table 3: Zero-shot transfer of OpenSDID-trained models to the held-out AutoSplice and CocoGlide benchmarks. Dagger marks
+a degenerate predictor excluded from ranking. FUSED achieves the best result on every metric of both benchmarks.
+Model
+INP: Real vs. Inpaint
+INP-X: Real vs. Exchanged
+Pix. F1
+IoU
+F1
+AUC
+Acc.
+Pix. F1
+IoU
+F1
+AUC
+Acc.
+MVSS-Net (Dong et al. 2022)
+10.6
+7.5
+61.0
+92.1
+74.5
+6.9
+5.7
+23.0
+69.2
+60.5
+PSCC-Net (Liu et al. 2022)
+15.3
+10.4
+75.2
+87.6
+79.3
+14.0
+9.8
+39.5
+69.3
+60.7
+IML-ViT (Ma et al. 2023)
+16.8
+11.8
+57.3
+81.2
+68.4
+13.2
+10.0
+34.8
+65.7
+58.4
+ObjectFormer (Wang et al. 2022)
+6.2
+4.4
+17.3
+63.3
+58.4
+5.7
+4.2
+12.8
+60.0
+57.1
+TruFor (Guillaro et al. 2023)
+16.0
+11.4
+47.6
+89.6
+69.1
+12.2
+9.9
+11.3
+68.5
+57.8
+CAT-Net (Kwon et al. 2022)
+13.2
+8.1
+39.2
+43.2
+45.4
+13.0
+8.0
+39.7
+44.4
+45.7
+DeCLIP (Smeu, Oneata, and Oneata 2025)
+12.9
+9.6
+18.7
+68.4
+59.3
+14.2
+11.2
+13.9
+65.6
+58.0
+MaskCLIP (Wang, Huang, and Hong 2025)
+17.1
+13.1
+61.3
+80.7
+70.5
+15.0
+12.5
+49.3
+74.0
+64.4
+FUSED (Ours)
+18.3
+12.5
+84.4
+93.8
+80.8
+21.3
+15.0
+68.0
+75.0
+68.3
+Table 4: Zero-shot transfer of OpenSDID-trained models to the paired INP-X benchmark, with the global VAE artifact present
+(INP) and removed (INP-X). FUSED achieves the best detection accuracy and pixel F1 under both conditions.
+Model
+Localization: pixel F1
+Detection: F1
+SD1.5
+SD2.1
+SDXL
+SD3
+Flux.1
+Avg.
+SD1.5
+SD2.1
+SDXL
+SD3
+Flux.1
+Avg.
+FUSED (Ours)
+70.5
+63.9
+48.3
+62.1
+31.8
+55.3
+93.9
+95.4
+90.2
+89.2
+71.2
+88.0
+w/o MoE (dense FFN)
+70.2
+63.8
+47.2
+60.6
+29.0
+54.2
+94.7
+91.0
+81.5
+80.8
+62.4
+82.1
+w/o seg-bridge
+57.9
+44.6
+27.0
+35.0
+16.8
+36.2
+96.0
+91.8
+84.9
+86.2
+70.2
+85.8
+w/o ConvNeXt
+29.3
+19.9
+16.0
+17.7
+12.8
+19.1
+86.7
+83.1
+66.3
+76.3
+70.5
+76.6
+w/o SparseViT
+61.6
+60.5
+39.2
+58.1
+28.1
+49.5
+96.2
+92.6
+83.1
+83.0
+63.4
+83.7
+ConvNeXt-Large
+68.0
+62.0
+42.7
+56.3
+26.0
+51.0
+93.7
+92.2
+82.8
+83.6
+64.5
+83.4
+ConvNeXt-Base
+65.4
+54.6
+37.4
+48.0
+24.4
+46.0
+91.3
+87.8
+71.1
+74.9
+57.6
+76.5
+MoE top-k=1
+67.0
+61.9
+44.0
+58.7
+26.8
+51.7
+94.2
+94.1
+89.5
+89.1
+71.8
+87.8
+MoE top-k=3
+70.0
+63.8
+47.0
+61.3
+29.8
+54.4
+95.8
+92.4
+86.4
+86.6
+67.7
+85.8
+Table 5: Ablation of FUSED on the OpenSDID test generators (pixel F1 and detection F1). The blocks remove one component
+at a time, vary the frozen semantic backbone, and vary the routing sparsity. Every variant is retrained on the SD1.5 split with the
+same recipe, and the FUSED row (ConvNeXt-XXL, top-k=2) is the shared reference. Bold marks the best and the underlined
+are second-best value in each column across all rows. FUSED achieves the best average on both tasks.
+tion less severely. Removing the forensic SparseViT branch
+reduces localization on every generator, including the in-
+domain SD1.5 split, where pixel F1 decreases from 70.5 to
+61.6, and lowers the average from 55.3 to 49.5.
+The MoE fusion has a more transfer-specific effect. To
+isolate conditional routing from the capacity it activates, we
+replace the E=8, top-k=2 mixture with a single SwiGLU
+FFN whose hidden width matches the two experts active per
+token, leaving the active parameter count unchanged. This
+changes localization only slightly, from 55.3 to 54.2, and
+leaves in-domain detection almost unchanged. However, it
+reduces detection F1 by 4.4 to 8.8 points on each unseen
+generator, a consistent loss across all four transfer settings.
+The gain, therefore, comes from routing rather than from
+
+
+Figure 5: Pixel-F1 robustness to Gaussian blur and JPEG
+compression on in-domain SD1.5 and unseen SD3. FUSED
+maintains its SD3 advantage across all severity levels, show-
+ing that its unseen-generator transfer remains robust even
+when the input is degraded.
+the capacity it activates. Qualitative masks for each ablated
+variant are shown in Section E of the supplementary material.
+Routing behavior.
+Figure 4 presents the per-token expert
+utilization of both branches across all five generators. The
+forensic and semantic token groups exhibit distinct utiliza-
+tion profiles, which vary across generators, and the load-
+balancing loss keeps all eight experts active in both branches.
+The router thus treats the forensic and semantic streams dif-
+ferently and adapts the expert mixture to each input. Varying
+the routing sparsity (Table 5) shows that the number of active
+experts matters: top-k=1 nearly matches FUSED on detec-
+tion, with marginally higher Flux.1 F1, but loses 3.6 aver-
+age localization points, while top-k=3 recovers localization
+yet drops detection F1 on every unseen generator. Top-k=2
+therefore gives the best trade-off between the two tasks.
+Backbone capacity.
+Increasing the capacity of the frozen
+semantic backbone improves both tasks monotonically (Ta-
+ble 5). As the backbone is scaled from ConvNeXt-Base to
+ConvNeXt-Large and then to ConvNeXt-XXL, average pixel
+F1 increases from 46.0 to 51.0 and 55.3, respectively. De-
+tection F1 similarly increases from 76.5 to 83.4 and 88.0.
+Semantic-backbone capacity therefore has a direct effect on
+cross-generator transfer performance.
+Robustness to post-processing.
+We evaluate localization
+robustness under Gaussian blur and JPEG compression, two
+common post-processing operations that may suppress the
+low-level traces used by forensic detectors (Figure 5). Neither
+perturbation changes the overall ranking. MaskCLIP retains
+its advantage on the in-domain SD1.5 split, whereas FUSED
+remains stronger on the unseen SD3 split across all evaluated
+severity levels. The cross-generator advantage of FUSED,
+therefore, does not depend on pristine inputs.
+Conclusion
+We introduce FUSED, a unified model for AI inpainting de-
+tection and localization that integrates forensic and seman-
+tic representations through a token-wise sparse Mixture-of-
+Experts followed by cross-stream attention. A segmentation
+bridge propagates localization supervision into the fused
+representation. Experiments on OpenSDID, AutoSplice,
+CocoGlide, and INP-X demonstrate state-of-the-art transfer
+from a single training source, with the largest gains on un-
+seen generators and the strongest overall performance both
+with and without the global VAE artifact. When retrained
+on the multi-generator So-Fake-Set, FUSED remains ahead
+of the strongest baseline on So-Fake-OOD in both detection
+and localization. This shows that its advantage is not tied
+to single-generator training and extends to a contemporary
+benchmark containing held-out commercial generators.
+Limitations. FUSED remains the strongest after removing
+the global VAE artifact, yet its accuracy drop on INP-X sug-
+gests residual sensitivity to this cue. Localization is harder
+for the smallest edits, although FUSED retains its advan-
+tage across all edit-size bins, as shown in the supplementary
+material. Finally, our experiments focus on generation-based
+inpainting, leaving other manipulation types for future work.
+References
+Batifol, S.; Blattmann, A.; Boesel, F.; Consul, S.; Diagne,
+C.; Dockhorn, T.; English, J.; English, Z.; Esser, P.; Kulal,
+S.; et al. 2025. Flux. 1 kontext: Flow matching for in-context
+image generation and editing in latent space. arXiv e-prints,
+arXiv–2506.
+Chen, R.; Xi, J.; Yan, Z.; Zhang, K.-Y.; Wu, S.; Xie, J.;
+Chen, X.; Xu, L.; Guan, I.; Yao, T.; and Ding, S. 2025. Dual
+Data Alignment Makes AI-Generated Image Detector Easier
+Generalizable. ArXiv, abs/2505.14359.
+Cheng, S.; Lyu, L.; Wang, Z.; Zhang, X.; and Sehwag,
+V. 2025.
+CO-SPY: Combining Semantic and Pixel Fea-
+tures to Detect Synthetic Images by AI. In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 13455–13465.
+Dong, C.; Chen, X.; Hu, R.; Cao, J.; and Li, X. 2022. Mvss-
+net: Multi-view multi-scale supervised networks for image
+manipulation detection. IEEE Transactions on Pattern Anal-
+ysis and Machine Intelligence, 45(3): 3539–3553.
+Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn,
+D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.;
+Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2020.
+An Image is Worth 16x16 Words: Transformers for Image
+Recognition at Scale. ArXiv, abs/2010.11929.
+Esser, P.; Kulal, S.; Blattmann, A.; Entezari, R.; Müller, J.;
+Saini, H.; Levi, Y.; Lorenz, D.; Sauer, A.; Boesel, F.; et al.
+2024. Scaling rectified flow transformers for high-resolution
+image synthesis. In Forty-first international conference on
+machine learning.
+Fang, M.; Li, Z.; Yu, L.; Yang, Q.; Xie, H.; and Zhang, Y.
+2025. Forensic-MoE: Exploring Comprehensive Synthetic
+Image Detection Traces with Mixture of Experts. In Proceed-
+ings of the IEEE/CVF International Conference on Computer
+Vision, 17772–17782.
+Grommelt, P.; Weiss, L.; Pfreundt, F.-J.; and Keuper, J. 2024.
+Fake or JPEG? Revealing Common Biases in Generated Im-
+age Detection Datasets. In ECCV Workshops.
+Guillaro, F.; Cozzolino, D.; Sud, A.; Dufour, N.; and Ver-
+doliva, L. 2023. TruFor: Leveraging All-Round Clues for
+Trustworthy Image Forgery Detection and Localization. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 20606–20615.
+
+
+Guillaro, F.; Zingarini, G.; Usman, B.; Sud, A.; Cozzolino,
+D.; and Verdoliva, L. 2025. A Bias-Free Training Paradigm
+for More General AI-generated Image Detection. In Pro-
+ceedings of the Computer Vision and Pattern Recognition
+Conference (CVPR), 18685–18694.
+Guo, Y.; Ye, J.; Zhang, C.; Kang, H.; Fu, H.; He, C.; and Li,
+W. 2025. OmniAID: Decoupling Semantic and Artifacts for
+Universal AI-Generated Image Detection in the Wild. arXiv
+preprint arXiv:2511.08423.
+Hao, Q.; Ren, R.; Wang, K.; Niu, S.; Zhang, J.; and Wang,
+M. 2024.
+EC-Net: General image tampering localization
+network based on edge distribution guidance and contrastive
+learning. Knowledge-Based Systems, 293: 111656.
+Huang, Z.; Li, X.; Yang, X.; Peng, B.; Huang, X.; Wu, B.;
+Tao, D.; Yang, M.-H.; and Cheng, G. 2026. So-Fake: Bench-
+marking Social-Media Image Forgery Detection.
+Ilharco, G.; Wortsman, M.; Wightman, R.; Gordon, C.; Car-
+lini, N.; Taori, R.; Dave, A.; Shankar, V.; Namkoong, H.;
+Miller, J.; Hajishirzi, H.; Farhadi, A.; and Schmidt, L. 2021.
+OpenCLIP.
+Ji, K.; Chen, F.; Guo, X.; Xu, Y.; Wang, J.; and Chen, J. 2023.
+Uncertainty-guided learning for improving image manipula-
+tion detection. In Proceedings of the IEEE/CVF international
+conference on computer vision, 22456–22465.
+Jia, S.; Huang, M.; Zhou, Z.; Ju, Y.; Cai, J.; and Lyu, S. 2023.
+AutoSplice: A Text-prompt Manipulated Image Dataset for
+Media Forensics. In Proceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition, 893–903.
+Karageorgiou, D.; Papadopoulos, S.; Kompatsiaris, I.; and
+Gavves, E. 2025. Any-Resolution AI-Generated Image De-
+tection by Spectral Learning.
+IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR).
+Kingma, D. P.; and Welling, M. 2013. Auto-encoding varia-
+tional bayes. arXiv preprint arXiv:1312.6114.
+Kong, C.; Luo, A.; Bao, P.; Yu, Y.; Li, H.; Zheng, Z.; Wang,
+S.; and Kot, A. C. 2025. Moe-ffd: Mixture of experts for
+generalized and parameter-efficient face forgery detection.
+IEEE Transactions on Dependable and Secure Computing.
+Koutlis, C.; and Papadopoulos, S. 2024. Leveraging rep-
+resentations from intermediate encoder-blocks for synthetic
+image detection. In European Conference on computer vi-
+sion, 394–411. Springer.
+Kwon, M.-J.; Nam, S.-H.; Yu, I.-J.; Lee, H.-K.; and Kim, C.
+2022. Learning JPEG Compression Artifacts for Image Ma-
+nipulation Detection and Localization. International Journal
+of Computer Vision, 130(8): 1875–1895.
+Liu, X.; Liu, Y.; Chen, J.; and Liu, X. 2022. PSCC-Net: Pro-
+gressive spatio-channel correlation network for image ma-
+nipulation detection and localization. IEEE Transactions on
+Circuits and Systems for Video Technology.
+Liu, Z.; Qi, X.; and Torr, P. H. 2020. Global texture enhance-
+ment for fake face detection in the wild. In Proceedings of
+the IEEE/CVF conference on computer vision and pattern
+recognition, 8060–8069.
+Ma, X.; Du, B.; Jiang, Z.; Hammadi, A. Y. A.; and Zhou, J.
+2023. IML-ViT: Benchmarking Image Manipulation Local-
+ization by Vision Transformer. arXiv:2307.14863.
+Miao, C.; Chu, Q.; Gong, T.; Tan, Z.; Jin, Z.; Zhuang, W.;
+Luo, M.; Hu, H.; and Yu, N. 2025. Mixture-of-noises en-
+hanced forgery-aware predictor for multi-face manipulation
+detection and localization. In Proceedings of the 33rd ACM
+International Conference on Multimedia, 3903–3912.
+Nebioglu, E.; Bilgiç, E.; and Popescu, A. 2026. AI-Generated
+Image Detectors Overrely on Global Artifacts: Evidence
+from Inpainting Exchange. arXiv preprint arXiv:2602.00192.
+Niloy, F. F.; Bhaumik, K. K.; and Woo, S. S. 2023. CFL-Net:
+Image forgery localization using contrastive learning. In Pro-
+ceedings of the IEEE/CVF winter conference on applications
+of computer vision, 4642–4651.
+Ojha, U.; Li, Y.; and Lee, Y. J. 2023. Towards universal fake
+image detectors that generalize across generative models. In
+Proceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, 24480–24489.
+Podell, D.; English, Z.; Lacey, K.; Blattmann, A.; Dockhorn,
+T.; Müller, J.; Penna, J.; and Rombach, R. 2024. Sdxl: Im-
+proving latent diffusion models for high-resolution image
+synthesis. In International Conference on Learning Repre-
+sentations, volume 2024, 1862–1874.
+Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh,
+G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark,
+J.; et al. 2021. Learning transferable visual models from
+natural language supervision. In International conference
+on machine learning, 8748–8763. PmLR.
+Ren, R.; Hao, Q.; Niu, S.; Xiong, K.; Zhang, J.; and Wang, M.
+2023. MFI-Net: Multi-feature fusion identification networks
+for artificial intelligence manipulation. IEEE Transactions
+on Circuits and Systems for Video Technology, 34(2): 1266–
+1280.
+Ricker, J.; Lukovnikov, D.; and Fischer, A. 2024.
+Aer-
+oblade: Training-free detection of latent diffusion images
+using autoencoder reconstruction error. In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition, 9130–9140.
+Rombach, R.; Blattmann, A.; Lorenz, D.; Esser, P.; and Om-
+mer, B. 2021. High-Resolution Image Synthesis with Latent
+Diffusion Models. arXiv:2112.10752.
+Shazeer, N. 2020. Glu variants improve transformer. arXiv
+preprint arXiv:2002.05202.
+Shazeer, N.; Mirhoseini, A.; Maziarz, K.; Davis, A.; Le,
+Q.; Hinton, G.; and Dean, J. 2017. Outrageously large neural
+networks: The sparsely-gated mixture-of-experts layer. arXiv
+preprint arXiv:1701.06538.
+Smeu, S.; Oneata, E.; and Oneata, D. 2025. DeCLIP: De-
+coding CLIP representations for deepfake localization. In
+Proceedings of the IEEE/CVF Winter Conference on Appli-
+cations of Computer Vision (WACV).
+Su, L.; Ma, X.; Zhu, X.; Niu, C.; Lei, Z.; and Zhou, J.-
+Z. 2025. Can we get rid of handcrafted feature extractors?
+sparsevit: Nonsemantics-centered, parameter-efficient image
+manipulation localization through spare-coding transformer.
+In Proceedings of the AAAI conference on artificial intelli-
+gence, volume 39, 7024–7032.
+
+
+Tan, C.; Zhao, Y.; Wei, S.; Gu, G.; Liu, P.; and Wei, Y. 2024a.
+Frequency-aware deepfake detection: Improving generaliz-
+ability through frequency space domain learning. In Pro-
+ceedings of the AAAI Conference on Artificial Intelligence,
+volume 38, 5052–5060.
+Tan, C.; Zhao, Y.; Wei, S.; Gu, G.; Liu, P.; and Wei, Y.
+2024b. Rethinking the up-sampling operations in cnn-based
+generative network for generalizable deepfake detection. In
+Proceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, 28130–28139.
+Vasilcoiu, A.; Najdenkoska, I.; Geradts, Z.; and Wor-
+ring, M. 2025.
+LATTE: Latent Trajectory Embedding
+for Diffusion-Generated Image Detection.
+arXiv preprint
+arXiv:2507.03054.
+Verdoliva, L. 2020. Media Forensics and DeepFakes: An
+Overview. IEEE Journal of Selected Topics in Signal Pro-
+cessing, 14(5): 910–932.
+Wang, J.; Wu, Z.; Chen, J.; Han, X.; Shrivastava, A.; Lim,
+S.-N.; and Jiang, Y.-G. 2022. Objectformer for image ma-
+nipulation detection and localization.
+In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition.
+Wang, K.; Niu, S.; Hao, Q.; and Zhang, J. 2025. Inpdiffu-
+sion: image inpainting localization via conditional diffusion
+models. In Proceedings of the AAAI Conference on Artificial
+Intelligence, volume 39, 7771–7779.
+Wang, S.-Y.; Wang, O.; Zhang, R.; Owens, A.; and Efros,
+A. A. 2020. CNN-generated images are surprisingly easy to
+spot...for now. In CVPR.
+Wang, Y.; Huang, Z.; and Hong, X. 2025. OpenSDI: Spotting
+Diffusion-Generated Images in the Open World. In Proceed-
+ings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition (CVPR).
+Wang, Z.; Bao, J.; Zhou, W.; Wang, W.; Hu, H.; Chen, H.; and
+Li, H. 2023. Dire for diffusion-generated image detection.
+In Proceedings of the IEEE/CVF International Conference
+on Computer Vision, 22445–22455.
+Wu, Y.; AbdAlmageed, W.; and Natarajan, P. 2019. Mantra-
+net: Manipulation tracing network for detection and local-
+ization of image forgeries with anomalous features. In Pro-
+ceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, 9543–9552.
+Yan, S.; Li, O.; Cai, J.; Hao, Y.; Jiang, X.; Hu, Y.; and Xie,
+W. 2024. A Sanity Check for AI-generated Image Detection.
+arXiv preprint arXiv:2406.19435.
+Zhao, B.; Wu, C.; Li, D.; Meng, H.; Li, J.; Zhang, J.; Zhou,
+J.; Lin, J.; Gao, K.; Cao, K.; et al. 2026. Qwen-image-2.0
+technical report. arXiv preprint arXiv:2605.10730.
+
+
+FUSED: Forensic–Semantic Mixture-of-Experts for AI Inpainting
+Detection and Localization
+(Supplementary Material)
+The supplementary material extends the evaluation in the
+main paper with additional qualitative and stratified analyses.
+All results use the same checkpoints and baselines evaluated
+in Section 4 of the main paper. Sections A–C examine lo-
+calization behavior on representative OpenSDID examples,
+fully synthetic images, and images with small manipulated
+regions. Section D stratifies localization and detection by
+manipulated-area fraction, Section E visualizes the compo-
+nent ablations, Section F examines errors from both output
+heads, and Section G provides qualitative results under the
+So-Fake-Set to So-Fake-OOD distribution shift. Together,
+these analyses clarify where the gains in the main paper arise
+and which cases remain challenging.
+A
+Additional Localization Examples
+Figure 11 shows ten randomly selected OpenSDID test ex-
+amples. MVSS-Net produces spatially diffuse predictions in
+most rows, while several baselines frequently return empty
+or nearly empty masks. MaskCLIP, the strongest localization
+baseline, recovers the coarse manipulated region in several
+examples but remains inconsistent and produces empty pre-
+dictions in others. FUSED responds across all examples and
+usually preserves the coarse extent of the manipulated region,
+although its masks sometimes include neighboring objects
+or background areas. Overall, FUSED’s main qualitative ad-
+vantage is more consistent localization.
+B
+Fully Synthetic Images
+Figure 12 presents five fully synthetic images. Because every
+pixel is generated, the correct mask covers the entire frame.
+FUSED produces a full-frame prediction in all five exam-
+ples. MaskCLIP and DeCLIP also produce full-frame masks
+in several cases, whereas the forensic baselines frequently
+return empty or incomplete predictions.
+These examples show that FUSED can extend its response
+across a fully generated image even when there is no localized
+authentic–generated boundary.
+C
+Small-Manipulation Examples
+Figure 13 shows examples in which the edited region oc-
+cupies only a small fraction of the image. MVSS-Net sub-
+stantially over-segments every example, while many other
+baselines return empty masks. Overall, FUSED produces
+non-empty, localized predictions in all four cases, although
+some masks contain spurious or fragmented components.
+D
+Performance by Manipulated-Area
+Fraction
+Figure 6 reports mean per-image localization IoU and de-
+tection recall across bins of ground-truth manipulated-area
+fraction. We compare FUSED with MaskCLIP, the strongest
+Figure 6: Performance by manipulated-area fraction on the
+OpenSDID test set. Mean per-image localization IoU (left)
+and detection recall on manipulated images (right), binned by
+the ground-truth manipulated-area fraction. FUSED exceeds
+MaskCLIP in every bin on both tasks. Localization improves
+from the smallest to the medium and large partial-edit bins,
+while recall remains high across partial edits.
+localization baseline in Table 1 of the main paper. FUSED
+outperforms MaskCLIP in every bin on both tasks, showing
+that its aggregate advantage is not driven by one manipula-
+tion scale. Localization IoU increases from below 0.25 for
+edits covering less than 2% of the image to above 0.60 in
+the medium and large partial-edit bins. Detection recall is
+considerably less sensitive to edit size and remains above
+approximately 0.90.
+Both methods decline on fully generated images, which
+form a distinct setting without an authentic–generated bound-
+ary and are shown qualitatively in Section B. Overall, edit
+size affects localization more than detection: small edits may
+be detected but localized imprecisely.
+E
+Qualitative Ablation Results
+Figure 7 complements the component ablation shown in Ta-
+ble 5 of the main paper with the predicted masks themselves,
+comparing the full model against the four ablated variants
+on OpenSDID test samples. The degradation visible in the
+masks tracks the quantitative drops. Removing the segmenta-
+tion bridge, SparseViT or the ConvNeXt branch damages the
+predictions most, yielding fragmented or displaced regions
+where the full model recovers a coherent shape.
+F
+Failure Cases
+The preceding sections show representative and stratified
+behavior. Here, we examine cases in which FUSED fails,
+considering the detection and localization heads separately.
+F.1
+Detection Errors
+Figure 8 groups test images by their actual and predicted
+image-level labels. The false-positive and false-negative ex-
+amples cover varied content, including people, sporting
+events, animals, isolated objects, natural scenes, and graphic
+
+
+Figure 7: Qualitative ablation results. Predictions of the full
+model and the four component-ablation variants from Table 5
+of the main paper on OpenSDID test examples. Removing
+the segmentation bridge, SparseViT or ConvNeXt branch
+produces the largest qualitative changes.
+Figure 8: Detection outcomes on the OpenSDID test set.
+Images are grouped by their actual and predicted real/fake
+labels. The off-diagonal cells show real images classified as
+fake and fake images classified as real.
+patterns. No single content category or visual characteristic
+explains all errors in either direction.
+The examples, therefore, suggest that the remaining detec-
+tion errors are heterogeneous rather than dominated by one
+obvious semantic shortcut.
+F.2
+Localization Failures
+Figure 9 shows ten examples, two per generator, for which
+FUSED obtains an IoU of 0.00. The ground-truth regions are
+generally small relative to the image, placing these examples
+in the lowest-area regime of Figure 6.
+Most predicted masks are not empty. Instead, FUSED re-
+sponds to regions elsewhere in the image, sometimes with an
+Figure 9: Ten OpenSDID examples, two per generator, for
+which FUSED obtains an IoU of 0.00. Each triplet contains
+the input image, ground-truth mask, and predicted mask.
+area comparable to or larger than the target. The zero IoU,
+therefore, reflects incorrect spatial attribution rather than
+mask collapse. This differs from the frequent empty-mask
+behavior of several baselines in Figure 11 and indicates that
+improving these cases requires more precise spatial ground-
+ing rather than simply stronger mask activation.
+G
+So-Fake-OOD Qualitative Results
+Figure 10 complements the quantitative So-Fake-OOD re-
+sults in the main paper with examples from GPT-4o and
+Ideogram 3.0. MaskCLIP frequently produces empty or near-
+full predictions, whereas FUSED more often produces lo-
+calized responses that overlap the manipulated region. The
+task nevertheless remains challenging: several FUSED pre-
+dictions contain fragmented components or extend beyond
+the ground-truth region. Overall, the examples are consistent
+with the quantitative results, where the largest advantage of
+FUSED over MaskCLIP is in localization rather than image-
+level detection.
+
+
+Figure 10: Qualitative localization results on So-Fake-OOD for GPT-4o (left) and Ideogram 3.0 (right). Each group shows
+the input image, ground-truth mask, MaskCLIP prediction, and FUSED prediction. MaskCLIP frequently produces empty or
+near-full masks, whereas FUSED more often localizes the manipulated region, although some predictions remain fragmented
+or over-segmented.
+
+
+Figure 11: Additional qualitative results on OpenSDID. Ten randomly selected test examples. Each row contains the input image,
+ground-truth mask, and predictions from all compared methods. FUSED responds across all examples and generally recovers
+the coarse manipulated region, although some predictions remain over-segmented.
+
+
+Figure 12: Qualitative results on fully synthetic images. The ground-truth mask covers the entire image because every pixel is
+generated. FUSED predicts a full-frame mask in all five examples, whereas the compared baselines are less consistent.
+Figure 13: Qualitative results for small manipulated regions. The edited region occupies only a small fraction of each image.
+FUSED generally localizes the target region, although its predictions may include additional disconnected areas.

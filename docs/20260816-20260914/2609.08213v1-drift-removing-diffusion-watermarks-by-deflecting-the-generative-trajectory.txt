@@ -1,0 +1,1877 @@
+DRIFT: Removing Diffusion Watermarks by Deflecting
+the Generative Trajectory
+Rui Bao1∗
+Zheng Gao1∗
+Xiaoyu Li1
+Xiaoyan Feng2
+Yang Song1
+Jiaojiao Jiang1
+1University of New South Wales
+2Griffith University
+Abstract
+Diffusion watermarking embeds verifiable signals into the generative process and commonly
+verifies them by recovering trajectory-dependent evidence, making the marks robust to conven-
+tional pixel-space distortions. Existing removal attacks either regenerate along deterministic
+trajectories, which often preserve the watermark-bearing latent structure, or optimize every
+image separately. We identify the reliance on a recoverable generative trajectory as a common
+attack surface among the schemes we study. Based on this observation, we propose DRIFT,
+a black-box attack that combines partial forward diffusion with stochastic reverse resampling.
+Forward re-noising limits source information available to a fixed-depth recovery pipeline, while
+stochastic reversal supplies alternative noise-driven paths whose removal benefit we isolate
+through matched sampler comparisons. Adaptive DRIFT searches a selected ladder for each
+image’s first verifier-rejected rung and refines fidelity while retaining only updates rejected by the
+same verifier. At fixed depth, we derive information-theoretic and Wasserstein source-dependence
+bounds; under realized-ladder monotonicity, the first rejected rung is least distorted among
+rejected rungs on that ladder, and verifier-gated refinement preserves rejection. Across nine
+watermarks spanning three paradigms, DRIFT achieves 98–100% attack success and the best
+image quality among the compared attacks, without secret keys, verifier internals, or per-image
+gradient optimization.
+1
+Introduction
+Diffusion models [11, 28, 34] have made photorealistic image synthesis widely accessible, intensifying
+the need to trace AI-generated content. Diffusion watermarking provides an active provenance
+signal by embedding a mark into generation itself, allowing attribution to persist when metadata is
+removed or overwritten.
+Existing methods inject watermarks at different points: Tree-Ring [37], RingID [6], and PRC [8]
+structure the initial noise; Gaussian Shading [39], SFW [15], and SEAL [2] constrain latent represen-
+tations or bind the mark to content; ROBIN [13] learns hidden prompts. Despite these differences,
+the evaluated public implementations recover evidence associated with their generation or inversion
+trajectories, typically through deterministic inversion. This dependence is associated with robustness
+to JPEG compression, blur, crop, and rotation, but may also expose a common attack surface.
+Prior attacks do not fully exploit it. Deterministic regeneration can remove pixel-space marks [42],
+yet often preserves the latent structure used by diffusion watermarks. Latent-removal and black-box
+attacks [14, 24] can evade stronger schemes, but require iterative optimization for every image.
+These approaches target individual watermark signals; they leave the shared verification mechanism
+largely untouched.
+1
+arXiv:2609.08213v1  [cs.CR]  8 Sep 2026
+
+
+Across these implementations, successful verification is empirically associated with recoverable
+trajectory-linked evidence. We call this reliance trajectory consistency. Rather than perturbing a
+detector-specific signal, an attacker can target the path itself. Based on this principle, we propose
+DRIFT, which first applies partial forward diffusion to limit source information entering a fixed-
+depth recovery pipeline and then performs stochastic reverse resampling. Fresh reverse noise opens
+alternative reconstruction paths, while the pretrained score function promotes natural-image outputs.
+Whether this variation survives the downstream map and crosses a verifier boundary is scheme-
+and sampler-dependent; we establish its removal benefit empirically through matched sampler
+comparisons.
+A fixed re-noising strength wastes fidelity because watermark robustness varies across schemes
+and images. Adaptive DRIFT therefore predicts the watermark family from a shared inverted latent,
+uses binary verifier feedback to stop at the first verifier-rejected rung on the selected ladder, and
+applies a DPPO-trained refinement controller [27] with verifier-gated back-off to recover quality.
+Our contributions are: (i) identifying trajectory consistency across nine schemes; (ii) introducing
+DRIFT with fixed-depth information and Wasserstein bounds, conditional ladder-relative selection,
+and verifier-rejection invariance; and (iii) isolating stochasticity with matched samplers and obtaining
+98–100% success with the best compared fidelity.
+2
+Related Work
+Diffusion sampling and inversion.
+Deterministic samplers such as DDIM [33] and higher-
+order variants [18, 20, 41] define a coupled noise-to-image path, the property underpinning DDIM
+inversion [23, 36] and most diffusion watermark verifiers, though prediction errors accumulate along
+it [4, 17]. Reverse-time SDE samplers [7, 34, 38] instead inject fresh noise during generation, so
+repeated runs from the same state can follow different trajectories [25]; we exploit this contrast.
+Diffusion watermarking.
+Watermarks differ by injection point. Noise-space methods modify the
+initial latent: Tree-Ring [37] writes a Fourier ring pattern, RingID [6] extends it to multi-channel
+patterns, PRC [8] samples pseudorandom codes, and WIND [1] organizes large key pools. Latent-
+and frequency-domain methods act on intermediate representations: Gaussian Shading [39] applies
+key-controlled spectral offsets, GaussMarker [16] encodes high-frequency components, and SFW [15]
+and SEAL [2] bind marks to semantic content; optimization-based ROBIN [13] learns hidden
+prompts. Although these embeddings differ, the evaluated implementations recover structure tied to
+the generation or inversion trajectory.
+Removal attacks.
+Regeneration attacks reconstruct the image with a diffusion model: Zhao et al.
+[42] use deterministic PNDM with guarantees for pixel-level marks, CtrlRegen [19] adds trained
+control modules, Saberi et al. [29] adapt DiffPure through a reverse-time SDE, and DDWRM [21]
+denoises in pixel space; others optimize a latent perturbation per input [14, 24]. DRIFT instead
+isolates stochastic trajectory deflection under matched samplers, requires no per-image gradients,
+and draws on inversion-based fingerprints and diffusion-policy optimization [3, 12, 27, 35] only to
+seed a verifier-guided strength search and to retain refinement updates when rejection is preserved.
+3
+The DRIFT Attack
+Problem setup. Let Wf be a diffusion-watermarking scheme from family f. Given prompt c
+and secret key κ, it produces xw = Wf(c, κ). Its verifier computes sf,κ(x) and returns Vf,κ(x) =
+2
+
+
+Stage I: Partial Forward Diffusion
+Xᵂ
+Encoder
+ε ~ N(0, Iᵈ)
+t₀
+t₁
+tₗ
+Partial Noised Latent
+���
+Re-noising Strength λ
+Low
+High  λ∈(0,1]
+Stage II: Stochastic Reverse Resampling
+Reconstructed Clean Latent
+Reconstructed Deflected Latent
+Decoder
+Xᵅ
+Stage 0: Blind Identification
+Xᵂ
+����⁻¹
+              z_T
+key-free structural features
+learned classifier
+family f + seed λ
+Verify-and-Climb
+climb λ ladder → minimal λ★
+Stage III: RL Refinement
+DPPO 
+Stochastic Deflection
+Minimal λ
+λ
+Ζt
+1
+t
+Z 
+tZ
+0
+Z
+re-noise
+refine 
+✓
+survival 0%   fidelity⬆
+▲
+× K rounds
+Figure 1: Overview of Adaptive DRIFT. A shared inversion predicts the watermark family and
+seeds an ascending strength ladder. DRIFT then combines partial forward diffusion with stochastic
+reverse resampling; an optional controller recovers fidelity while retaining only candidates rejected
+by the same verifier.
+1[sf,κ(x) ≥τ], covering both zero-bit and message-based schemes. For a target δfail ∈[0, 1], a
+randomized attack Aω returns xa
+ω = Aω(xw) and seeks low perceptual distortion while meeting a
+target failure probability:
+min
+A
+Eω[dsem(xa
+ω, xw)]
+s.t.
+Pr
+ω [Vf,κ(xa
+ω) = 0] ≥1 −δfail.
+(1)
+The attacker observes only xw and uses a public latent diffusion model (E, D, ϵθ), which need
+not match the watermarked generator. The key, message, prompt, family, and verifier internals
+are unknown. All denoising and inversion operations use the same globally fixed deterministic
+attacker-side conditioning catt (e.g., the empty prompt), independent of the source image and all
+attack randomness; we suppress it in the notation below. Base DRIFT is training-free and query-free;
+the adaptive stages receive only binary verifier responses and never perform per-image gradient
+optimization.
+Attack overview. The evaluated watermark families use different signals, but their verifiers all
+recover evidence coupled to the marked generation or inversion path. DRIFT targets this shared
+interface. Partial forward diffusion attenuates the explicit source-latent contribution, while stochastic
+reverse sampling reconstructs through fresh noise-driven transitions. Adaptive DRIFT then uses a
+blind family prediction to seed a finite strength ladder, returns its first verifier-rejected candidate,
+and optionally refines that candidate under a hard verifier gate. Figure 1 summarizes the three
+stages.
+3.1
+Stage I: Partial Forward Diffusion
+For a diffusion horizon T ∈N, we encode the watermarked image as zw
+0 = E(xw) and map strength
+λ ∈(0, 1] to tλ = ⌈λT⌉. The closed-form DDPM forward process [11] gives
+za
+tλ =
+p¯αtλ zw
+0 +
+p1 −¯αtλ ϵ,
+ϵ ∼N(0, Id),
+(2)
+3
+
+
+where ¯αt = Qt
+i=1(1 −βi) and ¯α0 = 1. Increasing λ decreases the explicit coefficient √¯αtλ of the
+source latent, but also discards more source detail. This is the removal–fidelity trade-off addressed by
+the adaptive ladder. Section 4 formalizes the corresponding forward information bottleneck without
+assuming that the reverse network is contractive.
+3.2
+Stage II: Stochastic Reverse Resampling
+Starting from za
+tλ, the denoiser first predicts
+bza
+0 = za
+t −√1 −¯αt ϵθ(za
+t , t)
+√¯αt
+.
+(3)
+DRIFT then uses the generalized DDIM/DDPM reverse update
+za
+t−1 =
+p
+¯αt−1 bza
+0 +
+q
+1 −¯αt−1 −σ2
+t ϵθ(za
+t , t)
++
+σtξt
+|{z}
+stochastic deflection
+,
+ξt ∼N(0, Id).
+(4)
+Here 0 ≤σt ≤√1 −¯αt−1, so σ1 = 0. Each ξt is fresh relative to the current reverse history. The
+choice σt = 0 recovers deterministic DDIM, whereas the posterior variance gives the standard
+DDPM ancestral special case; other admissible scales define generalized stochastic DDIM samplers.
+A positive σt makes that transition non-degenerate. Terminal and image-level diversity additionally
+require that subsequent reverse steps and the decoder do not collapse the injected variation. Thus
+stochasticity supplies path deflection, while its removal benefit is established by the controlled
+sampler comparison in Section 5.2, not assumed as a universal theorem.
+The final latent is decoded as xa = D(za
+0). Base DRIFT uses one VAE encode, tλ denoiser
+evaluations, and one VAE decode, matching the order of a standard image-to-image diffusion pass.
+Algorithm 1 appears in Appendix A.
+3.3
+Adaptive Strength Selection
+A global strength either fails on robust marks or unnecessarily degrades easy instances. Adaptive
+DRIFT therefore computes one shared inversion
+ϵw ≡zinv
+T
+= IDDIM(zw
+0 )
+and extracts radial Fourier power, sign-field tiling, cross-channel correlation, and short-period block
+statistics. A lightweight classifier bf = H(zinv
+T ) predicts the family without observing the key or
+message, repurposing inversion fingerprints used for source attribution [35]. The identifier is an
+empirical query-saving device; the search guarantee below applies to whichever ladder it selects and
+does not require bf = f.
+The prediction chooses an offline seed and an ascending ladder. We fix δ > 0, n↓∈N0, and
+0 < λseed(g) ≤λmax ≤1, and define Jg = ⌊(λmax −λseed(g))/δ⌋. Then
+Λb
+f = sort
+λseed( bf) + jδ : j = −n↓, . . . , Jb
+f,
+0 < λseed( bf) + jδ ≤λmax
+	,
+(5)
+The parameter conditions guarantee that the finite ladder is nonempty. DRIFT queries it from its
+lowest retained rung and stops at the first verifier rejection. If no rung is rejected, it returns the
+4
+
+
+strongest evaluated candidate with a failure flag; this outcome counts as an unsuccessful attack in
+Eq. (1). If verdicts form a rejected suffix and distortion is non-decreasing along the realized ladder,
+the first rejected candidate is the least distorted rejected rung on that ladder (Proposition 4.4). It is
+not claimed to be the optimum between grid points or over the continuous objective. The complete
+predict–seed–climb procedure is Algorithm 2.
+The distributional bounds in Section 4 concern a strength fixed independently of the source
+and attack randomness. They therefore apply to base DRIFT or a prespecified ladder rung, not
+automatically to the final candidate selected using the identifier and verifier history.
+3.4
+Feasibility-Preserving Fidelity Refinement
+The first rejected rung may still lose fine detail. Starting from that image x0, Stage III performs
+short guided-SDEdit rounds [5, 22]. At round k, the retained image is lightly re-noised by ηk and
+denoised with pixel-MSE and LPIPS guidance [40] toward xw. The same globally fixed scalarization
+is used for retention throughout:
+S(x) = ws SSIM(x, xw)
+−wℓLPIPS(x, xw),
+ws, wℓ> 0.
+(6)
+A candidate replaces the retained best only if the same deterministic verifier rejects it and S strictly
+improves; otherwise the algorithm backs off to the previous best. This update rule, rather than the
+learned policy, preserves verifier-relative feasibility.
+We learn the refinement schedule as a Markov decision process. The state contains DINOv2
+embeddings [26] of the source and retained images, the action/fidelity history, and the round index,
+but not the family label. The action
+ak = (ηk, gpix,k, glpips,k, stop)
+controls re-noising, the two guidance weights, and termination. With metric increments defined as
+current minus previous, the step reward is
+rstep
+k
+= ∆Sk −wc stepsk,
+followed by terminal rejection and fidelity bonuses. Hence increasing SSIM or decreasing LPIPS
+raises reward.
+The controller is a diffusion policy trained with DPPO [27]: a short conditional denoising chain
+proposes each action, and PPO optimizes the summed Gaussian log-probability with clipping and
+generalized advantage estimation [31, 32]. Reward shaping and back-off follow B2-DiffuRL [12]. For
+any fixed rollout, returning the retained best keeps it rejected by the same verifier and makes S
+non-decreasing along nested prefixes (Propositions 4.5–4.6); these invariants do not assert monotone
+PPO return or improvement of every component metric.
+4
+Analysis of DRIFT
+We separate three questions that are easy to conflate: what forward re-noising removes about
+the source, what stochastic reversal changes, and what the adaptive loops guarantee. The first
+admits a distributional theorem; the second is a structural distinction whose removal benefit is
+empirical; the third follows from finite search and verifier-gated back-off. Appendix B gives complete
+proofs, including the fully quantified fixed-depth result in Theorem B.8 and the conditional terminal
+diagnostic in Corollary B.10.
+5
+
+
+4.1
+Forward Re-noising as an Information Bottleneck
+The attack in Section 3 acts on a fixed image. For the distributional statements below, however, we
+draw a watermarked image from the source population induced by the generation protocol (including
+prompts, keys, messages, and generator randomness), independently of the attack randomness.
+Mutual information, Wasserstein distance, and unconditioned expectations are taken over this
+population and the fresh attack noises; the fixed-image sensitivity statement below conditions on
+the source latent.
+Write X = zw
+0 for the source latent, W = ϵw for its recovered reference noise, and
+Zn = √¯αnX + √1 −¯αnϵ
+for the Stage-I state at depth n. The complete Stage-II and recovered-noise pipeline is a measurable
+randomized map Yn = Hn(Zn, Ξ1:n) = bϵa
+n. To expose the source contribution, we also run the same
+reverse-noise realization from eZn = √1 −¯αnϵ, yielding the source-free baseline eϵn. Let Σz = Cov(zw
+0 ).
+Theorem 4.1 (Fixed-depth source-dependence bounds). Fix a deterministic λ ∈(0, 1] before sam-
+pling the source and attack randomness, and set n = tλ. Under the source-independent-conditioning,
+measurability, independence, and moment conditions in Assumption B.1, the following hold.
+(i) The forward channel imposes
+I(ϵw; bϵa
+n) ≤1
+2 log det
+
+Id +
+¯αn
+1 −¯αn
+Σz
+
+≤d
+2 log
+
+1 + ¯αn tr(Σz)
+d(1 −¯αn)
+
+=: Bn,
+(7)
+and the total-variation distance between the joint law and the product of its marginals is at
+most
+p
+Bn/2.
+(ii) If the reverse pipeline is LQCn-Lipschitz under synchronous reverse-noise coupling, with
+Γn = √¯αnCn, then for each fixed source latent x the coupled difference is pathwise at most
+LQΓn∥x∥2. Averaging over the source population gives
+E
+h
+∥bϵa
+n −eϵn∥2
+2
+i
+≤L2
+QΓ2
+nE∥zw
+0 ∥2
+2 =: ∆n.
+(8)
+With the stated second-moment conditions,
+W2(L(bϵa
+n, ϵw), L(bϵa
+n) ⊗L(ϵw)) ≤2
+p
+∆n.
+(iii) Separately, when λ = 1 and n = T, if Assumption B.1 is instantiated at T and the additional
+terminal premise in Assumption B.9 holds,
+E∥bϵa
+T −ϵw∥2
+2 −2d
+ ≤∆T + 2
+p
+2d ∆T .
+The theorem applies to base DRIFT or a prespecified ladder rung. It does not automatically
+apply to the final Adaptive DRIFT output: its selected depth depends on the identifier and verifier
+history and can itself carry source information. The ladder and refinement guarantees in Section 4.3
+are separate pathwise statements.
+Proof idea. Fresh attack randomness gives the Markov chains ϵw →zw
+0 →Zn →bϵa
+n; data processing
+and the Gaussian-channel capacity bound yield part (i). For part (ii), couple the attacked and
+source-free initializations with identical forward and reverse noises: their only initial difference
+is √¯αnzw
+0 , which the reverse pipeline amplifies by at most LQCn. A second, tensorized coupling
+6
+
+
+converts this mean-square estimate into the product-law Wasserstein bound. Part (iii) expands
+the squared distance around the independent terminal reference and controls the cross term by
+Cauchy–Schwarz.
+Why this is true. In one dimension, Stage I is simply a Gaussian channel whose signal-to-noise ratio
+is ¯αn/(1−¯αn); no downstream randomized map can recover more information about the source than
+entered that channel. The coupling view gives the complementary geometric statement: removing
+the source term changes the initialization by exactly √¯αnzw
+0 , after which only the sensitivity of the
+shared reverse map matters.
+Takeaway. Forward re-noising places a monotone information envelope on any recovered signal
+whose only access to the source is through the fixed-depth state Zn, while the complementary W2
+bound quantifies proximity to a source-free baseline when the realized reverse map is sufficiently
+insensitive.
+Only Bn and the forward-channel information I(ϵw; Zn) are guaranteed to decrease with depth.
+The actual post-processed information, Γn, ∆n, and their W2 envelope need not be monotone
+because the reverse map changes with n. Nor does any dependence metric reveal an unknown
+verifier margin. The paired latent distances and strength thresholds in Section 5.2 and Figure 11 of
+Appendix E.8 are distinct empirical diagnostics, not estimates of Bn or of the joint/product-law
+W2 above. The terminal value 2d is a conditional diagnostic, not a distributional claim for every
+watermark family.
+4.2
+What Stochastic Resampling Changes
+Remark 4.2 (Path randomness is local; removal advantage is empirical). Conditioned on za
+tλ,
+deterministic DDIM returns a point mass. At a step with σt > 0, Eq. (4) instead has a non-Dirac
+next-state law. This local fact does not by itself make the final latent or decoded image non-Dirac:
+later reverse steps or the decoder may collapse the injected variation. Precisely, terminal diversity
+holds if and only if two independent complete noise rollouts disagree with positive probability after
+the full downstream map (Lemma B.11).
+This distinction also explains why Theorem 4.1 does not prove a stochastic advantage. Its
+sensitivity argument drives two trajectories with the same reverse noises, which cancel; the same
+bound holds when every σt = 0. Stochastic resampling supplies alternative noise-driven paths,
+but whether those paths cross a watermark verifier’s decision boundary is scheme- and sampler-
+dependent. Section 5.2 therefore holds re-noising depth, inputs, backbone, and strength grid fixed
+and changes only the reverse-sampler condition.
+4.3
+Operational Guarantees of Adaptive DRIFT
+Verify-and-climb. Fix the family prediction and one complete realization of the candidates on the
+selected ladder Λb
+f = {λb
+f,0 < · · · < λb
+f,M}. Let vj be its binary verdict and ϕj = dsem(xa
+j, xw).
+Assumption 4.3 (Monotone realized ladder). The verdicts form a rejected suffix, vj+1 ≤vj, and
+distortions are non-decreasing, ϕj+1 ≥ϕj, on this fixed realized ladder.
+Proposition 4.4 (First rejected rung). Suppose at least one rung is rejected and j⋆= min{j : vj =
+0}. Algorithm 2 returns rung j⋆after exactly j⋆+ 1 ladder-verifier queries, and ϕj⋆≤ϕj for every
+rejected rung j on the selected realized ladder.
+The result is deliberately grid-relative. It neither selects an optimum between rungs nor compares
+independently resampled candidates. The family identifier affects which rungs are evaluated, not
+the validity of the finite scan: its accuracy and query savings are therefore evaluated empirically.
+7
+
+
+Verifier-gated refinement. Let b0 be the first rejected attack output and let bk be the retained
+best after round k. The following statements use the same fixed deterministic verifier and the same
+fixed composite score S throughout.
+Proposition 4.5 (Feasibility invariance). If b0 is verifier-rejected and bk is replaced only by a
+verifier-rejected candidate, then every retained bk and the returned image are rejected by that verifier,
+independently of the controller.
+Proposition 4.6 (Monotone retained score). Along nested prefixes of one fixed rollout, if a candidate
+replaces bk−1 only when S strictly improves, then S(bk) ≥S(bk−1) for every k.
+Both propositions are invariants of the retained-best update, not guarantees about raw candidates
+or the learned policy. In particular, a higher composite score need not improve every component
+metric, and PPO clipping does not imply monotone true return. Section 5.3 measures the policy’s
+actual fidelity gain; the propositions certify only that the same rollout never deploys a gate-violating
+or lower-scoring retained image. Appendices C and D give the proofs and the precise DPPO
+objective.
+5
+Experiments
+In this section, we evaluate DRIFT along four questions: whether it removes watermarks across
+different embedding paradigms, whether stochastic reverse sampling contributes beyond re-noising,
+whether per-image adaptation reduces unnecessary distortion, and whether the full pipeline preserves
+visual fidelity. We use Stable Diffusion v2.1 as the public diffusion backbone, draw evaluation prompts
+from Stable-Diffusion-Prompts [30], and run all experiments on an H100 GPU.
+Evaluated watermarks. We consider nine representative diffusion watermarks spanning three
+injection points. The noise-space group contains Tree-Ring (TR) [37], RingID (RI) [6], PRC [8], and
+WIND [1]; the latent/frequency-domain group contains Gaussian Shading (GS) [39], GaussMarker
+(GM) [16], SFW [15], and SEAL [2]; and the optimization-based group contains ROBIN [13]. We
+use these abbreviations throughout the tables and appendix.
+Attack baselines. We compare against the black-box attack [24] and the latent-noise removing
+attack [14], two prior attacks that target semantic watermarks through per-image adversarial
+optimization. DRIFT performs no per-image gradient optimization.
+Metrics and protocol. Attack success rate (ASR, ↑) is the true-detector removal rate. We
+measure distribution-level quality with CLIP score (↑) [9] and FID (↓) [10], and paired fidelity
+against the watermarked original with SSIM/PSNR (↑) and LPIPS (↓). For the adaptive and
+refinement stages, we additionally report identification accuracy, the selected per-image strength
+λ, verifier queries/runtime, and pre→post fidelity. All controlled comparisons use the same en-
+code →deflect →decode route: Section 5.2 holds the re-noising stage, images, backbone, and strength
+grid fixed while changing the reverse-sampler condition; Section 5.3 changes only how λ is selected;
+and Section 5.3 changes whether Stage III is applied. Full per-family results, ablations, and qualitative
+panels are provided in Appendix E.
+5.1
+Overall Attack Effectiveness
+Table 1(a) tests one trajectory-level attack across nine schemes under the strong setting, λ ≥0.5.
+DRIFT reaches 98–100% ASR on every scheme and averages 99.8%, versus 96.8% for the black-box
+attack and 81.3% for the removing attack. The largest gaps occur on Tree-Ring (98% vs. 72% black-
+box) and on GaussMarker/Gaussian Shading (100% vs. 55%/4% removing). Its success across all
+8
+
+
+Table 1: Overall attack effectiveness and image quality. (a) Per-watermark ASR under the
+strong DRIFT setting, λ ≥0.5; underlined entries indicate where DRIFT matches or exceeds the
+best prior attack. (b) End-to-end ASR, image quality, and runtime averaged over the nine families;
+bold marks the best quality values among the three DRIFT configurations. For the two baselines
+and Full DRIFT, FID, SSIM, and LPIPS follow the 100-image-per-family quality protocol detailed
+in Appendix E.1.
+(a) Per-watermark attack success rate (ASR, %).
+Attack
+Noise-space
+Latent/frequency
+Optimization
+AVG.
+TR
+RI
+PRC
+WIND
+GS
+GM
+SFW
+SEAL
+ROBIN
+Prior attacks
+Black-box
+72
+99
+100
+100
+100
+100
+100
+100
+100
+96.8
+Removing
+99
+95
+100
+100
+4
+55
+100
+100
+79
+81.3
+DRIFT (ours)
+DRIFT
+98
+100
+100
+100
+100
+100
+100
+100
+100
+99.8
+(b) End-to-end effectiveness, image quality, and runtime.
+Method
+ASR (%)↑
+CLIP↑
+FID↓
+SSIM↑
+PSNR↑
+LPIPS↓
+Time (s)
+Baseline attacks
+Black-box attack
+96.8
+31.9
+114.019
+0.519
+19.46
+0.305
+–
+Removing attack [14]
+81.3
+31.4
+104.693
+0.712
+26.35
+0.338
+–
+DRIFT (ours), end-to-end configurations
+Fixed-λ DRIFT (λ = 0.70)
+100.0
+31.8
+136.5
+0.401
+14.31
+0.528
+1.16
+Adaptive-λ DRIFT (no refine)
+99.7
+31.5
+58.7
+0.697
+23.72
+0.168
+4.20
+Full DRIFT (+ DPPO refine)
+100.0
+32.1
+55.414
+0.713
+24.01
+0.154
+8.12
+three watermark paradigms establishes breadth; the controlled study below isolates the contribution
+of stochastic reversal.
+5.2
+Role of Stochastic Reverse Sampling
+Theorem 4.1 does not establish a stochastic advantage because its bound also holds at σt=0
+(Section 4.2). We therefore fix the re-noising stage, images, backbone, and strength grid while
+comparing three deterministic samplers (DDIM, DPM-Solver++, Euler) with three stochastic
+samplers (DDPM ancestral, Euler-a, SDE-DPM-Solver++). Each uses three verifier-inversion
+settings on nine families with 100 images per cell and λ ∈[0, 0.70]. Table 2 reports the smallest
+strength λ⋆
+p reaching p% survival (↓better). “never” means the threshold is not reached by λ = 0.70.
+Accordingly, the λ⋆
+5 mean uses the eight families resolved by both groups, while λ⋆
+50 uses all nine
+shown.
+Stochastic samplers require 32% less strength at λ⋆
+50 and 27% less at λ⋆
+5 on average. The gap is
+negligible near the grid floor (SFW) but pronounced on robust schemes. Most decisively, deterministic
+Gaussian Shading never reaches 5% survival by λ = 0.70, whereas the stochastic condition does at
+about λ = 0.54; this deterministic condition is the regeneration baseline in Remark 4.2. Fidelity
+is not uniformly higher: at each sampler’s λ⋆
+5, the mean SDE–ODE change is −0.004 SSIM and
+−0.21 dB, although GaussMarker gains +0.049 SSIM and +1.56 dB. The empirical advantage is
+therefore decoupling per unit strength, not universally higher fidelity.
+9
+
+
+Table 2: Deterministic (ODE) versus stochastic (SDE) reverse sampling. We report λ⋆
+p,
+the smallest strength driving watermark survival to p%, averaged over three samplers and three
+inversion settings (↓better).
+λ⋆
+50 ↓
+λ⋆
+5 ↓
+Family
+ODE
+SDE
+ODE
+SDE
+SEAL
+0.038
+0.032
+0.097
+0.090
+SFW
+0.040
+0.038
+0.093
+0.090
+WIND
+0.100
+0.076
+0.197
+0.129
+ROBIN
+0.181
+0.135
+0.255
+0.204
+PRC
+0.182
+0.117
+0.297
+0.193
+Tree-Ring
+0.204
+0.135
+0.325
+0.212
+RingID
+0.440
+0.291
+0.586
+0.453
+GaussMarker
+0.575
+0.372
+0.690
+0.479
+Gaussian Shading
+0.691
+0.462
+never
+0.542
+Mean
+0.272
+0.184
+0.318
+0.231
+Latent-space evidence.
+DDIM inversion of an unattacked image remains close to the watermark-
+carrying noise ϵw (L1 ≈0.34–0.68), while the measured distance after DRIFT increases across the
+tested λ grid toward the independent-Gaussian diagnostics L1 = 2/√π and L2 =
+√
+2. This empirical
+diagnostic complements, but is not implied by, the fixed-depth dependence bound in Theorem 4.1;
+Figure 10 of Appendix E.7 gives all nine curves. Corollary B.10 formalizes only the conditional
+squared-L2 reference, not the empirical monotonicity or the Gaussian L1 value.
+5.3
+Adaptive Search and Fidelity Refinement
+We next test blind family prediction, per-image strength selection, and verifier-gated refinement.
+Blind family identification.
+Using only structural features of the shared DDIM-inverted latent,
+the key-free classifier reaches 99.3% top-1 accuracy on 1,350 held-out images. All non-trivial
+confusions stay within the similar Gaussian-Shading/GaussMarker/SEAL cluster. The prediction
+seeds verify-and-climb; per-family results and the confusion matrix appear in Table 5 and Figure 3
+of Appendix E.2.
+Per-image minimal-strength search.
+On 300 images per family, black-box verify-and-climb
+reduces mean strength from 0.244 to 0.20 relative to a fixed per-family choice while raising ASR
+from 96.8% to 99.7%. Mean SSIM/PSNR/LPIPS improve from 0.67/22.6/0.19 to 0.71/23.9/0.16 at
+about 2.2 verifier queries per image. This is consistent with Proposition 4.4’s ladder-relative result;
+Table 6 of Appendix E.3 gives full per-family results, while Figure 9 of Appendix E.6 visualizes the
+strength–fidelity trade-off.
+Verifier-gated fidelity refinement.
+On already rejected Stage-III inputs, DPPO improves every
+reported fidelity metric, including LPIPS from 0.136 to 0.114, while survival remains 0% over 1.16
+rounds. Proposition 4.5 explains the same-verifier rejection invariant, not the empirical fidelity gain.
+Table 3 shows that removing the terminal watermark bonus or back-off/re-verification raises raw
+10
+
+
+Original
+DRIFT
+Black-Box Attack
+Removing Attack
+GM
+GS
+PRC
+Figure 2: Qualitative comparison with baseline attacks (Original / DRIFT / Black-Box /
+Removing), with zoomed insets, on GM. GS and PRC are in Figure 6 of Appendix E.5.
+Variant
+SSIM↑LPIPS↓WM surv.↓Rounds
+Full DPPO (ours)
+0.738
+0.114
+0.0%
+1.16
+−terminal WM bonus∗
+0.688
+0.119
+9.3%
+1.00
+−back-off / re-verify∗
+0.694
+0.117
+7.1%
+1.12
+−LPIPS guidance
+0.735
+0.136
+0.0%
+1.22
+kmax = 1
+0.738
+0.116
+0.0%
+1.00
+Table 3: Ablation of the DPPO controller (N = 225). Each row disables one component. ∗For
+the two constraint ablations, survival is measured with evaluation-time back-off disabled; otherwise
+deployed survival remains fixed at 0%.
+survival to 9.3% and 7.1%, while removing LPIPS guidance worsens LPIPS to 0.136. Table 7 and
+Figures 4–5 of Appendix E.4 provide the full refinement evidence.
+5.4
+Image Quality and Visual Fidelity
+Table 1(b) reports semantic, distributional, and paired fidelity over all nine families. Fixed λ = 0.70
+reaches 100% ASR but incurs substantial distortion (SSIM 0.401, LPIPS 0.528); per-image selection
+improves to SSIM 0.697/LPIPS 0.168 at 99.7% ASR. Full DRIFT restores 100% ASR with SSIM
+0.713, PSNR 24.01, LPIPS 0.154, FID 55.414, and 8.12 s runtime. Its FID/LPIPS are lower than
+both baselines, while the removing attack reaches only 81.3% ASR; Table 4 of Appendix E.1 gives
+the aggregate comparison and protocol. Figure 2 provides the retained zoomed comparison on GM,
+GS, and PRC; Figures 7–8 of Appendix E.5 cover all nine families.
+6
+Conclusion
+We identify trajectory consistency as a common vulnerability among the diffusion watermarks studied
+and introduce DRIFT, which combines partial forward diffusion, stochastic reverse resampling, per-
+image verify-and-climb, and verifier-gated refinement. Across nine watermarks in three paradigms,
+DRIFT achieves 98–100% ASR and the best perceptual-quality trade-off among the compared
+11
+
+
+attacks without secret keys, verifier internals, or per-image gradients. Matched samplers isolate the
+empirical benefit of stochastic deflection; Theorem 4.1 and Proposition 4.5 separately characterize
+fixed-depth source dependence and same-verifier refinement feasibility. Aggressive fixed re-noising can
+substantially reduce fidelity, which motivates the adaptive minimal-strength search and refinement
+rather than a universally strong setting. The guarantees remain conditional on unverified network-
+level Lipschitz and terminal premises, and evaluation uses one public latent-diffusion backbone.
+Extending trajectory-aware evaluation to pixel-space, video, autoregressive, and flow-based generators
+is an important next step.
+References
+[1] Kasra Arabi, Benjamin Feuer, R Teal Witter, Chinmay Hegde, and Niv Cohen. Hidden in the
+noise: Two-stage robust watermarking for images. arXiv preprint arXiv:2412.04653, 2024.
+[2] Kasra Arabi, R Teal Witter, Chinmay Hegde, and Niv Cohen. Seal: Semantic aware image
+watermarking. In Proceedings of the IEEE/CVF International Conference on Computer Vision,
+pages 16196–16205, 2025.
+[3] Kevin Black, Michael Janner, Yilun Du, Ilya Kostrikov, and Sergey Levine. Training diffusion
+models with reinforcement learning. In The Twelfth International Conference on Learning
+Representations, 2024.
+[4] Zander W Blasingame and Chen Liu. A reversible solver for diffusion sdes. In ICLR 2025
+Workshop on Deep Generative Model in Machine Learning: Theory, Principle and Efficacy,
+2025.
+[5] Hyungjin Chung, Jeongsol Kim, Michael Thompson McCann, Marc Louis Klasky, and Jong Chul
+Ye. Diffusion posterior sampling for general noisy inverse problems. In The Eleventh Interna-
+tional Conference on Learning Representations, 2023.
+[6] Hai Ci, Pei Yang, Yiren Song, and Mike Zheng Shou. Ringid: Rethinking tree-ring watermarking
+for enhanced multi-key identification. In European conference on computer vision, pages 338–354.
+Springer, 2024.
+[7] Martin Gonzalez, Nelson Fernandez, Thuy Tran, Elies Gherbi, Hatem Hajri, and Nader
+Masmoudi. Seeds: Exponential sde solvers for fast high-quality sampling from diffusion models,
+2023. URL https://arxiv.org/abs/2305.14267.
+[8] Sam Gunn, Xuandong Zhao, and Dawn Song. An undetectable watermark for generative image
+models. arXiv preprint arXiv:2410.07369, 2024.
+[9] Jack Hessel, Ari Holtzman, Maxwell Forbes, Ronan Le Bras, and Yejin Choi. Clipscore: A
+reference-free evaluation metric for image captioning. In Proceedings of the 2021 conference on
+empirical methods in natural language processing, pages 7514–7528, 2021.
+[10] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter.
+Gans trained by a two time-scale update rule converge to a local nash equilibrium. Advances
+in neural information processing systems, 30, 2017.
+[11] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances
+in neural information processing systems, 33:6840–6851, 2020.
+12
+
+
+[12] Zijing Hu, Fengda Zhang, Long Chen, Kun Kuang, Jiahui Li, Kaifeng Gao, Jun Xiao, Xin Wang,
+and Wenwu Zhu. Towards better alignment: Training diffusion models with reinforcement
+learning against sparse rewards. In Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, 2025.
+[13] Huayang Huang, Yu Wu, and Qian Wang. Robin: Robust and invisible watermarks for diffusion
+models with adversarial optimization. Advances in Neural Information Processing Systems, 37:
+3937–3963, 2024.
+[14] Anubhav Jain, Yuya Kobayashi, Naoki Murata, Yuhta Takida, Takashi Shibuya, Yuki Mitsufuji,
+Niv Cohen, Nasir Memon, and Julian Togelius. Forging and removing latent-noise diffusion
+watermarks using a single image. arXiv preprint arXiv:2504.20111, 2025.
+[15] Sung Ju Lee and Nam Ik Cho. Semantic watermarking reinvented: Enhancing robustness
+and generation quality with fourier integrity. In Proceedings of the IEEE/CVF International
+Conference on Computer Vision, pages 18759–18769, 2025.
+[16] Kecen Li, Zhicong Huang, Xinwen Hou, and Cheng Hong. Gaussmarker: Robust dual-domain
+watermark for diffusion models. In International Conference on Machine Learning, pages
+34688–34701. PMLR, 2025.
+[17] Haonan Lin, Mengmeng Wang, Jiahao Wang, Wenbin An, Yan Chen, Yong Liu, Feng Tian,
+Guang Dai, Jingdong Wang, and Qianying Wang. Schedule your edit: A simple yet effective
+diffusion noise schedule for image editing, 2024. URL https://arxiv.org/abs/2410.18756.
+[18] Luping Liu, Yi Ren, Zhijie Lin, and Zhou Zhao. Pseudo numerical methods for diffusion models
+on manifolds. In International Conference on Learning Representations, 2022.
+[19] Yepeng Liu, Yiren Song, Hai Ci, Yu Zhang, Haofan Wang, Mike Zheng Shou, and Yuheng
+Bu. Image watermarks are removable using controllable regeneration from clean noise. arXiv
+preprint arXiv:2410.05470, 2024.
+[20] Cheng Lu, Yuhao Zhou, Fan Bao, Jianfei Chen, Chongxuan Li, and Jun Zhu. Dpm-solver:
+A fast ode solver for diffusion probabilistic model sampling in around 10 steps. Advances in
+neural information processing systems, 35:5775–5787, 2022.
+[21] Hannes Mareen, Kobe De Meulenaere, Peter Lambert, and Glenn Van Wallendael. Diffusion
+denoising watermark removal models to attack invisible image watermarks. In 2024 17th
+International Conference on Signal Processing and Communication System (ICSPCS), pages
+1–6. IEEE, 2024.
+[22] Chenlin Meng, Yutong He, Yang Song, Jiaming Song, Jiajun Wu, Jun-Yan Zhu, and Stefano
+Ermon. SDEdit: Guided image synthesis and editing with stochastic differential equations. In
+International Conference on Learning Representations, 2022.
+[23] Ron Mokady, Amir Hertz, Kfir Aberman, Yael Pritch, and Daniel Cohen-Or. Null-text inversion
+for editing real images using guided diffusion models. In Proceedings of the IEEE/CVF conference
+on computer vision and pattern recognition, pages 6038–6047, 2023.
+[24] Andreas Müller, Denis Lukovnikov, Jonas Thietke, Asja Fischer, and Erwin Quiring. Black-box
+forgery attacks on semantic watermarks for diffusion models. In Proceedings of the Computer
+Vision and Pattern Recognition Conference, pages 20937–20946, 2025.
+13
+
+
+[25] Shen Nie, Hanzhong Allan Guo, Cheng Lu, Yuhao Zhou, Chenyu Zheng, and Chongxuan Li.
+The blessing of randomness: Sde beats ode in general diffusion-based image editing. In The
+Twelfth International Conference on Learning Representations, 2024.
+[26] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov,
+Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mahmoud Assran,
+Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra,
+Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Hervé Jegou, Julien Mairal, Patrick
+Labatut, Armand Joulin, and Piotr Bojanowski. Dinov2: Learning robust visual features
+without supervision, 2024. URL https://arxiv.org/abs/2304.07193.
+[27] Allen Z. Ren, Justin Lidard, Lars L. Ankile, Anthony Simeonov, Pulkit Agrawal, Anirudha
+Majumdar, Benjamin Burchfiel, Hongkai Dai, and Max Simchowitz. Diffusion policy policy
+optimization, 2024.
+[28] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer.
+High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF
+conference on computer vision and pattern recognition, pages 10684–10695, 2022.
+[29] Mehrdad Saberi, Vinu Sankar Sadasivan, Keivan Rezaei, Aounon Kumar, Atoosa Chegini,
+Wenxiao Wang, and Soheil Feizi. Robustness of ai-image detectors: Fundamental limits and
+practical attacks. arXiv preprint arXiv:2310.00076, 2023.
+[30] Gustavo Santana. Stable-diffusion-prompts. https://huggingface.co/datasets/Gustavosta/
+Stable-Diffusion-Prompts, 2024. Accessed: 2024-11-20.
+[31] John Schulman, Philipp Moritz, Sergey Levine, Michael Jordan, and Pieter Abbeel. High-
+dimensional continuous control using generalized advantage estimation.
+In International
+Conference on Learning Representations, 2016.
+[32] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal
+policy optimization algorithms, 2017.
+[33] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denoising diffusion implicit models. In
+International Conference on Learning Representations, 2021.
+[34] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Stefano Ermon,
+and Ben Poole. Score-based generative modeling through stochastic differential equations. In
+International Conference on Learning Representations, 2021.
+[35] Huan Teng, Yuhui Quan, Chengyu Wang, Jun Huang, and Hui Ji. Fingerprinting denoising
+diffusion probabilistic models. In Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition (CVPR), 2025.
+[36] Bram Wallace, Akash Gokul, and Nikhil Naik. Edict: Exact diffusion inversion via coupled
+transformations. In Proceedings of the IEEE/CVF conference on computer vision and pattern
+recognition, pages 22532–22541, 2023.
+[37] Yuxin Wen, John Kirchenbauer, Jonas Geiping, and Tom Goldstein. Tree-rings watermarks:
+Invisible fingerprints for diffusion images. In A. Oh, T. Naumann, A. Globerson, K. Saenko,
+M. Hardt, and S. Levine, editors, Advances in Neural Information Processing Systems, volume 36,
+pages 58047–58063. Curran Associates, Inc., 2023. URL https://proceedings.neurips.cc/paper_
+files/paper/2023/file/b54d1757c190ba20dbc4f9e4a2f54149-Paper-Conference.pdf.
+14
+
+
+[38] Shuchen Xue, Mingyang Yi, Weijian Luo, Shifeng Zhang, Jiacheng Sun, Zhenguo Li, and Zhi-
+Ming Ma. Sa-solver: Stochastic adams solver for fast sampling of diffusion models. Advances in
+Neural Information Processing Systems, 36:77632–77674, 2023.
+[39] Zijin Yang, Kai Zeng, Kejiang Chen, Han Fang, Weiming Zhang, and Nenghai Yu. Gaussian
+shading: Provable performance-lossless image watermarking for diffusion models. In Proceedings
+of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 12162–12171,
+2024.
+[40] Richard Zhang, Phillip Isola, Alexei A. Efros, Eli Shechtman, and Oliver Wang. The unrea-
+sonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE
+Conference on Computer Vision and Pattern Recognition, pages 586–595, 2018.
+[41] Wenliang Zhao, Lujia Bai, Yongming Rao, Jie Zhou, and Jiwen Lu. Unipc: A unified predictor-
+corrector framework for fast sampling of diffusion models. Advances in Neural Information
+Processing Systems, 36:49842–49869, 2023.
+[42] Xuandong Zhao, Kexun Zhang, Zihao Su, Saastha Vasan, Ilya Grishchenko, Christopher Kruegel,
+Giovanni Vigna, Yu-Xiang Wang, and Lei Li. Invisible image watermarks are provably removable
+using generative ai. Advances in neural information processing systems, 37:8643–8672, 2024.
+15
+
+
+Technical Appendix
+Organization. Appendix A gives executable specifications of the base and adaptive attacks;
+Appendix B contains the full theoretical statements and proofs; Appendices C and D prove the
+adaptive-search and refinement guarantees; and Appendix E provides the extended protocols, tables,
+ablations, and qualitative results.
+A
+Algorithmic Specifications
+Algorithms 1 and 2 provide executable summaries of the base and adaptive attacks described in
+Section 3.
+Algorithm 1 DRIFT (base attack)
+Require: Watermarked image xw, pretrained LDM (E, D, ϵθ), global source-independent condition-
+ing catt, strength λ, schedule {βi}T
+i=1, valid generalized reverse scales {σt}
+Ensure: Attacked image xa
+1: zw
+0 ←E(xw);
+tλ ←⌈λT⌉
+2: ¯α0 ←1;
+¯αt ←Qt
+i=1(1 −βi)
+3: ϵ ∼N(0, Id)
+4: za
+tλ ←√¯αtλzw
+0 + √1 −¯αtλϵ
+5: for t = tλ, tλ −1, . . . , 1 do
+6:
+ˆza
+0 ←
+ za
+t −√1 −¯αtϵθ(za
+t , t; catt)
+/√¯αt
+7:
+ξt ∼N(0, Id)
+8:
+za
+t−1 ←√¯αt−1ˆza
+0 +
+q
+1 −¯αt−1 −σ2
+t ϵθ(za
+t , t; catt) + σtξt
+9: end for
+10: return xa ←D(za
+0)
+Algorithm 2 Adaptive DRIFT (predict →seed →climb)
+Require: xw; encoder/inverter/identifier/verifier (E, IDDIM, H, V); global catt; ladder bank {Λg}g∈F
+Ensure: Attacked image xa, selected strength λ, and status
+1: zinv
+T
+←IDDIM(E(xw); catt);
+ˆf ←H(zinv
+T )
+2: Select the ascending seeded ladder Λ ˆf
+3: for λ ∈Λ ˆf do
+4:
+xa ←DRIFT(xw, λ)
+▷Algorithm 1
+5:
+if V(xa) reports not watermarked then
+6:
+return (xa, λ, Success)
+▷first verifier-rejected rung
+7:
+end if
+8: end for
+9: return (xa, λ, Failure)
+▷strongest evaluated candidate remains detected
+B
+Theory of Source Decoupling
+We prove the three parts of Theorem 4.1. Throughout, X = zw
+0 ∈Rd is the source latent, W =
+ϵw = IDDIM(X) ∈Rd is its recovered reference, and n = tλ = ⌈λT⌉is the attack depth. For
+16
+
+
+the distributional claims, (X, W) follows the population law induced by the watermarked-image
+generation protocol, and is independent of the attack randomness. When X = x is fixed, expectations
+subscripted by Nn are over attack randomness only.
+Assumption B.1 (Regularity). We assume: (A1) 0 < βt < 1 for every diffusion step, X, W ∈L2,
+the recovered reference W = IDDIM(X) is a measurable function of X, and 0 < ¯αn < 1; (A2)
+the entries of the complete attack-noise vector Nn = (ϵ, ξ1:n) are mutually independent standard
+Gaussian draws, and Nn is jointly independent of (X, W); (A3) all denoising and inversion operations
+use the same globally fixed deterministic attacker-side conditioning catt, independent of (X, W, Nn),
+and all forward, reverse, decoder, encoder, and inversion maps used below are Borel measurable;
+(A4) for the sensitivity claims, each fixed-noise reverse kernel is Kt-Lipschitz in its state uniformly
+over the reverse-noise argument, the recovered-noise map Q := IDDIM ◦E ◦D is LQ-Lipschitz, and
+the source-free recovered output defined below is in L2.
+Set ¯α0 = 1 and 0 ≤σt ≤√1 −¯αt−1. Substituting Eq. (3) into Eq. (4) gives
+zt−1 = gt(zt; ξt) = Atzt + Btϵθ(zt, t) + σtξt,
+(9)
+where
+At =
+s
+¯αt−1
+¯αt
+,
+Bt =
+q
+1 −¯αt−1 −σ2
+t −
+s
+¯αt−1(1 −¯αt)
+¯αt
+.
+This is exactly the generalized DDIM update; σt = 0 gives deterministic DDIM, and the DDPM
+posterior variance gives the standard ancestral DDPM special case. For fixed ξ1:n, let Fn(u; ξ1:n)
+be the reverse composition from time n to 0, and set Rn = Q ◦Fn. With Ξ1:n := (ξ1, . . . , ξn), the
+main-text map is Hn(u, Ξ1:n) := Rn(u; ξ1:n). Define
+Cn =
+n
+Y
+s=1
+Ks,
+Γn = √¯αnCn,
+∆n = L2
+QΓ2
+n E∥X∥2
+2.
+If ϵθ(·, t) is Lt-Lipschitz, then the explicit but generally loose choice Kt = At + |Bt|Lt is valid. Since
+this triangle bound ignores cancellation, it need not certify that Γn decreases; the information result
+below does not require any Lipschitz assumption.
+Lemma B.2 (Forward information bottleneck). Under (A1)–(A3), with Zn = √¯αnX + √1 −¯αnϵ
+and Yn = Hn(Zn, Ξ1:n), where Hn is the complete measurable reverse and recovered-noise pipeline,
+I(W; Yn) ≤1
+2 log det
+
+Id +
+¯αn
+1 −¯αn
+Σz
+
+≤Bn,
+where Σz = Cov(X) and Bn is defined in Eq. (7). Moreover,
+TV(L(W, Yn), L(W) ⊗L(Yn)) ≤
+q
+Bn/2.
+The envelope Bn is non-increasing with attack depth.
+Proof. Freshness gives the Markov chains W →X →Zn →Yn, hence I(W; Yn) ≤I(X; Zn). For
+a = ¯αn and Σz = Cov(X), the maximum-entropy property of the Gaussian gives
+I(X; Zn) ≤1
+2 log det
+
+Id +
+a
+1 −aΣz
+
+.
+17
+
+
+Applying Jensen’s inequality to the eigenvalues of Σz gives Eq. (7), and Pinsker’s inequality gives
+the TV bound. Finally, if m ≥n, then ¯αm ≤¯αn; equivalently, the coupling
+Zm =
+s
+¯αm
+¯αn
+Zn +
+s
+1 −¯αm
+¯αn
+G,
+G ∼N(0, Id),
+G ⊥(W, Zn),
+makes W →Zn →Zm a Markov chain. Both views show that the forward information envelope is
+non-increasing with depth.
+Lemma B.3 (One-step stability). For every t, u, v, and ξ,
+∥gt(u; ξ) −gt(v; ξ)∥2 ≤Kt∥u −v∥2.
+Proof. This is (A4). For the explicit sufficient constant, the common noise cancels and the triangle
+inequality gives
+∥gt(u; ξ) −gt(v; ξ)∥2 ≤(At + |Bt|Lt)∥u −v∥2.
+Lemma B.4 (Multi-step stability). For every n, u, v, and ξ1:n, ∥Fn(u; ξ1:n) −Fn(v; ξ1:n)∥2 ≤
+Cn∥u −v∥2.
+Proof. Drive both trajectories by the same noises and iterate Lemma B.3 from t = n to 1:
+∥z(u)
+0
+−z(v)
+0 ∥2 ≤
+ n
+Y
+s=1
+Ks
+!
+∥u −v∥2 = Cn∥u −v∥2.
+Lemma B.5 (Stability of the recovered-noise map). ∥Rn(u; ξ1:n) −Rn(v; ξ1:n)∥2 ≤LQCn∥u −v∥2.
+Proof. By (A4), ∥Rn(u) −Rn(v)∥2 ≤LQ∥Fn(u) −Fn(v)∥2; apply Lemma B.4.
+Lemma B.6 (Decoupling from the source latent). Let
+bϵa
+n = Rn
+√¯αnX + √1 −¯αnϵ; ξ1:n
+
+,
+eϵn = Rn
+√1 −¯αnϵ; ξ1:n
+
+.
+Then eϵn is independent of (X, W). Moreover, for every deterministic x ∈Rd and every attack-noise
+realization,
+Rn
+√¯αnx + √1 −¯αnϵ; ξ1:n
+
+−eϵn
+
+2 ≤LQCn
+√¯αn∥x∥2.
+Consequently,
+ENn
+Rn
+√¯αnx + √1 −¯αnϵ; ξ1:n
+
+−eϵn
+
+2
+2
+
+≤L2
+QC2
+n¯αn∥x∥2
+2,
+and averaging over the source population gives
+E∥bϵa
+n −eϵn∥2
+2 ≤∆n.
+Proof. The baseline is a measurable function of Nn and the globally fixed catt alone, so independence
+follows from (A2)–(A3). Couple both runs with the same Nn. Lemma B.5 gives the displayed
+deterministic x bound pathwise. Squaring and integrating over Nn gives the fixed-image bound.
+Substituting x = X gives, pathwise,
+∥bϵa
+n −eϵn∥2 ≤LQCn
+√¯αn∥X∥2.
+Squaring and averaging over the independent source population proves the last claim.
+18
+
+
+Lemma B.7 (Distance to the independent product law). All laws below belong to P2(R2d), and
+W2(L(bϵa
+n, W), L(bϵa
+n) ⊗L(W)) ≤2
+p
+∆n.
+Proof. Write A = bϵa
+n, B = eϵn, and E = W. Assumptions (A1), (A4), and Lemma B.6 give the
+required second moments. Since B ⊥E,
+ρ := L(B, E) = L(B) ⊗L(E).
+The synchronous coupling ((A, E), (B, E)) shows W2(L(A, E), ρ) ≤√∆n. For the other leg, draw
+(A′, B′) ∼L(A, B) and independently draw E′ ∼L(E). Then ((B′, E′), (A′, E′)) couples ρ to
+L(A) ⊗L(E) at expected squared cost E∥A −B∥2
+2 ≤∆n. The triangle inequality yields the stated
+factor of two.
+Theorem B.8 (Source dependence at fixed depth). Fix a deterministic λ ∈(0, 1] before sampling
+(X, W, Nn) and set n = tλ. Under Assumption B.1: (i) the information and total-variation bounds of
+Lemma B.2 hold; and (ii) the pathwise and fixed-image bounds of Lemma B.6 hold, while population
+averaging gives
+E∥bϵa
+n −eϵn∥2
+2 ≤∆n,
+W2(L(bϵa
+n, W), L(bϵa
+n) ⊗L(W)) ≤2
+p
+∆n.
+Only the information envelope Bn is guaranteed to be non-increasing across prespecified depths; no
+monotonicity is asserted for ∆n. These distributional bounds do not automatically extend to the
+output selected by a source- or verifier-dependent adaptive depth.
+Proof. Combine Lemmas B.2, B.6, and B.7.
+Assumption B.9 (Terminal reference moments). The source-free terminal baseline eϵT and reference
+W are centered and have identity covariance.
+Together with (A2), this moment condition implies E∥eϵT −W∥2
+2 = 2d; Gaussianity is not needed.
+The condition is an explicit diagnostic premise, not a consequence of Gaussian primitive attack
+noise or of a standard marginal for a watermark-carrying latent. It must therefore be justified or
+measured for the recovered-noise pipeline in question.
+Corollary B.10 (Random-reference distance at the terminal step). When n = T, under Assump-
+tion B.1 instantiated at T and Assumption B.9,
+E∥bϵa
+T −W∥2
+2 −2d
+ ≤∆T + 2
+p
+2d ∆T .
+Proof. Set U = bϵa
+T −eϵT and V = eϵT −W. Expanding ∥U + V ∥2
+2 and applying Cauchy–Schwarz
+gives
+E∥U + V ∥2
+2 −E∥V ∥2
+2
+ ≤E∥U∥2
+2 + 2
+q
+E∥U∥2
+2 E∥V ∥2
+2.
+Theorem B.8 bounds the first moment by ∆T . By Lemma B.6, (A2), and Assumption B.9, the
+centered vectors eϵT and W are independent and E∥V ∥2
+2 = 2d. Substitution proves the result.
+Lemma B.11 (When stochastic paths remain diverse). Fix an initial state zn and let G(zn, Ξ1:n)
+denote the full reverse map into any finite-dimensional latent space. If Ξ′
+1:n is an independent copy,
+then the terminal law is non-Dirac if and only if
+Pr
+G(zn, Ξ1:n)̸ = G(zn, Ξ′
+1:n)
+ > 0.
+The same criterion holds after a Borel decoder by replacing G with D ◦G. A step with σt > 0 has
+a non-Dirac conditional next-state law, but this alone does not imply either terminal or decoded
+diversity.
+19
+
+
+Proof. Two independent draws from a common probability law agree almost surely if and only if
+that law is Dirac; applying this fact to the Borel random variable G(zn, Ξ1:n) proves the equivalence.
+At a positive scale, the next state is a fixed conditional mean plus the non-degenerate Gaussian
+σtξt, so its conditional law is non-Dirac. A later measurable map, however, may map all of that
+variation to one point.
+C
+Analysis of Adaptive Search
+Proof of Proposition 4.4. Algorithm 2 scans the fixed ordered ladder from j = 0 and stops at its
+first rejected rung. By definition this is j⋆, so the scan uses exactly j⋆+ 1 verifier queries. Every
+other rejected rung has index j ≥j⋆; the distortion ordering in Assumption 4.3 gives ϕj ≥ϕj⋆. The
+comparison is only among candidates in this same realized ladder.
+D
+Analysis of RL Fidelity Refinement
+Fix the deterministic verifier and the score S from Eq. (6) used in the rollout. Let vref
+k
+∈{0, 1} be
+its decision at round k, where zero means rejected. Starting from the rejected b0, update
+bk =
+(
+xk,
+vref
+k
+= 0 and S(xk) > S(bk−1),
+bk−1,
+otherwise.
+Proof of Proposition 4.5. Induct on k. The fixed verifier rejects b0. If it rejects bk−1, then either the
+update retains bk−1 or replaces it by a candidate that the same verifier rejects. Hence every retained
+best, and thus the output of every nested prefix of this rollout, remains rejected independently of
+the policy.
+Proof of Proposition 4.6. At each round, either bk = bk−1 or the update occurs under the strict
+condition S(bk) > S(bk−1). Thus S(bk) ≥S(bk−1) pathwise for every nested prefix of the fixed
+rollout.
+On DPPO optimization. The diffusion policy’s action log-probability is the sum of Gaussian log-
+probabilities over the Kdiff denoising sub-steps, so the importance ratio rθ = exp(log πθ −log πθold)
+is well defined. DPPO optimizes the PPO clipped surrogate E[min(rθ bA, clip(rθ, 1−εclip, 1+εclip) bA)]
+with GAE advantage estimates bA [31, 32]. This objective regularizes large policy updates but is
+not a monotone-improvement guarantee for true return. Propositions 4.5–4.6 instead follow from
+verifier-gated retention and hold independently of DPPO convergence.
+E
+Additional Experimental Results
+This appendix provides supplementary tables, ablations, and qualitative results that complement
+the main experiments.
+E.1
+Image Quality Across Attack Methods
+Table 4 reports CLIP, FID, SSIM, and LPIPS averaged over the nine watermark families for the two
+baseline attacks and the full Adaptive+RL DRIFT pipeline. DRIFT attains the best score on every
+metric: the highest CLIP (32.091) and lowest FID (55.41), the best SSIM (0.713, matching the
+removing attack), and, most tellingly, the lowest LPIPS (0.154)—roughly half that of either baseline.
+20
+
+
+Table 4: Image quality comparison across attack methods. CLIP score, FID, SSIM, and
+LPIPS are averaged over the nine watermark families (100 images each). FID is the per-family-mean
+Fréchet distance to the watermarked originals; SSIM and LPIPS are paired against the same originals.
+Best per column in bold.
+Method Group
+CLIP ↑
+FID ↓
+SSIM ↑
+LPIPS ↓
+Black-box attack
+31.877
+114.019
+0.519
+0.305
+Removing attack
+31.357
+104.693
+0.712
+0.338
+DRIFT (Adaptive+RL)
+32.091
+55.414
+0.713
+0.154
+Table 5: Blind watermark-family identification on held-out images (150 per family). The key-free
+classifier predicts the family from the DDIM-inverted latent zinv
+T . Top-1 is per-family recall; low-conf.
+flags confidence below τconf=0.835 (5th validation percentile).
+Watermark family
+Top-1 Acc. (%)
+Low-conf. (%)
+Tree-Ring
+100.0
+2.7
+RingID
+99.3
+4.0
+PRC
+99.3
+2.7
+WIND
+100.0
+0.0
+Gaussian Shading
+97.3
+12.7
+GaussMarker
+99.3
+7.3
+SFW
+100.0
+3.3
+SEAL
+98.0
+17.3
+ROBIN
+100.0
+0.0
+Overall (blind)
+99.3
+5.6
+The removing attack attains similar SSIM but substantially worse LPIPS and FID, showing that
+pixel similarity alone does not capture the full fidelity trade-off; DRIFT achieves higher attack
+success with less measured perceptual distortion.
+E.2
+Blind Watermark-Family Identification
+Table 5 gives the per-family top-1 accuracy and low-confidence rate of the key-free classifier over
+1,350 held-out images (150 per family), and Figure 3 shows the row-normalised confusion matrix.
+Four families (Tree-Ring, WIND, SFW, ROBIN) are identified perfectly, and most confusions involve
+the structurally similar GS/GM/SEAL families, with a few isolated errors involving RI and PRC.
+E.3
+Per-Image Verify-and-Climb Search
+Table 6 compares non-adaptive DRIFT—which fixes a single per-family strength at the 90th
+percentile of per-image λ⋆—against Adaptive DRIFT, which stops at each image’s first verifier-
+rejected rung λ⋆. The gain concentrates where per-image difficulty is spread (RI, TR, GM, GS) and
+vanishes where every image needs the same strength (ROBIN).
+E.4
+RL Fidelity Refinement: Details and Ablation
+Table 7 summarises the pre→post fidelity of Stage-III refinement, Figure 4 shows the DPPO training
+dynamics, and Figure 5 illustrates fidelity recovery across three families of decreasing robustness.
+21
+
+
+Tree-Ring
+RingID
+PRC
+WIND
+Gaussian Shading
+GaussMarker
+SFW
+SEAL
+ROBIN
+Predicted family
+Tree-Ring
+RingID
+PRC
+WIND
+Gaussian Shading
+GaussMarker
+SFW
+SEAL
+ROBIN
+True family
+1.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.99
+0.00
+0.00
+0.01
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.99
+0.00
+0.00
+0.01
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+1.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.01
+0.00
+0.97
+0.00
+0.00
+0.02
+0.00
+0.00
+0.00
+0.00
+0.00
+0.01
+0.99
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+1.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.02
+0.00
+0.00
+0.98
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+0.00
+1.00
+Blind structural classifier 
+ confusion matrix
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0
+Row-normalised fraction
+Figure 3: Row-normalised confusion matrix of the blind classifier over the nine families (zinv
+T
+features,
+no keys); off-diagonal mass stays within the GS/GM/SEAL cluster.
+The component ablation is retained as Table 3 in the main paper.
+0
+50
+100
+150
+200
+training iteration
+9.5
+10.0
+10.5
+11.0
+11.5
+12.0
+mean episodic return
+heuristic baseline: n/a
+(non-learning policy)
+(a) Episodic return
+0
+50
+100
+150
+training iteration
+0.70
+0.71
+0.72
+0.73
+terminal SSIM
+DPPO final
+(eval)
+baseline 0.710
+(b) Mean terminal SSIM
+0
+50
+100
+150
+200
+training iteration
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0
+survival rate (1 - removal)
+100% removal
+(c) Watermark-survival rate
+DPPO (learned)
+Heuristic baseline
+run min–max (n=2)
+Figure 4: DPPO training dynamics. (a) Mean episodic return rises and plateaus; (b) mean
+terminal SSIM improves; (c) returned retained outputs remain verifier-rejected throughout. The
+first two trends are empirical; Proposition 4.5 explains only the same-verifier rejection invariant.
+E.5
+Qualitative Comparison Across All Watermarking Methods
+Figure 7 and Figure 8 compare the full Adaptive DRIFT pipeline—the first verifier-rejected rung
+λ⋆followed by DPPO fidelity refinement—across all nine evaluated watermarking methods. For
+each method, the left column shows the original watermarked image and the right column shows
+the corresponding attacked-and-refined image. Across the three watermark paradigms, the outputs
+22
+
+
+(a) Watermarked xw
+(b) Min-λ DRIFT
+(c) + DPPO refinement
+GS (λ=0.50), watermark ✓present
+PSNR 16.3 / SSIM .462 / LPIPS .363, rejected PSNR 18.3 / SSIM .543 / LPIPS .194, rejecte
+GM (λ=0.45), watermark ✓present
+PSNR 19.5 / SSIM .495 / LPIPS .330, rejected PSNR 20.6 / SSIM .522 / LPIPS .179, rejecte
+ROBIN (λ=0.20), watermark ✓present PSNR 23.3 / SSIM .569 / LPIPS .211, rejected PSNR 23.6 / SSIM .558 / LPIPS .142, rejecte
+Figure 5: RL refinement recovers fidelity at fixed verifier rejection across three families
+of decreasing robustness (GS, GM, ROBIN; per-row λ⋆in parentheses). (a) Watermarked image;
+(b) Adaptive DRIFT at the first verifier-rejected rung λ⋆(the larger strengths needed by GS/GM
+drift content); (c) DPPO refinement pulls the result back toward xw under a hard verifier-rejection
+constraint. Per-panel PSNR/SSIM/LPIPS are measured against xw; better refined value in bold.
+All panels 512×512.
+23
+
+
+¯λ ↓
+ASR (%)↑
+SSIM↑
+PSNR↑
+LPIPS↓
+Family
+Base
+Adapt.
+Base
+Adapt.
+Base
+Adapt.
+Base
+Adapt.
+Base
+Adapt.
+SEAL
+0.05
+0.087
+98.7
+100.0
+0.872
+0.875
+29.05
+28.96
+0.049
+0.046
+SFW
+0.10
+0.074
+99.7
+100.0
+0.736
+0.787
+23.76
+25.74
+0.099
+0.075
+RI
+0.20
+0.161
+91.0
+99.7
+0.658
+0.755
+22.45
+25.32
+0.179
+0.112
+WIND
+0.15
+0.110
+97.0
+100.0
+0.654
+0.686
+23.02
+24.01
+0.120
+0.103
+ROBIN
+0.15
+0.150
+100.0
+100.0
+0.723
+0.719
+23.98
+23.85
+0.124
+0.123
+PRC
+0.20
+0.155
+95.7
+100.0
+0.703
+0.730
+23.46
+24.54
+0.170
+0.141
+TR
+0.30
+0.199
+94.7
+99.7
+0.643
+0.698
+21.58
+23.81
+0.219
+0.156
+GM
+0.50
+0.394
+99.0
+100.0
+0.557
+0.596
+18.95
+20.70
+0.342
+0.275
+GS
+0.55
+0.482
+95.7
+98.0
+0.477
+0.505
+17.02
+18.11
+0.406
+0.360
+Mean
+0.244 0.201
+96.8
+99.7
+0.669
+0.706
+22.59
+23.89
+0.190
+0.155
+Table 6: Non-adaptive vs. Adaptive DRIFT across nine watermark families (300 images each;
+H100). Base fixes the 90th percentile of each family’s per-image λ⋆; Adapt. verify-and-climbs to the
+first verifier-rejected rung using only black-box accept/reject queries. Best mean per metric in bold.
+Pre-refine (round 0)
+Post-refine (DPPO)
+SSIM↑
+PSNR↑
+LPIPS↓
+SSIM↑
+PSNR↑
+LPIPS↓
+0.735
+24.95
+0.136
+0.738
+25.19
+0.114
+Table 7: Stage-III fidelity refinement on verifier-rejected attack outputs (N=225, 25×9 families).
+Empirically, the DPPO controller improves all three reported mean fidelity metrics over the round-0
+attacked image in 1.16 rounds on average. Proposition 4.5 guarantees only that the retained output
+remains rejected by the same verifier; the fidelity gains are empirical.
+preserve subject identity, color palette, and composition while remaining rejected by the evaluated
+verifier. These examples illustrate detector evasion with limited visible artifacts; quantitative fidelity
+is reported separately.
+E.6
+Effect of Attack Strength on Image Fidelity
+Figure 9 illustrates the fidelity–evasion trade-off of the base (fixed-λ) DRIFT attack across three
+representative watermarking methods of increasing robustness as λ grows from 0.30 to 0.60. For
+weakly robust methods such as PRC, successful evasion is achieved at λ = 0.30 with virtually
+no perceptual change relative to the original. For moderately robust methods such as ROBIN,
+minor variations in fine-grained texture appear at λ = 0.45 but remain within an acceptable
+perceptual range. For the most robust method Tree-Ring, stronger perturbation at λ = 0.60 is
+required, introducing slight deviation in high-frequency details while the overall scene structure and
+semantic content are well preserved. The observed first successful rung varies with the scheme, image,
+verifier, sampler, search grid, and stochastic realization, motivating Adaptive DRIFT’s per-image
+minimal-strength search.
+E.7
+Trajectory Decoupling: Noise Distance vs. Attack Strength
+Figure 10 plots the mean L1 and L2 distances between the DDIM-inverted noise of the attacked
+image and the reference noise ϵw as a function of λ. Both metrics increase monotonically across
+24
+
+
+Original
+DRIFT
+Black-Box Attack
+Removing Attack
+GS
+PRC
+Figure 6: Qualitative comparison with baseline attacks on GS and PRC (Original / DRIFT
+/ Black-Box / Removing), with zoomed insets. Figure 2 of the main text shows the same comparison
+on GaussMarker.
+the measured grid, providing empirical evidence that stronger attacks progressively decouple the
+recovered latent from its original trajectory. At λ = 0.70, the curves lie in the narrow bands
+L1 ≈1.05–1.07 and L2 ≈1.31–1.34. These values approach the random-Gaussian diagnostics
+L1 = 2/√π and per-coordinate RMS L2 =
+√
+2. Corollary B.10, under Assumption B.9, formalizes
+only the corresponding squared-L2 reference E[∥· ∥2
+2] = 2d (up to its stated perturbation bound);
+the L1 value additionally requires independent Gaussian coordinates. For non-noise-space schemes,
+both values are used only as diagnostic comparisons.
+E.8
+Strength-Sensitivity Result
+Figure 11 exposes why a single global strength is inefficient. SFW and SEAL saturate at λ = 0.10 ,
+WIND and PRC at 0.20–0.25, and ROBIN at 0.40, whereas Tree-Ring, Gaussian Shading, RingID,
+and GaussMarker require 0.50–0.60. Nevertheless, the peak ASR remains 98–100% across all nine
+families. The dominant variation is therefore the minimum effective strength, precisely the quantity
+targeted by verify-and-climb.
+25
+
+
+Watermarked/GM
+Attacked/GM
+Watermarked/SEAL
+Attacked/SEAL
+Watermarked/PRC
+Attacked/PRC
+Watermarked/ROBIN
+Attacked/ROBIN
+Watermarked/RI
+Attacked/RI
+Watermarked/TR
+Attacked/TR
+Figure 7: (a) Adaptive DRIFT on six watermarking methods. Left: watermarked originals.
+Right: Adaptive DRIFT outputs (per-image first-rejected λ⋆+ DPPO refinement).
+26
+
+
+Watermarked/SFW
+Attacked/SFW
+Watermarked/GS
+Attacked/GS
+Watermarked/WIND
+Attacked/WIND
+Figure 8: (b) Adaptive DRIFT on the remaining three methods. Left: watermarked originals.
+Right: Adaptive DRIFT outputs (per-image first-rejected λ⋆+ DPPO refinement).
+Method
+Original
+λ = 0.30
+λ = 0.45
+λ = 0.60
+PRC (Weak)
+ROBIN (Moderate)
+Tree-Ring (Strong)
+Figure 9: Fidelity–evasion trade-off of base DRIFT under different attack strengths. PRC,
+ROBIN, and Tree-Ring represent weakly, moderately, and highly robust methods. As λ increases,
+the attacked outputs reveal clear differences in the trade-off across robustness levels, motivating the
+per-image minimal-strength search of Adaptive DRIFT.
+27
+
+
+Figure 10: Mean L1 and L2 noise distances vs. attack strength λ across nine watermarking
+methods. Across the measured grid, both metrics increase and approach the random-Gaussian
+diagnostic values. This trend is empirical: Theorem B.8 bounds fixed-depth source dependence and
+does not predict monotonicity of these distances. Corollary B.10 conditionally formalizes only the
+squared-L2 2d reference; the L1 value additionally assumes independent Gaussian coordinates.
+28
+
+
+0.00
+0.25
+0.50
+0.75
+1.00
+TR
+Peak ASR 0.98
+@ strength 0.50
+GS
+Peak ASR 1.00
+@ strength 0.60
+RI
+Peak ASR 1.00
+@ strength 0.60
+0.00
+0.25
+0.50
+0.75
+1.00
+ROBIN
+Peak ASR 1.00
+@ strength 0.40
+SFW
+Peak ASR 1.00
+@ strength 0.10
+GM
+Peak ASR 1.00
+@ strength 0.60
+0.00
+0.15
+0.30
+0.50
+0.70
+0.00
+0.25
+0.50
+0.75
+1.00
+PRC
+Peak ASR 1.00
+@ strength 0.25
+0.00
+0.15
+0.30
+0.50
+0.70
+WIND
+Peak ASR 1.00
+@ strength 0.20
+0.00
+0.15
+0.30
+0.50
+0.70
+SEAL
+Peak ASR 1.00
+@ strength 0.10
+Attack Strength
+Attack Success Rate (ASR)
+Figure 11: Sensitivity to the re-noising strength λ. ASR as a function of λ for all nine
+watermark families. The widely separated saturation thresholds motivate selecting the smallest
+successful strength for each image rather than applying one global value.
+29

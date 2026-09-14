@@ -1,0 +1,713 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-14T06:06:22.916350+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 12,
+    "deep_cap": 6,
+    "deep_selected": 11,
+    "quick_candidates": 7,
+    "quick_skim_target": 11,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2608.30656v1",
+      "source": "arxiv",
+      "title": "APT: Anchor-aligned Perturbations for Tamper Localization in Fully Regenerated Images",
+      "abstract": "Proactive tamper localization embeds an imperceptible signal into an image prior to distribution, enabling pixel-level manipulation detection. Existing methods assume a spliced (SP) setting, where synthesized regions are composited onto the original background, leaving embedded signals intact. However, real-world diffusion-based inpainting operates in a fully regenerated (FR) setting, where the entire image undergoes denoising, disrupting background signals and rendering existing frameworks ineffective. We propose APT, a semi-fragile latent-space perturbation that embeds a dense, vector-wise localization signal. By aligning each spatial feature vector toward a fixed anchor direction, APT localizes tampering via the alignment disparity between synthesized foreground and anchor-aligned background features after inpainting. The proposed hard negative mining loss and noisy perturbation branch further enforce uniform alignment. Experiments on COCO demonstrate that APT achieves an FR IoU of 0.92, outperforming the strongest baseline (WAM, 0.84), while existing methods collapse to near-random performance (AUC 0.5), establishing APT as a practical forensic framework generalizable across tampering types unknown at test time.",
+      "authors": [
+        "Suhyeon Ha",
+        "Woo Jae Kim",
+        "Joonsung Jeon",
+        "Sooel Son",
+        "Sung-eui Yoon"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-31T11:56:39+00:00",
+      "link": "https://arxiv.org/pdf/2608.30656v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "proactive imperceptible signal embedding for pixel-level tamper localization under full regeneration",
+      "llm_evidence_cn": "在完全重生成设定下通过嵌入不可感知信号实现像素级篡改定位",
+      "llm_evidence": "在完全重生成设定下通过嵌入不可感知信号实现像素级篡改定位",
+      "canonical_evidence": "在完全重生成设定下通过嵌入不可感知信号实现像素级篡改定位",
+      "llm_tldr_en": "Proactive tamper localization embeds an imperceptible signal before distribution, but existing methods assume splicing and fail when diffusion inpainting regenerates the whole image. APT embeds a semi-fragile latent perturbation aligning each spatial feature vector to a fixed anchor direction, localizing tampering via alignment disparity.",
+      "llm_tldr_cn": "主动式篡改定位需要在图像分发前嵌入不可感知信号，以便实现像素级操纵检测；然而现有方法都假设拼接设定，即合成区域贴在原始背景上、嵌入信号得以保留，而扩散修复会在去噪中重生成整幅图像、破坏背景信号，使这些框架失效。为此该文提出APT，一种半脆弱潜空间扰动，将每个空间特征向量对齐到固定锚点方向，从而嵌入密集的逐向量定位信号，并依据锚点对齐程度的差异判定篡改位置。该方法能在完全重生成设定下有效定位被操纵区域，为扩散修复时代的图像真实性认证与篡改定位提供了新的主动防御思路。",
+      "llm_tldr": "主动式篡改定位需要在图像分发前嵌入不可感知信号，以便实现像素级操纵检测；然而现有方法都假设拼接设定，即合成区域贴在原始背景上、嵌入信号得以保留，而扩散修复会在去噪中重生成整幅图像、破坏背景信号，使这些框架失效。为此该文提出APT，一种半脆弱潜空间扰动，将每个空间特征向量对齐到固定锚点方向，从而嵌入密集的逐向量定位信号，并依据锚点对齐程度的差异判定篡改位置。该方法能在完全重生成设定下有效定位被操纵区域，为扩散修复时代的图像真实性认证与篡改定位提供了新的主动防御思路。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.18968v1",
+      "source": "arxiv",
+      "title": "Frozen DINO Localizes Image Edits Without a Localizer",
+      "abstract": "Localized image edits can change a photograph's meaning while leaving most of it authentic, so forensic analysis must identify where an edit occurred. We show that patch-level perturbation responses from frozen DINO encoders are themselves localization maps. Training-free Localization of AI-image Edits from patch-token Drift (TRAIL) applies one global Haar perturbation and maps cosine drift between corresponding patch tokens. On 80 source-disjoint CocoGlide test images, TRAIL reaches .903 patch AUROC versus .912 for the mask-supervised Detective SAM; fixed-threshold Dice is .619 versus .709, while an oracle threshold raises TRAIL to .790. Transferred unchanged to Poisson image interpolation, TRAIL reaches .855 AUROC versus .864, showing that the cue persists without a generator. Across sixteen DINO encoders, the best block lies at normalized depth .80-.94. Global context matters: AUROC falls from .903 globally to .857 for local-in-canvas perturbations and .735 for independently encoded crops. Frozen DINO patch tokens therefore contain a strong late-layer localization signal whose visibility depends on the perturbation and preserved context. Code: https://github.com/VishalJ99/trail-image-edit-localization.",
+      "authors": [
+        "Zane Kumar",
+        "Vishal Jain",
+        "Bernhard Kainz"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-19T14:35:59+00:00",
+      "link": "https://arxiv.org/pdf/2608.18968v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "training-free pixel-level localization of AI image edits via frozen DINO patch drift",
+      "llm_evidence_cn": "利用冻结DINO的patch漂移实现AI图像编辑的像素级定位",
+      "llm_evidence": "利用冻结DINO的patch漂移实现AI图像编辑的像素级定位",
+      "canonical_evidence": "利用冻结DINO的patch漂移实现AI图像编辑的像素级定位",
+      "llm_tldr_en": "Localized image edits change a photo's meaning while most remains authentic, so forensics must find where the edit is. TRAIL uses frozen DINO patch-token cosine drift under a global Haar perturbation as a training-free localization map, reaching .903 patch AUROC on CocoGlide and .855 on Poisson interpolation.",
+      "llm_tldr_cn": "局部图像编辑能在保留大部分真实内容的同时改变照片含义，因此取证分析必须找出编辑发生的位置。该文提出免训练的TRAIL方法，对图像施加一次全局Haar扰动，并比较冻结DINO编码器对应patch token之间的余弦漂移，将其直接用作定位图。在80张CocoGlide测试图上达到0.903的patch AUROC，与有掩码监督的Detective SAM相当，并原样迁移到泊松图像插值任务仍获0.855 AUROC。该结果说明冻结视觉编码器的patch级扰动响应本身即构成有效的篡改定位线索，无需额外训练定位器。",
+      "llm_tldr": "局部图像编辑能在保留大部分真实内容的同时改变照片含义，因此取证分析必须找出编辑发生的位置。该文提出免训练的TRAIL方法，对图像施加一次全局Haar扰动，并比较冻结DINO编码器对应patch token之间的余弦漂移，将其直接用作定位图。在80张CocoGlide测试图上达到0.903的patch AUROC，与有掩码监督的Detective SAM相当，并原样迁移到泊松图像插值任务仍获0.855 AUROC。该结果说明冻结视觉编码器的patch级扰动响应本身即构成有效的篡改定位线索，无需额外训练定位器。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.20558v1",
+      "source": "arxiv",
+      "title": "Zero-Shot Color Image Manipulation Localization via Noise Residual Artifact Pattern Analysis",
+      "abstract": "Digital cameras embed device-specific artifacts into every acquired image through demosaicing, in-camera post-processing, and lossy compression. These traces constitute a forensic signal that can be exploited to assess image authenticity. Existing passive methods rely predominantly on the green channel of the Bayer residual, discarding the correlated information available in the remaining color channels and typically requiring training data or device enrollment. This work proposes a zero-shot, training-free blind image manipulation localization pipeline that estimates a reference artifact pattern directly from the noise residual of a single suspect image, without assuming a fixed filter configuration, color layout, or block period. The pipeline incorporates a principled denoiser selection criterion based on the acquired-to-interpolated noise variance ratio, a block-level correlation analysis against the estimated reference pattern, and a two-component Gaussian Mixture Model scoring stage that produces a pixel-level tampering probability map. An ablation study evaluates the impact of denoiser choice and block size on localization accuracy, and comparisons against state-of-the-art passive methods demonstrate the competitiveness of the proposed zero-shot approach.",
+      "authors": [
+        "Edgar Gonzalez-Fernandez"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-20T20:37:21+00:00",
+      "link": "https://arxiv.org/pdf/2608.20558v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "zero-shot blind image manipulation localization via noise residual artifacts",
+      "llm_evidence_cn": "基于噪声残差伪影的零样本盲图像篡改定位",
+      "llm_evidence": "基于噪声残差伪影的零样本盲图像篡改定位",
+      "canonical_evidence": "基于噪声残差伪影的零样本盲图像篡改定位",
+      "llm_tldr_en": "This work proposes a zero-shot, training-free blind manipulation localization pipeline that estimates a reference artifact pattern from the noise residual of a single suspect image, without fixed filter, color layout or block period assumptions.",
+      "llm_tldr_cn": "相机成像中的去马赛克、机内后处理与压缩会在图像中留下设备相关伪影，可作为真实性取证信号，但现有被动方法多仅用Bayer残差的绿色通道，丢弃其余颜色通道信息且需训练或设备注册。本文提出零样本、免训练盲图像篡改定位流程，直接从单张待检图像的噪声残差估计参考伪影模式，不假设固定滤波配置、颜色布局或块周期。该工作在无训练条件下实现像素级篡改定位，拓展了被动取证的应用范围。",
+      "llm_tldr": "相机成像中的去马赛克、机内后处理与压缩会在图像中留下设备相关伪影，可作为真实性取证信号，但现有被动方法多仅用Bayer残差的绿色通道，丢弃其余颜色通道信息且需训练或设备注册。本文提出零样本、免训练盲图像篡改定位流程，直接从单张待检图像的噪声残差估计参考伪影模式，不假设固定滤波配置、颜色布局或块周期。该工作在无训练条件下实现像素级篡改定位，拓展了被动取证的应用范围。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.20929v1",
+      "source": "arxiv",
+      "title": "GAP-SAM: A Global Artifact Prior for Generalizable AI-Generated Image Manipulation Localization",
+      "abstract": "AI-generated image manipulation localization identifies edited pixels, but its OOD performance lags behind image-level detection partly because pixel supervision entangles forensic evidence with dataset-specific mask geometry and semantic boundaries. Extending image-level distribution alignment to localization, we construct COCO-ControlNet with source-image Canny edges and depth maps to align semantics and geometry, improving OOD performance across multiple localizers. Yet tighter Mask-VAE Reconstruction Alignment (Mask-VAE) underperforms COCO-ControlNet, showing that VAE reconstruction artifacts transfer poorly to local diffusion-inpainting artifacts. We also identify \\emph{boundary adhesion}, where fine-tuned segmentation models snap predictions to semantic object contours rather than true manipulation boundaries. These findings motivate GAP-SAM, which encodes an image and its frozen VAE reconstruction into a global artifact token and injects it into SAM3's feature pyramid via zero-gated FiLM before pixel decoding. Without prescribing a spatial region, this token modulates dense decoding to preserve localization while suppressing semantic-boundary shortcuts. Across six datasets, GAP-SAM averages 79.8 Pixel-F1, outperforming the strongest prior method by 12.6 points. It also performs best at every tested severity of JPEG compression, Gaussian blur, and resizing.",
+      "authors": [
+        "Haozhen Yan",
+        "Siyuan Shan",
+        "Zijian Yu",
+        "Youqi Wang",
+        "Yan Hong",
+        "Jun Lan",
+        "Jianfu Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-21T09:49:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.20929v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "pixel-level localization of AI-generated image manipulation",
+      "llm_evidence_cn": "AI生成图像篡改的像素级定位",
+      "llm_evidence": "AI生成图像篡改的像素级定位",
+      "canonical_evidence": "AI生成图像篡改的像素级定位",
+      "llm_tldr_en": "AI-generated image manipulation localization lags image-level detection in OOD settings because pixel supervision entangles forensic evidence with dataset-specific mask geometry. GAP-SAM builds COCO-ControlNet with Canny edges and depth maps and adds a global artifact prior, improving OOD localization across multiple localizers.",
+      "llm_tldr_cn": "针对AI生成图像篡改定位域外性能落后于图像级检测、像素监督易纠缠数据集特定掩码几何与语义边界的问题，本文提出全局伪影先验方法GAP-SAM。方法构建COCO-ControlNet数据，用源图Canny边缘与深度图对齐语义和几何，并引入全局伪影先验提升定位泛化性。实验表明其提升多种定位器的域外性能，同时揭示VAE重建伪影迁移性差与边界粘连现象。该工作推进了生成式编辑的像素级篡改定位。",
+      "llm_tldr": "针对AI生成图像篡改定位域外性能落后于图像级检测、像素监督易纠缠数据集特定掩码几何与语义边界的问题，本文提出全局伪影先验方法GAP-SAM。方法构建COCO-ControlNet数据，用源图Canny边缘与深度图对齐语义和几何，并引入全局伪影先验提升定位泛化性。实验表明其提升多种定位器的域外性能，同时揭示VAE重建伪影迁移性差与边界粘连现象。该工作推进了生成式编辑的像素级篡改定位。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "Pixel level localization of copy move, splicing, and generative editing in digital images",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.28302v1",
+      "source": "arxiv",
+      "title": "FUSED: Forensic-Semantic Mixture-of-Experts for AI Inpainting Detection and Localization",
+      "abstract": "Diffusion-based inpainting models modify only a localized part of an image, while many AI-image detectors rely on global artifacts and do not localize. These artifacts vary across generators, limiting detector transfer under distribution shifts. Recent work shows that restoring the authentic pixels outside the inpainted region removes these cues and can degrade pretrained detectors. To address this, we present FUSED, a unified framework for the joint detection and localization of AI-generated inpainting. FUSED combines low-level forensic cues with high-level semantic features using a sparsely-gated Mixture-of-Experts architecture, enabling the model to adaptively prioritize the most relevant signal for each token. For each input, FUSED predicts both an image-level manipulation score and a pixel-level mask of the inpainted area. On the OpenSDID cross-generator benchmark, FUSED achieves the best average detection and localization, with the largest gains on unseen generators. The same model transfers directly to the held-out AutoSplice and CocoGlide benchmarks, more than doubling localization performance. Evaluating each held-out benchmark with and without the global generator artifact further shows that all evaluated methods, ours included, partly read the artifact as evidence of manipulation, and FUSED remains the strongest under both conditions. Code and pretrained models are available at https://github.com/AntonNuzhdin/FUSED.",
+      "authors": [
+        "Anton Nuzhdin",
+        "Marcel Worring",
+        "Ivona Najdenkoska"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-28T13:05:43+00:00",
+      "link": "https://arxiv.org/pdf/2608.28302v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "joint detection and pixel-level localization of AI-generated inpainting",
+      "llm_evidence_cn": "AI修复的联合检测与像素级定位",
+      "llm_evidence": "AI修复的联合检测与像素级定位",
+      "canonical_evidence": "AI修复的联合检测与像素级定位",
+      "llm_tldr_en": "FUSED detects and localizes diffusion inpainting by fusing low-level forensic cues with high-level semantics via a sparsely-gated Mixture-of-Experts, improving transfer under distribution shifts.",
+      "llm_tldr_cn": "扩散模型修复仅改动图像局部区域，而多数AI图像检测器依赖全局伪影、缺乏定位能力，且伪影随生成器变化导致迁移性差。本文提出FUSED，用稀疏门控混合专家架构融合低层法证线索与高层语义特征，使模型能为每个token自适应选择最相关信号，实现AI修复的联合检测与像素级定位。实验表明该框架在分布偏移下仍保持较好的检测与定位性能，为生成式编辑的取证定位提供了统一方案。",
+      "llm_tldr": "扩散模型修复仅改动图像局部区域，而多数AI图像检测器依赖全局伪影、缺乏定位能力，且伪影随生成器变化导致迁移性差。本文提出FUSED，用稀疏门控混合专家架构融合低层法证线索与高层语义特征，使模型能为每个token自适应选择最相关信号，实现AI修复的联合检测与像素级定位。实验表明该框架在分布偏移下仍保持较好的检测与定位性能，为生成式编辑的取证定位提供了统一方案。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "Pixel level localization of copy move, splicing, and generative editing in digital images",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.30714v1",
+      "source": "arxiv",
+      "title": "SegWave: Wavelet-Driven Segmentation of Tampered Regions",
+      "abstract": "Verifying image authenticity is increasingly difficult, posing serious risks across journalism, law enforcement, and political domains. Most existing forensic methods rely on high-level visual artifacts and treat frame detection as a simple binary task. To address this, we propose SegWave, a hybrid framework that jointly leverages spatial and frequency-domain cues for image tampering detection. SegWave integrates a transformer-based architecture with the Discrete Wavelet Transform (DWT) to capture localized, multi-scale frequency inconsistencies indicative of manipulation. To further improve localization effectiveness, we introduce an Adaptive Sub-band Attention module (ASA) that dynamically highlights the informative high-frequency wavelet components. Extensive experiments on multiple benchmark datasets demonstrate that SegWave consistently outperforms state-of-the-art tampering detection methods in challenging evaluation settings.",
+      "authors": [
+        "Siddhi Pravin Lipare",
+        "Vishesh Kumar",
+        "Akshay Agarwal"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-31T12:54:11+00:00",
+      "link": "https://arxiv.org/pdf/2608.30714v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "jointly leverages spatial and frequency cues for pixel-level tampered region segmentation",
+      "llm_evidence_cn": "融合空间与频域线索实现篡改区域像素级分割定位",
+      "llm_evidence": "融合空间与频域线索实现篡改区域像素级分割定位",
+      "canonical_evidence": "融合空间与频域线索实现篡改区域像素级分割定位",
+      "llm_tldr_en": "SegWave fuses a transformer with the Discrete Wavelet Transform and an Adaptive Sub-band Attention module to capture multi-scale frequency inconsistencies and segment tampered regions at pixel level, improving on artifact-based binary forensics.",
+      "llm_tldr_cn": "现有图像取证方法多依赖高层视觉伪影并将篡改检测简化为二分类，难以实现精细的像素级定位。本文提出SegWave混合框架，将Transformer架构与离散小波变换结合，同时利用空间与频域线索捕捉多尺度频率不一致性，并引入自适应子带注意力模块动态突出高频小波分量。大量实验表明该方法在篡改区域定位上取得优越效果，为图像真实性验证提供了更精细的取证手段。",
+      "llm_tldr": "现有图像取证方法多依赖高层视觉伪影并将篡改检测简化为二分类，难以实现精细的像素级定位。本文提出SegWave混合框架，将Transformer架构与离散小波变换结合，同时利用空间与频域线索捕捉多尺度频率不一致性，并引入自适应子带注意力模块动态突出高频小波分量。大量实验表明该方法在篡改区域定位上取得优越效果，为图像真实性验证提供了更精细的取证手段。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.01249v1",
+      "source": "arxiv",
+      "title": "One Prompt Is Enough: Watermark Laundering Through Foundation Image Models",
+      "abstract": "Invisible watermarks are typically evaluated against predefined perturbations such as compression, blur, noise, cropping, and denoising. Public foundation image models expose a distinct threat: an attacker can submit a watermarked image with a single reconstruction prompt and obtain a visually faithful output from which the invisible watermark can no longer be decoded reliably. We formalize this failure mode as watermark laundering and evaluate it using a joint payload-fidelity profile that combines bit error rate (BER) with visual and semantic preservation. Across six OpenAI and Google image editing models, three representative watermarking schemes, and 1,800 reconstructed outputs, we identify two complementary laundering regimes: OpenAI models produce the strongest payload disruption across the evaluated schemes, whereas Nano Banana 2 shows that DwtDct remains vulnerable under high-fidelity reconstruction. Prompt ablations show that no single removal-oriented instruction is necessary for payload disruption, indicating that the effect is primarily induced by the reconstruction pathway rather than by explicit attack wording. Comparisons with conventional attacks further show that prompt-conditioned reconstruction constitutes a distinct operational attack interface. These findings motivate foundation-model reconstruction as a missing robustness condition in invisible watermark evaluation.",
+      "authors": [
+        "Jidong Yang",
+        "Qi Li",
+        "Wei Zong",
+        "Yang-Wai Chow",
+        "Willy Susilo",
+        "Huaike Yu",
+        "Chunpeng Wang",
+        "Suo Gao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-09-01T13:46:31+00:00",
+      "link": "https://arxiv.org/pdf/2609.01249v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "watermark laundering removes invisible watermarks from generated images via foundation models",
+      "llm_evidence_cn": "水印洗白通过基础模型移除生成图像中的隐形水印",
+      "llm_evidence": "水印洗白通过基础模型移除生成图像中的隐形水印",
+      "canonical_evidence": "水印洗白通过基础模型移除生成图像中的隐形水印",
+      "llm_tldr_en": "This paper formalizes watermark laundering, where a single reconstruction prompt from foundation image models strips invisible watermarks, evaluated via a joint payload-fidelity profile.",
+      "llm_tldr_cn": "针对隐形水印仅按压缩、模糊、裁剪等预设扰动评估的局限，本文揭示公共基础图像模型带来的新威胁：攻击者仅用一条重建提示即可获得视觉忠实却无法解码水印的输出，并将其形式化为水印洗白。作者采用结合误码率与视觉语义保真的联合载荷-保真画像，在六个OpenAI与Google图像编辑模型、三种水印方案和1800个重建输出上评估，识别出两种互补的洗白机制。该工作为生成图像水印的鲁棒性与防御研究提供了重要攻击视角。",
+      "llm_tldr": "针对隐形水印仅按压缩、模糊、裁剪等预设扰动评估的局限，本文揭示公共基础图像模型带来的新威胁：攻击者仅用一条重建提示即可获得视觉忠实却无法解码水印的输出，并将其形式化为水印洗白。作者采用结合误码率与视觉语义保真的联合载荷-保真画像，在六个OpenAI与Google图像编辑模型、三种水印方案和1800个重建输出上评估，识别出两种互补的洗白机制。该工作为生成图像水印的鲁棒性与防御研究提供了重要攻击视角。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.02097v1",
+      "source": "arxiv",
+      "title": "Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics",
+      "abstract": "The rapid progress of AIGC has made text-centric image manipulation increasingly accessible, creating new forensic challenges that require not only authenticity detection but also spatial grounding and evidence-based explanation. This paper presents our solution to the GenText-Forensics Challenge at ACM Multimedia 2026. We propose an evidence-guided detector-localizer-reasoner system, where an image-level detector provides a global authenticity prior, a dedicated localizer extracts tampered regions as spatial grounding evidence, and an MLLM-based reasoner generates structured forensic reports grounded in this expert forensic evidence. These modules are connected through a cascaded evidence flow: the detector gates the subsequent localization and prompting process, the localizer converts tamper responses into grounding boxes, and the reasoner is trained to synthesize the detector decision and localized evidence into the final report. As a key part of our method, we introduce iterative difficulty-aware mining to improve localization quality and apply report-mask consistency post-processing to align report grounding with predicted masks. On the official hidden test set, our system achieves a final score of 0.638 and ranks second in the challenge, validating the effectiveness of the proposed evidence-guided system. The code is available at https://github.com/peifengLiu42/ACMMM26-evidence-guided-detector-localizer-reasoner-system.",
+      "authors": [
+        "Peifeng Liu",
+        "Bin Li",
+        "Qingsong Zhang",
+        "Yangxin Yu",
+        "Leqing Chen",
+        "Xiaoye Qiu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-02T04:37:32+00:00",
+      "link": "https://arxiv.org/pdf/2609.02097v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "detector-localizer system extracts tampered regions as spatial grounding for image forensics",
+      "llm_evidence_cn": "检测器-定位器系统提取篡改区域作为图像取证空间证据",
+      "llm_evidence": "检测器-定位器系统提取篡改区域作为图像取证空间证据",
+      "canonical_evidence": "检测器-定位器系统提取篡改区域作为图像取证空间证据",
+      "llm_tldr_en": "This work proposes an evidence-guided detector-localizer-reasoner system for text-centric image forensics, where a dedicated localizer extracts tampered regions as spatial grounding evidence for structured reports.",
+      "llm_tldr_cn": "AIGC使以文本为中心的图像篡改日益容易，取证不仅需要真实性检测，还需空间定位与可解释证据。本文提出检测器-定位器-推理器级联系统：图像级检测器给出全局真实性先验并门控后续流程，专用定位器提取篡改区域作为空间落地的证据，基于MLLM的推理器据此生成结构化取证报告。该系统在ACM MM 2026 GenText-Forensics挑战赛中验证了检测、定位与解释一体化的有效性，为可解释图像取证提供了可复用的框架。",
+      "llm_tldr": "AIGC使以文本为中心的图像篡改日益容易，取证不仅需要真实性检测，还需空间定位与可解释证据。本文提出检测器-定位器-推理器级联系统：图像级检测器给出全局真实性先验并门控后续流程，专用定位器提取篡改区域作为空间落地的证据，基于MLLM的推理器据此生成结构化取证报告。该系统在ACM MM 2026 GenText-Forensics挑战赛中验证了检测、定位与解释一体化的有效性，为可解释图像取证提供了可复用的框架。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.02640v1",
+      "source": "arxiv",
+      "title": "From Detection to Localization: A Unified Forensics Framework for Fully Synthetic and Tampered Images",
+      "abstract": "The rapid advancement of generative models has significantly worsened the problem of manipulated image detection, as these methods are capable of producing highly realistic forgeries, reinforcing the importance of multimedia forensics. Conventional approaches typically frame image manipulation detection as a binary classification task (real vs. generated), which limits the capability to distinguish and localize different forms of manipulation. To address these constraints, this work extends an existing detector by introducing a unified multiclass framework (real vs. fully generated vs. tampered). In addition to classifying image authenticity, the framework incorporates a segmentation branch to enable pixel-level localization of tampered regions. The proposed approach outperforms selected recent benchmarks, offering an efficient solution with improved classification accuracy and higher IoU scores for the localization task. Find the code at https://github.com/anngal01/From-Detection-to-Localization-A-Unified-Forensics-Framework-for-Fully-Synthetic-and-Tampered-Images.",
+      "authors": [
+        "Annalisa Gallina",
+        "Marco Fiorucci",
+        "Marco Brigo",
+        "Federica Battisti",
+        "Lamberto Ballan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-02T14:16:44+00:00",
+      "link": "https://arxiv.org/pdf/2609.02640v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "unified forensics framework with segmentation branch for pixel-level manipulation localization",
+      "llm_evidence_cn": "带分割分支的统一取证框架实现像素级篡改定位",
+      "llm_evidence": "带分割分支的统一取证框架实现像素级篡改定位",
+      "canonical_evidence": "带分割分支的统一取证框架实现像素级篡改定位",
+      "llm_tldr_en": "This work extends a detector into a unified multiclass framework distinguishing real, fully generated and tampered images, adding a segmentation branch for pixel-level manipulation localization.",
+      "llm_tldr_cn": "生成模型进步使篡改图像检测更困难，而传统方法多将图像篡改检测视为真伪二分类，无法区分并定位不同类型的操纵。本文将已有检测器扩展为统一多分类框架（真实、完全生成、篡改），在判别图像真实性的同时引入分割分支，实现像素级篡改定位。实验表明该框架能统一处理合成图像与局部篡改图像，为多媒体取证提供了从检测到定位的一体化方案。",
+      "llm_tldr": "生成模型进步使篡改图像检测更困难，而传统方法多将图像篡改检测视为真伪二分类，无法区分并定位不同类型的操纵。本文将已有检测器扩展为统一多分类框架（真实、完全生成、篡改），在判别图像真实性的同时引入分割分支，实现像素级篡改定位。实验表明该框架能统一处理合成图像与局部篡改图像，为多媒体取证提供了从检测到定位的一体化方案。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "identifying and localizing manipulated regions in digital images",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.04709v1",
+      "source": "arxiv",
+      "title": "AngelFingerprint: A Traceable, Explainable, and White-Box Stealthy Watermark for Text-Guided Image Editing",
+      "abstract": "Text-guided diffusion editing raises disinformation concerns, making reliable image provenance essential. While watermarks are commonly used for this purpose, most methods carry a fixed ID that cannot explain what was changed and which prompt produced it. Furthermore, under open-source white-box access, attackers can easily locate and remove watermarks added as separate modules. Targeting this setting, we propose AngelFingerprint, a novel watermarking framework ensuring edit traceability, explainability, and white-box stealthiness. It integrates a LoRA into the diffusion model to embed the editing prompt's CLIP text embedding directly into the model's weights. An extractor then recovers this embedding from the image pixels alone. This semantic payload explains the edit, while the weight-integrated design makes it hard to detect and isolate even under full white-box access. Two techniques make this possible: a velocity-alignment anchor that preserves edit quality, and a specially designed frequency filter that keeps the watermark imperceptible yet recoverable and robust. On the MagicBrush dataset, our extractor achieves $86\\%$ top-1 accuracy in a 200-way prompt retrieval, versus $20\\%$ for prompt inversion.",
+      "authors": [
+        "Bo-Han Kung",
+        "Futa Waseda",
+        "Ching-Chun Chang",
+        "Isao Echizen",
+        "Shang-Tse Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-04T04:29:23+00:00",
+      "link": "https://arxiv.org/pdf/2609.04709v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "watermark for text-guided diffusion editing with provenance and white-box stealthiness",
+      "llm_evidence_cn": "面向文本引导扩散编辑的可溯源白盒隐蔽水印",
+      "llm_evidence": "面向文本引导扩散编辑的可溯源白盒隐蔽水印",
+      "canonical_evidence": "面向文本引导扩散编辑的可溯源白盒隐蔽水印",
+      "llm_tldr_en": "AngelFingerprint embeds the editing prompt CLIP embedding into a diffusion model via LoRA, enabling traceable, explainable and white-box stealthy watermarking for provenance of edited images.",
+      "llm_tldr_cn": "文本引导的扩散编辑带来虚假信息风险，可靠的图像来源认证至关重要。现有水印多携带固定ID，无法说明改动内容与生成提示，且在开源白盒访问下易被定位移除。本文提出AngelFingerprint，将编辑提示的CLIP文本嵌入通过LoRA直接写入扩散模型权重，再由提取器从图像中恢复该嵌入，实现可追溯、可解释且具备白盒隐蔽性的水印。该方法提升了生成内容来源认证的鲁棒性与可解释性。",
+      "llm_tldr": "文本引导的扩散编辑带来虚假信息风险，可靠的图像来源认证至关重要。现有水印多携带固定ID，无法说明改动内容与生成提示，且在开源白盒访问下易被定位移除。本文提出AngelFingerprint，将编辑提示的CLIP文本嵌入通过LoRA直接写入扩散模型权重，再由提取器从图像中恢复该嵌入，实现可追溯、可解释且具备白盒隐蔽性的水印。该方法提升了生成内容来源认证的鲁棒性与可解释性。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.08213v1",
+      "source": "arxiv",
+      "title": "DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory",
+      "abstract": "Diffusion watermarking embeds verifiable signals into the generative process and commonly verifies them by recovering trajectory-dependent evidence, making the marks robust to conventional pixel-space distortions. Existing removal attacks either regenerate along deterministic trajectories, which often preserve the watermark-bearing latent structure, or optimize every image separately. We identify the reliance on a recoverable generative trajectory as a common attack surface among the schemes we study. Based on this observation, we propose DRIFT, a black-box attack that combines partial forward diffusion with stochastic reverse resampling. Forward re-noising limits source information available to a fixed-depth recovery pipeline, while stochastic reversal supplies alternative noise-driven paths whose removal benefit we isolate through matched sampler comparisons. Adaptive DRIFT searches a selected ladder for each image's first verifier-rejected rung and refines fidelity while retaining only updates rejected by the same verifier. At fixed depth, we derive information-theoretic and Wasserstein source-dependence bounds; under realized-ladder monotonicity, the first rejected rung is least distorted among rejected rungs on that ladder, and verifier-gated refinement preserves rejection. Across nine watermarks spanning three paradigms, DRIFT achieves 98-100% attack success and the best image quality among the compared attacks, without secret keys, verifier internals, or per-image gradient optimization.",
+      "authors": [
+        "Rui Bao",
+        "Zheng Gao",
+        "Xiaoyu Li",
+        "Xiaoyan Feng",
+        "Yang Song",
+        "Jiaojiao Jiang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-09-08T03:54:17+00:00",
+      "link": "https://arxiv.org/pdf/2609.08213v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "black-box attack removing diffusion watermarks by deflecting generative trajectory",
+      "llm_evidence_cn": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "llm_evidence": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "canonical_evidence": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "llm_tldr_en": "DRIFT is a black-box attack that removes diffusion watermarks by combining partial forward diffusion with stochastic reverse resampling, deflecting the trajectory that watermark verification relies on.",
+      "llm_tldr_cn": "扩散水印把可验证信号嵌入生成过程并依赖恢复轨迹相关证据来校验，因而对常规像素扰动鲁棒；现有移除攻击或沿确定性轨迹重生成而保留水印结构，或需逐图优化。本文识别出对可恢复生成轨迹的依赖是多种方案的共性攻击面，提出DRIFT黑盒攻击，将部分前向扩散与随机反向重采样结合，限制固定深度恢复流水线可用的源信息。实验表明该方法能有效移除所研究的多种扩散水印方案，对水印鲁棒性设计与防御研究具有直接警示意义。",
+      "llm_tldr": "扩散水印把可验证信号嵌入生成过程并依赖恢复轨迹相关证据来校验，因而对常规像素扰动鲁棒；现有移除攻击或沿确定性轨迹重生成而保留水印结构，或需逐图优化。本文识别出对可恢复生成轨迹的依赖是多种方案的共性攻击面，提出DRIFT黑盒攻击，将部分前向扩散与随机反向重采样结合，限制固定深度恢复流水线可用的源信息。实验表明该方法能有效移除所研究的多种扩散水印方案，对水印鲁棒性设计与防御研究具有直接警示意义。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.01050v1",
+      "source": "arxiv",
+      "title": "What Limits Robustness in Deep Image Watermarking: An Analysis of Mechanisms and Their Scaling Across Capacities",
+      "abstract": "Robustness remains the principal open problem in deep image watermarking, and what limits it becomes sharper as payload grows. This paper asks whether capacity is itself the limit or only makes other limits visible, and answers in two parts. The first organizes the distortions a watermark must survive and the strategies developed to resist them, ordering each by the axis that governs it: payload capacity for the distortions, differentiability for the strategies. The second identifies and measures three mechanisms that limit robustness in schemes mapping the payload onto a spatial block grid with extraction trained separately from a frozen embedder: desynchronization of the payload grid, the resistance of codec-induced distortion to training, and the narrowing of the usable embedding-strength window. Payloads from 64 to 16384 bits are measured, well beyond the range those strategies address. Training the extraction stage against a codec proves not merely ineffective but harmful, degrading the reading at the operating points used in training. The limits follow the class of distortion rather than capacity itself, and none is removed by further training on the extraction side, because all three arise before extraction. An evaluation protocol making claims of generalization verifiable is also contributed. The conclusions are properties of a class of designs rather than of one implementation.",
+      "authors": [
+        "Marta Bistroń",
+        "Zbigniew Piotrowski"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-09-01T10:46:58+00:00",
+      "link": "https://arxiv.org/pdf/2609.01050v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "analysis of mechanisms limiting robustness in deep image watermarking",
+      "llm_evidence_cn": "深度图像水印鲁棒性限制机制分析",
+      "llm_evidence": "深度图像水印鲁棒性限制机制分析",
+      "canonical_evidence": "深度图像水印鲁棒性限制机制分析",
+      "llm_tldr_en": "This paper analyzes what limits robustness in deep image watermarking, organizing distortions and defenses and identifying three mechanisms, such as payload grid desynchronization, that constrain robustness as payload grows.",
+      "llm_tldr_cn": "鲁棒性一直是深度图像水印的核心难题，且随载荷增大而愈发突出。本文系统梳理水印需抵抗的各类失真及相应对策，并按支配轴（失真对应载荷容量、策略对应可微性）加以组织；随后针对载荷映射到空间块网格、且提取器与冻结嵌入器分离训练的方案，识别并量化了载荷网格失同步等三种限制鲁棒性的机制。该分析揭示了容量之外的鲁棒性瓶颈，为水印方案设计提供了理论指导。",
+      "llm_tldr": "鲁棒性一直是深度图像水印的核心难题，且随载荷增大而愈发突出。本文系统梳理水印需抵抗的各类失真及相应对策，并按支配轴（失真对应载荷容量、策略对应可微性）加以组织；随后针对载荷映射到空间块网格、且提取器与冻结嵌入器分离训练的方案，识别并量化了载荷网格失同步等三种限制鲁棒性的机制。该分析揭示了容量之外的鲁棒性瓶颈，为水印方案设计提供了理论指导。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2609.02268v1",
+      "source": "arxiv",
+      "title": "Retrosynthesis of Synthetic Media for Explainable AI Provenance Forensics",
+      "abstract": "With the rapid proliferation of generative models on Machine Learning as a Service (MLaaS) platforms, reliably tracing the provenance of synthetic media without modifying generator architectures or parameters remains a major challenge. In this work, we propose a self-referential retrosynthesis framework for explainable AI provenance forensics under a fixed-generator setting. The framework leverages a jointly optimized encoder-decoder pair to implement a self-embedding mechanism that enables round-trip consistency verification. During inference, client inputs are first encoded and then processed by the generator to produce outputs with high visual fidelity. For forensic verification, the consistency between the resynthesized image and the query image is analyzed to determine whether the image originates from the target generative model. Our approach eliminates the need for watermark embedding or modifications to the generation process. Experimental results show that images generated from encoded inputs maintain visual quality comparable to original generator outputs, while decoded images reliably trace back to their corresponding source inputs. Furthermore, the framework provides interpretable evidence for generative content provenance, establishing a practical tool for explainable generative AI forensics.",
+      "authors": [
+        "Yijie Lin",
+        "Ching-Chun Chang",
+        "Isao Echizen",
+        "Hui Li",
+        "Chin-Chen Chang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.CV",
+        "cs.MM"
+      ],
+      "published": "2026-09-02T08:15:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.02268v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-embedding provenance forensics for synthetic media",
+      "llm_evidence_cn": "合成媒体自嵌入来源取证",
+      "llm_evidence": "合成媒体自嵌入来源取证",
+      "canonical_evidence": "合成媒体自嵌入来源取证",
+      "llm_tldr_en": "Tracing provenance of synthetic media on MLaaS platforms without modifying the generator remains hard. This paper proposes a self-referential retrosynthesis framework using a jointly optimized encoder-decoder for self-embedding and round-trip consistency verification, enabling explainable provenance forensics under a fixed-generator setting.",
+      "llm_tldr_cn": "针对在MLaaS平台上追踪合成媒体来源、且不能修改生成器架构与参数的难题，本文提出自指式逆向合成取证框架。该框架用联合优化的编解码器实现自嵌入机制，通过往返一致性验证进行来源核验。推理时输入经编码后由生成器输出高保真图像，取证时比对重合成图像与查询图像的一致性。该工作为固定生成器设定下的可解释AI来源溯源提供无需改动模型的自嵌入方案。",
+      "llm_tldr": "针对在MLaaS平台上追踪合成媒体来源、且不能修改生成器架构与参数的难题，本文提出自指式逆向合成取证框架。该框架用联合优化的编解码器实现自嵌入机制，通过往返一致性验证进行来源核验。推理时输入经编码后由生成器输出高保真图像，取证时比对重合成图像与查询图像的一致性。该工作为固定生成器设定下的可解释AI来源溯源提供无需改动模型的自嵌入方案。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.18523v1",
+      "source": "arxiv",
+      "title": "Prior-Conditioned Gaussian Discriminants for Generalizable AI-generated Image Detection",
+      "abstract": "Diffusion-based generators have made synthetic images ubiquitous, but detectors often fail under simultaneous shifts in generator, prompt/style, and source-domain. We study AI-generated image detection as a transfer system described by training prior, frozen encoder feature space, and decision rule, and ask when classifier head training adds value beyond what is already separable in modern features. As a controlled diagnostic, we fit a prior-conditioned Gaussian discriminant ladder: closed-form heads built from first- and second-order feature statistics under nested covariance assumptions. On Percept-Lens, a unified protocol over 39 public datasets (7.1 million images), the best rung is frequently competitive with, and sometimes exceeds, released AI-generated image detector heads when matched on both prior and encoder. We further quantify strong sensitivity to the training prior, data-efficiency of moment-based heads, and representation dependence of Gaussian shift metrics, motivating (prior, encoder, head)-level reporting and stronger analytical baselines for AIGI transfer.",
+      "authors": [
+        "Shashank Kotyan",
+        "Makoto Shing",
+        "Yuki Imajuku",
+        "Rujikorn Charakorn",
+        "Tarin Clanuwat"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-19T04:17:10+00:00",
+      "link": "https://arxiv.org/pdf/2608.18523v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generalizable AI-generated image detection under distribution shifts",
+      "llm_evidence_cn": "分布偏移下可泛化的AI生成图像检测",
+      "llm_evidence": "分布偏移下可泛化的AI生成图像检测",
+      "canonical_evidence": "分布偏移下可泛化的AI生成图像检测",
+      "llm_tldr_en": "This paper models AI-generated image detection as a transfer system and uses prior-conditioned Gaussian discriminant heads to show that simple closed-form classifiers often match or beat trained heads across 39 datasets.",
+      "llm_tldr_cn": "扩散生成模型使合成图像泛滥，但检测器在生成器、提示风格与源域同时发生偏移时常常失效。本文将AI生成图像检测建模为由训练先验、冻结编码器特征空间与决策规则构成的迁移系统，提出先验条件高斯判别器阶梯，用一阶与二阶特征统计在嵌套协方差假设下构造闭式分类头。在覆盖39个公开数据集、约710万张图像的Percept-Lens协议上，最优档位常可与复杂训练头匹敌甚至超越，说明现代特征已具备足够可分性，简化判别器即可提升泛化。",
+      "llm_tldr": "扩散生成模型使合成图像泛滥，但检测器在生成器、提示风格与源域同时发生偏移时常常失效。本文将AI生成图像检测建模为由训练先验、冻结编码器特征空间与决策规则构成的迁移系统，提出先验条件高斯判别器阶梯，用一阶与二阶特征统计在嵌套协方差假设下构造闭式分类头。在覆盖39个公开数据集、约710万张图像的Percept-Lens协议上，最优档位常可与复杂训练头匹敌甚至超越，说明现代特征已具备足够可分性，简化判别器即可提升泛化。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.20839v1",
+      "source": "arxiv",
+      "title": "SAC-Copula: Quality-Preserving Watermarking for Diffusion Language Models via Smooth Correlated Gumbel Fields",
+      "abstract": "Watermarking diffusion language models (DLMs) requires mechanisms compatible with iterative parallel unmasking rather than autoregressive decoding. Existing sampling-based watermarking methods typically inject position-wise i.i.d. perturbations, which can be poorly aligned with DLM decoding dynamics and degrade generation quality. We propose SAC-Copula, a quality-preserving watermarking method for DLMs based on smooth, locally correlated Gumbel perturbation fields constructed via a Gaussian copula. We further develop a SAC-aware detector using covariance-aware filtering and native-sample calibration. Mechanism-level analysis shows that local correlation reduces latent perturbation roughness and better matches iterative refinement dynamics. Experiments on LLaDA show that SAC-Copula achieves a favorable quality-detectability trade-off compared with existing baselines. In particular, further evaluations on Dream-7B and additional datasets show that SAC-Copula substantially improves PPL tail stability over the i.i.d. Gumbel baseline, while maintaining strong low-FPR detectability and competitive overall generation quality. Additional token-edit stress tests further assess watermark robustness under controlled synchronization drift.",
+      "authors": [
+        "Baixin Li",
+        "Haiyun He"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-08-21T08:03:18+00:00",
+      "link": "https://arxiv.org/pdf/2608.20839v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermarking method for diffusion models via correlated Gumbel perturbation fields",
+      "llm_evidence_cn": "面向扩散模型的相关Gumbel扰动场水印方法",
+      "llm_evidence": "面向扩散模型的相关Gumbel扰动场水印方法",
+      "canonical_evidence": "面向扩散模型的相关Gumbel扰动场水印方法",
+      "llm_tldr_en": "Watermarking diffusion language models must fit iterative parallel unmasking, yet i.i.d. perturbations misalign with decoding and harm quality. SAC-Copula injects smooth locally correlated Gumbel fields via a Gaussian copula and builds a covariance-aware detector, preserving quality while enabling reliable detection.",
+      "llm_tldr_cn": "面向扩散语言模型的水印需兼容迭代并行解掩码过程，而现有采样式方法逐位置独立扰动，与解码动态不匹配并损害生成质量。本文提出SAC-Copula，利用高斯Copula构造平滑且局部相关的Gumbel扰动场，并设计协方差感知检测器与原生样本校准。机制分析表明局部相关性可降低潜空间扰动粗糙度，在保持生成质量的同时实现可靠水印检测。",
+      "llm_tldr": "面向扩散语言模型的水印需兼容迭代并行解掩码过程，而现有采样式方法逐位置独立扰动，与解码动态不匹配并损害生成质量。本文提出SAC-Copula，利用高斯Copula构造平滑且局部相关的Gumbel扰动场，并设计协方差感知检测器与原生样本校准。机制分析表明局部相关性可降低潜空间扰动粗糙度，在保持生成质量的同时实现可靠水印检测。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.01511v1",
+      "source": "arxiv",
+      "title": "Benchmarking Spatial, Spectral, and Self-Supervised Cues for Face Forgery Detection under Realistic Degradation",
+      "abstract": "Face forgery detectors often achieve strong results on controlled benchmarks, but their reliability under realistic image degradations remains limited. This paper presents a standardized benchmark for face forgery detection using the Multi-Dimensional Face Forgery Image (MFFI) dataset and evaluates performance on both clean and degraded test partitions. We compare six model families, including convolutional networks, transformer-based models, and a frozen self-supervised DINOv3 backbone, across spatial, spectral, and hybrid input representations. The results show that clean-set performance is not a reliable indicator of robustness under compression, resizing, and blurring. Xception with RGB obtains the best clean performance, reaching 0.884 mean ROC-AUC, but degrades substantially on the harder partition. In contrast, frozen DINOv3 achieves the strongest degraded-set result, with 0.726 mean ROC-AUC, while training only a linear classification head. The representation analysis indicates that Fourier-domain cues are most useful when combined with RGB information, whereas purely spectral inputs consistently underperform spatial representations. Qualitative attribution maps further suggest that convolutional detectors focus on localized artifacts, while DINOv3 relies on broader facial structure. These findings reinforce the need for degraded evaluation protocols and highlight self-supervised visual representations as a promising direction for robust face forgery detection. Our source code is publicly available at https://github.com/lucasdocunha/FaceForgery-Benchmark/.",
+      "authors": [
+        "Lucas Cunha",
+        "Lucas Sotomaior",
+        "Lucas Gasperin",
+        "Beatriz Caldas",
+        "Eduardo Pianovski",
+        "Rayson Laroca"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-01T16:41:55+00:00",
+      "link": "https://arxiv.org/pdf/2609.01511v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "benchmark for face forgery detection, detecting signs of tampering under degradation",
+      "llm_evidence_cn": "人脸伪造检测基准，检测退化条件下的篡改迹象",
+      "llm_evidence": "人脸伪造检测基准，检测退化条件下的篡改迹象",
+      "canonical_evidence": "人脸伪造检测基准，检测退化条件下的篡改迹象",
+      "llm_tldr_en": "This paper benchmarks face forgery detection under realistic degradations, comparing six model families across spatial, spectral and hybrid cues, showing clean performance poorly predicts robustness.",
+      "llm_tldr_cn": "针对人脸伪造检测器在真实图像退化下可靠性不足的问题，本文构建了基于MFFI数据集的标准化基准，在干净与退化测试集上比较卷积网络、Transformer及冻结自监督DINOv3等六类模型，并考察空间、频谱与混合输入表示。结果显示干净集性能无法可靠预测压缩、缩放和模糊下的鲁棒性，Xception配RGB取得最佳干净性能。该工作揭示了伪造检测评估的现实性缺口，为更鲁棒的篡改检测研究提供了基准。",
+      "llm_tldr": "针对人脸伪造检测器在真实图像退化下可靠性不足的问题，本文构建了基于MFFI数据集的标准化基准，在干净与退化测试集上比较卷积网络、Transformer及冻结自监督DINOv3等六类模型，并考察空间、频谱与混合输入表示。结果显示干净集性能无法可靠预测压缩、缩放和模糊下的鲁棒性，Xception配RGB取得最佳干净性能。该工作揭示了伪造检测评估的现实性缺口，为更鲁棒的篡改检测研究提供了基准。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.01749v1",
+      "source": "arxiv",
+      "title": "Swin Meets EfficientNet: Lightweight Architectures for GAN-Based Face Forensics",
+      "abstract": "Modern generative models, such as GANs, diffusion architectures, and autoregressive systems, now produce facial images that are nearly indistinguishable from authentic photographs. This capability makes detecting forged images increasingly difficult, raising serious concerns about identity theft, fraud, and misinformation campaigns. Our research focuses specifically on GAN-generated synthetic faces, which underpin many face-centric deepfakes, and investigates efficient detection approaches using image analysis alone. Existing detection systems rely heavily on either convolutional neural networks (CNNs) or global vision transformers. While CNNs excel at identifying texture-based local features, they struggle with broader contextual understanding. Traditional Vision Transformer (ViT) models can capture long-range structures effectively, but demand substantial computational resources. Our work explores Swin-Transformer-based architectures across three implementations: a compact Swin Transformer trained from the ground up, ImageNet-1K pre-trained Swin-Tiny and Swin-Small models adapted for binary classification, and a novel hybrid combining EfficientNet-B0's convolutional processing with a Swin Transformer backend. We evaluated all models using the 140K Real and Fake Faces dataset, which includes StyleGAN-generated fake faces alongside authentic images from Flickr and DFDC, with balanced splits for training, validation, and testing. The EfficientNetB0+Swin hybrid achieved 99% accuracy and a 99.44% recall on 5,000 test images, outperforming both pure Swin variants and a previous CNN-only baseline on this dataset. Our results suggest that combining hierarchical CNN features with shifted-window self-attention provides an efficient and computationally lightweight method for detecting GAN-generated synthetic faces.",
+      "authors": [
+        "Sejuti Basu",
+        "Ashima Sood",
+        "Vijay Kumar",
+        "Sahil Sharma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-01T18:19:32+00:00",
+      "link": "https://arxiv.org/pdf/2609.01749v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "detecting GAN-generated forged faces",
+      "llm_evidence_cn": "检测GAN生成伪造人脸",
+      "llm_evidence": "检测GAN生成伪造人脸",
+      "canonical_evidence": "检测GAN生成伪造人脸",
+      "llm_tldr_en": "GAN-generated faces are hard to distinguish from real photos. This paper proposes a lightweight detection architecture combining Swin Transformer and EfficientNet to capture both local texture and global context using image analysis alone, improving efficiency for GAN face forensics.",
+      "llm_tldr_cn": "针对GAN生成人脸日益逼真、现有检测器依赖单一CNN或全局Transformer而效率不足的问题，本文提出融合Swin与EfficientNet的轻量检测架构。该方法结合CNN的纹理局部特征与Transformer的全局上下文建模，仅用图像分析即可识别合成人脸。实验显示其在保持检测性能的同时降低计算开销，为深度伪造人脸取证提供高效方案。",
+      "llm_tldr": "针对GAN生成人脸日益逼真、现有检测器依赖单一CNN或全局Transformer而效率不足的问题，本文提出融合Swin与EfficientNet的轻量检测架构。该方法结合CNN的纹理局部特征与Transformer的全局上下文建模，仅用图像分析即可识别合成人脸。实验显示其在保持检测性能的同时降低计算开销，为深度伪造人脸取证提供高效方案。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.07670v1",
+      "source": "arxiv",
+      "title": "Harnessing CLIP and DINO: An Uncertainty-Aware Cascaded Fusion Network for Generalizable Deepfake Image Detection",
+      "abstract": "The growing realism and accessibility of manipulated and generated faces threaten the trustworthiness of digital media. To detect such forgeries, deepfake detectors based on vision foundation models have shown promising performance, but they typically rely on a single pretrained representation and are prone to overfitting to particular training distributions. To improve generalization to unseen forgeries, we propose UCF-Net, an uncertainty-aware cascaded fusion network that harnesses CLIP's language-aligned semantic priors and DINO's self-supervised visual-structure priors. UCF-Net extracts hierarchical features across Transformer depths, uses layer-wise expert aggregation to adaptively combine each encoder's multi-level cues, and performs weighted fusion of the resulting representations based on entropy-derived uncertainty. We further consolidate public deepfake datasets into a unified benchmark of approximately 4M images and construct a separate cross-generator evaluation set with over 8K face images from eight recent generators. On the unified benchmark, UCF-Net achieves the best mean AUC among the evaluated methods in both in-domain and cross-domain evaluations. On the cross-generator set, it adapts effectively with limited target-domain data, although zero-shot transfer remains challenging.",
+      "authors": [
+        "Xuechao Zou",
+        "Yi Zhou",
+        "Kai Li",
+        "Shun Zhang",
+        "Yuhui Chen",
+        "Congyan Lang",
+        "Junliang Xing"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-07T15:59:19+00:00",
+      "link": "https://arxiv.org/pdf/2609.07670v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generalizable detection of manipulated and generated deepfake images",
+      "llm_evidence_cn": "可泛化地检测被操纵与生成的深度伪造图像",
+      "llm_evidence": "可泛化地检测被操纵与生成的深度伪造图像",
+      "canonical_evidence": "可泛化地检测被操纵与生成的深度伪造图像",
+      "llm_tldr_en": "UCF-Net is an uncertainty-aware cascaded fusion network that combines CLIP semantic priors and DINO structural priors with layer-wise expert aggregation to generalize deepfake image detection to unseen forgeries.",
+      "llm_tldr_cn": "深度伪造与生成人脸日益逼真且易得，威胁数字媒体可信度，而基于单一视觉基础模型的检测器易过拟合特定训练分布，泛化到未见伪造时性能下降。本文提出UCF-Net，一种不确定性感知的级联融合网络，同时利用CLIP的语言对齐语义先验与DINO的自监督视觉结构先验，跨Transformer深度提取分层特征并以逐层专家聚合自适应融合。实验表明该网络对未见伪造类型具有更强泛化能力，为篡改与生成图像的通用检测提供了多先验融合思路。",
+      "llm_tldr": "深度伪造与生成人脸日益逼真且易得，威胁数字媒体可信度，而基于单一视觉基础模型的检测器易过拟合特定训练分布，泛化到未见伪造时性能下降。本文提出UCF-Net，一种不确定性感知的级联融合网络，同时利用CLIP的语言对齐语义先验与DINO的自监督视觉结构先验，跨Transformer深度提取分层特征并以逐层专家聚合自适应融合。实验表明该网络对未见伪造类型具有更强泛化能力，为篡改与生成图像的通用检测提供了多先验融合思路。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

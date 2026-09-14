@@ -1,0 +1,297 @@
+{
+  "date": "20260816-20260914",
+  "date_label": "2026-08-16 ~ 2026-09-14",
+  "generated_at": "2026-09-14 06:12:56 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.30656v1",
+      "route": "20260816-20260914/2608.30656v1-apt-anchor-aligned-perturbations-for-tamper-localization-in-fully-regenerated-images",
+      "title": "APT: Anchor-aligned Perturbations for Tamper Localization in Fully Regenerated Images",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "在完全重生成设定下通过嵌入不可感知信号实现像素级篡改定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.18968v1",
+      "route": "20260816-20260914/2608.18968v1-frozen-dino-localizes-image-edits-without-a-localizer",
+      "title": "Frozen DINO Localizes Image Edits Without a Localizer",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "利用冻结DINO的patch漂移实现AI图像编辑的像素级定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.20558v1",
+      "route": "20260816-20260914/2608.20558v1-zero-shot-color-image-manipulation-localization-via-noise-residual-artifact-pattern-analysis",
+      "title": "Zero-Shot Color Image Manipulation Localization via Noise Residual Artifact Pattern Analysis",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "基于噪声残差伪影的零样本盲图像篡改定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.20929v1",
+      "route": "20260816-20260914/2608.20929v1-gap-sam-a-global-artifact-prior-for-generalizable-ai-generated-image-manipulation-localization",
+      "title": "GAP-SAM: A Global Artifact Prior for Generalizable AI-Generated Image Manipulation Localization",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "AI生成图像篡改的像素级定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.28302v1",
+      "route": "20260816-20260914/2608.28302v1-fused-forensic-semantic-mixture-of-experts-for-ai-inpainting-detection-and-localization",
+      "title": "FUSED: Forensic-Semantic Mixture-of-Experts for AI Inpainting Detection and Localization",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "AI修复的联合检测与像素级定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.30714v1",
+      "route": "20260816-20260914/2608.30714v1-segwave-wavelet-driven-segmentation-of-tampered-regions",
+      "title": "SegWave: Wavelet-Driven Segmentation of Tampered Regions",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "融合空间与频域线索实现篡改区域像素级分割定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.01249v1",
+      "route": "20260816-20260914/2609.01249v1-one-prompt-is-enough-watermark-laundering-through-foundation-image-models",
+      "title": "One Prompt Is Enough: Watermark Laundering Through Foundation Image Models",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "水印洗白通过基础模型移除生成图像中的隐形水印",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.02097v1",
+      "route": "20260816-20260914/2609.02097v1-evidence-guided-detection-localization-and-explanation-for-text-centric-image-forensics",
+      "title": "Evidence-Guided Detection, Localization and Explanation for Text-Centric Image Forensics",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "检测器-定位器系统提取篡改区域作为图像取证空间证据",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.02640v1",
+      "route": "20260816-20260914/2609.02640v1-from-detection-to-localization-a-unified-forensics-framework-for-fully-synthetic-and-tampered-images",
+      "title": "From Detection to Localization: A Unified Forensics Framework for Fully Synthetic and Tampered Images",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "带分割分支的统一取证框架实现像素级篡改定位",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.04709v1",
+      "route": "20260816-20260914/2609.04709v1-angelfingerprint-a-traceable-explainable-and-white-box-stealthy-watermark-for-text-guided-image-editing",
+      "title": "AngelFingerprint: A Traceable, Explainable, and White-Box Stealthy Watermark for Text-Guided Image Editing",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向文本引导扩散编辑的可溯源白盒隐蔽水印",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.08213v1",
+      "route": "20260816-20260914/2609.08213v1-drift-removing-diffusion-watermarks-by-deflecting-the-generative-trajectory",
+      "title": "DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.01050v1",
+      "route": "20260816-20260914/2609.01050v1-what-limits-robustness-in-deep-image-watermarking-an-analysis-of-mechanisms-and-their-scaling-across-capacities",
+      "title": "What Limits Robustness in Deep Image Watermarking: An Analysis of Mechanisms and Their Scaling Across Capacities",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "深度图像水印鲁棒性限制机制分析",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.02268v1",
+      "route": "20260816-20260914/2609.02268v1-retrosynthesis-of-synthetic-media-for-explainable-ai-provenance-forensics",
+      "title": "Retrosynthesis of Synthetic Media for Explainable AI Provenance Forensics",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "合成媒体自嵌入来源取证",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.18523v1",
+      "route": "20260816-20260914/2608.18523v1-prior-conditioned-gaussian-discriminants-for-generalizable-ai-generated-image-detection",
+      "title": "Prior-Conditioned Gaussian Discriminants for Generalizable AI-generated Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "分布偏移下可泛化的AI生成图像检测",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2608.20839v1",
+      "route": "20260816-20260914/2608.20839v1-sac-copula-quality-preserving-watermarking-for-diffusion-language-models-via-smooth-correlated-gumbel-fields",
+      "title": "SAC-Copula: Quality-Preserving Watermarking for Diffusion Language Models via Smooth Correlated Gumbel Fields",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向扩散模型的相关Gumbel扰动场水印方法",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.01511v1",
+      "route": "20260816-20260914/2609.01511v1-benchmarking-spatial-spectral-and-self-supervised-cues-for-face-forgery-detection-under-realistic-degradation",
+      "title": "Benchmarking Spatial, Spectral, and Self-Supervised Cues for Face Forgery Detection under Realistic Degradation",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "人脸伪造检测基准，检测退化条件下的篡改迹象",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.01749v1",
+      "route": "20260816-20260914/2609.01749v1-swin-meets-efficientnet-lightweight-architectures-for-gan-based-face-forensics",
+      "title": "Swin Meets EfficientNet: Lightweight Architectures for GAN-Based Face Forensics",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "检测GAN生成伪造人脸",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    },
+    {
+      "paper_id": "2609.07670v1",
+      "route": "20260816-20260914/2609.07670v1-harnessing-clip-and-dino-an-uncertainty-aware-cascaded-fusion-network-for-generalizable-deepfake-image-detection",
+      "title": "Harnessing CLIP and DINO: An Uncertainty-Aware Cascaded Fusion Network for Generalizable Deepfake Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "可泛化地检测被操纵与生成的深度伪造图像",
+      "first_seen_at": "2026-09-14 06:12:56 UTC",
+      "updated_at": "2026-09-14 06:12:56 UTC"
+    }
+  ]
+}

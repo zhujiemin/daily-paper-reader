@@ -1,0 +1,1206 @@
+Title: SAC-Copula: Quality-Preserving Watermarking for Diffusion Language Models via Smooth Correlated Gumbel Fields
+
+URL Source: https://arxiv.org/pdf/2608.20839v1
+
+Published Time: Mon, 24 Aug 2026 00:32:30 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+## SAC-Copula: Quality-Preserving Watermarking for Diffusion Language Models via Smooth Correlated Gumbel Fields 
+
+Baixin Li and Haiyun He 
+
+The Hong Kong University of Science and Technology (Guangzhou) 
+
+baixinli31@connect.hku.hk, haiyunhe@hkust-gz.edu.cn 
+
+Abstract 
+
+Watermarking diffusion language models (DLMs) requires mechanisms compatible with iterative parallel unmasking rather than au-toregressive decoding. Existing sampling-based watermarking methods typically inject position-wise i.i.d. perturbations, which can be poorly aligned with DLM decoding dynamics and degrade generation quality. We propose SAC-Copula, a quality-preserving watermark-ing method for DLMs based on smooth, lo-cally correlated Gumbel perturbation fields con-structed via a Gaussian copula. We further de-velop a SAC-aware detector using covariance-aware filtering and native-sample calibration. Mechanism-level analysis shows that local correlation reduces latent perturbation rough-ness and better matches iterative refinement dynamics. Experiments on LLaDA show that SAC-Copula achieves a favorable quality– detectability trade-off compared with existing baselines. In particular, further evaluations on Dream-7B and additional datasets show that SAC-Copula substantially improves PPL tail stability over the i.i.d. Gumbel baseline, while maintaining strong low-FPR detectability and competitive overall generation quality. Addi-tional token-edit stress tests further assess wa-termark robustness under controlled synchro-nization drift. 
+
+1 Introduction 
+
+As Large Language Models (LLMs) become widely deployed, it becomes increasingly critical to establish a safety line between LLMs and humans, where one important brick is to distinguish the model-generated content from the human-created one. Watermarking offers a practical route: a gen-erator embeds a private statistical signal during content decoding, and a detector later tests whether a text carries that signal via a shared secret key. Most existing language-model watermarking methods are developed for autoregressive LLMs, day [MASK] [MASK]                        
+
+> Independent Gumbel VS Smooth SAC-Copula
+> (a) Position-indexed i.i.d. Gumbel perturbation (b) SAC-Copula smooth correlated Gumbel field
+> Correlation Correlation
+> Input |dog [MASK] [MASK]
+> Output |dog eats into day
+> rough local perturbations → semantic drift
+> Input |dog [MASK] [MASK] [MASK]
+> Output |dog has its day
+> local smoothness → coherent refinement
+> DLM unmasks tokens in parallel DLM unmasks tokens in parallel day [MASK] [MASK]
+
+Figure 1: Motivation for smooth watermark fields in DLM decoding. Position-indexed i.i.d. Gumbel pertur-bations create independent high-frequency noises across neighboring positions, whereas SAC-Copula introduces controlled low-lag dependence while preserving one-coordinate Gumbel marginals. Token examples are il-lustrative rather than deterministic generation outcomes. 
+
+including green-list token biasing, sampling-based or distortion-free schemes, robust watermark-ing variants, and multi-bit identification mecha-nisms (Kirchenbauer et al., 2023; Kuditipudi et al., 2024; Zhao et al., 2024; Yoo et al., 2024). In these methods, watermark signals are typically synchro-nized with the left context and tokens are generated sequentially from left to right conditioned on the prefix and watermark signal. In contrast, Diffusion Language Models (DLMs), such as LLaDA (Nie et al., 2025), generate text through iterative masked denoising, where multiple positions are updated in parallel and previously generated tokens can be re-vised across steps. This non-sequential and dynam-ically coupled decoding process makes watermark design fundamentally different from the autoregres-sive setting. In particular, watermarking schemes based on i.i.d. injected signals are poorly matched to DLM decoding dynamics, which can disrupt lo-cal refinement consistency across denoising steps. This may lead to degraded generation quality, in-cluding unstable neighboring predictions, semantic inconsistency, degraded fluency, and refinement os-arXiv:2608.20839v1 [cs.CL] 21 Aug 2026 Overview of SAC-Copula Watermark Generation and Detection                     
+
+> Generation Side Detection Side (A) DLM masked token decoding
+> xn:[Prompt] MASK MASK MASK MASK DLM denoising network
+> predicts logits in parallel
+> xn+1 :[Prompt] y1MASK y3MASK Confidence-based acceptance / remasking
+> (B) SAC-Copula watermark noise construction
+> Independent Gaussian sources Locally correlated Gumbel perturbation field
+> Zwhite,1 KWZspatial,norm
+> Zwhite,2
+> Gaussian-Copula Transform
+> (C) Noise injection
+> clean logits +perturbed logits Generated text
+> (D) Watermark evidence extraction
+> Generated text
+> y= ( y1, … , yT)
+> index by ( t,yt)
+> Readout
+> st(y) = Gcorr (t, yt)
+> s(y) =
+> s1
+> ⋮
+> sT
+> Watermark evidence
+> (E) SAC-aware FFR detection
+> native samples centering
+> x(y)Watermarked
+> Attack-Aware Detection
+> Edited text offset scan
+> d∈𝒟
+> local Gaussian kernel
+> Generated text estimated mean of u Native covariance: Score
+> non-Watermarked
+
+Figure 2: Overview of SAC-Copula. The generation side constructs a locally correlated Gumbel tape through variance-normalized convolution, dual-stream mixing, and a Gaussian-copula transform, then injects it at currently masked generated positions during DLM refinement. The detection side reads token-level evidence and applies SAC-aware filtering with thresholds calibrated on native, unwatermarked samples. GO-FFR is shown only as an auxiliary diagnostic for controlled insertion/deletion edits. 
+
+cillation. Figure 1 shows an illustrative example that compares i.i.d. and correlated perturbations. 
+
+1.1 Related Works Autoregressive and sampling-based watermark-ing. A large body of LLM watermarking work embeds keyed statistical signals during autore-gressive decoding and detects them under a false-positive constraint (Kirchenbauer et al., 2023; Li et al., 2025). Stronger watermark signals can im-prove detection power but may degrade fluency, semantic fidelity, or diversity, motivating selec-tive, adaptive, and quality-aware objectives (Wang et al., 2025; Giboulot and Furon, 2024; He et al., 2025). A related line uses Gumbel-max, inverse-transform, or distortion-free sampling ideas to em-bed keyed randomness under specific sampling and security assumptions (Aaronson, 2023; Fairoze et al., 2023; Christ et al., 2024). This paper follows the sampling-based watermarking paradigm, while explicitly adapting the design to DLM decoding dynamics. 
+
+DLM watermarking. Some recent works have started to explore designing watermarking methods adapted to DLMs. Gloaguen et al. (2026) propose the first watermark tailored for DLMs by apply-ing the green-red list watermarking (Kirchenbauer et al., 2023) in expectation over partially observed contexts and promoting tokens that strengthen future watermark signals. To address the non-sequential decoding process, some works (Wu et al., 2025; Raban et al., 2026) further consider synchronizing watermark signals using both left and right contexts. Instead of directly perturbing token probabilities, Hong and No (2026) embed watermark by steering the decoding order to im-prove quality preservation in DLMs. More closely related to our work, Bagchi et al. (2026) apply Gumbel-max watermarking (Aaron-son, 2023) to diffusion decoding using sequence-position-indexed randomness. Although this ap-proach is theoretically distribution-preserving, the injected i.i.d. Gumbel perturbations are not well aligned with DLM decoding dynamics, as dis-cussed earlier, and can degrade generated text qual-ity in practice. Existing Gumbel-based methods primarily focus on how randomness is indexed across positions. In contrast, we argue that the 
+
+joint structure of the perturbation field is itself a critical design dimension for DLM watermarking. Under iterative refinement decoding, independent high-frequency perturbations across neighboring positions can conflict with local consistency. Moti-vated by this observation, we shift the design focus from injecting independent randomness to design-ing structured perturbation fields whose geometry and smoothness better align with diffusion decod-ing dynamics and detector evidence geometry. The main insight of our paper is that locally smooth and correlated watermark perturbations may be more compatible with DLM decoding than high-frequency i.i.d. perturbations, motivating the hypothesis of improved generation stability. Based on this insight, we propose SAC-Copula , which constructs correlated Gumbel perturbation fields via a Gaussian copula (cf. Figure 1). Under suit-able assumptions, SAC-Copula preserves Gumbel marginals while introducing controlled local de-pendence across neighboring token positions. This structured perturbation field is designed to better align with DLM refinement dynamics and supports a strong quality–detectability trade-off. 
+
+1.2 Main Contributions 
+
+Our contributions can be summarized as follows: • We introduce SAC-Copula , a DLM watermark-ing method with Smooth and Auto-Correlated Gumbel Copula perturbations through a Gaus-sian Copula , which preserves one-coordinate Gumbel marginals under mild assumptions. This is a DLM-aware watermarking perspective that treats the joint geometry of the perturbation field as a key design dimension for DLM decoding. • We provide a mechanism-level analysis show-ing that positive low-lag dependence reduces la-tent perturbation roughness, decreasing the local-difference energy from Di.i.d = 2 to DSAC =2(1 − ρ2r1) and providing a mechanistic ratio-nale for the DLM-refinement hypothesis. • We develop a SAC-aware detector that reads the induced local evidence geometry through covariance-aware filtering and native-sample cal-ibration. For controlled edit diagnostics, we fur-ther include a global-offset scan that provides coarse synchronization recovery under token– signal misalignment. • Experiments on LLaDA show that SAC-Copula achieves a strong quality–detectability trade-off, with strong clean detectability and a balanced multi-dimensional quality profile. Relative to the matched i.i.d. Gumbel baseline, the clearest generation-side gain is substantially improved upper-tail stability. We further report mild token-edit stress tests as diagnostic analyses of residual watermark evidence. 
+
+2 Watermark Injection and Detection 
+
+SAC-Copula replaces position-indexed i.i.d. Gum-bel perturbations with a smooth, locally correlated Gumbel field for DLM decoding. The generation side defines this field, while the detector provides a matched readout for the induced evidence geome-try. Figure 2 summarizes the pipeline. 
+
+Baseline i.i.d. Gumbel Watermarking. Let V
+
+be the token vocabulary, j ∈ V a token, t ∈ [T ] agenerated-token position, and n a DLM denoising step. The direct baseline applies position-indexed i.i.d. Gumbel perturbations (Bagchi et al., 2026; Aaronson, 2023), Gi.i.d.(t, j ) ∼ Gumbel(0 , 1) , to masked-position logits: 
+
+eℓn,t,j = ℓn,t,j + αG i.i.d.(t, j ), t ∈ [T ], j ∈ V .
+
+Here ℓn,t,j is the clean logit and α is the pertur-bation scale. In the controlled mechanism com-parison used in this paper, the direct i.i.d. Gumbel baseline is the ρ = 0 endpoint of the same tape family: setting ρ = 0 removes cross-position corre-lation while retaining standard-Gumbel candidate marginals and the same perturbation scale α. In the main comparison, both settings use α = 1 .0 and temperature 1.0, with the same key/tape interface, prompts, seeds, generation length, diffusion steps, masked-position injection, decoding, and remask-ing pipeline. We do not introduce or tune a separate 
+
+δ-style logit-bias strength for this matched i.i.d.– SAC comparison; α is fixed at 1.0, while W , σK ,and ρ parameterize the cross-position dependence structure. 
+
+2.1 SAC-Copula Perturbation Field 
+
+SAC-Copula constructs a locally correlated Gaus-sian latent field and maps each coordinate to a standard Gumbel variable through a Gaussian copula. It starts from two independent key-seeded standard Gaussian position–vocabulary tapes Zwhite ,1, Z white ,2, with Zwhite ,r (t, j ) ∼N (0 , 1) . Let W be an odd window, h = ( W −
+
+1) /2, and σK the kernel shape parameter. For 
+
+k ∈ {− h, . . . , h }, define 
+
+KW [k] = exp  −k2/(2 σ2 
+
+> K
+
+)Phm=−h exp  −m2/(2 σ2 
+
+> K
+
+) .
+
+For full-window positions, the normalized spatial branch is 
+
+eZspatial (t, j ) = 
+
+Phk=−h KW [k]Zwhite ,1(t − k, j )
+
+qPhk=−h KW [k]2
+
+.
+
+The final latent field mixes the independent white noise and the normalized spatial stream: 
+
+Zfinal (t, j ) = p1 − ρ2 Zwhite ,2(t, j )+ ρ eZspatial (t, j ),where ρ ∈ [0 , 1] controls the local dependence strength. Under the full-window or boundary-normalized convention, this normalization keeps each valid coordinate of Zfinal standard normal. Appendices A.1 and A.2 state the boundary con-vention and prove the resulting one-coordinate marginal exactness. The correlated Gumbel noise tape is obtained by the Gaussian-copula transform 
+
+Gcorr (t, j ) = F −1 
+
+> G
+
+(Φ( Zfinal (t, j ))) ∼ Gumbel(0 , 1) ,
+
+where Φ is the standard Gaussian cumulative distri-bution function (CDF) and FG is the standard Gum-bel CDF. Appendix A.2 shows that this coordinate-wise transform preserves one-coordinate Gum-bel marginals under assumptions stated in Ap-pendix A.1, while introducing the joint noise tape structure. Since the perturbations are also indepen-dent across vocabulary items at each fixed position, it further implies that the single-position condi-tional sampling marginal is preserved: 
+
+P SAC  
+
+> Yt|context
+
+= P i.i.d.Yt|context ,
+
+where the context denotes all information used to compute the current logits. This is a fixed-context, single-position statement, not invariance of the full generated-text joint distribution. Appendix A.3 de-rives the finite-window latent autocorrelation used by the detector design. 
+
+2.2 Injection into LLaDA Decoding 
+
+SAC-Copula noise is injected only into currently masked generated positions. At a masked gener-ated position t, SAC-Copula perturbs logits before applying the decoding rule: 
+
+eℓn,t,j = ℓn,t,j + αG corr (t, j ), t ∈ [T ], j ∈ V ,
+
+Here ℓn,t,j is the contemporaneous clean logit from the current partially masked denoising state. The keyed tape Gcorr is constructed independently of model logits; the logits determine how the fixed tape perturbation affects token selection, not how the tape itself is constructed. The perturbation scale 
+
+α is an experimental configuration parameter. In the main configuration it matches the generation temperature, but this equality is not a theoretical requirement. Prompt tokens are not perturbed, and remasking confidence is computed from the unper-turbed logits. The same token-position perturbation 
+
+Gcorr (t, ·) is reused across denoising steps, indexed by generated token position and token but not by denoising step. 
+
+2.3 SAC-Aware Detector 
+
+For a clean fixed-alignment sequence y =(y1, . . . , y T ), the detector reconstructs the same private keyed Gcorr tape and indexes it with the observed token at each generated position, yielding token-level watermark evidence s(y) = (s1(y), . . . , s T (y)) ⊤, where 
+
+st(y) = Gcorr (t, y t).
+
+The tape reconstruction depends on the private key rather than on a second model evaluation; detection does not recompute fully revealed log-its or require an additional language-model for-ward pass. The legacy detector treats these val-ues as exchangeable i.i.d. Gumbel evidence and applies an equal-weight z-score; Appendix B.1 gives the full old-score form. SAC-Copula inten-tionally induces low-lag evidence structure, so re-lying only on an i.i.d. equal-weight readout can discard useful local geometry. We therefore use the Full Filtered Ridge (FFR) detector, defined as a ridge-regularized matched linear statistic after SAC-aware local filtering and covariance calibra-tion on native samples. FFR first centers raw evidence using the Gumbel mean μG and a residual mean bμx, 0 estimated from held-out native (aka. unwatermarked) samples gen-erated under the same decoding protocol: 
+
+x(y) = s(y) − μG1 − bμx, 0.
+
+It then applies a SAC-aware local feature map 
+
+u(y) = Hωx(y),ωτ ∝ exp 
+
+
+
+− τ 2
+
+4σ2
+
+> K
+
+
+
+1{| τ | ≤ B},
+
+where Hω is a filter motivated by the autocorrela-tion envelope of the SAC kernel (cf. Appendix B.2) and B = min( W − 1, T − 1) . The lag template mirrors the Gaussian-envelope smoothing used by SAC-Copula, so Hω aggregates evidence over the local low-lag structure introduced by the correlated perturbation field. The filtered native-sample covariance and ridge covariance are 
+
+bΣu, 0 = Hω bΣx, 0H⊤ 
+
+> ω
+
+, Cλ = bΣu, 0 + λI. 
+
+Here bΣx, 0 is estimated from held-out native sam-ples under the same detector configuration. Let b∆ube the filtered mean direction estimated from de-velopment or cross-fit data, not evaluation samples. The FFR score is 
+
+ZFFR (y) = b∆⊤ 
+
+> u
+
+C−1 
+
+> λ
+
+u(y)
+
+qb∆⊤ 
+
+> u
+
+C−1 
+
+> λ
+
+b∆u.
+
+The detector flags a sequence as watermarked when 
+
+ZFFR (y) ≥ τη,
+
+where the threshold τη can be calibrated from held-out native samples. In our experiments, we report ROC-based AUC and TPR at target FPR levels using the corresponding Native-score distribution. FFR provides a matched linear readout for the SAC-induced evidence geometry under the stated cali-bration model. Appendix B.1–B.4 provide the full FFR rationale, matched-direction derivation, and relation to the old detector. Furthermore, as one step towards robust detec-tion, we introduce another detector, GO-FFR, ex-tended from FFR by considering controlled inser-tion/deletion attacks: 
+
+ZGO -FFR (Y ) = max  
+
+> d∈D
+
+Zd(Y ),
+
+where D is a scan window and Zd(Y ) is a test statistic defined in Appendix B.5. It scans a small family of global offsets to partially recover mis-matched token–signal alignment, reuses the FFR scoring direction, and calibrates its threshold on native samples under the same offset-scan rule. Ap-pendices B.5–B.6 give the full analyses. 
+
+3 Why Correlated Perturbations Help DLMs 
+
+This section provides a mechanism-level rationale for why smooth, locally correlated perturbations may be better aligned with DLM refinement dy-namics than high-frequency i.i.d. perturbations. We analyze the geometry of the latent perturbation field and the induced detector evidence, and derive em-pirical predictions on generation quality and de-tectability that are evaluated in Section 4. 
+
+3.1 DLM Decoding Couples Neighboring Decisions 
+
+Autoregressive watermarking perturbs a left-to-right sampler whose prefix is fixed once a token is emitted. DLM decoding is different. LLaDA-style generation repeatedly predicts multiple masked positions in parallel, accepts or remasks tokens according to confidence, and revises a partially generated sequence over denoising steps (Nie et al., 2025; Ghazvininejad et al., 2019). More re-cent masked-diffusion and non-Markovian discrete-diffusion work likewise emphasizes iterative de-noising and refinement-sensitive generation dynam-ics (Zhang et al., 2025; Sahoo et al., 2024). As a result, neighboring token positions are not isolated one-step decisions: local choices can be compared, retained, or revised together during refinement. This difference makes the geometry of the pertur-bation field relevant. Beyond its marginal strength at each position, a watermark also determines how perturbations vary across adjacent positions. An i.i.d. Gumbel field can vary sharply across neigh-boring masked positions that are refined together, creating a plausible mismatch with the local con-sistency preference of iterative masked refinement. A smoother locally correlated field makes nearby perturbation preferences more coherent, which mo-tivates the quality-stability hypothesis tested in Sec-tion 4. Figure 1 illustrates this contrast, while the following subsections formalize it using a latent local-difference proxy. 
+
+3.2 Independent Latent Fields Create Local Roughness 
+
+We first define a latent local-difference proxy be-fore the coordinate-wise Gumbel transform. Fix a vocabulary item j, and consider the Gaussian latent field Z(t, j ) that is later mapped monotoni-cally into Gumbel noise. We measure lag-one local variation by 
+
+D = E
+
+h
+
+(Z(t + 1 , j ) − Z(t, j )) 2i
+
+,
+
+A larger D indicates sharper adjacent changes in the latent perturbation field. For an i.i.d. latent Gaussian field, 
+
+Var( Z(t, j )) = 1 and Cov( Z(t, j ), Z (t + 1 , j )) = 0. Therefore, the difference proxy for i.i.d. latent Gaussian field is 
+
+Di.i.d = 2 .
+
+3.3 SAC-Copula Reduces Local Perturbation Variation 
+
+SAC-Copula changes the joint structure of the perturbation field rather than the one-coordinate marginal. Let rτ (W, σ K ) denote the finite-window autocorrelation of the normalized spatial branch defined in Appendix A.3. This quantity is large at small lags when the smoothing kernel strongly overlaps with its shifted copy, and decays as the lag exceeds the kernel support. For the final latent field, the nonzero-lag covariance is 
+
+Cov( Zfinal (t, j ), Z final (t + τ, j )) = ρ2rτ (W, σ K ).
+
+Let r1 = rτ =1 (W, σ K ), and write ∆t = Zfinal (t +1, j ) − Zfinal (t, j ), the lag-one local difference en-ergy becomes 
+
+DSAC = E[∆ 2 
+
+> t
+
+] = 2(1 − ρ2r1).
+
+When r1 > 0 and ρ > 0, SAC-Copula has lower latent local variation than the i.i.d. field: 
+
+DSAC < D i.i.d.
+
+This lower local variation gives a plausible qual-ity mechanism for DLM decoding. LLaDA-style models refine neighboring masked positions jointly, so when clean logits are locally uncertain, abrupt independent perturbation changes can push nearby positions toward inconsistent random preferences. SAC-Copula does not reduce the single-coordinate probability of large Gumbel values: after the mono-tone Gaussian-copula-to-Gumbel transform, each coordinate still has the standard Gumbel marginal under the assumptions in Appendix A.2. Instead, it reduces abrupt local changes across positions by inducing positive low-lag dependence. This motivates the empirical hypothesis that smoother perturbation fields may improve quality stability under iterative masked refinement. Because the inverse-Gumbel transform is nonlin-ear, this latent local-difference proxy characterizes only the dependence structure before the copula transform and should not be interpreted as invari-ance of the full generated-text distribution. Figure 3 visualizes these perturbation-field di-agnostics. The autocorrelation view shows that SAC-Copula introduces a positive low-lag depen-dence, while the adjacent-variation view shows the corresponding reduction in the latent roughness proxy. Together, these results suggest that locally corre-lated perturbations better support DLM decoding quality while preserving watermark detectability. Section 4 evaluates these predictions empirically. 
+
+4 Experiments 
+
+We evaluate four questions: clean quality– detectability and matched-i.i.d. tail stability; 10 20 30 40 
+
+> Lag
+> 0.0 0.1 0.2 0.3
+> Autocorrelation
+> Noise-tape autocorrelation
+> i.i.d. SAC-Copula i.i.d. SAC-Copula 0.0 0.5 1.0 1.5 2.0
+> Adjacent variation  D 2.000 1.286
+> Derived adjacent variation
+
+Figure 3: Perturbation-field smoothness diagnostics. SAC-Copula induces positive low-lag autocorrelation and lowers the latent adjacent-variation proxy from 
+
+Diid = 2 to DSAC ≈ 1.286 . These are latent-field diagnostics, not text-quality measurements. 
+
+correlation strength; detector, calibration, and targeted-transfer controls; and residual evi-dence under controlled token edits. Code: 
+
+https://anonymous.4open.science/status/ review-artifact-90EF 
+
+4.1 Experimental Setup 
+
+We evaluate generation from LLaDA-8B-Instruct (Nie et al., 2025) on ELI5 prompts (Fan et al., 2019). LLaDA–ELI5 is our primary benchmark; the targeted Dream-7B and C4-en evaluations reported below test transfer across a second DLM backbone and a second task/source setting without redefining the primary protocol. The comparison includes native decoding and the direct i.i.d. Gumbel baseline. We evaluate the LLaDA-adapted KGW-style (Kirchenbauer et al., 2023) and Unigram (Zhao et al., 2024) baselines, together with a PatternMark baseline (Chen et al., 2025), over δ ∈ { 1, 2, 3}. For KGW and Unigram, we use green-list fraction γ = 0 .25 ; each method uses its mechanism-specific detector. Unless otherwise stated, SAC-Copula uses W =39 , σ K = 15 .0, ρ = 0.6, controlling correla-tion range, kernel shape, and correlated-branch strength. The original mixed-parameter study in-formed this submitted setting (Appendix C.5); the fixed-(W, σ K ) sweep below directly tests ρ and supports ρ = 0 .6 as a balanced interior operating point. Full generation, watermark, detector, cali-bration, seed, and evaluator details are reported in Appendix C.2. Quality metrics (details in Table 4) include me-dian PPL, PPL > 100 , SBERT, MAUVE (Pillutla et al., 2021), Token TV, Rep3, and Distinct3; the matched i.i.d.–SAC comparison additionally re-ports PPL tail collapse. AUC and TPR at nominal 1%/5% FPR summarize score discrimination (Li et al., 2025; He et al., 2025); realized FPR under 0(i.i.d.) .2 .4 .6 .8 1                
+
+> Correlation strength ρ
+> 0.80 0.85 0.90 0.95 1.00
+> Detection
+> (a) Clean detection
+> FFR AUC TPR@1%FPR
+> 0(i.i.d.) .2 .4 .6 .8 1
+> Correlation strength ρ
+> 10 2
+> 10 3
+> P99 perplexity
+> (b) Upper-tail PPL
+> 0(i.i.d.) .2 .4 .6 .8 1
+> Correlation strength ρ
+> 0123
+> PPL>100 (%)
+> (c) Severe failures
+> 0(i.i.d.) .2 .4 .6 .8 1
+> Correlation strength ρ
+> 0.76 0.77 0.78 0.79 0.80
+> SBERT
+> (d) Semantic profile
+
+Figure 4: Correlation-strength ρ sweep under ( W =39 , σ K = 15 , α = 1 ); ρ = 0 is matched i.i.d. Gumbel. Detection peaks at moderate correlation and falls at ρ =1; the PPL tail keeps improving, but broader endpoint quality degrades. Thus ρ = 0 .6 is a balanced interior point. 
+
+frozen thresholds separately tests operational trans-fer. 
+
+Ablation on Correlation Strength. Figure 4 varies only ρ under fixed W = 39 , σ K = 15 , α =1, with ρ = 0 representing the i.i.d. Gumbel. FFR AUC/TPR@1%FPR rises from 0.9683 /0.820 
+
+at ρ = 0 to 0.9900 /0.980 at 0.6, then falls to 
+
+0.9631 /0.830 at 1. P99 decreases from 4256 .63 to 
+
+99 .65 and 27 .55 , but ρ = 1 worsens semantic, rep-etition, and diversity metrics relative to 0.6. Thus 
+
+ρ = 0 .6 is a balanced interior point; full tables are in Appendix C.9. 
+
+4.2 Text Quality and Stability 
+
+Text quality is the primary empirical target. Rela-tive to matched i.i.d. Gumbel, the central PPL val-ues are close (median 8.446 vs. 8.260 ), whereas the upper tail differs substantially: P95 decreases from 
+
+48 .420 to 30 .810 , P99 from 4256 .634 to 99 .653 ,and the fraction above PPL 100 from 3.5% (7/200) to 1.0% (2/200). Thus, the clearest PPL gain is reduced severe upper-tail failures rather than a uni-form per-prompt improvement. Table 1 and Fig-ure 5 provide the broader context: SAC retains strong low-FPR detectability together with a com-petitive semantic, distributional, repetition, diver-sity, and token-drift profile. Full paired tail di-agnostics and complete sweep results are in Ap-pendix C.9. SBERT ROUGE-L Token-F1 Rep3 Collapse>100 PPL-P90    
+
+> Native reference i.i.d Gumbel KGW =3
+> PatternMark =3
+> Unigram =3
+> SAC-Copula (ours)
+
+Figure 5: Generation-quality profile for SAC-Copula, i.i.d. Gumbel, and representative external baselines on direction-normalized axes; larger values indicate better or more native-like behavior. Raw metrics remain pri-mary. 
+
+4.3 Clean Detection 
+
+Table 1 establishes clean fixed-alignment de-tectability; Appendix C.1, Figure 7, retains the full external sweep. 
+
+Detector-readout control. Under the legacy readout, i.i.d. versus SAC AUC/TPR@5%FPR is 0.966 /0.855 versus 0.987 /0.950 ; FFR fur-ther raises SAC TPR@1%FPR/TPR@5%FPR to 
+
+0.980 /0.985 . Thus the SAC signal difference is visible under the common legacy readout, while FFR provides an additional covariance-aware read-out gain. Appendix C.6, Table 13, gives the full control. 
+
+Calibration sensitivity. With model-native 
+
+H0, AUC/TPR@1%FPR/TPR@5%FPR rises from 0.9867 /0.9078 /0.9667 at N = 100 to 
+
+0.9900 /0.980 /0.985 at N = 500 , with N = 200 
+
+intermediate; the strict 1% point benefits most from added calibration. At N = 500 , human-answer, C4, and Wikipedia H0 give AUC 0.9861 –0.9878 
+
+and TPR@1%FPR 0.950 –0.955 , quantifying calibration-source sensitivity. Freezing the original LLaDA–ELI5 model-native-H0 thresholds without C4 refitting and ap-plying them to 2,000 held-out non-watermarked C4 
+
+realnewslike records yields 0.95% /5.50% real-ized FPR at nominal 1% /5% . This is detector-only threshold transfer, not C4 generation; full controls are in Appendix C.10. Method Strength AUC ↑ TPR@1%FPR ↑ TPR@5%FPR ↑ Median PPL ↓ PPL > 100 ↓ SBERT ↑ MAUVE ↑ Token TV ↓ Rep3 ↓ Distinct3 ↑ Quality ↑                                                                                                                                                         
+
+> Native ––––6.381 0.005 1.000 1.000 0.000 0.406 0.594 0.960 i.i.d. Gumbel –0.966 0.815 0.855 8.446 0.035 0.784 0.991 0.163 0.415 0.585 0.661 KGW δ= 1 0.670 0.060 0.120 6.697 0.030 0.794 0.999 0.146 0.414 0.586 0.694 KGW δ= 2 0.820 0.200 0.315 8.020 0.045 0.776 0.998 0.173 0.450 0.550 0.553 KGW δ= 3 0.936 0.515 0.660 10.543 0.050 0.762 0.982 0.228 0.510 0.489 0.379 Unigram δ= 1 0.896 0.385 0.555 6.145 0.000 0.803 0.981 0.233 0.395 0.605 0.798
+> Unigram δ= 2 0.988 0.850 0.930 6.535 0.000 0.755 0.841 0.360 0.455 0.545 0.545 Unigram δ= 3 0.997 0.985 0.995 6.585 0.005 0.690 0.601 0.439 0.560 0.440 0.150 PatternMark δ= 1 0.818 0.510 0.625 6.766 0.010 0.781 0.983 0.153 0.426 0.574 0.721 PatternMark δ= 2 0.926 0.760 0.800 7.263 0.015 0.779 0.996 0.161 0.422 0.578 0.714 PatternMark δ= 3 0.938 0.760 0.805 8.938 0.020 0.768 0.982 0.198 0.480 0.520 0.555 SAC-Copula (Ours) –0.990 0.980 0.985 8.260 0.010 0.798 0.999 0.163 0.414 0.586 0.758
+
+Table 1: Clean detection and text-quality trade-off. AUC and low-FPR TPR report detection; Median PPL and PPL > 100 report central fluency and severe tail failures; the remaining raw metrics report broader quality. The normalized Quality score is descriptive only. Best and second-best watermarked results are marked in each column.                    
+
+> Model/Dataset Method AUC ↑P99 ↓Tail failure ↓
+> Dream-7B/ ELI5 i.i.d. Gumbel 1.0000 5988.25 24.5% SAC-Copula (Ours) 0.9986 240.68 4.0% LLaDA/ C4-en i.i.d. Gumbel 0.8260 35740.32 10.5% SAC-Copula (Ours) 0.9138 494.57 3.0%
+
+Table 2: Generalization across models and datasets. Tail failure denotes Composite collapse for Dream-7B/ELI5 and PPL >100 for LLaDA/C4-en 
+
+Targeted model/task transfer. Table 2 evalu-ates SAC-Copula on two additional model–dataset settings. On Dream-7B/ELI5, SAC-Copula main-tains near-perfect detection while substantially re-ducing P99 and the Composite-collapse rate. On LLaDA/C4-en, it improves detection while reduc-ing P99 and the PPL-tail failure rate, with nearly unchanged median PPL (13.71 vs. 13.73). These re-sults demonstrate that the benefits of SAC-Copula generalize across different models and datasets. Appendix C.11 provides full Dream-7B/ELI5 (Ta-ble 27) and LLaDA/C4-en results, including a sep-arate common-detector control (Tables 28–29). 
+
+4.4 Residual Evidence under Controlled Token Edits 
+
+We evaluate deletion, insertion, and substitution as controlled token-level stress tests. At 20%, GO-FFR raises TPR@1%FPR from 0.150 to 0.460 un-der deletion and from 0.195 to 0.505 under inser-tion, showing partial coarse synchronization while low-FPR detection remains degraded. Substitution is less alignment-disruptive: SAC+FFR reaches TPR@1%FPR 0.890 versus 0.755 for i.i.d.+Old. Full readout and rate sweeps are in Appendix C.7. GO-FFR scans a coarse global-offset family, while cumulative token–tape drift under dele-tion and insertion remains unresolved. Seman-tic/document paraphrasing replaces, reorders, or regenerates the evidence-bearing sequence and re-mains outside the current robustness scope. Full failure diagnostics are in Appendix C.8. 
+
+5 Discussion and Limitations 
+
+SAC-Copula focuses on smooth, locally correlated DLM Gumbel fields and achieves a strong quality– detectability trade-off. Relative to matched i.i.d. Gumbel, its clearest quality gain is improved upper-tail stability with a competitive broader profile. The latent-field analysis is a mechanism-level ra-tionale: one-coordinate marginals neither imply invariance of the complete generated-text distribu-tion nor prove downstream text quality. FFR provides a SAC-aware covariance-matched readout under the Gaussian mean-shift rationale. GO-FFR extends this readout with coarse global-offset recovery for insertion/deletion, while cumu-lative local drift remains unresolved. Detection relies on calibrated H0 samples and development data; the size/source controls and frozen-threshold C4 test quantify calibration sensi-tivity and threshold transfer. LLaDA–ELI5 remains the primary setting, while Dream-7B–ELI5 and LLaDA–C4-en extend the evaluation to a second DLM backbone and a second task/source setting. The fixed-W, σ K six-point sweep identifies an inte-rior operating region around ρ = 0 .6. Deployment requires private-tape access and representative cali-bration data. Under edit stress tests, GO-FFR partially recov-ers coarse insertion/deletion offsets, while low-FPR detection degrades as cumulative drift grows. Para-phrastic rewriting remains challenging because it breaks the fixed tape readout (Krishna et al., 2023; Hou et al., 2024). Broader watermark-security work studies strong-watermark impossibility lim-its and watermark stealing (Zhang et al., 2024; Jovanovi´ c et al., 2024). Natural extensions in-clude broader architectural coverage, more system-atic W/σ K studies, runtime characterization, and deployment-oriented robustness evaluation (Zhao et al., 2025). References 
+
+Scott Aaronson. 2023. Watermarking of large language models. https://simons.berkeley.edu/talks/ scott-aaronson-ut-austin-openai-2023-08-17 .Accessed: 2023-08. Avi Bagchi, Akhil Bhimaraju, Moulik Choraria, Daniel Alabi, and Lav R. Varshney. 2026. Watermarking dis-crete diffusion language models. In ICLR 2026 Work-shop on Principled Design for Trustworthy AI - Inter-pretability, Robustness, and Safety across Modalities .Ruibo Chen, Yihan Wu, Yanshuo Chen, Chenxi Liu, Junfeng Guo, and Heng Huang. 2025. A watermark for order-agnostic language models. In International Conference on Learning Representations .Miranda Christ, Sam Gunn, and Or Zamir. 2024. Unde-tectable watermarks for language models. In Pro-ceedings of Thirty Seventh Conference on Learn-ing Theory , volume 247 of Proceedings of Machine Learning Research , pages 1125–1139. PMLR. Jaiden Fairoze, Sanjam Garg, Somesh Jha, Saeed Mahloujifar, Mohammad Mahmoody, and Mingyuan Wang. 2023. Publicly-Detectable Watermarking for Language Models. Cryptology ePrint Archive, Paper 2023/1661. Angela Fan, Yacine Jernite, Ethan Perez, David Grang-ier, Jason Weston, and Michael Auli. 2019. ELI5: Long form question answering. In Proceedings of the 57th Annual Meeting of the Association for Com-putational Linguistics , pages 3558–3567, Florence, Italy. Association for Computational Linguistics. Marjan Ghazvininejad, Omer Levy, Yinhan Liu, and Luke Zettlemoyer. 2019. Mask-predict: Parallel de-coding of conditional masked language models. In 
+
+Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Lan-guage Processing (EMNLP-IJCNLP) , pages 6112– 6121, Hong Kong, China. Association for Computa-tional Linguistics. Eva Giboulot and Teddy Furon. 2024. Watermax: breaking the llm watermark detectability-robustness-quality trade-off. In Advances in Neural Information Processing Systems 37 .Thibaud Gloaguen, Robin Staab, Nikola Jovanovi´ c, and Martin Vechev. 2026. Watermarking diffusion lan-guage models. In International Conference on Learn-ing Representations .Haiyun He, Yepeng Liu, Ziqiao Wang, Yongyi Mao, and Yuheng Bu. 2025. Theoretically grounded frame-work for llm watermarking: A distribution-adaptive approach. In Advances in Neural Information Pro-cessing Systems 38 , pages 114528–114564. Pyo Min Hong and Albert No. 2026. dgMARK: Decoding-guided watermarking for diffusion lan-guage models. In Forty-third International Confer-ence on Machine Learning .Abe Hou, Jingyu Zhang, Tianxing He, Yichen Wang, Yung-Sung Chuang, Hongwei Wang, Lingfeng Shen, Benjamin Van Durme, Daniel Khashabi, and Yulia Tsvetkov. 2024. Semstamp: A semantic watermark with paraphrastic robustness for text generation. In 
+
+Proceedings of the 2024 Conference of the North American Chapter of the Association for Computa-tional Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 4067–4082, Mexico City, Mexico. Association for Computational Lin-guistics. Nikola Jovanovi´ c, Robin Staab, and Martin Vechev. 2024. Watermark stealing in large language mod-els. In Proceedings of the 41st International Con-ference on Machine Learning , volume 235, pages 22570–22593. PMLR. John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein. 2023. A watermark for large language models. In Proceed-ings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research , pages 17061–17084. PMLR. Kalpesh Krishna, Yixiao Song, Marzena Karpinska, John Wieting, and Mohit Iyyer. 2023. Paraphras-ing evades detectors of ai-generated text, but retrieval is an effective defense. In Advances in Neural Infor-mation Processing Systems 36 .Rohith Kuditipudi, John Thickstun, Tatsunori Hashimoto, and Percy Liang. 2024. Robust distortion-free watermarks for language models. 
+
+Transactions on Machine Learning Research .Xiang Li, Feng Ruan, Huiyuan Wang, Qi Long, and Weijie J. Su. 2025. A statistical framework of wa-termarks for large language models: Pivot, detection efficiency and optimal rules. The Annals of Statistics ,53(1):322–351. Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. 2025. Large language dif-fusion models. In Advances in Neural Information Processing Systems 38 .Krishna Pillutla, Swabha Swayamdipta, Rowan Zellers, John Thickstun, Sean Welleck, Yejin Choi, and Zaid Harchaoui. 2021. Mauve: Measuring the gap be-tween neural text and human text using divergence frontiers. In Advances in Neural Information Pro-cessing Systems 34 .Ofek Raban, Gal Chechik, and Ethan Fetaya. 2026. Lr-dwm: Efficient watermarking for diffusion language models. In Findings of the Association for Computa-tional Linguistics: ACL 2026 , pages 43510–43517, San Diego, California, United States. Association for Computational Linguistics. Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T Chiu, Alexander Rush, and Volodymyr Kuleshov. 2024. Simple and effective masked diffusion language mod-els. In Advances in Neural Information Processing Systems 37 .Chenrui Wang, Junyi Shu, Billy Chiu, Yu Li, Saleh Al-harbi, Min Zhang, and Jing Li. 2025. Learning to watermark: A selective watermarking framework for large language models via multi-objective optimiza-tion. In Advances in Neural Information Processing Systems 38 .Linyu Wu, Linhao Zhong, Wenjie Qu, Yuexin Li, Yue Liu, Shengfang Zhai, Chunhua Shen, and Jiaheng Zhang. 2025. Dmark: Order-agnostic watermark-ing for diffusion large language models. Preprint ,arXiv:2510.02902. KiYoon Yoo, Wonhyuk Ahn, and Nojun Kwak. 2024. Advancing beyond identification: Multi-bit water-mark for large language models. In Proceedings of the 2024 Conference of the North American Chap-ter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 4031–4055, Mexico City, Mexico. As-sociation for Computational Linguistics. Hanlin Zhang, Benjamin L. Edelman, Danilo Francati, Daniele Venturi, Giuseppe Ateniese, and Boaz Barak. 2024. Watermarks in the sand: Impossibility of strong watermarking for language models. In Pro-ceedings of the 41st International Conference on Ma-chine Learning , volume 235, pages 58851–58880. PMLR. Yangtian Zhang, Sizhuang He, Daniel Levine, Lawrence Zhao, David Zhang, Syed A Rizvi, Shiyang Zhang, Emanuele Zappala, Rex Ying, and David van Dijk. 2025. Non-markovian discrete diffusion with causal language models. In Advances in Neural Information Processing Systems 38 .Xuandong Zhao, Prabhanjan Ananth, Lei Li, and Yu-Xiang Wang. 2024. Provable robust watermarking for ai-generated text. In International Conference on Learning Representations .Xuandong Zhao, Sam Gunn, Miranda Christ, Jaiden Fairoze, Andres Fabrega, Nicholas Carlini, Sanjam Garg, Sanghyun Hong, Milad Nasr, Florian Tramer, Somesh Jha, Lei Li, Yu-Xiang Wang, and Dawn Song. 2025. Sok: Watermarking for ai-generated content. In 2025 IEEE Symposium on Security and Privacy (SP) , pages 2621–2639. IEEE. 
+
+A Watermark Properties 
+
+This appendix gives proof details behind the SAC-Copula field in Section 2.1. The claims are about the latent watermark tape. They are not claims about invariance of the complete output-text law. 
+
+A.1 Boundary Convention 
+
+The current convolution convention uses zero padding and divides by the global full-window en-ergy 
+
+S2 =
+
+> h
+
+X
+
+> k=−h
+
+KW [k]2.
+
+Therefore exact unit variance is guaranteed for full-window interior positions. Boundary positions can have smaller variance because fewer nonzero taps contribute. An all-position idealization would define 
+
+Kt = {k ∈ [−h, h ] : 1 ≤ t − k ≤ Lmax },S2(t) = X
+
+> k∈K t
+
+KW [k]2,
+
+and divide the boundary convolution by pS2(t).In this paper, strict marginal claims are made under the full-window or boundary-normalized conven-tion. Boundary deviations under zero padding are treated as implementation checks rather than as part of the exact marginal claim. 
+
+A.2 Marginal Gaussian and Gumbel Exactness 
+
+At a full-window position, 
+
+Zspatial (t, j ) = 
+
+> h
+
+X
+
+> k=−h
+
+KW [k]Zwhite ,1(t − k, j ).
+
+This is a linear combination of independent Gaus-sian variables, hence Gaussian. Since the source variables have unit variance, 
+
+Var( Zspatial (t, j )) = 
+
+> h
+
+X
+
+> k=−h
+
+KW [k]2 = S2.
+
+Thus 
+
+eZspatial (t, j ) = Zspatial (t, j )
+
+√S2
+
+∼ N (0 , 1) .
+
+The same proof applies to the boundary-normalized ideal form after replacing S2 by S2(t).The white stream and spatial stream are indepen-dent. Therefore 
+
+Zfinal (t, j ) = p1 − ρ2Zwhite ,2(t, j )+ ρ eZspatial (t, j )
+
+is Gaussian with zero mean and variance (1 − ρ2) + 
+
+ρ2 = 1 . Hence each valid coordinate of Zfinal is 
+
+N (0 , 1) .By the probability integral transform, 
+
+U (t, j ) = Φ( Zfinal (t, j )) ∼ Uniform(0 , 1) .
+
+Applying the inverse standard Gumbel CDF gives 
+
+Gcorr (t, j ) = F −1 
+
+> G
+
+(U (t, j )) ∼ Gumbel(0 , 1) .
+
+For the standard Gumbel distribution, F −1 
+
+> G
+
+(u) = 
+
+− log( − log u). In numerical evaluation, U is clamped to avoid floating-point extremes, so exact unbounded Gumbel statements refer to the ideal transform. 
+
+A.3 Finite-Window Latent Autocorrelation 
+
+Let 
+
+bk = KW [k]
+
+√S2
+
+, bk = 0 for k / ∈ [−h, h ].
+
+Then 
+
+eZspatial (t, j ) = X
+
+> k
+
+bkZwhite ,1(t − k, j ).
+
+Expanding the covariance and using independence of the white source gives the finite-window auto-correlation 
+
+rτ (W, σ K ) = X
+
+> k
+
+bkbk+τ .
+
+Thus r0 = 1 , r−τ = rτ , and rτ = 0 for |τ | >W − 1. For the final latent field and τ̸ = 0 ,
+
+Cov( Zfinal (t, j ), Z final (t + τ, j )) = ρ2rτ (W, σ K ),
+
+because the white stream contributes no cross-position covariance. This latent autocorrelation mo-tivates the detector-side Hω template, while the de-tector covariance itself is estimated from extracted Native evidence. For the lag-one local-difference proxy used in Section 3.3, the unit marginal variance and the covariance above give 
+
+DSAC = E
+
+h
+
+(Zfinal (t + 1 , j ) − Zfinal (t, j )) 2i
+
+= 2 − 2ρ2r1(W, σ K ) = 2(1 − ρ2r1).
+
+Thus the Section 3.3 expression is a direct conse-quence of the finite-window autocorrelation and the preserved one-coordinate latent variance. 
+
+A.4 Latent Tape KL Proxy 
+
+Let P0 = N (0 , I T ) be an i.i.d. latent Gaussian tape and Pρ = N (0 , ΣT ) the SAC latent Gaussian tape, where 
+
+ΣT = (1 − ρ2)IT + ρ2RT ,
+
+[RT ]ab = ra−b(W, σ K ).
+
+Assume ΣT ≻ 0, so the log-determinant is well-defined. This holds for ρ < 1 when RT is positive semidefinite; the endpoint ρ = 1 additionally re-quires nonsingularity of RT .For zero-mean Gaussians, 
+
+DKL (Pρ ∥ P0) = 12 (tr Σ T − T − log det Σ T ) .
+
+Since diag(Σ T ) = 1 , tr Σ T = T , and 
+
+L(T )tape = 1
+
+T DKL (Pρ ∥ P0) = − 12T log det Σ T .
+
+This is a latent process diagnostic, not semantic KL and not output-text KL. This expansion is an explanatory approximation obtained from the log-determinant series around the identity covariance. Set A = RT − IT . Since 
+
+ΣT = IT + ρ2A and tr( A) = 0 ,
+
+L(T )tape = ρ4
+
+4T tr( A2) + O(ρ6).
+
+For the Toeplitz finite-window case, 
+
+tr( A2) = X 
+
+> τ̸=0
+
+(T − | τ |)rτ (W, σ K )2.
+
+The leading term is O(ρ4) because the diagonal marginal variances are preserved and the trace term cancels. 
+
+A.5 Implementation Checks 
+
+Implementation checks should include: • marginal Gaussian and Gumbel QQ plots; • empirical versus theoretical autocorrelation; • low-frequency energy of the noise tape; • effective sample size estimates; • boundary variance curves. For a diagnostic sequence a, with discrete Fourier transform ba(f ), define the low-frequency energy fraction as 
+
+LFE( a) = 
+
+P  
+
+> f∈F low
+
+|ba(f )|2
+
+P  
+
+> f∈F
+
+|ba(f )|2 .
+
+These checks validate the noise-tape construction, not the distributional invariance of generated text. B Detector Rationale 
+
+This appendix expands the detector rationale in Sec-tion 2.3. It clarifies why the detector is matched to the evidence geometry induced by the SAC-Copula perturbation field. 
+
+B.1 From i.i.d. Evidence to Covariance-Aware Calibration 
+
+The old detector aggregates raw evidence with an equal-weight i.i.d. Z-score: 
+
+Zold = 1⊤(s − μG1)
+
+σG
+
+√T .
+
+It implicitly assumes 
+
+Σx, 0 ≈ σ2
+
+> G
+
+I, ∆x ∝ 1.
+
+For non-i.i.d. evidence, however, the null variance of the equal-weight sum is 
+
+Var 0(1⊤x) = 1⊤Σx, 01.
+
+Positive local dependence increases this variance relative to the i.i.d. value, reducing effective sample size. HAC or covariance-aware calibration corrects this null variance while keeping the evidence di-rection 1. If a calibration-only score is a positive rescaling, 
+
+Zh0 _hac = cdZold , cd > 0,
+
+then within the same detector group and fixed cal-ibration setting it does not change ROC ordering or AUC. This explains why calibration alone is in-sufficient when the useful watermark shift is not aligned with 1.
+
+B.2 Why Filtering is Needed for SAC-Copula Evidence 
+
+SAC-Copula injects a locally correlated, low-lag perturbation field. The resulting evidence is not merely a uniform mean shift across positions. Full Filtered Ridge maps centered raw evidence into a SAC-aligned filtered feature: 
+
+u = Hωx.
+
+The filter Hω is motivated by the autocorrelation envelope of the SAC kernel, using weights propor-tional to exp( −τ 2/(4 σ2 
+
+> K
+
+)) with boundary renor-malization. Concretely, with 
+
+aτ = exp 
+
+
+
+− τ 2
+
+4σ2
+
+> K
+
+
+
+1{| τ | ≤ B},
+
+a row-normalized filtered readout can be written as 
+
+[Hω]t,s = as−t
+
+P 
+
+> r: 1 ≤t+r≤T
+
+ar
+
+.
+
+where ar = 0 outside [−B, B ]. This filter is a detector-side transform, not generation noise. Native text and the decoding process may also introduce background correlations. Therefore the latent tape covariance should not be used directly as the detector’s null covariance. The detector es-timates the observed-evidence Native covariance and projects it into filtered space: 
+
+bΣu, 0 = Hω bΣx, 0H⊤ 
+
+> ω
+
+.
+
+Thus FFR combines a SAC-motivated feature map with Native H0 observed-evidence covariance whitening. 
+
+B.3 Ridge-Regularized Matched Direction 
+
+In the detector statistic, raw evidence is centered before filtering, so u = Hωx is already H0-centered up to finite-sample error. The surrogate 
+
+Tw(u) = w⊤(u − μu, 0) writes the same idea in abstract filtered-space notation. In filtered feature space, use the Gaussian mean-shift surrogate 
+
+H0 : u ∼ (μu, 0, Σu, 0),H1 : u ∼ (μu, 0 + ∆u, Σu, 0).
+
+For a linear score 
+
+Tw(u) = w⊤(u − μu, 0),
+
+the standardized separation is 
+
+SNR( w) = w⊤∆u
+
+pw⊤Σu, 0w .
+
+Let b = Σ 1/2 
+
+> u, 0
+
+w, so w = Σ −1/2 
+
+> u, 0
+
+b, and 
+
+a = Σ −1/2 
+
+> u, 0
+
+∆u.
+
+Then 
+
+SNR( w) = b⊤a
+
+∥b∥2
+
+≤ ∥ a∥2.
+
+Equality holds when b ∝ a, giving 
+
+w⋆ ∝ Σ−1
+
+> u, 0
+
+∆u.The practical direction is the ridge-regularized plug-in estimate 
+
+wλ = ( bΣu, 0 + λI )−1 b∆u.
+
+Because the main detector centers evidence in raw space before filtering, the implemented scalar score can be written without an additional filtered-space mean subtraction: 
+
+ZFFR (y) = b∆⊤ 
+
+> u
+
+(bΣu, 0 + λI )−1u(y)
+
+γFFR 
+
+.
+
+For scores expressed directly in centered raw-evidence space, the corresponding linear direction is 
+
+q = H⊤ 
+
+> ω
+
+wλ
+
+γFFR 
+
+,γFFR =
+
+qb∆⊤ 
+
+> u
+
+(bΣu, 0 + λI )−1 b∆u.
+
+The ridge is finite-sample regularization for an em-pirical covariance inverse. The direction b∆u must be estimated from a development split or cross-fitting protocol without evaluation leakage. The optimality statement is limited to the linear detector class under the shared-covariance Gaussian surro-gate. 
+
+B.4 Relation to the Original Detector 
+
+FFR reduces to the old detector under 
+
+Hω = I, bΣu, 0 = σ2
+
+> G
+
+I, 
+
+b∆u ∝ 1, λ = 0 ,
+
+bμx, 0 = 0 .
+
+In this case the FFR direction is proportional to 1,and the score becomes the old equal-weight Gum-bel evidence sum. FFR is therefore a covariance-aware, direction-aware, SAC-aware generalization of the original i.i.d. detector. 
+
+B.5 Global Offset Extension 
+
+FFR assumes fixed token-to-tape alignment j = i.Insertion and deletion can instead induce 
+
+j = i + δ(i),
+
+where δ(i) is an unknown drift. For an alignment 
+
+A, the ideal alignment-aware centered evidence would be 
+
+xAi = s(yA(i); i) − μG − bμx, 0,i ,
+
+with score 
+
+Z(A) = q⊤xA.
+
+GO-FFR restricts alignment to the global-offset family 
+
+AGO = {Ad(i) = i + d : d ∈ D} ,
+
+where D ⊂ Z is a finite candidate offset set. In the reported attack-aware implementa-tion, D = {− Dmax , . . . , 0} for deletion, D =
+
+{0, . . . , D max } for insertion, and D = {0} for fixed-alignment clean or substitution settings, with 
+
+Dmax = 96 . The resulting score is 
+
+ZGO -FFR (Y ) = max  
+
+> d∈D
+
+Zd(Y ),Zd(Y ) = q⊤x(d)(Y ).
+
+This is a GLRT-style scan over a small alignment family. The max over offsets inflates the Native 
+
+H0 right tail. The GO-specific threshold is the empirical 1 − η quantile of ZGO -FFR on Native 
+
+H0 samples under the same offset-scan rule. GO-FFR recovers coarse global synchronization within the scanned global-offset family; cumulative local drift and semantic rewriting remain outside this alignment family. 
+
+B.6 Scope and Limitations 
+
+FFR adapts detection to correlated SAC-Copula evidence, while GO-FFR extends the same scoring direction with coarse synchronization recovery for mild insertion/deletion. Low-FPR evaluation uses detector-specific Native H0 calibration, and b∆u
+
+is estimated without evaluation leakage. Seman-tic rewriting and cumulative edit-path drift remain outside the global-offset family analyzed here. 
+
+C Additional Experiment Evidence 
+
+This appendix records supporting clean-setting summaries, frozen-output re-analysis, calibration and targeted-transfer controls, and frozen attack-summary evidence used in Section 4. The clean quality and clean detection claims in the main text are supported by the frozen clean multi-baseline sweep summaries, not by the attack-summary ev-idence. The attack sources are summary-only ar-tifacts derived from token-level edit outputs and semantic/paraphrase attack summaries; the attack-detail and failure-analysis sections do not use per-sample generated text, exact noise tapes, or full detector-score files. Evidence item Appendix location Source / scope note Full experimental setup Tables 5–6 implementation scripts, run metadata, and frozen summary files. Metric definitions and orientation Table 4 Defines raw metrics, direction, and visualization-only quality score. Full clean quality metrics Tables 7–8 frozen clean multi-baseline quality summaries. Radar normalization Tables 9–10 Display normalization only; not primary evidence. Clean quality–detection view Figure 6 Compact appendix view of clean quality and detection trade-offs. Full clean detection sweep Figure 7 External-baseline strength sweep supporting the clean multi-method comparison. Unigram strength trade-off Figure 8 Contrastive static-bias sweep. SAC parameter sensitivity Table 12 Raw-metric support for the selected SAC operating point. Detector comparison Table 13 Clean old-readout / FFR / GO-FFR sanity check. Token-edit sweeps Figures 11–13 AUC, TPR@FPR1, and TPR@FPR5 across 0–50% edit rates. Failure analysis Tables 15–16 Boundary evidence for edit drift and semantic rewriting. Tail stability Tables 17–18 Frozen-output re-analysis and paired upper-tail diagnostics. Six-point ρ sweep Tables 19–20 Fixed-parameter correlation-strength control. Calibration controls Tables 21–25 Size, source, threshold, and prompt-shift diagnostics. Frozen C4 FPR Table 26 Detector-only transfer of frozen ELI5 operating thresholds. Dream-7B transfer Table 27 Targeted second-backbone evidence on ELI5. C4-en transfer Table 28 Targeted method-matched continuation evidence. C4 common-detector control Table 29 Separate detector-control protocol for C4 generation. Detector derivation Appendix B Full detector definitions are not duplicated in this experiment appendix. 
+
+Table 3: Experiment appendix evidence index. Each row points to the compact appendix evidence used to support Section 4. The index is organizational only and does not introduce new experimental values. 
+
+C.1 Clean Quality and Detection Details 
+
+This subsection records supporting material for the clean multi-baseline comparison in Section 4.2 and Section 4.3. The source tables are frozen clean-text sweep summaries used to construct the main trade-off table, quality-score components, radar normalization, and heatmap points. These tables explain the compact quality score and visualization normalization; they do not introduce additional experimental claims beyond the clean-setting trade-off reported in the main text. Table 4 defines metric directions, Tables 7–8 report the full raw quality metrics, Tables 9–10 document the radar normal-ization, and Figures 6–7 provide compact clean quality–detection and clean detection views. 
+
+C.2 Full Experimental Configuration 
+
+This appendix records implementation-level de-tails for reproducibility. Fields not exposed by the frozen scripts or summary metadata are marked as unavailable rather than inferred. 
+
+Baseline adaptation notes. KGW is adapted as a context-greenlist bias baseline with the configured context width, PRF, and detector listed in Table 5 and Table 6. Unigram is used as a static-greenlist clean-text trade-off baseline with its unique-token detector. PatternMark is the MarkovPattern Refer-enceLite variant used in the clean evaluation, not a claim of a complete independent reimplementation of every PatternMark setting. Detector derivations for the old readout, covariance-aware calibration, filtering, ridge matched direction, and GO-FFR are provided in Appendix B.1, Appendix B.2, Ap-pendix B.3, and Appendix B.5; this experiment ap-pendix only records how those detectors are used in the experiments. 
+
+Quality–detection heatmap. Figure 6 summa-rizes the same clean-setting trends using a compact heatmap. The quality score averages direction-normalized components for semantic preserva-tion, MAUVE-based distributional fidelity, token-distribution fidelity, low repetition, lexical diver-sity, and PPL-tail stability. This visualization is intended as a compact summary of the quality– detection balance rather than a replacement for the raw metric values in Table 7. The external-baseline clean detection sweep over 
+
+δ ∈ { 1, 2, 3} is fully visualized below in Figure 7 and supports the clean multi-method comparison in Table 1. Figure 6 and Table 13 further connect the clean delta sweep to the raw quality tables and detector-readout sanity checks without duplicating the full CSV rows. 
+
+Full clean detection sweep. Figure 7 reports the full clean detection visualization for AUC, TPR@FPR1, and TPR@FPR5 across the external-baseline strength sweep. This appendix figure pro-vides the full clean-detection sweep across methods and watermark-strength settings and does not intro-duce new experimental values. 
+
+C.3 Unigram Strength Trade-off 
+
+Figure 8 keeps the Unigram strength sweep as a contrastive reference for static-bias tuning. It is included in the appendix so that the main text can focus on the SAC-Copula clean quality and clean Metric Definition / source Direction Use in this paper PPL Perplexity under the configured evaluator model. Lower is better Fluency and tail-stability evidence. PPL-P90 90th-percentile conditional PPL. Lower is better Radar tail-stability axis. Median / P95 / P99 PPL Quantiles of the per-output conditional-PPL distribution. Lower is better Central and upper-tail summaries. LLaDA PPL > 100 Fraction of evaluated outputs with Conditional_PPL > 100 . Lower is better LLaDA severe-tail diagnostic. Dream Composite collapse Preregistered Dream PPL/repetition criterion; distinct from LLaDA PPL > 100 . Lower is better Dream-specific collapse statistic. SBERT Sentence-embedding similarity to the Native reference. Higher is better Semantic preservation. BERTScore Token-level contextual similarity. Higher is better Semantic preservation in full quality table. ROUGE-L Longest-common-subsequence lexical overlap. Higher is better Radar lexical overlap axis. Token-F1 Native token-set overlap F1. Higher is better Radar token-overlap axis. MAUVE Distributional similarity against Native reference generations. Higher is better Distributional fidelity. Token TV / Token JS Unigram token-distribution divergence from Native. Lower is better Token-distribution drift. Top-k overlap Overlap with Native top-k token set. Higher is better Token-distribution fidelity. Rep3 Repeated 3-gram rate. Lower is better Repetition diagnostic. Distinct3 Distinct 3-gram ratio. Higher is better Lexical diversity. Ent3 3-gram entropy. Higher is better Diversity / spread diagnostic. AUC Threshold-independent detector ranking metric. Higher is better Clean and attack diagnostic detection. TPR@FPR1 / TPR@FPR5 True-positive rate at 1% / 5% false-positive rate. Higher is better Low-FPR clean detection and attack diagnostics. Quality Direction-normalized visualization summary. Higher is better Descriptive radar/heatmap display only; not primary evidence. 
+
+Table 4: Metric definitions and orientations used in Section 4. Raw metrics are the primary evidence. The normalized Quality score is a descriptive display summary constructed from direction-normalized components and should not be interpreted as an additional ground-truth quality label. 
+
+Category Field Setting Generation Model name LLaDA-8B-Instruct 
+
+Generation Prompt source ELI5.jsonl 
+
+Generation Prompt format LLaDA chat template Generation Split sizes Native H0 = 500 , Delta-dev = 200 , eval = 200 
+
+Generation Operating GPU NVIDIA RTX PRO 6000 Generation Generation length 256 tokens Generation Block length 32 Generation Diffusion steps max(1 , ⌊0.5× generation length ⌋) = 128 
+
+Generation Temperature 1.0 Generation top-p / top-k not available in the frozen configuration fields Generation Mask id 126336 Generation Seeds and key fixed random seeds and a fixed private watermark key; exact values are kept in the implementation configuration Generation Cached artifacts generated texts and exact perturbation tapes are cached for reproducibility in the implementation artifacts Watermark Main SAC-Copula W = 39 , σK = 15 .0, ρ = 0 .6
+
+Watermark SAC sensitivity rows W = 35 , σ K = 11 .5, ρ = 0 .7; W = 35 , σ K = 13 .5, ρ = 0 .7; W = 39 , σ K = 15 .0, ρ = 0 .6
+
+Watermark Perturbation scale α = 1 .0, passed as the generation temperature in the generation call Watermark Tape length 256 generated positions in the clean evaluation Watermark Exact tapes saved under exact_tapes ; missing-tape reconstruction disabled Baselines Direct mechanism baseline i.i.d. position-indexed Gumbel Baselines External baselines KGW context-green bias, Unigram static-green bias, PatternMark MarkovPattern ReferenceLite Baselines External sweep δ ∈ { 1, 2, 3} for KGW, Unigram, and PatternMark; γ = 0 .25 for KGW and Unigram Baselines KGW details conv-kernel PRF, kernel [−1] , context width 1, sumhash seeding, no-bias fallback Baselines Unigram details static greenlist bias; unique-token detector is the main detector Baselines PatternMark details MarkovPattern ReferenceLite, k = 2 , pattern length 4, 10000 null samples 
+
+Table 5: Generation, watermark, and baseline configuration for the clean multi-baseline evaluation. Values are taken from the frozen generation/detection script and collected run metadata. 
+
+detection profile. The figure shows that stronger Unigram settings can improve clean detectability, but the same sweep changes semantic, distribu-tional, token-drift, repetition, and diversity dimen-sions. This supports the main-text interpretation of Unigram as a trade-off baseline, not as the central object of study. 
+
+C.4 Traceable Clean-Generation Example 
+
+Table 11 provides one traceable qualitative example from the frozen generated-text JSONL artifact. The example is included only to make the automatic quality metrics more concrete; it is not used as primary evidence and is not selected to prove a general qualitative claim. 
+
+C.5 SAC Parameter Sensitivity 
+
+This subsection documents the SAC operating point used in the main experiments. The three SAC parameters have distinct roles: W controls the correlation window or range, σK controls the kernel decay and smoothness, and ρ controls the strength of the correlated branch. Table 12 com-pares several SAC configurations under the same clean-text evaluation slice. Detection metrics come from the FFR clean-detection summary, and quality metrics come from the multidimensional quality and token-drift sum-maries in the shared clean-text evaluation slice in-dexed as δ = 1 for the external-baseline strength sweep. This δ index is not a SAC parameter; the SAC parameters are W, σ K , ρ . The normalized quality score is not included in these delta-sweep summary files, so it remains marked as unavailable rather than reconstructed, and the interpretation should rely on the raw listed metrics. The table should be read as a compact trade-off summary. The W = 35 , ρ = 0 .7 variants can im-Category Field Setting Detection Canonical detector mapping i.i.d. Gumbel: old z-score; KGW: KGWGreenlistZDetectorV2; Unigram: UnigramUniqueGreenlistDetectorV2; PatternMark: PatternMarkMarkovPatternDetector Detection SAC detector rows old z-score, Full Filtered Ridge, Global Offset Full Filtered Ridge Detection FFR ridge λ = 10 −4                                          
+
+> Detection Cross-fitting 2 folds with crossfit seed 20260506 for empirical direction estimation Detection Native H0calibration detector-specific calibration on held-out Native H0samples Detection Target FPRs 1% and 5% Detection GO offset setting max offset 96 and offset penalty 0.0; clean GO-FFR scoring uses offset 0 Detection Tape device generation tape on runtime device; detection tape on CPU Quality PPL model Llama-3.1-8B-Instruct evaluator checkpoint Quality PPL collapse threshold PPL >100
+> Quality PPL trim quantile 0.95 Quality SBERT model all-MiniLM-L6-v2 sentence-embedding model Quality BERTScore model roberta-large , English, no baseline rescaling Quality MAUVE setup Native reference group, gpt2-large features, max text length 256, 10 buckets Quality Token drift unigram JS, TV, and top-koverlap for k∈ { 50 ,100 ,500 ,1000 }
+> Quality Repetition/diversity Rep3, Distinct3, Ent3, with Self-BLEU 3/4 available in multidimensional quality metadata Quality Normalized quality score descriptive direction-normalized summary for visualization, not a primary metric
+
+Table 6: Detector, calibration, and evaluator configuration for the clean multi-baseline evaluation. Values are taken from the implementation scripts, collected run metadata, and existing summary tables. 
+
+Method Strength Mean PPL Median PPL Collapse SBERT BERTScore MAUVE Token TV Native – 16.840 6.381 0.005 1.000 1.000 1.000 0.000 i.i.d. Gumbel – 636.069 8.446 0.035 0.784 0.868 0.991 0.163 KGW δ = 1 5.32 ×10 4 6.697 0.030 0.794 0.869 0.999 0.146 KGW δ = 2 6.98 ×10 4 8.020 0.045 0.776 0.867 0.998 0.173 KGW δ = 3 8.30 ×10 4 10.543 0.050 0.762 0.863 0.982 0.228 Unigram δ = 1 7.714 6.145 0.000 0.803 0.867 0.981 0.233 Unigram δ = 2 7.630 6.535 0.000 0.755 0.851 0.841 0.360 Unigram δ = 3 9.464 6.585 0.005 0.690 0.836 0.601 0.439 PatternMark δ = 1 3883.179 6.766 0.010 0.781 0.869 0.983 0.153 PatternMark δ = 2 3898.094 7.263 0.015 0.779 0.866 0.996 0.161 PatternMark δ = 3 3901.117 8.938 0.020 0.768 0.863 0.982 0.198 SAC-Copula main 12.164 8.260 0.010 0.798 0.868 0.999 0.163 
+
+Table 7: Full automatic quality metrics for the clean multibase comparison, part 1. The table reports fluency and stability, semantic preservation, distributional fidelity, and token-distribution drift. Lower values are better for PPL, collapse, and token TV; higher values are better for semantic similarity and MAUVE. 
+
+prove some central fluency or collapse indicators, especially for W = 35 , σ K = 13 .5, ρ = 0 .7, but they also shift diversity, token-drift, and low-FPR detection behavior. The selected W = 39 , σ K =15 .0, ρ = 0 .6 setting is used because it retains strong low-FPR detection while maintaining favor-able MAUVE, repetition/diversity, and token-drift behavior. Table 12 supports the selected configuration as a deliberate quality–detectability operating point over the reported local sensitivity configurations. 
+
+C.6 Detector Comparison for SAC Evidence 
+
+This subsection is included to separate generation-side structure from detector-side readout in the clean setting. The old detector is the i.i.d. equal-weight baseline readout, while FFR is the SAC-aware filtered statistic used to read the local low-lag evidence geometry induced by SAC-Copula. GO-FFR provides continuity with the mild inser-tion/deletion stress tests. Table 13 reports the available clean detector com-parison rows from the clean detection summary. The comparison should be read in two steps: if SAC evidence already improves over i.i.d. Gumbel under the old detector, that supports a generation-side signal difference; if FFR improves further on SAC evidence, that supports a matched readout for SAC structure. The clean fixed-alignment setting explains why GO-FFR matches or closely tracks FFR here: offset recovery is unnecessary when alignment is intact. Table 13 serves as a clean-detector sanity check connecting the shared legacy readout to the SAC-aware readout; GO-FFR is included for continuity with the controlled edit diagnostics. 
+
+C.7 Controlled Token-Level Edit Details 
+
+Table 14 and Figures 11–13 support Section 4.4. These results are intended as controlled token-edit diagnostics rather than a claim of adversarial ro-bustness. Across selected deletion, insertion, and substitution settings, the SAC-aware detector re-tains partial residual evidence, and the Global Off-set variant provides a coarse realignment benefit. The full sweep figures report AUC, TPR@FPR1, and TPR@FPR5 across 0–50% attack rates. Low-FPR TPR remains substantially harder than AUC Method Strength Token JS Top50 Top100 Rep3 Distinct3 Ent3 Quality Native – 0.000 1.000 1.000 0.406 0.594 3.796 0.960 i.i.d. Gumbel – 0.059 0.940 0.830 0.415 0.585 3.680 0.661 KGW δ = 1 0.057 0.920 0.900 0.414 0.586 3.798 0.694 KGW δ = 2 0.060 0.900 0.850 0.450 0.550 3.555 0.553 KGW δ = 3 0.068 0.860 0.830 0.510 0.489 3.179 0.379 Unigram δ = 1 0.074 0.860 0.760 0.395 0.605 3.967 0.798 Unigram δ = 2 0.120 0.660 0.600 0.455 0.545 3.819 0.545 Unigram δ = 3 0.164 0.600 0.430 0.560 0.440 3.408 0.150 PatternMark δ = 1 0.058 0.940 0.840 0.426 0.574 3.686 0.721 PatternMark δ = 2 0.061 0.900 0.800 0.422 0.578 3.809 0.714 PatternMark δ = 3 0.066 0.880 0.810 0.480 0.520 3.442 0.555 SAC-Copula main 0.061 0.920 0.810 0.414 0.586 3.745 0.758 
+
+Table 8: Full automatic quality metrics for the clean multibase comparison, part 2. Lower values are better for token JS and repetition; higher values are better for vocabulary-overlap, distinctness, entropy, and the normalized quality score.                       
+
+> Radar axis Raw metric source Original direction Normalized score meaning SBERT SBERT Higher is better Embedding-level semantic closeness to Native text. ROUGE-L Mean ROUGE-L vs. Native Higher is better Lexical-sequence overlap with Native generations. Token-F1 Native token-set F1 Higher is better Native token-set overlap. Rep3 Mean Rep3 Lower is better Lower repeated 3-gram rate after inverted min–max normalization. Collapse >100 CollapseRate_GT100 Lower is better Fewer severe PPL-tail collapse cases after inverted min–max normalization. PPL-P90 Conditional PPL P90 Lower is better Lower 90th-percentile conditional perplexity after inverted min–max normalization.
+
+Table 9: Metric orientation used in the v3.8 quality radar. All radar axes are direction-normalized so that larger values indicate better or more Native-like behavior. Lower-is-better metrics, including repetition, collapse rate, and PPL-P90, are inverted before normalization. The normalization is used only for visualization; raw quality metrics remain the primary evidence in Table 1, Table 7, and Table 8. 
+
+under deletion and insertion, which supports the failure analysis rather than a broad edit-robustness claim. These conclusions come from the frozen token-edit summaries, relative-gain, and global-offset summaries. They should not be inferred from the multi-baseline clean-text results. The full 20% cross-method AUC and detec-tor/readout comparison is shown in Figure 10. Ta-ble 14 focuses on the detector-readout rows used to interpret SAC OLD, FFR, and GO-FFR behavior. Substitution does not induce cumulative position drift, so the fixed-alignment rows are the relevant diagnostic; no separate GO-FFR substitution row is needed for the synchronization-drift interpretation. Method SBERT ROUGE-L Token-F1 Rep3 Collapse > 100 PPL-P90 Native 1.000 1.000 1.000 1.000 1.000 1.000 i.i.d. Gumbel 0.869 0.948 0.767 0.992 0.333 0.830 KGW δ = 3 0.666 0.734 0.562 0.340 0.080 0.080 PatternMark δ = 3 0.721 0.764 0.677 0.549 0.667 0.788 Unigram δ = 3 0.080 0.080 0.080 0.080 1.000 1.000 SAC-Copula 1.000 1.000 1.000 1.000 0.889 0.919 
+
+Table 10: Display-normalized scores used in the v3.8 quality radar. A small display floor is applied to low-scoring axes to avoid degenerate polygons in the visualization. These scores are descriptive display values, not additional primary quality metrics. Quality score AUC TPR@FPR1 TPR@FPR5 SAC-Copula (ours) Unigram =3 
+
+Unigram =2 
+
+Unigram =1 
+
+i.i.d Gumbel PatternMark =3 
+
+KGW =3 
+
+0.61 0.99 0.98 0.98 0.15 1.00 0.98 0.99 0.45 0.99 0.85 0.93 0.65 0.90 0.39 0.56 0.51 0.97 0.81 0.85 0.41 0.94 0.76 0.81 0.23 0.94 0.52 0.66 
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized score
+
+Figure 6: Quality–detection heatmap for the clean multibase comparison. Rows correspond to representative water-mark settings, and columns show the normalized quality-preservation score, AUC, TPR@FPR1, and TPR@FPR5. The heatmap quality score averages semantic preservation, MAUVE, token-distribution fidelity, low repetition, lexical diversity, and tail stability after direction-aware normalization. SAC-Copula maintains a favorable balance between clean detectability and quality preservation compared with high-strength external baselines. =1 =2 =3         
+
+> External baseline watermark strength
+> 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00
+> AUC
+> =1 =2 =3
+> External baseline watermark strength
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> TPR@FPR1
+> =1 =2 =3
+> External baseline watermark strength
+> 0.2 0.4 0.6 0.8 1.0
+> TPR@FPR5
+> KGW Unigram PatternMark i.i.d Gumbel SAC-Copula (ours)
+
+Figure 7: Full clean detection sweep across watermark strengths. The panels report AUC, TPR@FPR1, and TPR@FPR5 for KGW, Unigram, and PatternMark over δ ∈ { 1, 2, 3}, with i.i.d. Gumbel and SAC-Copula shown as reference operating points. This figure reports clean fixed-alignment detection only. =1 =2 =3 
+
+0.0 0.2 0.4 0.6 0.8 1.0 TPR@FPR5 
+
+SAC-Copula 
+
+(a) Detection increases with bias strength 
+
+Unigram =1 =2 =3 
+
+0.6 0.7 0.8 0.9 1.0 Score  SAC SBERT SAC MAUVE 
+
+(b) Semantic / distributional similarity declines 
+
+Unigram SBERT Unigram MAUVE 
+
+=1 =2 =3 
+
+0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 Lower is better 
+
+SAC TV SAC Rep3 
+
+(c) Token drift and repetition increase 
+
+Unigram Token TV Unigram Rep3 
+
+=1 =2 =3 
+
+0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 Higher is better 
+
+SAC Distinct3 SAC Ent3 
+
+(d) Diversity drops at high detection strength 
+
+Unigram Distinct3 Unigram Ent3 Figure 8: SAC-Copula avoids the high-strength static-bias quality trade-off. The Unigram strength sweep is included as a contrastive reference: Panel (a) shows clean TPR@FPR5 increasing with Unigram strength δ, while Panels (b)–(d) show the accompanying semantic, distributional, token-drift, repetition, and diversity costs. SAC-Copula is shown as the reference operating point. 
+
+System Output excerpt Native Eval|Native|701|256 Dollar stores turn a profit primarily selling items at prices of only a dollar each. This allows them to sell a large quantity of items at a... i.i.d. Gumbel Eval|i.i.d_Baseline|701|256 Dollar stores turn a profit primarily by selling low-cost items at a lower price point. These items are usually bulk from larger retailers a... SAC-Copula Eval|SAC_W39_S15.0_R0.6|701|256 Dollar stores turn a profit through selling a wide variety of items at very low prices. They can offer a wide selection of items in from foo... KGW Eval|KGW_ContextGreen_Bias|701|256 Dollar stores turn a profit by by offering items at discounted prices, which allows them to sell more items per dollar spent. This is done b... Unigram Eval|Unigram_StaticGreen_Bias|701|256 Dollar stores turn a profit by selling a wide range of goods at low prices. They compete by offering a diverse selection of goods, including... PatternMark ReferenceLite Eval|PatternMark_MarkovPattern_ReferenceLite|701|256 Dollar stores make a profit through a combination of factors. 1. Lower pricing: Dollar stores sell items at very low prices, often as little... 
+
+Table 11: Traceable clean-generation example for the prompt “How do dollar stores turn a profit?” Excerpts are copied from the frozen clean-generation artifact and truncated for space. The table is illustrative only and does not replace the automatic quality metrics. 1.0 2.0 2.5 3.0 3.5 4.0 5.0 5.5 6.5 7.0 7.5 8.5 9.0 10.0 10.5 11.0 11.5 12.0 13.0 13.5 14.0 15.0 16.5            
+
+> K
+> 3711 15 19 23 27 31 35 39 43
+> W
+> 0.44 0.39 0.46 0.45 0.41 0.58 0.37 0.30 0.35 0.67 0.70 0.53 0.46 0.50 0.34 0.63 0.52 0.26 0.66 0.42 0.34 0.66 0.71 0.48 0.58 0.56 0.44 0.51 0.57 0.70
+
+Joint Trade-off | = 0.5            
+
+> 1.0 2.0 2.5 3.0 3.5 4.0 5.0 5.5 6.5 7.0 7.5 8.5 9.0 10.0 10.5 11.0 11.5 12.0 13.0 13.5 14.0 15.0 16.5
+> K
+> 3711 15 19 23 27 31 35 39 43
+> W
+> 0.40 0.37 0.47 0.31 0.29 0.38 0.59 0.40 0.50 0.59 0.68 0.49 0.26 0.18 0.36 0.37 0.43 0.55 0.59 0.45 0.61 0.39 0.59 0.65 0.35 0.70 0.71 0.41 0.69 0.59
+
+Joint Trade-off | = 0.6            
+
+> 1.0 2.0 2.5 3.0 3.5 4.0 5.0 5.5 6.5 7.0 7.5 8.5 9.0 10.0 10.5 11.0 11.5 12.0 13.0 13.5 14.0 15.0 16.5
+> K
+> 3711 15 19 23 27 31 35 39 43
+> W
+> 0.30 0.29 0.38 0.76 0.60 0.55 0.59 0.70 0.78 0.78 0.40 0.68 0.50 0.47 0.35 0.66 0.76 0.66 0.71 0.46 0.43 0.49 0.57 0.63 0.48 0.54 0.44 0.40 0.27 0.52
+
+Joint Trade-off | = 0.7 
+
+0.0 0.2 0.4 0.6 0.8 1.0 Joint Score (higher = better) 
+
+Joint Detection Quality Trade-off Heatmaps 
+
+Joint Score = mean(Detection Composite, Quality Composite) 
+
+Figure 9: SAC parameter sensitivity for clean operating-point selection. The heatmap groups configurations by 
+
+ρ, with W and σK on the axes and color indicating the joint quality–detectability score. The selected setting 
+
+W = 39 , σ K = 15 .0, ρ = 0 .6 is used as the main SAC-Copula configuration. This visualization guides operating-point selection and is not a claim of global optimality or raw-metric dominance. Configuration W σK ρ AUC TPR@1% TPR@5% Mean PPL Collapse Quality MAUVE Rep3 Distinct3 Token TV SAC W35 S11.5 R0.7 35 11.5 0.7 0.984 0.895 0.965 13.240 0.005 – 0.998 0.443 0.557 0.184 SAC W35 S13.5 R0.7 35 13.5 0.7 0.991 0.950 0.970 11.934 0.000 – 0.980 0.446 0.554 0.189 Selected SAC-Copula 39 15.0 0.6 0.990 0.980 0.985 12.163 0.010 – 0.999 0.414 0.586 0.163 
+
+Table 12: Compact appendix summary of SAC parameter sensitivity under clean DLM generation. The selected SAC-Copula row corresponds to the main-text configuration W = 39 , σ K = 15 .0, ρ = 0 .6. The normalized composite Quality score is unavailable in the delta-sweep summary CSVs used for this parameter table, so the Quality column is left blank and the table should be interpreted through the listed raw metrics. The δ = 1 data slice is a shared clean-text evaluation slice, not a SAC parameter. 
+
+Method / group Detector AUC TPR@1% TPR@5% Role i.i.d. Gumbel old z-score 0.966 0.815 0.855 Legacy baseline detector. SAC-Copula old z-score 0.987 0.915 0.950 Sanity check with the old readout. SAC-Copula FFR 0.990 0.980 0.985 Main SAC-aware clean readout. SAC-Copula GO-FFR 0.990 0.980 0.985 Offset-enabled variant; same clean score here. SAC W35 S11.5 R0.7 FFR 0.984 0.895 0.965 Parameter-sweep SAC readout. SAC W35 S13.5 R0.7 FFR 0.991 0.950 0.970 Parameter-sweep SAC readout. 
+
+Table 13: Compact appendix summary of available clean detector comparison rows for i.i.d. Gumbel and SAC-Copula evidence. FFR and GO-FFR read the local correlated evidence generated by SAC, while the old-detector rows provide sanity checks against the legacy i.i.d. readout. SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark 
+
+> 0.0 0.2 0.4 0.6 0.8 1.0 AUC
+> 0.841 0.744 0.733 0.561 0.901 0.995 0.752
+> Deletion @ 20%
+> SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark
+> 0.863 0.742 0.724 0.525 0.829 0.984 0.801
+> Insertion @ 20%
+> SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark
+> 0.988 0.988 0.983 0.956 0.828 0.978 0.904 Substitution @ 20%
+
+AUC comparison at 20% token edit attacks 
+
+> SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark
+
+Figure 10: Full AUC comparison under 20% token-level edit attacks. The three panels report deletion, insertion, and substitution for SAC-Copula readouts, the direct i.i.d. Gumbel baseline, and external clean-text baselines. This full comparison provides the complete cross-method view supporting the compact quantitative token-edit discussion in the main text and is reported as a residual-evidence diagnostic, not as a broad robustness claim. 
+
+Edit Detector row AUC TPR@1% TPR@5% Best offset Reading Deletion 20% i.i.d. old 0.561 0.025 0.110 0.000 Alignment-changing edit strongly weakens i.i.d. evidence. Deletion 20% SAC FFR 0.780 0.150 0.370 0.000 SAC-aware filtering retains partial residual evidence. Deletion 20% SAC GO-FFR 0.892 0.460 0.590 -27.295 Offset scanning partially recovers coarse shift. Insertion 20% i.i.d. old 0.525 0.010 0.045 0.000 Insertions disrupt fixed token-to-tape indexing. Insertion 20% SAC FFR 0.842 0.195 0.435 0.000 SAC-aware readout remains informative under controlled insertion. Insertion 20% SAC GO-FFR 0.884 0.505 0.670 18.230 Offset scanning gives a coarse synchronization gain. Substitution 20% i.i.d. old 0.956 0.755 0.825 0.000 Substitution is less damaging because sequence alignment is preserved. Substitution 20% SAC FFR 0.989 0.890 0.975 0.000 SAC evidence remains detectable in the indexed substitution setting. 
+
+Table 14: Selected low-rate token-level edit diagnostics from the frozen token-edit summary. These results are reported as partial residual-evidence diagnostics rather than broad robustness claims; the table is not evidence of full edit-path alignment or semantic rewrite robustness. 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate 0.0 0.2 0.4 0.6 0.8 1.0 Score 
+
+AUC      
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate
+
+TPR@FPR1      
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate
+
+TPR@FPR5 
+
+Deletion: 0% 50% token edit attack sweep 
+
+> SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark
+
+Figure 11: Deletion stress-test sweep from 0% to 50% token edit rate. The three panels report AUC, TPR@FPR1, and TPR@FPR5 for SAC-Copula readouts, i.i.d. Gumbel, and external clean-text baselines. The curves are residual-evidence diagnostics: GO-FFR can partially recover coarse offset shifts, while low-FPR TPR remains limited under accumulated deletion drift. 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate 0.0 0.2 0.4 0.6 0.8 1.0 Score 
+
+AUC      
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate
+
+TPR@FPR1      
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate
+
+TPR@FPR5 
+
+Insertion: 0% 50% token edit attack sweep 
+
+> SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark
+
+Figure 12: Insertion stress-test sweep from 0% to 50% token edit rate. The three panels report AUC, TPR@FPR1, and TPR@FPR5. Insertion induces synchronization drift by shifting token-to-tape indexing; GO-FFR provides a coarse-offset diagnostic improvement but does not solve cumulative local drift. 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate 0.0 0.2 0.4 0.6 0.8 1.0 Score 
+
+AUC      
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate
+
+TPR@FPR1      
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 Attack rate
+
+TPR@FPR5 
+
+Substitution: 0% 50% token edit attack sweep 
+
+> SAC W39 + GO-FFR SAC W39 + FFR SAC W39 + OLD i.i.d. baseline KGW Unigram PatternMark
+
+Figure 13: Substitution stress-test sweep from 0% to 50% token edit rate. The three panels report AUC, TPR@FPR1, and TPR@FPR5. Substitution corrupts token identities without shifting all subsequent positions, so it is a controlled token-corruption diagnostic rather than a synchronization-drift setting. C.8 Failure Analysis under Edit Drift             
+
+> Edit Detector AUC TPR1 TPR5 Offset Deletion i.i.d. old 0.513 0.005 0.050 0.000 SAC FFR 0.623 0.035 0.085 0.000 SAC GO-FFR 0.727 0.180 0.285 -51.945 Insertion i.i.d. old 0.447 0.000 0.035 0.000 SAC FFR 0.664 0.085 0.160 0.000 SAC GO-FFR 0.878 0.335 0.550 38.135
+
+Table 15: Diagnostics at 50% deletion/insertion from the frozen token-edit summary. GO-FFR partially improves coarse synchronization, while cumulative local drift remains. 
+
+Deletion and insertion accumulate synchronization drift. GO-FFR recovers coarse shifts but not cumu-lative local drift, leaving edit-path alignment unre-solved. Evidence comes from the frozen relative-drop, token-attack, and global-offset summaries. The frozen semantic/paraphrase summaries cover paraphrase results, valid-only filtering, realized TER bins, relative gains, and detector-only compar-isons. They show degraded detection under seman-tic rewriting; offset-style diagnostics provide only partial recovery.   
+
+> Attack Detector AUC TPR1 TPR5 Valid DIPPER R20 i.i.d. row 0.580 0.075 0.105 0.545 DIPPER R20 SAC row 0.745 0.130 0.260 0.495 DIPPER R30 i.i.d. row 0.526 0.005 0.070 0.330 DIPPER R30 SAC row 0.633 0.020 0.140 0.320
+
+Table 16: Semantic/paraphrase failure-analysis rows from the frozen summary, defining the current robust-ness boundary. 
+
+C.9 Tail Stability and Correlation-Strength Controls 
+
+The tail analysis in Tables 17–18 re-analyzes 200 frozen LLaDA-8B-Instruct ELI5 outputs for SAC W = 39 , σ K = 15 , ρ = 0 .6, paired by 
+
+Prompt_ID and Gen_Len . Conditional PPL is eval-uated with Meta-Llama-3.1-8B-Instruct; collapse is Conditional_PPL > 100 . Confidence intervals use 10 ,000 paired bootstrap resamples with seed 
+
+20260712 .
+
+Fixed-parameter correlation-strength sweep. The canonical 8B sweep varies 
+
+ρ ∈ { 0, 0.2, 0.4, 0.6, 0.8, 1} while fixing W = 39 ,
+
+σK = 15 , α = 1, temperature 1, generation length 256 , block length 32 , 128 diffusion steps, and key 42 . Prompts, seeds, decoding, and remasking are fixed; both Old and FFR detectors are evaluated, and PPL uses Meta-Llama-3.1-8B-Instruct. The ρ = 0 row is the direct matched i.i.d. endpoint. This is a fixed-parameter correlation-strength sweep, not matched-detectability or watermark-strength optimization. 
+
+Metric Native i.i.d. SAC Mean PPL 16.840 636.069 12.163 Median PPL 6.381 8.446 8.260 Q95 trimmed mean 7.201 9.864 9.333 P90 15.387 19.603 17.911 P95 22.580 48.420 30.810 P99 60.653 4256.634 99.653 Maximum 1669.349 59257.688 128.978 PPL > 100 1/200 7/200 2/200 
+
+Table 17: Conditional-PPL summaries for frozen LLaDA–ELI5 outputs. Q95 is the mean after trimming the highest 5%. 
+
+Paired collapse transition Count normal → normal 192/200 i.i.d. collapse → SAC normal 6/200 i.i.d. normal → SAC collapse 1/200 collapse → collapse 1/200 Diagnostic Estimate 95% CI Collapse-rate difference -0.025 [-0.050, 0.000] McNemar two-sided p=0.125 –Mean log 10 -PPL difference -0.0818 [-0.1664,-0.0063] P99 difference -4156.981 [-59177.786,-60.720] Median PPL difference 0.135 [-0.741,1.036] SAC lower-PPL win rate 0.485 [0.415,0.555] 
+
+Table 18: Paired collapse transitions and statistical diag-nostics for SAC relative to matched i.i.d. Gumbel. The collapse-rate difference is SAC minus i.i.d. 
+
+ρ
+
+AUC Old / FFR TPR1 Old / FFR TPR5 Old / FFR 0.0 .9658 / .9683 .815 / .820 .855 / .890 0.2 .9671 / .9753 .805 / .865 .895 / .905 0.4 .9819 / .9861 .895 / .925 .950 / .955 0.6 .9866 / .9900 .915 / .980 .950 / .985 0.8 .9842 / .9845 .920 / .925 .950 / .950 1.0 .9748 / .9631 .875 / .830 .940 / .895 
+
+Table 19: Complete detection results for the canonical six-point ρ sweep. TPR1 and TPR5 denote TPR at 1% and 5% FPR, respectively. 
+
+ρ Median PPL P95 P99 PPL 
+
+> 100 SBERT 0.0 8.45 48.42 4256.63 3.5% .784 0.2 8.52 36.62 2354.28 2.5% .792 0.4 8.28 26.00 173.26 2.0% .797 0.6 8.26 30.81 99.65 1.0% .798 0.8 8.17 21.97 66.18 0.5% .795 1.0 7.38 18.00 27.55 0.0% .766 
+
+Table 20: Complete quality-tail results for the canoni-cal six-point ρ sweep. At the two reported endpoints for broader quality context, ρ = 0 .6 has Rep3 ≈ .414 
+
+and Distinct3 ≈ .586 , while ρ = 1 has Rep3 ≈ .528 
+
+and Distinct3 ≈ .472 ; unreported intermediate repeti-tion/diversity values are not imputed. 
+
+Detection improves toward moderate correlation and then declines, while the quality dimensions do not move uniformly. The sweep therefore supports 
+
+ρ = 0 .6 as a balanced interior operating point, not a universal or global optimum, and does not isolate correlation as a causal theorem. 
+
+C.10 Calibration and Threshold-Transfer Controls Calibration-size sensitivity. These controls use LLaDA–ELI5, SAC W = 39 , σ K = 15 , ρ =0.6, and model-native H0. Calibration sizes are 
+
+50 /100 /200 /500 , with 20 /20 /20 /1 repeats, re-spectively. Development and evaluation identities are fixed and no evaluation example is used for calibration. 
+
+N AUC TPR@1%FPR TPR@5%FPR 50 .9758 ± .0111 .8025 ± .0715 .8982 ± .0677 
+
+100 .9867 ± .0034 .9078 ± .0473 .9667 ± .0184 
+
+200 .9888 ± .0009 .9487 ± .0277 .9812 ± .0060 
+
+500 .9900 .9800 .9850 
+
+Table 21: ROC discrimination as a function of model-native H0 calibration size. Mean and standard deviation are reported when repeated subsamples are available. 
+
+N
+
+Realized FPR @nom1 Realized FPR @nom5 TPR @nom1 TPR @nom5 50 28.88% 34.33% 98.40% 98.65% 100 13.03% 19.55% 98.08% 98.55% 200 5.13% 11.15% 97.90% 98.53% 500 0.50% 8.50% 98.00% 98.50% 
+
+Table 22: Operational-threshold diagnostic across cal-ibration sizes. Strong ROC discrimination does not imply insensitivity of fixed low-FPR thresholds to H0
+
+sample size. 
+
+Calibration-source controls. All four source conditions use N = 500 , the same development identities, the same 200 LLaDA–ELI5 Native neg-ative evaluations, and the same 200 LLaDA–ELI5 SAC positive evaluations; only the H0 source changes. 
+
+H0 source AUC TPR@1%FPR TPR@5%FPR LLaDA–ELI5 Native .9900 .980 .985 ELI5 human answer .9878 .955 .980 C4 raw text .9871 .955 .975 Wikipedia raw text .9861 .950 .970 
+
+Table 23: Four-source H0 calibration control with fixed development and evaluation identities. The results quan-tify source sensitivity; no formal equivalence margin was pre-specified. 
+
+Threshold portability and prompt shift. Using Wikipedia H0 thresholds on ELI5 Native evalua-tion gives realized FPR 6.5% (13 /200 ) and TPR 
+
+97 .5% at the nominal 1% point, and realized FPR 
+
+Calibration 
+
+H0
+
+Negative Eval AUC TPR1 TPR5 Native Native .9900 .9800 .9850 Native ELI5 human .9908 .9850 .9850 ELI5 human Native .9878 .9550 .9800 ELI5 human ELI5 human .9902 .9850 .9900 
+
+Table 24: Native/Human 2×2 ROC control. This matrix reports score discrimination rather than realized FPR at frozen operational thresholds. 
+
+21 .0% (42 /200 ) and TPR 98 .5% at the nominal 5% point. Thus, strong ROC separation is not equiva-lent to threshold portability.             
+
+> Condition H0construction AUC TPR1 TPR5 AOriginal 500 ELI5 questions + orig-inal starting prompt .9900 .980 .985 BDisjoint 500 ELI5 questions + same starting prompt .9889 .970 .985 CSame new questions/seeds + alter-native starting prompt .9907 .980 .985
+
+Table 25: Same-model prompt-shift control. A→Bchanges question/content samples; B →C changes the prompt template with questions and seeds fixed; A →Cis the combined tested same-model/same-task shift. This is not a prompt-invariance claim beyond the evalu-ated setting. 
+
+Frozen-threshold C4 realnewslike FPR. This detector-only transfer test freezes the original LLaDA–ELI5 model-native-H0 thresholds, per-forms no C4 refit, and evaluates 2,000 held-out non-watermarked C4 realnewslike records. It is not C4 watermark generation and is distinct from the C4-en continuation experiments below. 
+
+Nominal FPR Realized FPR Exact 95% CI SAC TPR 1% 0.95% [0.57%, 1.48%] .980 5% 5.50% [4.54%, 6.59%] .985 
+
+Table 26: Frozen-threshold false-positive transfer from LLaDA–ELI5 Native H0 to held-out C4 realnewslike 
+
+negatives. 
+
+As a secondary diagnostic, rebuilding H0 on C4 realnewslike yields realized FPR 2.95% , ex-act 95% CI [2 .25% , 3.79%] , at nominal 1%, and 
+
+7.55% , CI [6 .43% , 8.80%] , at nominal 5%. This evaluated sample does not show improved false-positive control after rebuilding H0 on C4; it does not establish that target-domain recalibration is generally harmful. Frozen-threshold realized FPR and ROC-selected detection answer different oper-ational questions. 
+
+C.11 Targeted Backbone and Task Transfer Dream-v0-Instruct-7B on ELI5. This targeted second-backbone evaluation uses 500 held-out ELI5 human answers for calibration, a separate 200 human answers for negative evaluation, and 200 method-specific Dream generations for posi-tive evaluation. The i.i.d. system uses its original exact-tape detector, while SAC uses FFR.                       
+
+> Detection Method AUC TPR1 TPR5 i.i.d. Gumbel 1.000000 1.000 1.000 SAC-Copula .998625 .995 .995 Quality Source Median P95 P99 Composite collapse ELI5 human answers 13.42 24.04 30.55 0.0% i.i.d. Gumbel 30.02 889.58 5988.25 24.5% SAC-Copula 17.84 81.69 240.68 4.0%
+
+Table 27: Dream-7B detection and quality evidence on ELI5. Composite collapse is the Dream experiment’s preregistered PPL/repetition rule and is not the LLaDA 
+
+Conditional_PPL > 100 statistic. 
+
+Both methods retain near-perfect detection in this protocol, while SAC reduces the i.i.d. upper-tail and composite-collapse profile. This provides targeted evidence of cross-DLM generalization to a second backbone. 
+
+LLaDA on C4-en continuation. The task uses a continuation instruction with a 128-token pas-sage and generates 256 tokens. SAC uses W =39 , σ K = 15 , ρ = 0 .6 with no C4-specific water-mark retuning. Calibration uses 200 C4-prompted unwatermarked LLaDA outputs; evaluation uses 500 raw non-watermarked C4-en records and 200 method-specific watermarked outputs. The method-matched pipelines use Old for i.i.d. and FFR for SAC.                    
+
+> Detection Pipeline AUC TPR1 TPR5 i.i.d.+Old .8260 .415 .530 SAC+FFR .9138 .670 .805 Quality Method Median PPL P99 PPL >100
+> i.i.d. 13.71 35740.32 10.5% SAC 13.73 494.57 3.0%
+
+Table 28: Method-matched LLaDA C4-en continuation results. Detection differences are attributed to the com-plete i.i.d.+Old and SAC+FFR pipelines, not solely to generation-side SAC. 
+
+The two pipelines have nearly identical median PPL, while SAC+FFR has a substantially less se-vere quality tail and stronger detection under the submitted method-matched protocol. This provides targeted evidence of cross-domain generalization to a second task/source setting. 
+
+Separate common-detector control. This is a distinct detector-control protocol and is not merged with the method-matched result above.                   
+
+> Detection control Method Old AUC FFR AUC FFR TPR1 FFR TPR5 i.i.d. .9107 .8627 .130 .315 SAC .9236 .9221 .785 .825 Quality Method Median P95 P99 PPL
+> >100 SBERT i.i.d. 13.71 680.48 35740.32 10.5% .570 SAC 13.73 78.61 494.57 3.0% .601
+
+Table 29: Separate C4 common-detector audit. These detector-control values must not be interpreted as the submitted method-matched C4 result in Table 28. 
+
+Additional quality context in this separate audit is Rep3 0.7298 → 0.6954 , Distinct3 0.2702 →
+
+0.3046 , and Ent3 1.7293 → 1.9986 from i.i.d. to SAC. The C4 raw-text calibration-source control, frozen-threshold C4 realnewslike FPR test, C4-en method-matched experiment, and this common-detector audit retain their distinct H0, evaluation, denominator, and detector identities.
