@@ -25,3 +25,86 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: diffusion-wm
+      description: 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: diffusion model watermarking
+          keyword_cn: 扩散模型水印
+          query: digital watermarking for diffusion models that generate images
+        - keyword: generative model watermarking
+          keyword_cn: 生成模型水印
+          query: watermark embedding and detection in generative models
+        - keyword: latent diffusion watermarking
+          keyword_cn: 潜在扩散模型水印
+          query: watermarking latent diffusion models and their generated outputs
+        - keyword: watermark embedding detection
+          keyword_cn: 水印嵌入与检测
+          query: embedding and detecting invisible watermarks in generated images
+        - keyword: generated content provenance
+          keyword_cn: 生成内容溯源
+          query: watermark-based provenance and attribution of generated content
+        - keyword: watermark removal attack
+          keyword_cn: 水印移除攻击
+          query: attacks that remove, erase, or forge watermarks in generated images
+      intent_queries:
+        - query: Defenses against watermark removal and adversarial attacks on generated image watermarks
+          query_cn: 针对生成图像水印的移除攻击和对抗攻击的防御方法
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-09-14T06:00:24.736Z'
+    - tag: image-tamper
+      description: >-
+        我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation
+        localization、image authentication、image integrity verification 和 manipulation
+        segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: image tampering localization
+          keyword_cn: 图像篡改定位
+          query: localizing tampered regions in digital images at pixel-level precision
+        - keyword: image manipulation localization
+          keyword_cn: 图像操控定位
+          query: identifying and localizing manipulated regions in digital images
+        - keyword: pixel-level localization
+          keyword_cn: 像素级定位
+          query: achieving pixel-level localization of tampered areas in images
+        - keyword: digital watermarking
+          keyword_cn: 数字水印
+          query: embedding imperceptible watermarks for image authentication and recovery
+        - keyword: image tampering detection
+          keyword_cn: 图像篡改检测
+          query: detecting signs of tampering in digital images
+      intent_queries:
+        - query: How to localize image tampering at the pixel level using deep learning models?
+          query_cn: 如何使用深度学习模型在像素级别定位图像篡改？
+          enabled: true
+          source: manual
+          note: ''
+        - query: Pixel level localization of copy move, splicing, and generative editing in digital images
+          query_cn: 数字图像中复制粘贴、拼接和生成式编辑的像素级定位
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-09-14T06:02:00.858Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
