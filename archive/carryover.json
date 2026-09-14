@@ -1,10 +1,15 @@
 {
-  "generated_at": "2026-09-14T06:06:22.918286+00:00",
-  "updated_date": "20260816-20260914",
+  "generated_at": "2026-09-14T22:29:19.315547+00:00",
+  "updated_date": "20260914",
   "carryover_days": 9,
   "tag_states": {
     "image-tamper": {
-      "updated_date": "20260816-20260914",
+      "updated_date": "20260914",
+      "carryover_days": 9,
+      "items": []
+    },
+    "diffusion-wm": {
+      "updated_date": "20260914",
       "carryover_days": 9,
       "items": []
     }

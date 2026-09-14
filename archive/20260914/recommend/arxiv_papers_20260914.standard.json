@@ -1,0 +1,263 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-14T22:29:19.314285+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 2,
+    "deep_cap": 7,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 12,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2609.08213v1",
+      "source": "arxiv",
+      "title": "DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory",
+      "abstract": "Diffusion watermarking embeds verifiable signals into the generative process and commonly verifies them by recovering trajectory-dependent evidence, making the marks robust to conventional pixel-space distortions. Existing removal attacks either regenerate along deterministic trajectories, which often preserve the watermark-bearing latent structure, or optimize every image separately. We identify the reliance on a recoverable generative trajectory as a common attack surface among the schemes we study. Based on this observation, we propose DRIFT, a black-box attack that combines partial forward diffusion with stochastic reverse resampling. Forward re-noising limits source information available to a fixed-depth recovery pipeline, while stochastic reversal supplies alternative noise-driven paths whose removal benefit we isolate through matched sampler comparisons. Adaptive DRIFT searches a selected ladder for each image's first verifier-rejected rung and refines fidelity while retaining only updates rejected by the same verifier. At fixed depth, we derive information-theoretic and Wasserstein source-dependence bounds; under realized-ladder monotonicity, the first rejected rung is least distorted among rejected rungs on that ladder, and verifier-gated refinement preserves rejection. Across nine watermarks spanning three paradigms, DRIFT achieves 98-100% attack success and the best image quality among the compared attacks, without secret keys, verifier internals, or per-image gradient optimization.",
+      "authors": [
+        "Rui Bao",
+        "Zheng Gao",
+        "Xiaoyu Li",
+        "Xiaoyan Feng",
+        "Yang Song",
+        "Jiaojiao Jiang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-09-08T03:54:17+00:00",
+      "link": "https://arxiv.org/pdf/2609.08213v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "black-box attack removing diffusion watermarks by deflecting generative trajectory",
+      "llm_evidence_cn": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "llm_evidence": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "canonical_evidence": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "llm_tldr_en": "Diffusion watermarks are verified via recoverable generative-trajectory evidence; DRIFT is a black-box attack combining partial forward diffusion with stochastic reverse resampling to break that reliance and strip the watermark.",
+      "llm_tldr_cn": "扩散水印通常在生成轨迹中嵌入可验证信号，并依赖可恢复的轨迹证据进行验证，因而对常规像素扰动较为鲁棒，现有移除攻击或保留水印潜在结构、或需逐图优化。本文提出DRIFT黑盒攻击，将部分前向扩散与随机反向重采样结合，前向加噪限制固定深度恢复流程可用的源信息。实验表明该方法能有效移除多种扩散水印方案，揭示了依赖可恢复生成轨迹这一共同攻击面，为水印鲁棒性设计提供参考。",
+      "llm_tldr": "扩散水印通常在生成轨迹中嵌入可验证信号，并依赖可恢复的轨迹证据进行验证，因而对常规像素扰动较为鲁棒，现有移除攻击或保留水印潜在结构、或需逐图优化。本文提出DRIFT黑盒攻击，将部分前向扩散与随机反向重采样结合，前向加噪限制固定深度恢复流程可用的源信息。实验表明该方法能有效移除多种扩散水印方案，揭示了依赖可恢复生成轨迹这一共同攻击面，为水印鲁棒性设计提供参考。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.12909v1",
+      "source": "arxiv",
+      "title": "Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery",
+      "abstract": "Semantic watermarking schemes such as Tree-Ring hide a detectable pattern in the initial noise latent of a diffusion model. Recent work shows these watermarks are not only removable but forgeable: an attacker who never sees the watermarking key can still produce images the genuine detector accepts. We reproduce the Reprompt forgery attack of Müller et al. against Tree-Ring on Stable Diffusion XL, using the authors' released code, on free-tier dual T4 GPUs with 14.6 GB of usable memory per device, substantially less per-GPU memory than the A40 hardware used in the original study. The attack reproduces. Over six trials of three arms we detect genuine images 6/6, clean images 0/6, and forged images 5/6, at 325-332 s per attack. Three further results came out of running it under constraint. The released detector computes a non-central $χ^2$ statistic and hands back only its CDF, so we recovered the discarded statistic; our recovery matches the released detector exactly, and two natural scores built from it separate the forged arm from the clean null at AUC 0.861 and 0.972 on the same eighteen observations. Running SDXL in half precision requires patching the pipeline's direct autoencoder calls, and a controlled probe confirms the patched path leaves the detector statistic unchanged. Finally, we report a prediction we made from reading the detector source that our measurements then contradicted. The notebook, the pinned fork and every measurement artifact are released with the paper.",
+      "authors": [
+        "Saifur Rahman Tamim",
+        "Md Taslimul Hasan Toufique",
+        "A. M. Tayeful Islam"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-09-11T14:35:42+00:00",
+      "link": "https://arxiv.org/pdf/2609.12909v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "black-box forgery attack against diffusion semantic watermark Tree-Ring",
+      "llm_evidence_cn": "针对扩散语义水印Tree-Ring的黑盒伪造攻击",
+      "llm_evidence": "针对扩散语义水印Tree-Ring的黑盒伪造攻击",
+      "canonical_evidence": "针对扩散语义水印Tree-Ring的黑盒伪造攻击",
+      "llm_tldr_en": "Semantic watermarks like Tree-Ring were thought robust, but this work reproduces the Reprompt forgery attack on Stable Diffusion XL, showing attackers without the key can produce images the genuine detector accepts.",
+      "llm_tldr_cn": "Tree-Ring等语义水印通过在扩散模型初始噪声潜码中隐藏可检测模式来标识生成图像，但已有研究显示其不仅可移除还可被伪造。本文在Stable Diffusion XL上复现Müller等人的Reprompt伪造攻击，并在显存受限的双T4免费GPU上运行作者代码。六次试验中真实图像6/6被检测、干净图像0/6、伪造图像5/6被接受，每次攻击约325至332秒。该结果证明黑盒语义水印可被伪造，凸显生成内容溯源机制的安全脆弱性。",
+      "llm_tldr": "Tree-Ring等语义水印通过在扩散模型初始噪声潜码中隐藏可检测模式来标识生成图像，但已有研究显示其不仅可移除还可被伪造。本文在Stable Diffusion XL上复现Müller等人的Reprompt伪造攻击，并在显存受限的双T4免费GPU上运行作者代码。六次试验中真实图像6/6被检测、干净图像0/6、伪造图像5/6被接受，每次攻击约325至332秒。该结果证明黑盒语义水印可被伪造，凸显生成内容溯源机制的安全脆弱性。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.06708v1",
+      "source": "arxiv",
+      "title": "A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content",
+      "abstract": "Large language models are transforming many industries with their text generation abilities. However, their outputs can be easily tampered with, creating serious risks in critical areas such as food safety reporting. To protect the integrity and traceability of AI-generated content, this paper introduces ToSS (Token Oriented Repartitioning and Strategic Selection), a reliable authentication method using adaptive dual watermarking. The key innovation of ToSS is its dual watermark encoding approach that divides vocabulary tokens into black and white sublists, enabling precise bit-level embedding of traceability information. Additionally, an entropy adaptive mechanism dynamically selects text regions with high prediction uncertainty for watermark insertion, maintaining text fluency and factual accuracy while ensuring reliable traceability. Experiments on multiple datasets, including food domain texts, demonstrate that ToSS achieves leading performance in both watermark capacity and decoding accuracy.",
+      "authors": [
+        "Zhongli Fang",
+        "Yiran Chen",
+        "Lingyun Zhang",
+        "Yu Liu",
+        "Ping Chen",
+        "Xiaoyan Sun",
+        "Jun Dai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-09-06T16:27:57+00:00",
+      "link": "https://arxiv.org/pdf/2609.06708v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "dual watermarking for authentication and traceability of LLM-generated content",
+      "llm_evidence_cn": "面向LLM生成内容认证与溯源的双重水印",
+      "llm_evidence": "面向LLM生成内容认证与溯源的双重水印",
+      "canonical_evidence": "面向LLM生成内容认证与溯源的双重水印",
+      "llm_tldr_en": "ToSS is an adaptive dual-watermarking framework that protects the integrity and traceability of LLM-generated text, using token repartitioning and entropy-guided region selection for bit-level embedding.",
+      "llm_tldr_cn": "大语言模型生成的文本易被篡改，在食品安全等关键领域带来严重风险，亟需可靠的内容认证与溯源手段。本文提出ToSS框架，采用自适应双重水印，将词表划分为黑白子表以实现比特级溯源信息嵌入，并利用熵自适应机制在高预测不确定性区域插入水印。该方法面向LLM生成文本，兼顾可检测性与内容质量。其贡献在于为生成内容的完整性认证与来源追溯提供水印方案，方法思路可迁移到生成图像水印。",
+      "llm_tldr": "大语言模型生成的文本易被篡改，在食品安全等关键领域带来严重风险，亟需可靠的内容认证与溯源手段。本文提出ToSS框架，采用自适应双重水印，将词表划分为黑白子表以实现比特级溯源信息嵌入，并利用熵自适应机制在高预测不确定性区域插入水印。该方法面向LLM生成文本，兼顾可检测性与内容质量。其贡献在于为生成内容的完整性认证与来源追溯提供水印方案，方法思路可迁移到生成图像水印。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.10416v1",
+      "source": "arxiv",
+      "title": "TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories",
+      "abstract": "Watermarking the final patch produced by a coding agent provides provenance evidence for the submitted artifact, but does not authenticate the visible process that produced it. Behavioral watermarking methods primarily provide a global detection or identifier-recovery signal, so a locally edited trajectory may retain sufficient ownership evidence without revealing which protected region has become inconsistent. To address this limitation, we propose TrajMark, a training-free, symmetric-key, visible-only trajectory watermarking framework that separates robust ownership attribution from fragile local integrity verification. Our framework consists of two complementary layers: a sparse owner layer that encodes a six-bit deployment identifier by rewriting a keyed subset of naturally occurring READ actions into masked linear equations, and a localization layer that inserts linked Q12 ordinary, group, and terminal seals to commit to protected critical-action segments. This separation allows ownership evidence to accumulate robustly across trajectories, while local modifications perturb nearby keyed commitments and expose the affected protocol region. We further provide a design-level analysis of owner recoverability, integrity collision probability, structural overhead, and localization behavior. Across three coding-agent frameworks and three LLMs, TrajMark recovers the exact owner in all evaluated clean full-watermark batches. Under exhaustive eligible single-site attacks it detects 95.5%-100% of edits, and under random single-action corruption it localizes 95.8% of modified sites to an accepted protocol region rather than to the individual action. Owner marking adds no trajectory actions; the integrity layer adds explicit read-only seals, and matched Pass@1 is 26.9% versus 26.3% for unwatermarked runs.",
+      "authors": [
+        "Bokang Zeng",
+        "Zheng Gao",
+        "Xiaoyu Li",
+        "Xiaoyan Feng",
+        "Jiaojiao Jiang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.SE"
+      ],
+      "published": "2026-09-09T16:33:02+00:00",
+      "link": "https://arxiv.org/pdf/2609.10416v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermark for ownership attribution and segment-level tamper localization",
+      "llm_evidence_cn": "用于所有权归属与片段级篡改定位的水印框架",
+      "llm_evidence": "用于所有权归属与片段级篡改定位的水印框架",
+      "canonical_evidence": "用于所有权归属与片段级篡改定位的水印框架",
+      "llm_tldr_en": "TrajMark watermarks coding-agent trajectories with a robust owner layer for attribution plus a fragile layer for segment-level tamper localization, separating ownership evidence from local integrity verification.",
+      "llm_tldr_cn": "现有对编码智能体产出补丁的水印只提供全局检测或身份恢复信号，无法揭示哪一受保护片段被局部篡改。作者提出TrajMark，一种免训练、对称密钥、仅可见的轨迹水印框架，将稳健的所有权归属层与脆弱的局部完整性验证层分离，稀疏所有者层编码六比特部署标识。该框架能在保留全局归属证据的同时定位被编辑的不一致片段，为生成过程的来源认证与篡改定位提供了可迁移的水印设计思路。",
+      "llm_tldr": "现有对编码智能体产出补丁的水印只提供全局检测或身份恢复信号，无法揭示哪一受保护片段被局部篡改。作者提出TrajMark，一种免训练、对称密钥、仅可见的轨迹水印框架，将稳健的所有权归属层与脆弱的局部完整性验证层分离，稀疏所有者层编码六比特部署标识。该框架能在保留全局归属证据的同时定位被编辑的不一致片段，为生成过程的来源认证与篡改定位提供了可迁移的水印设计思路。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.11188v1",
+      "source": "arxiv",
+      "title": "A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution",
+      "abstract": "Synthetic image attribution (SIA) has become increasingly important with the rapid advancement of text-to-image generation models. However, accurately identifying the source model of a generated image remains challenging due to the growing similarity among modern diffusion-based generators and the presence of diverse post-processing operations. In this report, we present a multi-view and confusion-guided ensemble framework for the Synthetic Image Attribution Challenge of the DLMMDD Workshop at ICANN 2026. Our approach integrates multiple complementary architectures, including FFT-ConvNeXt, DINOv2, CLIP, and Xception, to capture diverse attribution cues from frequency, semantic, and forensic perspectives. To improve robustness against unknown degradations and image manipulations, extensive data augmentation strategies are employed during training, simulating realistic post-processing operations such as compression, resizing, grayscale conversion, and blur. Furthermore, we analyze the confusion patterns of the ensemble model and observe severe ambiguity between Stable Diffusion 3 and Stable Diffusion 3.5. To address this issue, we introduce a dedicated binary expert classifier that is selectively activated under low-confidence conditions. We additionally apply class-adaptive confidence calibration to improve the discrimination of challenging classes such as Tencent Hunyuan. The proposed framework achieved 99.53% on the public leaderboard and 99.20% on the private leaderboard. The source code and implementation details are publicly available at https://github.com/ZOMIN28/SIA.",
+      "authors": [
+        "Zuomin Qu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-10T07:54:25+00:00",
+      "link": "https://arxiv.org/pdf/2609.11188v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "synthetic image attribution to identify the source generative model",
+      "llm_evidence_cn": "识别生成图像来源模型的合成图像归因",
+      "llm_evidence": "识别生成图像来源模型的合成图像归因",
+      "canonical_evidence": "识别生成图像来源模型的合成图像归因",
+      "llm_tldr_en": "A multi-view, confusion-guided ensemble combining FFT-ConvNeXt, DINOv2, CLIP and Xception attributes generated images to their source text-to-image model, improving robustness to post-processing.",
+      "llm_tldr_cn": "随着文本到图像生成模型的快速发展，准确识别生成图像的来源模型变得愈发重要，但现代扩散模型之间相似度升高且图像常经后处理，使归因十分困难。本文提出多视角与混淆引导的集成框架，融合FFT-ConvNeXt、DINOv2、CLIP与Xception等互补架构，从频域、语义与取证视角提取归因线索。该方法面向ICANN 2026合成图像归因挑战赛，提升了对后处理的鲁棒性。其贡献在于为生成内容的来源认证与溯源提供有效技术路径。",
+      "llm_tldr": "随着文本到图像生成模型的快速发展，准确识别生成图像的来源模型变得愈发重要，但现代扩散模型之间相似度升高且图像常经后处理，使归因十分困难。本文提出多视角与混淆引导的集成框架，融合FFT-ConvNeXt、DINOv2、CLIP与Xception等互补架构，从频域、语义与取证视角提取归因线索。该方法面向ICANN 2026合成图像归因挑战赛，提升了对后处理的鲁棒性。其贡献在于为生成内容的来源认证与溯源提供有效技术路径。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.12472v1",
+      "source": "arxiv",
+      "title": "TripPattern: A Pattern-based Text Watermarking Method for Large Language Models",
+      "abstract": "Text watermarking techniques have gained significant attention for identifying machine-generated text and mitigating risks from large language models (LLMs). Existing methods typically divide an LLM's vocabulary into green and red tokens, but encouraging generation toward green tokens can reduce text quality and naturalness. To address this, we propose TripPattern, a watermarking framework that formulates text watermarking as a pattern-based matching task using three vocabulary partitions. TripPattern divides the vocabulary into one neutral group and two pattern groups. During generation, the model alternates token selection between the two pattern groups to embed detectable patterns, while neutral tokens are selected independently to improve flexibility and preserve naturalness. For detection, TripPattern uses pattern-based statistical tests that provide interpretable p-values by measuring how often adjacent tokens alternate between the pattern groups. Theoretical analysis and empirical evaluations on four multilingual datasets show that TripPattern maintains LLM generation quality while achieving robust watermark detectability.",
+      "authors": [
+        "Sangjun Moon",
+        "Dasom Choi",
+        "Jingun Kwon",
+        "Hidetaka Kamigaito",
+        "Taro Watanabe",
+        "Manabu Okumura"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-09-11T06:14:17+00:00",
+      "link": "https://arxiv.org/pdf/2609.12472v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "pattern-based text watermarking for identifying machine-generated text",
+      "llm_evidence_cn": "识别机器生成文本的基于模式的文本水印",
+      "llm_evidence": "识别机器生成文本的基于模式的文本水印",
+      "canonical_evidence": "识别机器生成文本的基于模式的文本水印",
+      "llm_tldr_en": "TripPattern reformulates LLM text watermarking as pattern-based matching over three vocabulary partitions, alternating token groups to embed detectable patterns while preserving text quality.",
+      "llm_tldr_cn": "文本水印被广泛用于识别机器生成文本并降低大语言模型风险，但现有方法把词表分为绿红词并偏向绿词，往往损害文本质量与自然度。本文提出TripPattern，将文本水印建模为基于模式的匹配任务，把词表分为一个中性组和两个模式组，生成时在两个模式组间交替选词以嵌入可检测模式，中性词则独立选取以提升质量。实验表明该方法在保持可检测性的同时改善了文本自然度。其贡献在于为生成模型水印的嵌入与检测提供了更优权衡。",
+      "llm_tldr": "文本水印被广泛用于识别机器生成文本并降低大语言模型风险，但现有方法把词表分为绿红词并偏向绿词，往往损害文本质量与自然度。本文提出TripPattern，将文本水印建模为基于模式的匹配任务，把词表分为一个中性组和两个模式组，生成时在两个模式组间交替选词以嵌入可检测模式，中性词则独立选取以提升质量。实验表明该方法在保持可检测性的同时改善了文本自然度。其贡献在于为生成模型水印的嵌入与检测提供了更优权衡。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

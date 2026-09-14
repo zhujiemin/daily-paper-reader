@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-16 ~ 2026-09-14</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-14</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 18 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 6 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>11</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>7</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-14 06:12:56 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-14 22:31:37 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,9 +69,10 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>本期（2026-08-16~09-14）共筛出 18 篇，精读 11 篇、速读 7 篇，主线集中在图像篡改定位与 AI 生成图像取证。</p>
-<p>最值得看的是满分 10 分的《APT: Anchor-aligned Perturbations for Tamper Localization in Fully Regenerated Images》和 9 分的《Frozen DINO Localizes Image Edits Without a Localizer》，都指向&quot;不依赖额外定位器&quot;的篡改定位思路。</p>
-<p>普通读者可先读这两篇的方法与结论，再顺带浏览速读里 8 分的水印鲁棒性分析和 7 分的合成媒体溯源工作。</p>
+<p>今日共生成 6 篇推荐（精读 2 篇，速读 4 篇）</p>
+<p>精读：《DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory》（10.0/10）, 《Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery》（9.0/10）</p>
+<p>速读：《A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content》（6.0/10）, 《TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories》（6.0/10）, 《A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution》（6.0/10）</p>
+<p>这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -80,12 +81,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">11 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="APT: Anchor-aligned Perturbations for Tamper Localization in Fully Regenerated Images">APT: Anchor-aligned Perturbations for Tamper Localization in Fully Regenerated Images</span></li><li><span class="dpr-home-dashboard-paper-title" title="Frozen DINO Localizes Image Edits Without a Localizer">Frozen DINO Localizes Image Edits Without a Localizer</span></li><li><span class="dpr-home-dashboard-paper-title" title="Zero-Shot Color Image Manipulation Localization via Noise Residual Artifact Pattern Analysis">Zero-Shot Color Image Manipulation Localization via Noise Residual Artifact Pattern Analysis</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory">DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory</span></li><li><span class="dpr-home-dashboard-paper-title" title="Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery">Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>8</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>3</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -93,12 +94,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">7 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="What Limits Robustness in Deep Image Watermarking: An Analysis of Mechanisms and Their Scaling Across Capacities">What Limits Robustness in Deep Image Watermarking: An Analysis of Mechanisms and Their Scaling Across Capacities</span></li><li><span class="dpr-home-dashboard-paper-title" title="Retrosynthesis of Synthetic Media for Explainable AI Provenance Forensics">Retrosynthesis of Synthetic Media for Explainable AI Provenance Forensics</span></li><li><span class="dpr-home-dashboard-paper-title" title="Prior-Conditioned Gaussian Discriminants for Generalizable AI-generated Image Detection">Prior-Conditioned Gaussian Discriminants for Generalizable AI-generated Image Detection</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content">A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content</span></li><li><span class="dpr-home-dashboard-paper-title" title="TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories">TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories</span></li><li><span class="dpr-home-dashboard-paper-title" title="A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution">A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>4</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>3</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>4</strong></span></div>
 </section>
 </div>
 

@@ -1,0 +1,105 @@
+{
+  "date": "20260914",
+  "date_label": "",
+  "generated_at": "2026-09-14 22:31:37 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.08213v1",
+      "route": "202609/14/2609.08213v1-drift-removing-diffusion-watermarks-by-deflecting-the-generative-trajectory",
+      "title": "DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "通过偏转生成轨迹移除扩散水印的黑盒攻击",
+      "first_seen_at": "2026-09-14 22:31:37 UTC",
+      "updated_at": "2026-09-14 22:31:37 UTC"
+    },
+    {
+      "paper_id": "2609.12909v1",
+      "route": "202609/14/2609.12909v1-forging-tree-ring-reproducing-and-instrumenting-black-box-semantic-watermark-forgery",
+      "title": "Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "针对扩散语义水印Tree-Ring的黑盒伪造攻击",
+      "first_seen_at": "2026-09-14 22:31:37 UTC",
+      "updated_at": "2026-09-14 22:31:37 UTC"
+    },
+    {
+      "paper_id": "2609.06708v1",
+      "route": "202609/14/2609.06708v1-a-trustworthy-watermarking-framework-for-llm-generated-food-safety-content",
+      "title": "A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向LLM生成内容认证与溯源的双重水印",
+      "first_seen_at": "2026-09-14 22:31:37 UTC",
+      "updated_at": "2026-09-14 22:31:37 UTC"
+    },
+    {
+      "paper_id": "2609.10416v1",
+      "route": "202609/14/2609.10416v1-trajmark-ownership-attribution-and-segment-level-tamper-localization-for-coding-agent-trajectories",
+      "title": "TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "用于所有权归属与片段级篡改定位的水印框架",
+      "first_seen_at": "2026-09-14 22:31:37 UTC",
+      "updated_at": "2026-09-14 22:31:37 UTC"
+    },
+    {
+      "paper_id": "2609.11188v1",
+      "route": "202609/14/2609.11188v1-a-multi-view-and-confusion-guided-ensemble-framework-for-robust-synthetic-image-attribution",
+      "title": "A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "识别生成图像来源模型的合成图像归因",
+      "first_seen_at": "2026-09-14 22:31:37 UTC",
+      "updated_at": "2026-09-14 22:31:37 UTC"
+    },
+    {
+      "paper_id": "2609.12472v1",
+      "route": "202609/14/2609.12472v1-trippattern-a-pattern-based-text-watermarking-method-for-large-language-models",
+      "title": "TripPattern: A Pattern-based Text Watermarking Method for Large Language Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "识别机器生成文本的基于模式的文本水印",
+      "first_seen_at": "2026-09-14 22:31:37 UTC",
+      "updated_at": "2026-09-14 22:31:37 UTC"
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+Title: A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content
+
+URL Source: https://arxiv.org/pdf/2609.06708v1
+
+Published Time: Wed, 09 Sep 2026 01:27:09 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content 
+
+Zhongli Fang 1,2 , Yiran Chen 1,2 , Lingyun Zhang 1,2 , Yu Liu 1,2 , Ping Chen 2*, Xiaoyan Sun 3* and Jun Dai 3*
+
+1School of Computer Science and Technology, Fudan University, China 
+
+2Institute of Big Data, Fudan University, China 
+
+3 Worcester Polytechnic Institute 
+
+Abstract —Large language models are transforming many industries with their text generation abilities. However, their outputs can be easily tampered with, creating serious risks in critical areas such as food safety reporting. To protect the integrity and traceability of AI-generated content, this paper introduces ToSS (Token Oriented Repartitioning and Strategic Selection), a reliable authentication method using adaptive dual watermarking. The key innovation of ToSS is its dual watermark encoding approach that divides vocabulary tokens into black and white sublists, enabling precise bit-level embedding of traceabil-ity information. Additionally, an entropy adaptive mechanism dynamically selects text regions with high prediction uncertainty for watermark insertion, maintaining text fluency and factual accuracy while ensuring reliable traceability. Experiments on multiple datasets, including food domain texts, demonstrate that ToSS achieves leading performance in both watermark capacity and decoding accuracy. 
+
+Index Terms —Large Language Models, Text Watermarking, Food Content Safety 
+
+I. I NTRODUCTION 
+
+With the rapid development of artificial intelligence, vari-ous industries are accelerating their transition towards intel-ligentization [1]. The rise of generative models, particularly large language models (LLMs) [2], has significantly advanced technologies in speech, image, and text generation, profoundly changing people’s lives and work patterns. However, the swift pace of technological advancement has also introduced signif-icant regulatory and security challenges. In recent years, the misuse of generative models to create fake news, celebrity im-ages, and tamper with critical documents has become increas-ingly prominent. Especially in the food sector, LLMs could be maliciously used to forge food safety inspection reports, alter nutritional composition tables, generate false traceability information, or even fabricate misleading nutritional advice or fake health certifications, posing serious threats to public health and market order. Therefore, there is an urgent need for effective content authentication mechanisms to prevent such misuse. Watermarking technology, as a viable solution, can embed traceable identifiers into generated content. By detecting the presence of a watermark (zero-bit watermark-ing) or extracting embedded specific information (multi-bit watermarking), it enables authentication of content origin and user identity tracing, thereby ensuring content authenticity and trustworthiness. 
+
+*Corresponding authors: Ping Chen (pchen@fudan.edu.cn), Xiaoyan Sun (xsun7@wpi.edu) and Jun Dai (jdai@wpi.edu) With the first-stage watermark 
+
+> Focus on eating a variety of fresh, wholesome foods to nourish your body. Build meals around colorful vegetables and fruits, choosing different types to get a broad range of nutrients. Include good sources of protein with each meal, such as fish, beans, or lean meats. Use healthy fats like olive oil and nuts to support your heart and brain. Please create a personalized nutrition plan for me based on my health goals, current eating habits, any medical conditions or dietary restrictions, lifestyle factors like activity level and sleep, food preferences, and challenges I face with sticking to a healthy diet – include specific meal ideas and key recommendations to help me improve my overall wellbeing.
+
+With second-stage watermarking 
+
+> Focus on eating a variety of fresh, wholesome foods to nourish your body. Build meals around colorful vegetables and fruits, choosing different types to get a broad range of nutrients. Include good sources of protein with each meal, such as fish, beans, or lean meats. Use healthy fats like olive oil and nuts to support your heart and brain.
+
+Prompt 
+
+Authentic/Tampered Report 
+
+> Message& Consistency Verification
+
+1 1 0 0 0 1 1 0 0 1 1
+
+> Bit-based Watermark Information Watermark Text Embedding
+
+Fig. 1. Illustration of watermark extraction in the ToSS framework. The first-stage watermark verifies existence using red and green token lists, while the second-stage watermark encodes multi-bit traceability information through black (orange) and white (blue) token lists. The extracted bit sequence is compared with the stored reference to determine whether the text is authentic or tampered. 
+
+Current works, such as the zero-bit watermarking scheme by Kirchenbauer et al. [3], have made significant progress in proving the existence of generated text, while Qu et al. [4] have explored the embedding of multi-bit information. However, these existing approaches generally struggle to achieve stable embedding and reliable extraction of long-bit information within limited text lengths while preserving text quality. Par-ticularly in practical application scenarios like food reports and nutritional guidance, there is often a need to embed complete traceability information, certification numbers, or timestamps as long-bit data within a single paragraph or short statement [5]. The performance of existing technologies in such short texts remains insufficient. Consequently, there is still a lack of watermarking techniques capable of effectively storing long-bit information within a single paragraph, which limits their practical application in fine-grained authentication scenarios. In contrast, this paper proposes an adaptive dual-watermarking framework named Token-Oriented Repartition-ing and Strategic Selection(ToSS) for authenticating content arXiv:2609.06708v1 [cs.CR] 6 Sep 2026 Please create a personalized nutrition plan for me based on my health goals, current eating habits, any medical conditions or …… 
+
+> Prompt: User ID:0xC67
+
+Message   
+
+> Z-score: 6.47
+> Large Language Model
+> Low High
+> Entropy Filtering
+> Low Entropy Example （Weak Embedding）
+> High Entropy Watermark Embedding
+> High Entropy Example
+> 1 1 0 0 0 1 1 0 0 1 1 1 Watermark Information: User ID->：110001100111
+> Low Entropy
+> Focus on eating a variety of fresh, wholesome foods to nourish your body. Build meals around colorful vegetables and fruits, choosing different types to get a broad range of nutrients. Include good sources of protein with each meal, such as fish, beans, or lean meats. Use healthy fats like olive oil and nuts to support your heart and brain.
+
+# …Fig. 2. Overview of the ToSS framework. Given an input prompt, the language model generates text while the entropy-based filtering module identifies high-entropy and low-entropy regions. Multi-bit watermark information is embedded only in high-entropy regions via dynamic black–white list selection, while low-entropy regions are preserved to maintain textual fluency and factual accuracy. 
+
+generated by large models, as illustrated in Fig. 1. In the dual-watermark design, the first-stage watermark partitions the vocabulary into a green list and a red list, and biases generation toward green-list tokens to enable zero-bit watermark existence verification. The second-stage watermark further divides the green list into a white list (blue tokens) and a black list (orange tokens), embedding multi-bit traceability information through forced sampling according to the target bit sequence. In addition, ToSS incorporates an entropy-adaptive mechanism: watermark embedding is strengthened in high-entropy regions, while only a light green-list bias is applied in low-entropy regions to preserve textual fluency. During verification, the system first performs zero-bit de-tection and then reconstructs the multi-bit sequence using the black/white list assignments, comparing it against the stored reference to determine whether the text has been tampered with. Experimental results show that ToSS can robustly embed and extract watermarks of up to 64 bits in short-text scenarios such as food safety reports and nutritional guidance, and significantly outperforms existing methods in text fluency and factual consistency. In summary, the main contributions of this paper are as follows:  
+
+> •
+
+The proposal of an adaptive dual-watermarking frame-work combines the existence verification capability of zero-bit watermarking with the information tracing ability of multi-bit watermarking, achieving efficient and fine-grained content authentication within a unified frame-work.  
+
+> •
+
+The design of a dynamic hard-coded list mechanism builds upon the green list, dynamically partitions black and white lists using pseudo-random hash functions, and employs a hard-selection rule to unambiguously map message bits to vocabulary choices, enhancing the relia-bility and stealth of information embedding.  
+
+> •
+
+The introduction of an entropy-adaptive embedding strat-egy allows intelligent selection of embedding opportu-nities based on the predictive entropy of the language model, enforcing strong embedding in high entropy re-gions to ensure capacity while prioritizing text quality protection in low-entropy regions, thus achieving an opti-mal balance between watermark strength and text fluency.  
+
+> •
+
+The achievement of efficient long bit information embed-ding and extraction in short texts enables stable embed-ding of up to 64 bits of traceability information within paragraph-level short texts, addressing the limitation of insufficient embedding capacity in constrained paragraphs in existing technologies and providing a feasible au-thentication solution for practical scenarios such as food reports. II. R ELATED WORK 
+
+A. Zero-bit Watermarking 
+
+Research on zero-bit watermarking has progressed from rule-based techniques to approaches leveraging modern lan-guage models. Early methods focused on rewriting-based strategies such as paraphrasing [6] and synonym substitution [7]. With the rise of LLMs, more imperceptible watermarking became possible. For example, Abdelnabi et al. [8] proposed using a reverse-trained text-to-text model to perform both insertion and extraction. He et al. [9], [10] embedded water-marks via contextual lexical substitution. A major milestone was the work by Kirchenbauer et al. [3], who introduced a statistical watermark by modifying token-generation log-its—an approach that has become a standard technique for distinguishing machine-generated from human-written text. 
+
+B. Multi-bit Watermarking 
+
+Multi-bit watermarking embeds information-bearing bit se-quences into generated text, enabling applications such as source attribution and content tracking. Fernandez et al. [11] improved robustness using stronger statistical tests, while Yoo et al. [12] assigned short bit segments to tokens through pseudo-random mapping. Qu et al. [4] further enhanced ro-bustness through pseudo-random segment assignment. How-ever, a common limitation of the aforementioned schemes is their requirement for a large number of tokens to embed the watermark, indicating a lack of high-density embedding capability. III. M ETHODOLOGY 
+
+A. Overall Framework 
+
+The ToSS framework proposed in this paper adopts asynergistic dual-layer watermarking architecture, aiming to achieve everything from efficient existence verification to fine-grained information tracing. Building upon the classic zero-bit watermarking foundation, this design innovatively intro-duces an encodable multi-bit watermarking layer and balances watermark strength with text quality through an adaptive mechanism. Its detailed design is illustrated in Fig. 2. In par-ticular, ToSS incorporates an entropy-adaptive decision mod-ule that distinguishes between high-entropy and low-entropy positions during text generation. As shown in the figure, high-entropy tokens (marked in red) represent regions where the model is uncertain and thus suitable for full-strength multi-bit watermark embedding through dynamic black–white list selection. Low-entropy tokens (marked in light blue), which typically correspond to factual or semantically constrained content, receive only a weak green-list bias and no multi-bit embedding, ensuring that text fluency and factual accuracy are preserved. The existence verification layer of the watermark is based on the green list method using statistical hypothesis testing. This layer implants detectable statistical features into the text by biasing the generation probability of green list vocabulary during the text generation process. For a given text segment to be detected, one can efficiently determine whether it contains a watermark by calculating its Z-score: 
+
+z = |SG| − γT 
+
+pT γ (1 − γ) (1) Comparing it with a preset threshold, where |SG| is the number of green list tokens, T is the text length, and γ is the green list ratio. The information tracing layer is the core innovation of this framework. It constructs an encodable communication channel based on the existence verification layer. This layer converts traceability information such as user identity and timestamp into a binary sequence m ∈ { 0, 1}L and embeds the information bits into the vocabulary selection pattern through a dynamic pseudo-random mapping mechanism. Specifically, at each generation timestep t, based on the current message bit mi to be embedded, the system further partitions the base green list Gt into a white list Wt and a black list 
+
+Bt, achieving information encoding by adjusting the sampling probability. Furthermore, an entropy-adaptive embedding strat-egy dynamically adjusts the watermark embedding strength 
+
+δ′ = α(Ht) · δ according to the predictive entropy value Ht of the language model at each generation position. This ensures the robustness of information embedding in high-uncertainty contexts while prioritizing text fluency and accuracy for low-uncertainty critical information. This layered design allows ToSS to retain the detection efficiency of zero-bit watermarks while achieving the capa-bility to embed long-bit traceability information in paragraph-level short texts. It provides a practical solution for scenarios requiring high information density authentication, such as food safety reports. 
+
+B. Key Ideas of Our Watermark Design 
+
+To achieve reliable embedding of multi-bit information, this work proposes a dynamic list partitioning mechanism based on hard selection. Building upon the green list of traditional zero-bit watermarks, this mechanism constructs a deterministic information encoding channel through a pseudo-random hash function. Specifically, at each generation timestep t, the system first generates a base green list Gt based on the previous token 
+
+st−1 and a key K, with its size approximately γ·| V |, consistent with the standard procedure of such methods. Subsequently, based on the current message bit index msg index and the key K, the system pseudo-randomly partitions the green list 
+
+Gt into equally sized black list b list and white list w list :
+
+Gt = b list ∪ w list, |b list | = |w list | = |Gt|/2 (2) Let the message to be embedded be 
+
+m = ( m1, m 2, . . . , m L) ∈ { 0, 1}L (3) The hard-encoding rule ensures an unambiguous mapping from each message bit to vocabulary selection: when mi = 0 ,the next token is sampled uniformly from the black list b list ;when mi = 1 , it is sampled uniformly from the white list 
+
+w list .Formally, 
+
+st =
+
+(
+
+Uniform (b list ), mi = 0 
+
+Uniform (w list ), mi = 1 (4) This deterministic binding eliminates the inherent uncer-tainty of traditional probability-bias watermarking, thereby forming a solid foundation for reliable extraction. During the extraction phase, the detector reconstructs the list partition at each timestep using the same key K. The em-bedded information bits are then recovered using maximum-likelihood decoding: 
+
+ˆmi = arg max 
+
+> b∈{ 0,1}
+
+X
+
+> t
+
+I st ∈ L t(b) (5) This dynamic mechanism inherits the detection efficiency of zero-bit watermarks while maintaining encoding stealth through pseudo-random list partitioning. However, we observe that the algorithm attempts to embed watermark bits at every generation position, which leads to substantial degradation in text quality. Therefore, we further develop an entropy-adaptive strategy that restricts such strong forced embedding to suitable high-entropy regions, thereby jointly optimizing both information reliability and text quality. TABLE I COMPARISON OF WATERMARKING PERFORMANCE ACROSS REPRESENTATIVE METHODS UNDER DIFFERENT BIT LENGTHS .                                                                                               
+
+> Method 12-bit 16-bit 20-bit 24-bit 32-bit
+> Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Fernandez et al. [11] 99.6 100.0 0.12 99.6 100.0 0.34 99.2 99.9 5.04 98.0 99.8 110 NA NA 29000 (Estimated) Wang et al. [13] 99.6 100.0 0.16 98.8 99.9 0.58 98.4 99.8 3.14 97.2 99.6 35.5 NA NA 8300 (Estimated) Yoo et al. [12] 86.4 96.5 0.01 73.6 94.6 0.01 49.2 90.8 0.01 30.4 89.4 0.01 8.4 81.2 0.01 Cohen et al. [14] 93.2 98.7 0.01 88.8 97.0 0.02 78.4 95.3 0.02 65.6 94.7 0.03 27.2 89.7 0.04 Qu et al. [4] 98.8 99.9 0.04 98.0 99.7 0.06 97.6 99.6 0.10 96.0 99.5 0.18 94.0 99.1 0.6
+> ToSS(Ours) 100.0 100.0 0.35 99.45 99.93 0.36 99.43 99.89 0.36 98.95 99.79 0.37 98.95 99.65 0.39
+
+C. Adaptive Entropy Embedding Algorithm 
+
+To address the potential degradation of text quality caused by hard encoding in low-entropy regions, this work introduces an entropy-adaptive embedding strategy grounded in predictive uncertainty. The core idea is to leverage the entropy value 
+
+Ht = − X
+
+> v∈V
+
+Pt(v) log Pt(v) (6) of the language model at each generation step as a signal for dynamically adjusting the watermark embedding strength. When the model exhibits high prediction certainty (low-entropy regions), text quality is prioritized; when prediction uncertainty is high (high-entropy regions), strong watermark embedding is applied to ensure reliable information transmis-sion. Specifically, the system first sets an entropy threshold Hth .At each generation timestep t, the current entropy value Ht is computed and compared with the threshold. If Ht < H th , the watermark embedding operation is skipped, and the token st
+
+is sampled directly from the original probability distribution 
+
+pt. In this case, the message-bit index msg index is not ad-vanced. This mechanism ensures that the algorithm preserves text fluency in low-entropy regions, such as key terminology and fixed expressions. When Ht ≥ Hth , the system enters the watermark embed-ding mode. If there are still message bits to be written (i.e., 
+
+msg index < L ), the system forcibly samples from the corre-sponding black or white list according to the current message bit mi. Unlike traditional hard-encoding watermarking, the bit index is advanced only after the bit has been successfully embedded, which significantly improves the completion rate of long-message embedding under limited text length. After all message bits have been embedded ( msg index ≥
+
+L), the system automatically falls back to a single-layer green-list biasing mode, where a bias δ is applied to the logits of tokens in the green list Gt before sampling. This retains watermark existence-detection capability while avoiding un-necessary computational overhead. IV. E XPERIMENT 
+
+A. Experiment Setup 
+
+Following prior research [4], we evaluate our method ToSS using the following datasets: OpenGen [15], C4-News [16], 
+
+Fig. 3. Match rate performance of the proposed ToSS method across different large language models and datasets. 
+
+Fig. 4. Z-score performance of the ToSS watermark across different large language models and datasets. 
+
+and Essays [17]. Specifically, OpenGen contains 3,000 two-sentence passages randomly sampled from the WikiText103 [18] validation set. The C4-News dataset comprises roughly 15GB of online news text. The Essays dataset consists of student assignments from the IvyPanda repository [19]. To TABLE II PERFORMANCE OF THE LL AMA-2-7B MODEL ON THE OPEN GEN DATASET UNDER DIFFERENT ENTROPY THRESHOLDS                                                                                                                                         
+
+> Threshold 12-bit 16-bit 20-bit 24-bit 32-bit 64-bit
+> Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) Match (%) Bit Acc (%) Time (s) 0.0 100.0 100.0 0.12 100.0 100.0 0.17 100.0 100.0 0.18 100.0 100.0 0.19 100.0 100.0 0.21 100.0 100.0 0.28 1.0 100.0 100.0 0.35 99.45 99.93 0.36 99.43 99.89 0.36 98.95 99.79 0.37 98.95 99.65 0.39 95.63 99.12 0.47 2.0 98.00 99.85 0.37 97.00 99.75 0.40 95.88 99.62 0.43 94.40 99.49 0.47 92.50 99.32 0.51 89.38 99.10 0.64 3.0 98.0 98.0 0.36 88.0 93.3 0.37 90.0 90.0 0.42 84.0 86.4 0.42 66.0 72.4 0.46 16.0 17.4 0.47 4.0 74.0 75.2 0.44 58.0 59.6 0.45 44.0 46.4 0.46 40.0 40.0 0.47 16.0 16.0 0.47 0.0 0.0 0.49 TABLE III EFFECT OF DIFFERENT ENTROPY THRESHOLDS ON TEXT PERPLEXITY
+> (PPL) OF THE LL AMA-2-7B MODEL ON THE OPEN GEN DATASET
+> Threshold 12-bit 16-bit 20-bit 24-bit 32-bit 64-bit
+> 0.0 4.82 5.26 4.88 5.11 6.41 9.99 1.0 4.32 4.29 4.52 4.53 5.20 7.14 2.0 4.48 4.54 4.62 4.73 4.89 5.31 3.0 4.00 3.90 3.74 4.02 3.81 4.28 4.0 3.80 3.87 3.90 4.00 3.77 3.84
+
+better assess watermarking in food safety applications, we also introduce a new food-related dataset [20]. It includes diverse information such as recipes, ingredient lists, and cooking instructions. Unless specified otherwise, we primarily use the widely adopted OpenGen dataset as our main benchmark, consistent with prior work [4]. Our experiments primarily utilize the following state-of-the-art publicly available LLMs: LLaMA-2-7B [21], Guanaco-7B [22], and Falcon-7B [23]. By default, and consistent with prior work [4], we employ LLaMA-2-7B as our baseline model. We employ the following metrics for evaluation: match rate to assess the capability of fully extracting watermark information, and bit accuracy to reflect the precision of in-formation retrieval. For quality assessment, we report both the raw perplexity and the Z-score derived after watermark decod-ing to measure text quality and watermarking effectiveness, respectively. Additionally, we test our method with watermark bit lengths of 12, 16, 20, 24, 32, and 64 bits, setting the entropy threshold to 1.0 by default while maintaining the default values for all other parameters. 
+
+B. Comparison with Other Methods 
+
+We conducted a thorough comparison between our method and existing representative watermarking schemes, with partic-ular focus on the recent approach by Qu et al. [4]. Experiments were performed under identical settings, measuring match rate, bit accuracy, and extraction time across bit lengths from 12 to 32 bits. The results are summarized in Table I. In terms of decoding accuracy, our method achieved leading performance across all tested bit lengths. Even with 32-bit long-sequence embedding, it maintained a stable match rate of 98.95% and bit accuracy of 99.65%, showing minimal performance degradation. In comparison, while Qu et al. [4] achieved an excellent 94.0% match rate at 32 bits, our method still held a nearly 5 percentage point advantage. The methods by Yoo et al. [12] and Cohen et al. [14] suffered significant performance drops with long-bit embedding, with their 32-bit match rates plummeting to 8.4% and 27.2% respectively. This comparison strongly validates the effectiveness of our proposed dynamic list partitioning and entropy-adaptive mech-anism in maintaining reliability for long-sequence information embedding. This stable retention capability is crucial for sce-narios like food safety reports that require embedding complex traceability information such as production batch numbers, inspection timestamps, and organization codes. Regarding extraction efficiency, our method demonstrated excellent overall performance. Its extraction time was on the same order of magnitude as Qu et al. [4] and remained stable across all bit lengths, confirming the controllable computa-tional overhead of our approach. This sub-second detection speed meets the practical need for fast, on-the-fly verification of report authenticity within food supply chains. More impor-tantly, our method showed a substantial efficiency advantage over the approaches of Fernandez et al. [11] and Wang et al. [13]. For 24-bit embedding, our extraction time was 0.37 seconds, whereas the methods of [11] and [13] surged to 110 seconds and 35.5 seconds respectively due to computational complexity, rendering them impractical for 32-bit embedding. Notably, our method showed no significant performance degradation with long-sequence watermark embedding. As shown in Fig. 3, its watermark extraction accuracy remained high even when extended to 64-bit tests, significantly out-performing comparative methods. Specifically, on the Food dataset constructed to reflect the textual characteristics of the food domain, our method also achieved excellent and stable performance (shown in Fig. 3 and Fig. 4), verifying its strong adaptability to domain-specific terminology and writing styles. Furthermore, the watermark evidence strength (Z-score) remained consistently high and stable across different water-mark lengths, as shown in Fig. 4. This clearly indicates that our entropy-adaptive strategy effectively balances embedding strength and length, providing technical assurance for reliable food information traceability and authentication. In summary, our method offers further improvement in decoding accuracy over the recent Qu et al. [4] approach, while far surpassing the computational efficiency of earlier high-accuracy schemes like [11] and [13]. It achieves a su-perior overall balance between decoding accuracy, extraction efficiency, and long-sequence embedding capability, laying a solid foundation for building a high-assurance AI content authentication system for food safety. C. Ablation Study 
+
+To test how well our entropy-based method works in critical areas like food safety, we carefully checked how different set-tings affect watermark performance and text quality. As shown in Tables II and III, when we set the threshold to 0.0, meaning the system always embeds watermarks regardless of content, watermark detection works perfectly. However, this comes at a clear cost to text quality. With longer watermarks, like 64 bits, the text becomes much less natural, with a perplexity score rising to 9.99. This shows that forcing watermarks into all parts of the text, including critical factual statements, can harm readability, which is unacceptable for professional reports. For high-risk uses like food safety reports or nutrition guides, where traceability must be perfectly accurate, we set the default entropy threshold to 1.0. This ensures extremely reliable watermark extraction. Even with 64-bit watermarks, the system achieves a 95.63% match rate and 99.12% bit ac-curacy, allowing error-free recovery of key details like sample IDs or ingredient amounts. Text quality remains acceptable, with a perplexity of 7.14, balancing reliability and readability. In situations where text fluency is more important, a thresh-old of 2.0 can be used. This improves text quality further (per-plexity 5.31), while watermark performance (89.38% match rate at 64 bits, 99.10% bit accuracy) stays sufficient for most verification needs. This shows the flexibility of our approach. However, for high-risk fields, using thresholds above 2.0 is not recommended, as decoding performance drops sharply, undermining the watermark’s core purpose. Therefore, a de-fault threshold of 1.0 offers the best balance, providing strong, reliable content protection for applications involving public health and safety. V. C ONCLUSION 
+
+In summary, our proposed ToSS framework offers a new technical approach for securing AI-generated content, partic-ularly in high-risk fields like food safety. The core design of ToSS is highly sensitive to tampering. Any unauthorized modification to the text disrupts the densely embedded water-mark information, providing a strong mechanism for verifying content integrity. This “zero-tolerance” mechanism ensures text originality, which is a critical feature for applications re-quiring absolute trustworthiness. Experimental results confirm that ToSS achieves this goal while maintaining high decoding accuracy and practical usability. Our work provides a new direction for content authentication, and future research may explore adaptive frameworks that balance integrity sensitivity and editing robustness across different application scenarios. VI. A CKNOWLEDGMENT 
+
+Zhongli Fang, Yiran Chen, Lingyun Zhang, Yu Liu and Ping Chen were supported by National Key R&D Program of China under grant No. 2023YFB3107404 and the Key Research and Development Programme of Ningbo’s “Science and Technology Innovation Yongjiang 2035” Plan under grant No. 2025Z054. REFERENCES [1] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bj¨ orn Ommer, “High-resolution image synthesis with latent diffu-sion models,” in CVPR , 2022, pp. 10684–10695. [2] Humza Naveed, Asad Ullah Khan, Shi Qiu, Muhammad Saqib, Saeed Anwar, Muhammad Usman, Naveed Akhtar, Nick Barnes, and Ajmal Mian, “A comprehensive overview of large language models,” ACM Transactions on Intelligent Systems and Technology , 2025. [3] John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein, “A watermark for large language models,” in ICML . PMLR, 2023, pp. 17061–17084. [4] Wenjie Qu, Wengrui Zheng, Tianyang Tao, Dong Yin, Yanze Jiang, Zhihua Tian, Wei Zou, Jinyuan Jia, and Jiaheng Zhang, “Provably robust multi-bit watermarking for ai-generated text,” in USENIX Security 25 ,2025. [5] Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Ye Jin Bang, Andrea Madotto, and Pascale Fung, “Survey of hallucination in natural language generation,” ACM computing surveys , 2023. [6] et.al Atallah, “Natural language watermarking and tamperproofing,” in 
+
+International workshop on information hiding . Springer, 2002, pp. 196– 212. [7] Umut Topkara, Mercan Topkara, and Mikhail J Atallah, “The hiding virtues of ambiguity: quantifiably resilient watermarking of natural language text through synonym substitutions,” in Proceedings of the 8th workshop on Multimedia and security , 2006, pp. 164–174. [8] Sahar Abdelnabi and Mario Fritz, “Adversarial watermarking trans-former: Towards tracing text provenance with data hiding,” in IEEE S&P . IEEE, 2021, pp. 121–140. [9] Xuanli He, Qiongkai Xu, Lingjuan Lyu, Fangzhao Wu, and Chenguang Wang, “Protecting intellectual property of language generation apis with lexical watermark,” in AAAI 2022 .[10] Xuanli He, Qiongkai Xu, Yi Zeng, Lingjuan Lyu, Fangzhao Wu, Jiwei Li, and Ruoxi Jia, “Cater: Intellectual property protection on text generation apis via conditional watermarks,” Advances in Neural Information Processing Systems , vol. 35, pp. 5431–5445, 2022. [11] Pierre Fernandez et al., “Three bricks to consolidate watermarks for large language models,” in IEEE WIFS . IEEE, 2023, pp. 1–6. [12] KiYoon Yoo, Wonhyuk Ahn, and Nojun Kwak, “Advancing beyond identification: Multi-bit watermark for large language models,” in 
+
+NAACL , 2024, pp. 4031–4055. [13] Lean Wang, Wenkai Yang, Deli Chen, Hao Zhou, Yankai Lin, Fandong Meng, Jie Zhou, and Xu Sun, “Towards codable watermarking for injecting multi-bits information to llms,” arXiv:2307.15992 , 2023. [14] Aloni Cohen, Alexander Hoover, and Gabe Schoenbach, “Watermarking language models for many adaptive users,” in IEEE S&P 2025 .[15] Kalpesh Krishna, Yixiao Song, Marzena Karpinska, John Wieting, and Mohit Iyyer, “Paraphrasing evades detectors of ai-generated text, but retrieval is an effective defense,” Advances in Neural Information Processing Systems , vol. 36, pp. 27469–27500, 2023. [16] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J Liu, “Explor-ing the limits of transfer learning with a unified text-to-text transformer,” 
+
+Journal of machine learning research , pp. 1–67, 2020. [17] Christoph Schuhmann, “Essays with instructions,” https://huggingface. co/datasets/ChristophSchuhmann/essays-with-instructions, 2023, Ac-cessed: January 10, 2024. [18] Stephen Merity, Caiming Xiong, James Bradbury, and Richard Socher, “Pointer sentinel mixture models,” arXiv:1609.07843 , 2016. [19] IvyPanda, “Ivypanda essays,” https://ivypanda.com/essays/, 2024, Ac-cessed: January 19, 2024. [20] corbt, “All-recipes dataset,” https://huggingface.co/datasets/corbt/ all-recipes, 2023, Accessed: January 1, 2026. [21] Xuandong Zhao, Prabhanjan Ananth, Lei Li, and Yu-Xiang Wang, “Provable robust watermarking for ai-generated text,” arXiv:2306.17439 ,2023. [22] Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer, “Qlora: Efficient finetuning of quantized llms,” Advances in neural information processing systems , vol. 36, pp. 10088–10115, 2023. [23] Ebtesam Almazrouei, Hamza Alobeidli, Abdulaziz Alshamsi, Alessan-dro Cappelli, Ruxandra Cojocaru, M´ erouane Debbah, ´ Etienne Goffinet, Daniel Hesslow, Julien Launay, Quentin Malartic, et al., “The falcon series of open language models,” arXiv:2311.16867 , 2023.

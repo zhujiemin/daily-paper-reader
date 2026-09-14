@@ -1,0 +1,1051 @@
+Title: TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories
+
+URL Source: https://arxiv.org/pdf/2609.10416v1
+
+Published Time: Thu, 10 Sep 2026 01:32:40 GMT
+
+Number of Pages: 41
+
+Markdown Content:
+# TRAJ MARK : O WNERSHIP ATTRIBUTION AND SEGMENT -L EVEL 
+
+# TAMPER LOCALIZATION FOR CODING -A GENT TRAJECTORIES 
+
+Bokang Zeng 
+
+School of Computer Science and Engineering University of New South Wales Sydney, Australia 
+
+> bokang.zeng@student.unsw.edu.au
+
+Zheng Gao 
+
+School of Computer Science and Engineering University of New South Wales Sydney, Australia 
+
+> zheng.gao1@unsw.edu.au
+
+Xiaoyu Li 
+
+School of Computer Science and Engineering University of New South Wales Sydney, Australia 
+
+> xiaoyu.li2@unsw.edu.au
+
+Xiaoyan Feng 
+
+School of Information and Communication Technology Griffith University Brisbane, Australia 
+
+> xiaoyan.feng@griffithuni.edu.au
+
+Jiaojiao Jiang 
+
+School of Computer Science and Engineering University of New South Wales Sydney, Australia 
+
+> jiaojiao.jiang@unsw.edu.au
+
+# ABSTRACT 
+
+Watermarking the final patch produced by a coding agent provides provenance evidence for the submitted artifact, but does not authenticate the visible process that produced it. Recent behavioral watermarking methods extend provenance to agent trajectories by embedding ownership evidence into observable actions. However, these methods primarily provide a global detection or identifier-recovery signal, so a locally edited trajectory may retain sufficient ownership evidence without revealing which protected region has become inconsistent. To address this limitation, we propose 
+
+TrajMark , a training-free, symmetric-key, visible-only trajectory watermarking framework that separates robust ownership attribution from fragile local integrity verification. Our framework consists of two complementary layers: a sparse owner layer that encodes a six-bit deployment identifier by rewriting a keyed subset of naturally occurring READ actions into masked linear equations, and a localization layer that inserts linked Q12 ordinary, group, and terminal seals to commit to protected critical-action segments. This separation allows ownership evidence to accumulate robustly across trajectories, while local modifications perturb nearby keyed commitments and expose the affected protocol region. We further provide a design-level analysis of owner recoverability, integrity collision probability, structural overhead, and localization behavior. Across three coding-agent frameworks and three LLMs, TrajMark recovers the exact owner in all evaluated clean full-watermark batches. Under exhaustive eligible single-site attacks it detects 95.5%–100% of edits, and under random single-action corruption it localizes 95.8% of modified sites to an accepted protocol region rather than to the individual action. Owner marking adds no trajectory actions; the integrity layer adds explicit read-only seals, and matched Pass@1 is 26.9% versus 26.3% for unwatermarked runs. Overall, TrajMark preserves robust batch-level ownership evidence while providing segment-level tamper detection and localization. 
+
+Keywords coding agents, behavioral watermarking, provenance, ownership attribution, tamper detection, trajectory localization 
+
+# 1 Introduction 
+
+Coding agents [1, 2] are increasingly used for software-engineering tasks such as automated bug fixing, test generation, and repository maintenance. Unlike conventional code-generation systems, a coding-agent run produces more than a final patch: it leaves a visible trajectory , an ordered record of observable actions including repository exploration, arXiv:2609.10416v1 [cs.CR] 9 Sep 2026 TrajMark search, file reads, edits, test executions, reproductions, and final submission. As such trajectories are increasingly retained or released for auditing and provenance, two questions become fundamental: who produced the trajectory , and 
+
+whether the released trajectory has been modified after generation . Reliable provenance therefore requires protecting not only the final software artifact, but also the visible process that produced it. Existing watermarking mechanisms primarily protect generated content rather than the underlying execution process. Token-level watermarks embed provenance signals into generated text [3, 4], code watermarks modify source-code structure or lexical choices [5], and cryptographic signatures can authenticate a submitted patch. These approaches provide evidence about what was produced, but not about how it was produced. The same patch may arise from substantially different debugging trajectories, while a released action record may be selectively rewritten without changing the final patch. Consequently, artifact-level provenance alone cannot authenticate the visible development process. Behavioral watermarking for agents takes an important step toward process-level provenance by embedding ownership evidence directly into agent actions. AgentMark and AGENTWM encode identifiers through behavioral or tool-execution choices [6, 7]; ActHook studies keyed hook behavior in agent trajectories [8]; and SeqWM introduces sequential transition patterns designed to retain watermark detection under trajectory corruption [9]. These methods demonstrate that an agent’s behavior, rather than only its textual output, can serve as a watermark carrier. However, their verification signals are primarily global : they determine whether a trajectory or collection of trajectories carries a watermark, or recover an embedded identifier. A global ownership signal may therefore remain detectable even after part of the released trajectory has been rewritten, without revealing which protected region has become inconsistent. This limitation exposes a more fundamental tension in trajectory provenance: ownership and integrity require different evidence structures . Ownership evidence should be robust : it should accumulate across naturally varying trajectories and remain recoverable when individual actions are missing, altered, or provide limited evidence. Tamper-localization evidence should instead be fragile : modifying a protected region should disturb a nearby commitment and thereby reveal where the inconsistency occurred. Attempting to use a single global watermark signal for both objectives conflates these opposing requirements. Our key observation is therefore that trajectory provenance should not be represented by a single homogeneous watermark channel. Instead, robust ownership attribution and fragile local integrity should be treated as complementary but explicitly separated protocol layers. Under such a design, ownership evidence can remain stable under partial corruption, while local edits deliberately disrupt region-specific commitments. This separation allows a verifier to retain confidence about whose trajectory collection it is while simultaneously identifying where an individual released trajectory has become inconsistent. Motivated by this principle, we propose TrajMark, a training-free, visible-only trajectory-watermarking framework for coding agents. TrajMark operates on a public canonical projection of observable actions rather than assuming access to the complete semantics or hidden state of an execution. Its owner layer embeds a six-bit deployment identifier into a keyed subset of naturally occurring READ actions. Letting the deployment identifier lie in GF(2) 6, each selected normalized filename contributes a masked linear equation over GF(2) with a nonzero coefficient row. The equation is encoded by rewriting only the READ subtype while preserving its semantic family and file target. Because these carriers reuse actions that the agent already intended to execute, owner-only mode introduces no additional trajectory steps, while sparse equations can be aggregated across multiple trajectories for batch-level identifier recovery. In parallel, the integrity and localization layer introduces deliberately fragile commitments around critical portions of the visible trajectory. TrajMark partitions the canonical action stream into protected segments and emits linked Q12 ordinary seals at eligible critical-segment boundaries. Pairs of ordinary seals are protected by group commitments, and a terminal seal closes the remaining suffix and observed seal sequence. Consequently, an eligible modification to a protected segment changes the inputs to one or more nearby keyed commitments, which can cause the corresponding ordinary, group, or terminal replay check to become inconsistent. The two layers thus serve complementary purposes: ownership evidence is sparse and redundant across trajectories, whereas integrity evidence is intentionally sensitive to local structural changes. Verification requires only the published visible trajectory, a secret key, and public canonicalization rules. It does not rely on model logits, hidden reasoning, private wrapper metadata, authenticated side information, or access to the original execution environment. The verifier reconstructs the ownership equations from visible READ actions and independently replays the ordinary, group, and terminal seal protocol. It therefore produces two distinct outputs: a batch-level deployment-identifier decision and trajectory-level alarms identifying the protected segment, segment pair, or suffix whose keyed replay has become inconsistent. Importantly, TrajMark authenticates this public canonical projection rather than claiming to reconstruct deleted content or certify the complete semantics of an execution. 2TrajMark We implement TrajMark across three independently engineered coding-agent frameworks and evaluate it with three LLMs. Across all 27 evaluated full-watermark agent–provider–seed groups, the visible-only decoder recovers the exact embedded six-bit identifier. Under exhaustive eligible single-site attacks, TrajMark detects 95.5%–100% of edits across the nine agent–LLM conditions; for random one-action payload corruption, accepted localization covers 95.8% of eligible modified sites, while matched Pass@1 reaches 26.9% versus 26.3% without watermarking. These results demonstrate that robust ownership attribution and fragile local integrity can coexist within the same visible coding-agent trajectory without requiring model retraining or hidden verifier inputs. We summarize our contributions as follows: • Problem and design principle. We formulate coding-agent trajectory provenance over a public canonical projection of released action records and identify the fundamental distinction between robust batch-level ownership attribution and fragile trajectory-level integrity. • Framework. We propose TrajMark, a training-free, visible-only framework that combines sparse filename-indexed linear ownership equations over natural READ actions with linked Q12 ordinary, group, and terminal commitments. This two-layer design enables batch-level owner recovery together with protocol-level tamper localization. • Analysis and empirical evaluation. We provide a design-level analysis of owner recoverability, integrity collision behavior, structural overhead, and localization, and conduct an extensive evaluation across three coding-agent frameworks and three LLMs, covering exact identifier recovery, random trajectory corrup-tion, exhaustive single-site tampering, protocol-unit localization, structural cost, and repository-level task performance. 
+
+# 2 Background and Motivation 
+
+2.1 Coding-Agent Trajectories 
+
+A coding agent repeatedly observes a repository state, asks a language model for the next decision, executes a tool, and records the resulting action and observation. Interfaces differ: SWE-agent exposes a text-action agent–computer interface [1]; OpenHands represents interactions as typed events [2]; and OpenDev exposes structured tool calls. Nevertheless, their visible behavior contains recurring semantic families: • EXPLORE : inspect directory structure or repository metadata; • SEARCH : find names, symbols, imports, or matching content; • LOCATE : read all or a bounded region of a file; • CRITICAL : edit code, refactor, reproduce a defect, or run tests; and • TERMINAL : submit or end the run. Although these runtimes may record both actions and observations, TrajMark verifies a public canonical projection of visible action records, including public linkage and execution status; observation contents beyond these fields are not detector inputs. The first three families are read-only and often admit multiple surface realizations. TrajMark uses paired realizations that retain the READ family, file target, and read-only character, although they may return different observations and their utility impact must therefore be evaluated empirically. Agent-proposed natural READs provide Q6 ownership carriers. Separately, framework adapters instantiate additional read-only actions from the Q12 alphabet as integrity seals; Section 4.2 defines both alphabets and their roles. 
+
+2.2 Three Provenance Mechanisms Artifact watermarks. Text and code watermarks modify a generated artifact and detect a statistical or structural pattern in that artifact [3–5, 10]. They are complementary to TrajMark: an artifact watermark carries provenance evidence about the final text or code, whereas a trajectory watermark carries evidence over a protected canonical representation of the action record. 
+
+Cryptographic audit logs. Hash chains, forward-secure logs, and signed commitments provide strong integrity when a trusted logger can attach authenticators and downstream verifiers preserve and validate them [11]. They remain preferable in that setting, and their authenticators may be retained in-band or alongside the log. TrajMark instead studies the restricted observation contract formalized in Section 3: the released interface preserves a canonical action 3TrajMark trajectory but exposes no verifiable signature, hash-chain state, or authenticated wrapper metadata. TrajMark therefore complements rather than replaces cryptographic audit logging and does not provide the same freshness, replay, or non-repudiation guarantees. 
+
+Behavioral watermarks. AgentMark uses behavior distributions and conditional sampling to encode multi-bit identifiers while preserving utility [6]. AGENTWM constructs functionally equivalent execution paths [7]. ActHook studies secretly activated hook behavior in trajectory data and later detects that behavior in a trained agent [8]. SeqWM uses sequential transition patterns to retain detection under trajectory corruption [9]. These methods protect different objects and provide global detection or identifier-recovery evidence; they do not provide an explicit protocol-level output identifying which protected segment, seal pair, or suffix has become inconsistent. 
+
+2.3 Design Rationale for Two Layers 
+
+Ownership and localization favor different evidence structures. Ownership benefits from sparse, redundant evidence aggregated across trajectories, whereas localization requires region-specific commitments within an individual trajectory. Reusing one globally aggregated signal and decision rule for both objectives creates a tension: robustness favors tolerance to missing carriers, while local diagnosis requires additional visible evidence tied to protocol-defined regions. TrajMark therefore makes the two roles separately deployable. Owner-only mode inserts no additional visible actions but rewrites selected natural READ subtypes; integrity mode adds overt read-only seal actions at an explicit structural cost. Combined deployment retains separate carrier roles and detector outputs, although owner rewrites remain part of the canonical stream committed by the integrity layer. Because either intervention can change observations and downstream behavior, utility is evaluated empirically. 
+
+# 3 Problem Formulation and Threat Model 
+
+We study provenance for a released coding-agent trajectory, where the verifier sees the agent’s public actions but not its hidden reasoning or runtime state. The central constraint is therefore observational: every carrier, role, and decision must be recoverable from the released action stream. We first fix the trust boundary and online run, then define the canonical stream, verification tasks, and adversary. 
+
+3.1 System Model and Trust Boundary Parties and attribution scope. TrajMark is a symmetric-key mechanism operated inside a trusted verification domain. A trusted embedding service runs the coding agent with a watermarking wrapper, and a trusted verifier holds the same secret key K. The key authority assigns a six-bit, deployment-scoped payload w ∈ GF(2) 6; it is not a publicly verifiable legal or organizational identity. Any holder of K can produce a valid mark for any label. The construction consequently provides neither public verifiability nor non-repudiation, and it does not cover a dishonest embedding service, a dishonest verifier, or key compromise. The claimed label wc, configuration θ, and verifier-selected batch membership are trusted inputs fixed before decoding rather than inferred from the submitted stream. 
+
+Online generation. Let A be a coding agent, E its execution environment, x a repository task, and ω the run randomness. Watermarking is part of the agent loop: 
+
+τw ← Run (A, E, x, ω ; Wrap K, w,θ ). (1) At decision step t, the agent proposes a request from the already marked history hwt−1. The wrapper may rewrite an eligible READ before execution, update its state after the visible outcome, and execute integrity seals before the next agent decision. A natural READ is therefore an agent proposal observed immediately before the current rewrite, not an action recovered from a completed counterfactual. The No-WM run is a separate experimental control rather than an input to Eq. (1). 
+
+3.2 Canonical Visible Observation 
+
+A released trajectory is an ordered sequence of visible records τ = ( a1, . . . , a n). A public, versioned causal transducer joins only publicly linkable records. For example, it joins an OpenHands action with its subsequent observation, then emits canonical events, 
+
+sθ (τ ) = Π θ (a1, . . . , a n) = ( e1, . . . , e m),ei = ( class i, subtype i, target i, status i, header i). (2) 4TrajMark where unavailable subtypes, targets, or headers use fixed null symbols and status is success , failed , or unknown . Every visible action has a class, including OTHER outside the protocol taxonomy. The optional header retains public carrier fields required by a native profile; OpenDev publishes a role, ordinal, and authentication tag in its tool-call text. 
+
+Definition 3.1 (Visible-only observation) . The verifier’s trajectory-derived input is exactly sθ (τ ). In addition, it receives K, θ, the claimed label, and the batch definition as trusted inputs. Candidate syntax and filename eligibility are determined from the released prefix and θ. Profile-specific role replay may also use K to recognize owner carriers or authenticate public carrier headers. Runtime checks such as file existence are safety checks, not verifier-side eligibility conditions. The retained view contains class, subtype, canonical target, public status, any profile-defined public carrier header, and order. It excludes hidden reasoning, logits, private wrapper state, debug metadata, full commands or outputs, and observation contents beyond public linkage and status. The complete field contract is listed in Appendix D. 
+
+3.3 Public Replay and Protected Projections 
+
+Generation knows which actions were proposed by the agent and which were inserted by the wrapper; verification may not use those private labels. For an edited release ˜τ = T (τw), the verifier replays the declared placement rules from the beginning: 
+
+( bN , bL, D struct ) ← ProtocolReplay K,θ (sθ (˜ τ )) . (3) Here bL assigns expected ordinary, group, and terminal roles at public protocol positions, Dstruct records missing or invalid expected carriers, and 
+
+bN = {i / ∈ bL : Elig θ (ei, e <i ) = 1 }
+
+contains replay-assigned ownership positions. Given the replay-assigned roles, eligibility uses only the public prefix and θ; it does not recover wrapper-private origins after editing. Owner decoding excludes every integrity role. The two channels consume different projections of the same canonical stream. The owner projection ρown retains eligible, replay-assigned non-seal READ families, their Q6 subtypes, and normalized basenames. The first eligible occurrence of a basename in each trajectory supplies its carrier record. For protected segment Sk, the integrity projection is 
+
+ρint (Sk) = counts 12 (Sk) ∥  (j, class j , tgt θ (ej ))  
+
+> class j∈C crit
+
+, (4) where 
+
+Ccrit = {GENERATE _FIX , REFACTOR , RUN _TESTS , REPRODUCE }.
+
+Here j is the zero-based ordinal among critical events in Sk, and tgt θ (ej ) is the normalized basename of the event’s explicit public target, or the fixed null token when none is visible. Critical-event order, class, and canonical target are retained. Exploratory READ filenames, READ order within a segment, OTHER contents, complete commands, and observation contents are not protected by this projection. Seal roles, subtypes, public status, and order are checked separately during replay. For later use, define the protected protocol view 
+
+Pint (τ ) =  (ρint (Sk)) k, (( role ℓ, subtype ℓ, status ℓ)) ℓ, D struct 
+
+, (5) with seal order represented by sequence position. Projection-preserving edits are outside the integrity claim by definition. 
+
+3.4 Verification Tasks and Adversarial Scope 
+
+For a verifier-defined batch eB claimed to share one key, configuration, and deployment label, owner verification returns 
+
+OwnerVerify K,θ ( eB, wc) → ( ˆ w, d owner ),
+
+where downer ∈ { ACCEPT , REJECT , ABSTAIN }. Acceptance means that sufficient retained batch evidence is consistent with the registered key and claimed label. A different unique label that clears the same rank and evidence gates yields rejection; insufficient or ambiguous evidence yields abstention. Unique six-bit recovery is not open-world attribution and does not attribute every member of the batch individually. For one trajectory, integrity replay returns 
+
+IntegrityReplay K,θ (˜ τ ) → (dint , Aint ),
+
+where dint ∈ { CLEAN , ALARM } and Aint contains segment-, group-, suffix-, or structural alarms. A mismatched or missing expected carrier, or one whose status is disallowed by θ, produces an alarm. The reference protocol requires successful carrier execution; the evaluated profiles’ status and termination rules are specified in Appendix E. An alarm establishes inconsistency under K and θ; it does not distinguish malicious editing from a wrong key or configuration, an unmarked input, or a benign runtime failure. 5TrajMark 
+
+Post-publication adversary. The editor knows the algorithms, claimed label, and public configuration and may observe other marked trajectories, but it does not know K, control the trusted wrapper, alter trusted verifier inputs, or obtain adaptive localized feedback. It may insert, delete, or replace visible records and may target publicly recognizable protocol positions. The integrity probability statements in Section 5 concern a fixed, one-shot edit; adaptive verification-oracle attacks are outside the model. 
+
+Evaluated corruption scopes. Ownership experiments apply non-key-aware insertion, deletion, and replacement to homogeneous batches; integrity experiments edit protected payloads or visible carriers relative to each trajectory’s paired-clean replay baseline. Section 5 proves only fixed, role-preserving single-segment substitutions. Insert/delete/carrier cases, targeted rank suppression, and adaptive claims are empirical or outside scope. 
+
+Explicit exclusions. An intact replay of a valid marked trajectory remains valid evidence for its embedded label. TrajMark does not establish freshness, execution uniqueness, or binding to an external task, repository commit, patch, user, or session. Whole-object replay, same-label substitution, arbitrary mixed-label batches, cross-trajectory splicing, arbitrary compound attacks on integrity or localization, complete evidence erasure, and key or wrapper compromise are not covered. Applications that need context binding must authenticate that context separately. Removing enough owner evidence may force ABSTAIN ; visible-only verification cannot reconstruct deleted content. 
+
+Design objective. TrajMark seeks robust batch-level recovery when enough independent owner evidence survives, fragile localization when the protected view changes, and abstention when evidence is insufficient. All three outcomes must be derived from the released stream, K, public configuration, and predeclared claim and batch definition. 
+
+# 4 TrajMark: Dual-Channel Visible-Trajectory Watermarking 
+
+4.1 Method Overview 
+
+Figure 1 shows the two-channel loop. The robust owner channel maps selected agent-proposed READs to linear equations over GF(2) 6, preserving their family and target and adding no action. The fragile integrity channel closes public segments with ordinary, group, and terminal Q12 seals. From the released stream, the verifier solves a batch label (“who”) and independently localizes inconsistent protocol units (“where”). 
+
+Figure 1: TrajMark separates robust ownership evidence from fragile projected integrity. The owner channel rewrites selected natural READs and adds no actions, whereas the integrity channel emits ordinary, group, and terminal Q12 seals. The released public trajectories carry both channels: batch evidence supports owner-ID recovery, while one trajectory supports independent integrity replay. 6TrajMark We use Enc θ as abstract notation for a public, unambiguous profile encoding. The evaluated adapters use two profile-specific terminal serializers; Appendix E explains their shared fields and adapter-level differences. Thus ∥ below denotes the encoding selected by the declared framework profile. 
+
+4.2 Public Carrier Space and Role Separation 
+
+Natural READs assigned to N (τ ) may carry ownership equations; replay-assigned seal positions in L(τ ) carry integrity tags and never contribute owner equations. Independent HMAC domain tags separate selection, row generation, masking, orientation, ordinary seals, group seals, and the terminal seal. The public Q6 alphabet provides one binary pair per READ family; Q12 exposes all twelve subtypes to integrity seals. The concrete mapping appears in Appendix D; secrecy lies only in keyed choices and values. 
+
+4.3 Robust Ownership Channel 4.3.1 Causal Filename Slots 
+
+An owner candidate is a natural READ that (i) has an explicit regular repository-file target, (ii) belongs to EXPLORE, SEARCH, or LOCATE, and (iii) is the first eligible READ of its normalized basename in that trajectory. Write 
+
+sf = norm(basename( f )) .
+
+The filename-once rule prevents one loop over a file from dominating a trajectory and allows both runtime and verifier to decide eligibility from the current public prefix. The public configuration supplies a real-valued threshold ¯po. The key selects a basename by 
+
+uf = HMAC K (owner-select ∥ sf )64 
+
+264 , (6) 
+
+f is selected ⇐⇒ uf < ¯po. (7) The implementation compares this normalized 64-bit draw with the configured threshold; write po for the result-ing selection probability. The primary configuration uses ¯po = 0 .30 ; profile-level realizations are summarized in Appendix E. 
+
+4.3.2 Masked Linear-Equation Injection 
+
+For selected basename sf , rejection sampling maps a domain-separated HMAC output uniformly to a nonzero row 
+
+af ∈ GF(2) 6 \ { 0}.
+
+The unmasked payload equation and keyed mask are 
+
+bf = ⟨af , w⟩ mod 2 , (8) 
+
+mf = HMAC K (owner-mask ∥ sf ) mod 2 , cf = bf ⊕ mf . (9) For READ family F , let Q6 F [0] , Q6 F [1] be its public pair. A further domain-separated bit randomizes the public orientation: 
+
+of,F = HMAC K (owner-orient ∥ F ∥ sf ) mod 2 , jf = cf ⊕ of,F . (10) The wrapper executes Q6 F [jf ] with the original target. The same public pair therefore has no fixed visible meaning across filenames. Equations (9)–(10) specify the masked profile used by all three evaluated adapters. SWE-agent and OpenHands preserve the natural READ family, while OpenDev’s evaluated owner carrier uses the Locate pair. The adapters use profile-specific canonical slots and pair contexts but expose the same decoded equation (af , b f ); their visible realization differences are summarized in Appendix E. Each basename defines a slot. Coefficient collisions do not merge slots or increase rank; only coefficient types are bounded by 63. 
+
+4.3.3 Batch Decoding and Three-Way Decision 
+
+For a selected visible carrier with observed Q6 index jf , the verifier reconstructs 
+
+yf = jf ⊕ of,F ⊕ mf = ⟨af , w⟩ (11) 7TrajMark on an unedited carrier. Majority aggregation retains one equation per basename slot; ties are erased. Let U count retained slots and H(x) count their equations satisfied by x ∈ GF(2) 6. The decoder scores all 64 candidates and selects a unique maximizer when one exists. For the predeclared claim wc, the descriptive evidence score is 
+
+zowner (wc) = H(wc) − U/ 2
+
+pU/ 4 . (12) Given threshold τz , first require that the retained matrix has rank six, the Hamming-score maximizer ˆw is unique, and 
+
+zowner ( ˆ w) ≥ τz . If any gate fails, the verifier abstains; otherwise it accepts when ˆw = wc and rejects when ˆw̸ = wc.Rank six is a payload capacity condition, not by itself an acceptance condition or a robustness guarantee; Section 5 makes both distinctions precise. 
+
+4.4 Fragile Projected-Integrity Channel 4.4.1 Segments and Public State 
+
+The reference integrity state machine processes replay-assigned non-seal events. Its state contains the current segment buffer, the ordinary index k, the observed subtype of the previous ordinary seal, the ordinary digests and subtypes, the group count, and a Boolean cprev , initially false. After adding a non-seal event e to the current payload, set 
+
+c = 1[class (e) ∈ C crit ]. The boundary rule is 
+
+Boundary θ (e, c prev ) = c ∧ ¬ cprev , cprev ← c. 
+
+Thus a critical event at stream start or after a noncritical event closes a segment immediately; subsequent consecutive critical events enter the next buffer without another immediate seal. Ordinary and group roles do not update cprev . After an ordinary role, the buffer is cleared, and every second ordinary role schedules a group role before the next natural event. The reference schedule advances over attempted roles and checks status separately. The terminal role commits the remaining buffer, including an empty suffix. The evaluated profiles’ admission, boundary-state, failure, and closure rules are specified in Appendix E. READ events contribute their Q12 subtype counts to the buffer. If the critical events in a segment are numbered 
+
+j = 0 , . . . , r in their visible order, they contribute tokens 
+
+tj = j ∥ class j ∥ tgt θ (ej ),
+
+using the public target rule in Section 3.3. The resulting segment payload is 
+
+payload (Sk) = counts 12 (Sk) ∥ (t0, . . . , t r ). (13) This is exactly the projection in Eq. (4); changing data outside that projection is not an integrity event claimed by TrajMark. 
+
+4.4.2 Ordinary, Group, and Terminal Commitments 
+
+Let ˜σk−1 be the observed subtype of the preceding ordinary role and set ˜σ0 = GENESIS . The k-th ordinary digest and visible subtype are 
+
+dk = HMAC K (ordinary ∥ k ∥ ˜σk−1 ∥ payload (Sk)) , (14) 
+
+σk = Q12 [dk mod 12] . (15) Chaining the observed predecessor confines an ordinary mismatch: replay of the next segment starts from the symbol actually present in the stream rather than an unseen expected symbol. After ordinary roles 2g − 1 and 2g, the group protector is 
+
+gg = HMAC K (group ∥ g ∥ d2g−1 ∥ d2g ∥ ˜σ2g−1 ∥ ˜σ2g ), (16) 
+
+γg = Q12 [gg mod 12] . (17) The group input contains the full ordinary digests, not only their visible residues, so a payload change that collides modulo 12 can still create fresh group evidence. Finally, let d, ˜σ, and ˜γ be the ordinary digests and the observed ordinary and group subtype sequences. With empty sequences encoded canonically and ˜σm = GENESIS when m = 0 , define 
+
+CT = Hθ (d ∥ ˜σ ∥ ˜γ)
+
+and 
+
+σT = Q12 [HMAC K (terminal ∥ m ∥ g ∥ ˜σm ∥ CT ∥ payload (ST )) mod 12] . (18) Here Hθ is a fixed public hash identified by the protocol version. The terminal closes the final suffix and, conditional on collision resistance, binds the seal counts and visible seal sequence. 8TrajMark 
+
+4.4.3 Visible-Only Replay and Localization 
+
+Reference replay reconstructs each segment and consumes the next visible record at every expected role. Missing, mismatched, unsuccessful, or trailing records raise structural alarms. An ordinary mismatch reports one segment, a group mismatch its adjacent pair, and a terminal mismatch a suffix or closure inconsistency. These are protocol units rather than byte-level locations. The complete transition rules appear in Appendix D. 
+
+4.5 End-to-End Online Protocol 
+
+The online wrapper alternates agent actions with any scheduled integrity roles; the verifier first reconstructs public roles, then decodes owner equations and replays integrity commitments. The owner channel adds no action, whereas the integrity channel is overt and incurs visible step cost. Either channel may be enabled independently. Reference pseudocode is given in Appendix D; Section 6 distinguishes it from the evaluated framework profiles. 
+
+# 5 Theoretical Analysis 
+
+We now state the guarantees that explain the two-channel design. The main text keeps only the assumptions, headline results, and their interpretation; recurrences and complete proofs are deferred to the appendices. The owner result separates a key-independent frozen-pool model from decoding of an observed batch, while the integrity result concerns one fixed role-preserving edit. 
+
+Assumption 5.1 (Canonical replay) . Generation and verification use the same deterministic public transducer, role state machine, and typed, length-prefixed, injective encoding Enc θ . Boundary placement, null targets, role order, and successful-status requirements are fixed by θ.
+
+Assumption 5.2 (Idealized keyed outputs) . Domain-separated λ-bit HMAC outputs on distinct fresh canonical inputs are independent and uniform. The tested claim, batch, and frozen opportunity pool are fixed independently of the test key. The integrity editor makes one attempt, without key or verification-oracle access. A real-PRF formulation adds its distinguishing advantage. 
+
+For E(τ ) = ( ρown (τ ), P int (τ )) , owner verification depends only on the first projection and integrity replay only on the second. This functional separation does not imply statistical independence during online generation. In particular, capacity calculations use a key-independent frozen pool, because an early keyed rewrite can change the later trajectory. 
+
+5.1 Ownership Guarantees 
+
+Fix a frozen set S of DB distinct eligible basenames. If basename s appears in cs trajectories, let CB = P 
+
+> s
+
+cs. Under Assumption 5.2, the selected basename count M and expected owner rewrite count R satisfy 
+
+M ∼ Binomial( DB, p o), E[M ] = poDB, (19) 
+
+E[R] = poCB. (20) Let Pm(6) be the full-rank probability for m independent draws from the 63 nonzero vectors of GF(2) 6, one draw per selected basename slot. Appendix A gives the exact rank and collision recurrences and the proof of the capacity result. 
+
+Theorem 5.3 (Frozen-pool ownership capacity) . Suppose the frozen-pool audit contributes one clean equation for every selected basename, without feedback into the pool, and the claimed label is the embedded label. For τz ≥ 0, let 
+
+Lτ = max {6, ⌈τ 2 
+
+> z
+
+⌉} . Under Assumptions 5.1 and 5.2, 
+
+Pr[ ACCEPT ] = 
+
+> DB
+
+X
+
+> m=Lτ
+
+DB
+
+m
+
+
+
+pmo (1 − po)DB −mPm(6) , (21) 
+
+where an empty sum is zero. The corresponding rank-six capacity is 
+
+Prank6 (DB, p o) = 
+
+> DB
+
+X
+
+> m=0
+
+DB
+
+m
+
+
+
+pmo (1 − po)DB −mPm(6) . (22) 
+
+In a clean batch, U = M ; for M > 0, zowner = √M . Acceptance requires rank six and at least Lτ retained basename slots. 
+
+9TrajMark At the evaluated τz = 3 .09 , the evidence gate requires ten retained basename slots. Their coefficient vectors may repeat, but the matrix must still have rank six. 
+
+Theorem 5.4 (Owner robustness and fixed-claim soundness) . Let A ∈ GF(2) U ×6 and y ∈ GF(2) U retain one equation per basename slot after replay, majority aggregation, and tie erasure; coefficient vectors may repeat. 
+
+(i) Robust recovery. Define 
+
+d(A) = min  
+
+> v∈GF(2) 6\{ 0}
+
+∥Av ∥0. (23) 
+
+If A has rank six and y = Aw ⊕ η, then 2∥η∥0 < d (A) ensures unique recovery of w. With s slot erasures from A0,a sufficient condition is 2∥η∥0 + s < d (A0).
+
+(ii) Fixed-claim soundness for the masked profile. Fix the visible stream and claim wc independently of a wrong test key. Suppose owner-mask outputs do not affect role assignment, carrier selection, or basename-slot grouping. Under Assumption 5.2, conditional on all other domain outputs and U ≥ 1 retained slots, Hc := H(wc) ∼
+
+Binomial( U, 1/2) . This holds even when coefficient vectors repeat. Hence 
+
+Pr[ false ACCEPT | U ] ≤ 2−UUX  
+
+> h=hτ(U)
+
+Uh
+
+
+
+, hτ (U ) = 
+
+&
+
+U
+
+2 + τz
+
+√U
+
+2
+
+'
+
+. (24) Part (i) guarantees payload recovery, not the separate claim and evidence gates. Part (ii) is an exact finite-sample, fixed-claim bound; the normal score 1 − Φ( zowner ) is only a descriptive approximation. Appendix B proves both parts by Hamming distance and basename-mask symmetry. 
+
+5.2 Projected-Integrity Guarantee 
+
+Because 12 does not divide 2λ, the largest probability mass of one Q12 subtype is 
+
+q12 ,λ = ⌈2λ/12 ⌉
+
+2λ ≤ 112 + 2 −λ. (25) 
+
+Theorem 5.5 (Projected-integrity guarantees) . Under Assumption 5.1, an unchanged marked trajectory whose expected carriers execute successfully replays cleanly. Now consider a one-shot, role-preserving substitution that changes exactly one completed ordinary segment Sk, while boundaries, carrier positions, subtypes, and successful statuses remain fixed. If its recomputed ordinary input is fresh relative to every prior same-key ordinary-domain query, then under Assumption 5.2, 
+
+Pr[ Sk /∈ A int ] ≤ q12 ,λ . (26) 
+
+If the ordinary role belongs to a retained completed pair and, outside a full ordinary-digest collision, the recomputed group input is fresh relative to every prior same-key group-domain query, then 
+
+Pr[ neither the segment nor its pair is reported ] ≤ 2−λ + q212 ,λ . (27) 
+
+Remark 5.6 (Scope of the integrity bound) . No terminal factor is claimed because Hθ has no quantitative collision model or global terminal-query freshness assumption. Role-changing single-site insertion, deletion, and carrier edits are evaluated empirically. Compound and projection-preserving edits are outside both this theorem and the empirical integrity claim. 
+
+Appendix C proves clean replay and both localization clauses, then records the boundary cases that are intentionally excluded from the probability product. 
+
+Operational consequences. With m ordinary roles, the integrity channel emits 
+
+Aseal (m) = m +
+
+j m
+
+2
+
+k
+
++ 1 (28) seal actions. Ordinary alarms identify one segment, group alarms one adjacent pair, and terminal alarms a suffix or closure inconsistency. For total canonical byte length B, generation and replay take expected O(B) time; owner scoring adds O(2 6U ) for U retained basename slots. 10 TrajMark 
+
+# 6 Cross-Framework Implementation 
+
+We implement TrajMark in SWE-agent, OpenHands, and OpenDev using a shared semantic schema and versioned framework profiles. The schema fixes the Q6/Q12 inventories, owner-equation abstraction, and integrity commitments. Each evaluated profile also fixes event admission, role parsing, failure handling, closure hooks, literal hash inputs, terminal serialization, and native action templates. The reference contract below states the conditions for the clean-replay analysis; the evaluated profiles have the specific differences described in Appendix E. 
+
+6.1 Reference Adapter Contract 
+
+Let Realize F (e) be framework F ’s visible realization of canonical event e, and let ΠF,θ be its public causal transducer. For every finite event sequence and every prefix, a conforming adapter satisfies 
+
+ΠF,θ (Realize F (e1) · · · Realize F (en)) = ( e1, . . . , e n). (29) This contract requires unique public action–observation joins, order preservation, regular-file targets, and read-only Q6/Q12 realizations. Missing observations map to unknown , and non-success expected carriers raise alarms. These are reference requirements, rather than identical failure semantics in all evaluated adapters. Table 1: Native action surfaces of the evaluated framework profiles.        
+
+> Framework Owner integration point Integrity realization Public verifier input SWE-agent Agent-emitted request before computer execution Read-only request executed through the ordinary path Published action, outcome status, and order OpenHands Agent-sourced action entering the event stream Typed read action and observation executed by the runtime Publicly joined action and observation events OpenDev Structured tool call before dispatch Read-only tool call and response appended by the dispatcher Canonically indexed tool-call order and status
+
+SWE-agent hooks textual agent-to-computer requests, OpenHands joins typed actions with their observations, and OpenDev uses structured tool calls with a public index. In all three, owner rewriting occurs before execution and scheduled seals traverse the normal runtime. SWE-agent replay expects a final Q12 READ; OpenHands schedules a terminal READ after a visible finish action, so an exit that bypasses this hook has no terminal expectation in its evaluated replay. OpenDev recognizes roles through a public authenticated role/ordinal header in the tool call. This header is retained verifier input; auxiliary debug records are excluded. The evaluated OpenHands profile admits only successful non-seal actions to Q12 state. Its expected-role replay checks the next action’s subtype and advances the role count, but does not separately reject that carrier’s failed observation. OpenDev instead records failed carriers and advances its ordinary commitment state only after a successful ordinary carrier. These distinctions affect clean baselines and deletion coverage; the empirical results use each evaluated profile’s paired replay. 
+
+6.2 Configuration and Validation 
+
+The evaluated configuration uses owner 0x3f , six owner bits, ¯po = 0 .30 , filename-once selection, uniform nonzero rows, Q6 owner substitution, Q12 segment seals, group size two, and terminal closure. All three adapters use the masked-orientation owner profile. SWE-agent and OpenHands preserve the natural READ family, while OpenDev’s evaluated carrier uses the Locate pair. Ordinary and group payloads share one literal grammar; the OpenHands terminal commitment uses compact sorted JSON and the other two profiles use newline-delimited fields. Validation covers Q6/Q12 realizations and profile-specific replay with auxiliary debug metadata removed and native action text retained. Fixed public vectors cover owner rows, empty segments, the m = 0 terminal case, and ordinary/-group/terminal payloads. Appendix E documents the adapter contracts, while Appendix F shows sanitized excerpts of the resulting released trajectories. 
+
+# 7 Evaluation Methodology 
+
+This section describes the empirical protocol used to evaluate TrajMark. The probabilistic behavior of the owner equations and the integrity seals is analyzed in Section 5; here we specify the experimental subjects, comparison conditions, parameter choices, measurements, attacks, and artifact gates. Parameter selection uses a separate offline 11 TrajMark carrier-capacity analysis. The three claim-bearing evidence scopes are the primary full-watermark study, matched comparisons and ablations, and a paired cross-agent and cross-task generalization study with No-WM and owner-WM grids. 
+
+7.1 Research Questions 
+
+Our evaluation asks five questions. 
+
+RQ1: Ownership. 
+
+Can the visible-only decoder recover the exact six-bit owner from batches of complete watermarked trajectories, and how does recovery change with batch size? 
+
+RQ2: Robustness. 
+
+Does batch-level owner recovery remain stable when visible actions are randomly inserted, deleted, or replaced? 
+
+RQ3: Integrity. 
+
+Do untouched trajectories replay without alarms, and do edits to protected payloads or seal carriers induce a new Q12 alarm under single-site and proportional attacks? 
+
+RQ4: Cost and utility. 
+
+How many visible actions do the two layers add, and do marked runs preserve the agent’s repository-level task performance on the same tasks? 
+
+RQ5: Comparison and generalization. 
+
+How does TrajMark compare with matched controls and behavioral baselines, and does natural owner-carrier capacity remain available across agent, model-provider, and task-family boundaries? RQ1 and RQ2 use a batch as the unit of attribution because the owner layer is deliberately sparse. RQ3 uses a trajectory and its protected segments as the unit of integrity detection. RQ4 is interpreted only within matched agent, model, task-list, and seed conditions; raw action counts from different agent interfaces are not treated as equivalent computational units. 
+
+7.2 Evaluation Design and Scope 
+
+Table 2 summarizes the three empirical scopes. The primary full-WM study evaluates trajectories generated with both the Q6 owner layer and the Q12 ordinary, group, and terminal seals. It is the evidence source for the paper’s ownership, integrity-detection, and overhead claims. Matched controls and ablations use the same frozen task lists wherever complete live artifacts are available. The separate cross-pair generalization study first runs a No-WM control grid and then enables only the owner layer while varying agent, provider, and task family at seed 42. The paired grids distinguish unsupported agent–task conditions from limitations of natural READ embedding and batch decoding; neither grid is used to support full-protocol integrity or utility claims. Table 2: Evaluation scopes. The paired 27-cell grids cross every agent–task pairing and are analyzed separately from the primary full-WM study.             
+
+> Scope Design Claims
+> Primary full-WM Three agents and three model providers; three fixed 50-task lists (seeds 42, 45, and 48) for each aligned agent–model condition; both layers enabled RQ1–RQ4 Matched comparisons No-WM, owner-only, two live behavioral baselines, and full TrajMark on identical task identifiers where artifacts pass the gates RQ4–RQ5 Crossed grids Paired No-WM and owner-WM grids over 3agents ×3
+> providers ×3task families, seed 42, 50-task batches Carrier availability in RQ5
+
+This separation prevents two common attribution errors. First, owner recovery is evaluated with Q6 groups, while integrity replay is evaluated separately with Q12. Second, an unsuccessful downstream task outcome does not by itself invalidate watermark evidence when the complete visible trajectory and protocol carriers are present. We therefore report watermark validity, task outcome, and technical artifact completeness as distinct fields. 12 TrajMark 
+
+7.3 Agents, Models, Tasks, and Seeds 
+
+We evaluate three independently engineered coding-agent frameworks: SWE-agent, OpenHands, and the Rust imple-mentation of OpenDev 1.The initial JavaScript full-watermark batches used a locally modified Rust implementation of OpenDev based on upstream commit e56cf85769a1 . A subset of subsequent local Owner-only generalization reruns used upstream commit a90fbda26e8c . Their released action surfaces differ substantially: SWE-agent records text-oriented shell and ACI actions, OpenHands publishes typed actions and observations, and OpenDev records structured tool calls. This variation is central to the study because the detector is restricted to the visible representation published by each framework. The primary full-WM study pairs each framework with the task family used by its aligned implementation: • SWE-agent uses 50-instance lists from SWE-bench Python [1, 12]; • OpenHands uses 50-instance lists from the Java partition of SWE-PolyBench [2, 13]; and • OpenDev uses 50-instance lists from the JavaScript partition of SWE-PolyBench. For each aligned agent we evaluate DeepSeek V4 Flash, GPT-5 mini, and MiniMax M3 on the frozen task-list seeds 42, 45, and 48. Task identifiers are fixed before live generation and reused within every matched comparison. We do not derive the reported denominator from this nominal grid: a group enters a result only after the artifact and method gates in Section 7.8 pass, and each table reports its actual eligible denominator. The cross-pair generalization study uses the same three agents and providers but crosses each of them with all three task families: SWE-bench Python, SWE-PolyBench Java, and SWE-PolyBench JavaScript. Both 27-cell grids use seed 42 and frozen 50-instance inputs. The No-WM grid verifies that every crossed agent–task condition materializes a usable visible trajectory; the owner-WM grid then asks whether the owner mechanism can use the natural filenames exposed by that condition. Because integrity is disabled, these cells are never pooled with the primary full-WM localization results. 
+
+7.4 Parameter Configuration and Selection 
+
+We tune only the owner-selection probability po. The owner payload, equation construction, carrier alphabets, baseline profiles, and integrity schedule are fixed across agents, models, task families, and attack strengths. Table 3 reports the density-selection evidence. Table 3: Owner-density parameter selection based on carrier-capacity analysis of fixed No-WM trajectories. A condition passes the rank-six, exact-owner, and batch-size-30 recovery criteria. We select the smallest po among the five candidates shown that passes all nine conditions.                            
+
+> po(%) Rank-6 cells Passing conditions Min. B=30 recovery Decision 15 27/27 6/9 0.440 Fail 20 27/27 7/9 0.771 Fail 25 27/27 7/9 0.928 Fail
+> 30 27/27 9/9 0.970 Pass
+> 45 27/27 9/9 0.995 Pass
+
+Owner-density selection. Using fixed No-WM trajectories, we evaluate carrier capacity at po ∈ { 0.15 , 0.20 , 0.25 ,
+
+0.30 , 0.45 } by constructing owner equations from the observed eligible READ opportunities. We hold the task identifiers, owner identifier, key derivation, filename-once rule, equation family, and decoding procedure fixed. Each rate is evaluated over 27 seed-level cells grouped into nine agent–LLM conditions. We record rank-six coverage, the number of conditions that pass all selection gates, and the minimum condition-level exact-owner recovery rate at batch size 30. These density-selection artifacts are not pooled into the primary detection tables. Selection is constraint-based rather than based on the largest raw hit count. A candidate passes only when all 27 seed-level cells reach rank six and recover the exact owner, and every agent–LLM condition has a pooled batch-size-30 recovery rate of at least 0.95 . Each condition pools 1,000 resampling trials from each of the three seeds. Table 3 shows that rank six alone is insufficient: po ≤ 0.25 leaves at least two conditions below the complete gate and has a minimum 
+
+B=30 recovery below 0.95 . Both 0.30 and 0.45 pass all nine conditions. We therefore select po = 0 .30 , the smallest passing density among the five candidates, to minimize intervention in natural READs. 
+
+> 1https://github.com/opendev-to/opendev
+
+13 TrajMark 
+
+Transfer to other agents, models, and task families. We do not retune po for each deployment condition. Instead, for every cell in the No-WM generalization grid we apply the same visible canonicalizer and count DB, the distinct normalized basenames in eligible natural READs, and CB, the filename-once carrier opportunities. With po = 0 .30 ,these counts determine the expected number of selected equation generators and rewrites via Eqs. (19) and (20), and the idealized rank-six probability via Eq. (22). This capacity audit uses natural No-WM behavior; task utility and owner recovery are measured in the primary full-WM groups. The same po = 0 .30 , without per-cell adjustment, reaches rank six and the exact owner in all 27 agent–provider–seed groups. The combination of the No-WM capacity audit and the primary full-WM result is the basis for using po = 0 .30 throughout the evaluated settings. 
+
+Baseline operating points. ActHook-style uses a trajectory-level selection ratio of R = 0 .05 , following ActHook’s default watermark ratio, and adds exactly one keyed, read-only hook to a selected trajectory. AgentMark-U has no density parameter: it uses every eligible existing Q6 READ and changes only its visible subtype. This dense profile gives the adaptation its maximum available equation budget while preserving zero added actions. Both profiles are frozen before live runs and remain unchanged across agents and models. 
+
+Integrity operating point. The integrity layer is configured from the design analysis rather than selected on the attack results. Q12 is the largest READ-subclass alphabet implemented consistently by all three adapters and gives an approximate 1/12 accidental match probability for an altered keyed seal. Ordinary seals protect segments ending at the fixed critical classes GENERATE_FIX, REFACTOR, RUN_TESTS, and REPRODUCE; consecutive critical actions are coalesced to avoid sealing every step in a burst. A group protector commits to each pair of ordinary seals, so G = 2 
+
+keeps every ordinary seal near a second keyed check while adding approximately one protector per two segments. The terminal seal commits to the final suffix, seal count, and observed seal sequence. Detection reports whether replay introduces an ordinary, group, terminal, missing-carrier, failed-carrier, or unexpected-carrier alarm relative to the clean trajectory. 
+
+7.5 Methods and Comparison Conditions 
+
+The full method uses the frozen configuration in Section 6.2. On matched task identifiers, we compare an unwatermarked control, two prior-method baselines, an ownership-only ablation, and the complete TrajMark method. 
+
+Unwatermarked control (No-WM). 
+
+The same agent–LLM pair is executed on the matched tasks with watermarking completely disabled. The resulting trajectories contain no owner-channel encoding or integrity seals. This condition provides the negative control and the reference for measuring utility and execution overhead. 
+
+Prior-method baseline (ActHook-style). 
+
+A live visible-action analogue of ActHook [8]. A keyed subset of eligible runs receives a recognizable read-only hook action, and the detector checks whether visible hook evidence survives. This condition implements ActHook’s action-insertion principle in the live visible-action setting. 
+
+Prior-method baseline (AgentMark-U). 
+
+An adaptation of AgentMark [6] to the native tool-dispatch interface. AgentMark elicits an explicit planning-time probability list Pt from the LLM and uses it for sampling and decoding. The evaluated native interfaces provide selected tool calls rather than this probability list, so AgentMark-U applies keyed uniform selection over a public set of functionally equivalent visible choices. An honest abstention caused by too few opportunities remains a method outcome. It uses every eligible Q6 READ and therefore operates at the maximum carrier density available to the adaptation rather than at a tuned sparse operating point. 
+
+Ownership-only ablation (Owner-only). 
+
+This ablation of TrajMark enables the filename-linear Q6 owner-ID channel while disabling the Q12 integrity seals, group-of-two protectors, and terminal commitment. It isolates the owner-ID recovery provided by the Q6 channel, including its property of adding no trajectory actions. 
+
+Complete method (TrajMark). 
+
+The complete method combines the filename-linear Q6 owner-ID channel with Q12 ordinary segment seals, group-of-two protectors, and a terminal commitment. All comparison methods run during agent generation rather than being added to a No-WM log after the fact. This matters because an inserted action or altered READ can change the next observation seen by the model. We compare only conditions with the same agent, model, seed, and task identifiers; utility comparisons remain within the same agent–model row. 14 TrajMark 
+
+7.6 Metrics Ownership recovery. For every batch we report raw equation observations, retained basename slots (majority aggregation with ties erased), distinct coefficient vectors, rank, decoded owner, and decoder outcome. For AgentMark-U, exact recovery requires a consistent rank-six GF(2) system whose solution is 0x3f . For Owner-only and TrajMark, it requires a unique maximum-consensus solution equal to 0x3f . The score in Eq. (12) reports a descriptive evidence margin. Batch-size curves preserve the frozen trajectory order or use a stated resampling procedure and report abstention when rank is insufficient. 
+
+Cross-method carrier evidence. For the matched detection comparison, let N be the number of visible binary carrier observations and H the number that match the method’s keyed target. We report 
+
+z = H − N/ 2
+
+pN/ 4 , p = 1 − Φ( z), Hit = H/N. 
+
+For ActHook-style, an observation is an exact keyed-hook match; for AgentMark-U, Owner-only, and TrajMark, it is an equation satisfied by the claimed owner. Within each agent–LLM cell, Table 6 reports the mean seed-level 
+
+z, the largest normal-reference p-value across seeds, and the pooled P H/ P N . Following the random-agreement reporting convention used in prior agent-watermarking evaluations [9], the z-score and one-sided reference p-value are standardized summaries of accumulated carrier evidence. They are not used as a cross-method efficiency test or as the operative group-level decision rule; each method’s decision rule is defined in Section 7.5. 
+
+Owner robustness. For AgentMark-U, Owner-only, and TrajMark, the unit of success is a complete corrupted batch whose decoded identifier remains exactly 0x3f . The robustness curves retain the three LLM columns. For random visible-action corruption, every method–attack–LLM–corruption point contains 4,500 corrupted batches (500 trials for each of three agents and three seeds). ActHook-style appears only as a detection-only reference because it encodes hook presence rather than a six-bit identifier. We additionally evaluate exact-budget white-box carrier deletion. In each 50-trajectory batch, N is the number of clean owner-carrier occurrences and k = ⌊δN + 0 .5⌋. The attacker constructs up to 63 deterministic deletion sets using the clean coefficient rows, or hook orderings for ActHook-style, with clean Q12 seal positions excluded. Each candidate removes exactly k action atoms from the visible trajectories, including cause-linked observations for OpenHands. We then re-extract the evidence and rerun the native decoder, reporting whether recovery or hook detection survives the strongest tested candidate. Appendix G specifies candidate construction. Each point contains nine deterministic seed batches per LLM; candidate searches are not counted as additional trials. The disaggregated robustness figures retain all nine agent–LLM cells and the three primary seeds in each cell. For every random attack and corruption level, 500 deterministic trials are run per seed. Each plotted random-attack point therefore contains 1,500 corrupted B = 50 batches and uses the method-specific exact owner-ID recovery criterion above, with ActHook-style as a binary hook-detection reference. 
+
+Integrity detection. Clean replay is the fraction of untouched full-WM trajectories with no ordinary, group, terminal, missing-carrier, failed-carrier, or unexpected-carrier alarm. Attack trials require a complete, classifiable paired-clean replay baseline and an eligible modification site. Alarms already present in that baseline do not count as attack-induced detections. For exhaustive single-site attacks, we report whether a payload insertion, deletion, replacement, or seal removal induces at least one new Q12 protocol alarm. For proportional attacks, we apply the same any-alarm decision to random insertion, deletion, and replacement, and to targeted Q12-seal removal under the same nominal visible-action budget. The seal-removal attack spends its budget only on existing ordinary, group, and terminal seals, so its realized deletion rate saturates once all seals have been removed. These any-alarm rates are separate from localization. For the disaggregated results in Table 7, the agent-native Q12 report set is fixed from paired clean and attacked replay before the modified positions are supplied. Each report is mapped to an inclusive interval [ℓ, r ] of paired-clean visible actions. For every eligible payload modification, the accepted hierarchy contains its ordinary segment, the corresponding enclosing group when present, and the terminal region. We select the narrowest newly reported mapped interval in this hierarchy that geometrically covers the modified action or insertion boundary; its width is r − ℓ + 1 . A site with no accepted covering report is a localization miss: it remains in the coverage denominator and does not enter the conditional width mean or median. The one-action column uses exactly one selected action or insertion boundary and 50 deterministic trials per trajectory and attack. Percentage columns retain the frozen proportional schedules. Randomly selected Q12 seal actions remain in deletion and replacement mutants but are excluded from the payload-site denominator; targeted seal removal is evaluated only by the paired-clean any-alarm decision. Each displayed condition–attack cell micro-pools eligible sites over the three primary seeds; the overall row additionally pools the three random attack types. The interval construction follows the ordinary, group, and terminal replay units in Appendix D. 15 TrajMark In the full-watermark strength sweep, integrity is evaluated per attacked trajectory rather than per batch. Each agent– LLM–attack–corruption point contains 7,500 trajectory trials: 50 trajectories, 50 deterministic trials, and three seeds. A trial is detected when the attacked visible stream introduces an ordinary, group, terminal, missing-carrier, failed-carrier, or unexpected-carrier alarm not present in that trajectory’s clean replay. This clean-replay difference prevents a genuine runtime outcome already present in the released trajectory from being counted as an attack-induced detection. 
+
+Cost and task outcome. We count owner rewrites separately from added integrity actions. The owner-only layer adds no structural action; full TrajMark reports ordinary, group, and terminal READs and their within-condition percentage overhead. Where a task-family harness is available, we report paired benchmark resolution. We define Pass@1 as the fraction of benchmark tasks for which the single submitted patch passes the corresponding benchmark’s repository-level test harness; empty or invalid patches count as failures. Solve-rate comparisons pair TrajMark and No-WM runs by agent, LLM, seed, and task identifier, and use the same frozen harness configuration. We report the Pass@1 percentages and their difference in percentage points. To assess whether those changes have a consistent direction independently of the pooled magnitude, we apply an exact two-sided sign test to the nine matched agent–LLM percentage changes, excluding ties. Token and wall-clock measurements are reported only when the same adapter exposes comparable accounting, because API queueing, retries, and repository commands otherwise dominate the difference. For OpenDev records with missing native cost measurements, turns and output tokens are taken from matched cost-only re-executions; visible-action counts are taken from the canonical runs. 
+
+7.7 Attack Protocol 
+
+We use separate attack suites for the robust owner layer and the fragile integrity layer. 
+
+Random batch corruption. For RQ2, an attacker inserts, deletes, or replaces a fraction δ ∈{0.05 , 0.10 , 0.20 , 0.30 , 0.50 } of visible actions. Positions are sampled without access to the secret key. Insertions use syntactically valid visible actions; deletions remove observed actions; replacements change the visible action representation. The appropriate detector is rerun on every corrupted batch: exact six-bit recovery for AgentMark-U, Owner-only, and TrajMark. The owner-ID baseline comparison uses matched groups from SWE-agent, OpenHands, and OpenDev, retaining identical task identifiers and seeds within each agent–LLM condition. ActHook-style is evaluated separately as a binary hook detector. This suite measures tolerance to non-targeted log damage, not an oracle attack that knows the selected filename equations. The cross-agent strength sweep applies the same five values of δ to the complete full-WM trajectories from every agent–LLM–seed group. In each trial, the requested fraction is rounded separately for each trajectory and sampled from that trajectory’s released visible actions. Insertions and replacements draw non-protocol actions from the same clean seed group. The owner detector then re-decodes the full 50-trajectory batch, while the integrity detector evaluates every attacked trajectory against its own clean replay. Consequently, the sweep shows both how the robust owner channel degrades with attack strength and how quickly the fragile layer reacts to the same corruption. For proportional seal removal, a trajectory with N released visible actions receives the nominal budget k =min {N, max(1 , ⌈δN ⌉)}. The attacker samples without replacement from the trajectory’s existing Q12 ordinary, group, and terminal seals and removes min( k, S ) of the S available seals. Thus δ denotes a nominal visible-action budget; the realized deletion fraction can be smaller after the seal set is exhausted. This attack is scored only by the paired-clean Q12 any-alarm decision. 
+
+Exhaustive single-site integrity attacks. For RQ3, we enumerate eligible attack sites in every trajectory with a complete, classifiable paired-clean replay baseline. Payload attacks insert a READ into a protected segment, delete a protected READ or critical action, replace a READ subtype, or replace a critical target. Protector attacks delete or replace each ordinary seal, group protector, and terminal commitment. Every mutant changes one eligible site and is verified from the modified visible stream. We retain the exact trial denominator for each attack family because trajectories expose different numbers of protected segments and seal carriers. Insertion, deletion, and replacement are the primary payload-tampering families. Attacks on ordinary, group, and terminal carriers are reported separately because they target the integrity mechanism itself. Suffix loss is evaluated through the terminal role and its commitment to the final payload, seal counts, and observed seal sequence. 
+
+7.8 Artifact and Method Gates 
+
+A run enters the analysis only when its selected identifiers match the frozen input, provider and model identity match the manifest, required trajectory and prediction artifacts are non-empty, and the public protocol configuration and 16 TrajMark implementation hashes match the frozen manifest. For full TrajMark, the owner method must be the filename-once linear Q6 protocol and the integrity method must be the group-of-two Q12 protocol described in Sections 4.3 and 4.4. Only runs satisfying these method gates are pooled. The visible-only gate removes debug records and reconstructs owner equations, protected segments, and seals solely from the released action order. A full-WM trajectory must provide a complete, classifiable clean replay baseline before it contributes attack sites, and only alarm signatures newly introduced by a mutant count as attack detection. Provider, authentication, setup, and missing-artifact failures are treated as technical exclusions. Completed model interactions, timeouts, and failed tests remain honest task outcomes when their visible watermark artifacts are complete. Finally, every reported group is regenerated from synchronized local artifacts. The evaluation snapshot stores the frozen input hash, runtime and detector identifiers, eligible denominators, and the result file used to generate each table. 
+
+AI-assisted research workflow. We used ChatGPT and Codex (OpenAI) to assist with discussions of the watermark-ing and verification design, implementation and debugging of the watermarking and evaluation code, and development of scripts for aggregating recorded experimental outputs and producing result tables and plots. OpenAI image-generation tools assisted in preparing the method-overview illustration. AI-assisted code was checked using automated tests and comparisons against recorded verification outputs. The numerical results reported in this paper were computed from the recorded runs and verifier outputs by the evaluation and analysis scripts. 
+
+# 8 Evaluation Results 
+
+We report exact attribution, robustness, Q12 tamper detection, and utility in that order. Each result is kept at its valid unit of analysis; agent–LLM conditions are not merged unless an overall value is explicitly labeled. 
+
+8.1 Cross-Agent and Cross-Task Owner Attribution 
+
+The crossed grids test whether the frozen Q6 owner layer transfers beyond the three aligned agent–task pairings. Table 4: Cross-agent and cross-task owner attribution. Each cell is one agent–provider–task-family batch.       
+
+> Condition Measure Result No-WM Valid visible batch 27/27 Owner-only Exact owner-ID recovery 27/27
+
+All 27 No-WM cells produce usable visible batches, and Owner-only recovers the exact identifier 0x3f in all 27 corresponding cells. Thus the owner layer transfers across all tested agents, providers, and task families without per-cell retuning. 
+
+8.2 Trace Footprint and Runtime Cost 
+
+Table 5 shows the realized actions, model turns, and output tokens for each matched agent–LLM row. Complete TrajMark has more visible actions than No-WM in all nine rows, reflecting the explicit Q12 seals; Section 8.6.1 isolates their exact structural cost from ordinary run-to-run variation. Model turns change by −9.5 to +5 .7, and output tokens by −1.23 k to +0 .62 k, so neither increases systematically across the matched rows. Turns and output tokens use framework-native accounting. 17 TrajMark Table 5: Trace footprint and runtime cost across three coding agents and three LLMs (three matched 50-task seeds; 150 runs per full cell). Superscripts show absolute changes from No-WM within the same agent–LLM row (cyan: lower; red: higher). AH, AM-U, Owner, and TM denote ActHook-style, AgentMark-U, Owner-only, and complete TrajMark. 
+
+Avg. Visible Actions ↓
+
+LLM Agent No-WM AH AM-U Owner TM DeepSeek V4 Flash SWE-agent 41.1 40.1 ↓1.0 51.0 ↑9.9 41.8 ↑0.7 47.7 ↑6.6 
+
+OpenHands 33.4 31.7 ↓1.7 33.7 ↑0.4 32.7 ↓0.6 34.4 ↑1.1 
+
+OpenDev 33.8 45.3 ↑11.5 47.7 ↑13.9 47.6 ↑13.8 51.3 ↑17.5 
+
+GPT-5 mini SWE-agent 16.2 16.0 ↓0.2 39.9 ↑23.7 16.6 ↑0.4 27.0 ↑10.8 
+
+OpenHands 25.1 25.6 ↑0.5 31.3 ↑6.2 26.7 ↑1.5 29.9 ↑4.7 
+
+OpenDev 18.3 21.4 ↑3.1 19.5 ↑1.2 15.7 ↓2.6 19.8 ↑1.4 
+
+MiniMax M3 SWE-agent 43.1 41.5 ↓1.5 43.5 ↑0.4 41.5 ↓1.6 46.9 ↑3.9 
+
+OpenHands 34.1 33.4 ↓0.7 35.7 ↑1.6 31.9 ↓2.2 37.6 ↑3.5 
+
+OpenDev 68.6 72.7 ↑4.1 74.9 ↑6.3 55.0 ↓13.6 73.3 ↑4.7 
+
+Avg. Turns ↓
+
+LLM Agent No-WM AH AM-U Owner TM DeepSeek V4 Flash SWE-agent 41.4 40.5 ↓0.9 51.6 ↑10.2 42.2 ↑0.8 40.4 ↓1.0 
+
+OpenHands 31.4 29.8 ↓1.6 31.8 ↑0.4 30.7 ↓0.7 30.8 ↓0.6 
+
+OpenDev 40.1 40.0 ↓0.2 41.9 ↑1.8 44.6 ↑4.5 39.4 ↓0.7 
+
+GPT-5 mini SWE-agent 18.1 17.5 ↓0.6 47.7 ↑29.6 18.8 ↑0.7 23.8 ↑5.7 
+
+OpenHands 24.1 24.5 ↑0.4 30.3 ↑6.2 25.7 ↑1.5 26.2 ↑2.0 
+
+OpenDev 23.3 26.4 ↑3.0 24.5 ↑1.2 18.5 ↓4.8 18.7 ↓4.6 
+
+MiniMax M3 SWE-agent 44.3 42.7 ↓1.6 44.7 ↑0.4 42.7 ↓1.6 42.2 ↓2.0 
+
+OpenHands 32.9 32.0 ↓0.9 34.3 ↑1.4 30.5 ↓2.4 34.7 ↑1.8 
+
+OpenDev 70.8 74.0 ↑3.2 72.9 ↑2.0 54.7 ↓16.2 61.3 ↓9.5 
+
+Avg. Output Tokens (k) ↓
+
+LLM Agent No-WM AH AM-U Owner TM DeepSeek V4 Flash SWE-agent 5.43 5.41 ↓0.02 5.50 ↑0.07 4.81 ↓0.62 5.28 ↓0.14 
+
+OpenHands 7.34 7.38 ↑0.04 4.60 ↓2.74 6.57 ↓0.77 6.43 ↓0.91 
+
+OpenDev 20.52 21.34 ↑0.81 22.05 ↑1.52 19.77 ↓0.75 21.14 ↑0.62 
+
+GPT-5 mini SWE-agent 0.74 0.69 ↓0.05 1.80 ↑1.05 0.80 ↑0.06 1.13 ↑0.39 
+
+OpenHands 6.17 6.21 ↑0.03 4.20 ↓1.98 6.46 ↑0.29 6.58 ↑0.41 
+
+OpenDev 4.09 4.80 ↑0.71 4.60 ↑0.51 3.59 ↓0.50 3.80 ↓0.29 
+
+MiniMax M3 SWE-agent 2.32 2.28 ↓0.04 1.54 ↓0.78 2.19 ↓0.14 1.96 ↓0.36 
+
+OpenHands 6.41 5.70 ↓0.71 3.97 ↓2.44 5.80 ↓0.61 6.40 ↓0.01 
+
+OpenDev 12.89 14.36 ↑1.47 13.38 ↑0.50 9.89 ↓3.00 11.65 ↓1.23 
+
+18 TrajMark 
+
+8.3 Behavioral Watermark Evidence 
+
+Table 6: Detection evidence across three coding agents and three LLMs. Each cell pools three seed-matched 50-trajectory batches and reports mean seed-level z, the largest normal-reference p-value 1 − Φ( z) across seeds, and pooled keyed-carrier Hit%. Exact owner recovery is reported separately in Section 8.4.                                                                                                                               
+
+> SWE-agent OpenHands OpenDev LLM Method z↑p↓Hit% ↑z↑p↓Hit% ↑z↑p↓Hit% ↑
+> DeepSeek V4 Flash ActHook-style 1.28 1.59 ×10 −1100.0 1.82 4.2×10 −2100.0 1.62 1.59 ×10 −1100.0 AgentMark-U 29.51 1.5×10 −179 100.0 35.83 8.4×10 −273 100.0 20.88 6.7×10 −92 100.0 Owner-only 6.82 1.3×10 −10 100.0 9.84 9.0×10 −21 100.0 8.55 1.0×10 −13 100.0
+> TrajMark (ours) 6.68 4.6×10 −11 100.0 9.93 4.3×10 −22 100.0 9.97 7.2×10 −22 100.0
+> GPT-5 mini ActHook-style 1.28 1.59 ×10 −1100.0 1.82 4.2×10 −2100.0 1.62 1.59 ×10 −1100.0 AgentMark-U 32.99 8.1×10 −218 100.0 37.45 1.6×10 −294 100.0 12.05 5.6×10 −30 100.0 Owner-only 4.54 1.9×10 −5100.0 7.85 5.9×10 −12 100.0 5.15 2.3×10 −6100.0
+> TrajMark (ours) 5.12 8.1×10 −7100.0 7.78 3.6×10 −14 100.0 5.45 3.2×10 −5100.0
+> MiniMax M3 ActHook-style 1.28 1.59 ×10 −1100.0 1.63 7.9×10 −2100.0 1.62 1.59 ×10 −1100.0 AgentMark-U 28.75 3.0×10 −168 100.0 34.63 1.8×10 −253 100.0 20.70 2.8×10 −89 100.0 Owner-only 7.48 6.0×10 −14 100.0 8.89 3.0×10 −17 100.0 10.01 1.1×10 −17 100.0
+> TrajMark (ours) 8.02 4.7×10 −15 100.0 9.57 2.0×10 −21 100.0 10.28 5.2×10 −19 100.0
+
+All methods reach 100% Hit, while their evidence volumes differ: ActHook-style yields z = 1 .28 –1.82, AgentMark-U yields z = 12 .05 –37.45, and Owner-only and complete TrajMark yield z = 4 .54 –10.01 and z = 5 .12 –10.28, respectively. Because z measures accumulated carrier evidence rather than cross-method efficiency, Section 8.4 uses exact owner-ID recovery as the decision-level comparison. 
+
+8.4 Owner-ID Recovery and Robustness 
+
+We count owner-ID recovery as successful when the method-specific group-level decoder returns the exact six-bit owner ID 0x3f ; abstentions and incorrect IDs count as failures. Under this criterion, AgentMark-U, Owner-only, and complete TrajMark recover the exact owner ID in all 27 clean groups. ActHook-style is N/A for owner-ID recovery because hook presence does not encode an owner identity. 
+
+8.4.1 Owner-ID Recovery under Random Corruption and White-box Carrier Deletion 
+
+Figure 2 evaluates exact owner-ID recovery for the three ID-bearing methods under random visible-action corruption and targeted owner-carrier removal. ActHook-style is included as a detection-only reference because it does not encode an owner ID. The filename-indexed equations used by Owner-only and TrajMark recover the owner without adding trajectory actions. Under insertion, AgentMark-U’s position-indexed equations shift, whereas the filename-indexed carrier identities used by Owner-only and TrajMark remain stable (Figure 6). ActHook-style remains a detection-only reference at the fixed 
+
+R = 0 .05 operating point. At 20% random corruption, Owner-only and complete TrajMark achieve 99.3–100% and 96.3–100% exact owner-ID recovery, respectively. At 50% corruption, their minimum recovery rates are 79.1% and 76.5%. ActHook-style falls to 26.9–40.2% detection at 50% because its binary decision depends only on retained hook evidence. Under white-box physical deletion, Owner-only and complete TrajMark recover the exact ID in 22/27 and 23/27 batches at 20% carrier deletion, 7/27 and 10/27 at 30%, and 0/27 and 1/27 at 50%, respectively. The per-cell grids show that random deletion broadly affects AgentMark-U, while the largest filename-indexed losses under random deletion and replacement occur in the GPT-5 mini cells (Figures 5 and 7). Random insertion largely preserves the filename-indexed equations but shifts AgentMark-U’s position index (Figure 6). Figure 8 shows the native-adapter difference: AgentMark-U recovers no batches under white-box deletion in SWE-agent or OpenDev from 5% onward, whereas its OpenHands event-ID indexing preserves recovery in all nine batches through 30%, before falling to zero at 50%. 19 TrajMark ActHook (detection) AgentMark-U Owner-only TrajMark 
+
+> ActHook: binary detection; AgentMark-U, Owner-only, and TrajMark: exact owner-ID recovery.
+
+DeepSeek V4 Flash GPT-5 mini MiniMax M3               
+
+> Deletion
+> 020 40 60 80 100
+> Insertion
+> 020 40 60 80 100
+> Replacement
+> 020 40 60 80 100
+> White-box carrier deletion
+> 020 40 60 80 100
+> 510 20 30 50 510 20 30 50 510 20 30 50
+> Success rate (%) Corruption strength (%)
+
+Figure 2: Detection and exact owner-ID recovery under random visible-action corruption and exact-budget white-box carrier deletion. The first three rows aggregate 4,500 corrupted B = 50 batches per point. ActHook-style reports binary detection, whereas AgentMark-U, Owner-only, and TrajMark report exact owner-ID recovery. The fourth row reports nine B = 50 batches per point after physical carrier deletion and native re-decoding; clean integrity-seal positions are excluded from deletion. Agent-level results appear in Appendix G. 
+
+8.5 Full-Watermark Tamper Detection 
+
+The Q6 channel supports batch-level owner recovery, whereas Q12 integrity replay detects alarms introduced relative to the paired clean replay. Detection and localization use attack-specific eligibility conditions determined from the paired-clean Q12 replay. Figure 3 first evaluates every eligible single-site insertion, deletion, replacement, and seal removal. Across all nine agent–LLM cells, TrajMark detects 95.5–100% of these edits, establishing that the Q12 checks react reliably when one eligible site is modified. 20 TrajMark 90 92 94 96 98 100             
+
+> SWE-agent
+> DeepSeek V4 Flash GPT-5 mini MiniMax M3
+> 90 92 94 96 98 100
+> OpenHands
+> Ins. Del. Rep. Seal 90 92 94 96 98 100
+> OpenDev
+> Ins. Del. Rep. Seal Ins. Del. Rep. Seal
+> Detection rate (%)
+> Insertion Deletion Replacement Seal removal
+
+Figure 3: Single-site integrity detection across all nine agent–LLM cells. Each point is the probability of at least one attack-induced Q12 alarm under exhaustive eligible single-site attacks, macro-averaged over the three primary seeds. The truncated vertical axis makes differences near 100% visible. This is an any-protocol detection result. Figure 4 then applies the same any-alarm decision under proportional attacks. Insertion, deletion, and replacement randomly modify 5–50% of each trajectory’s visible actions; seal removal spends the same nominal budget only on Q12 seals. Every agent–LLM condition remains separate. At 50% corruption, all SWE-agent and OpenDev curves remain at or above 99.4%. OpenHands remains at 99.1–99.6% for insertion, but falls to 88.1%, 95.0%, and 84.8% for deletion and to 96.2%, 96.5%, and 91.2% for replacement across the three LLMs. Insertion preserves the existing Q12 evidence, whereas deletion can remove both protected content and some of its checks. The figure therefore supports robust any-alarm detection, with OpenHands deletion as the limiting condition; it evaluates detection rather than exact localization. Targeted seal removal is detected in 100% of SWE-agent and OpenDev trials and in 98.9%, 100%, and 99.0% of OpenHands trials across the three LLMs, respectively, at every nominal budget. At 50%, all available Q12 seals are removed in every condition. The flat seal-removal curves reflect the binary any-alarm decision: once a detectable trajectory raises an alarm, removing additional seals cannot increase its per-trajectory score. 21 TrajMark Insertion Deletion Replacement Seal removal             
+
+> DeepSeek V4 Flash
+> SWE-agent
+> 80 90 100
+> OpenHands
+> 80 90 100
+> OpenDev
+> 80 90 100
+> 510 20 30 50
+> GPT-5 mini
+> 510 20 30 50
+> MiniMax M3
+> 510 20 30 50
+> Detection rate (%) Nominal attack budget (% of visible actions)
+
+Figure 4: Tamper detection under proportional visible-action attacks across all nine agent–LLM conditions. The first three curves randomly insert, delete, or replace visible actions; seal removal directs the same nominal budget only to existing Q12 seals and saturates once all seals are removed. Detection means that at least one attack-induced Q12 alarm appears relative to the paired clean replay. Each point macro-averages the three primary-seed rates; each seed uses 50 trajectories and 50 deterministic trials. The denominator contains trajectories with at least one eligible random modification or at least one removed seal. Table 7 then reports where those alarms point. It keeps all LLM, agent, and random-corruption conditions separate and pairs accepted-site coverage with the width of the narrowest reported ordinary, group, or terminal region that covers each localized payload modification. With one selected modification, 95.8% of eligible payload sites fall inside an accepted newly reported region; among those sites, the narrowest region has pooled median width 15 and mean width 19.8 visible actions. At 50% corruption, the pooled coverage is 88.6%, and the corresponding median and mean widths are 25 and 31.6 actions. The disaggregated rows show that SWE-agent and OpenDev retain at least 89.3% and 95.7% coverage, respectively, at 50%, whereas OpenHands is the limiting framework, especially for replacement (34.2–49.3%). Its conditional widths must therefore be read together with the adjacent coverage values. Across all conditions, terminal regions constitute 22.0% of the narrowest accepted reports in the one-action setting and 41.4% at 50% corruption, showing the shift toward coarser enclosing evidence as corruption grows. These widths define the resolution of the localization claim. TrajMark identifies the narrowest accepted protocol region enclosing a modified site, not the individual action itself. As a scale comparison, the nine full-TrajMark cells in Table 5 average 40.9 visible actions per trajectory; the one-action median and mean widths therefore correspond to 36.7% and 48.4% of that average. Granularity is determined jointly by Boundary θ , the spacing of critical actions, and the surviving alarm level: ordinary reports cover one segment, group reports two, and terminal reports a suffix. A finer boundary policy partitions the protected stream into more ordinary segments, while Eq. (28) gives the corresponding seal count 
+
+m + ⌊m/ 2⌋ + 1 .22 TrajMark Table 7: Accepted-site localization by LLM, coding agent, and random corruption type. Each cell reports site coverage (%; ↑) / conditional mean width (paired-clean visible actions; ↓) for the narrowest newly reported Q12 region in the modified site’s accepted ordinary, group, or terminal hierarchy. Coverage retains eligible misses in its denominator; width is averaged only over covered sites. 
+
+LLM Agent Attack Site coverage (%) ↑ / conditional mean width ↓
+
+1 action 5% 10% 20% 30% 50% DeepSeek V4 Flash SWE-agent Insertion 98.1 / 21.7 97.9 / 24.7 97.6 / 25.5 97.5 / 26.7 97.4 / 27.9 97.7 / 30.1 Deletion 96.8 / 27.5 96.6 / 31.6 95.7 / 33.1 95.2 / 37.3 94.8 / 40.9 92.7 / 47.0 Replacement 90.0 / 24.9 96.1 / 30.8 96.4 / 31.4 96.3 / 34.3 96.3 / 38.0 96.5 / 45.6 OpenHands Insertion 85.1 / 20.2 81.6 / 22.2 77.4 / 22.6 69.8 / 22.5 62.4 / 22.9 46.4 / 23.2 Deletion 90.8 / 20.4 85.5 / 23.2 81.2 / 23.4 71.3 / 24.0 61.4 / 24.7 46.5 / 25.8 Replacement 90.4 / 20.4 83.9 / 22.7 78.2 / 22.9 67.0 / 23.6 54.7 / 24.0 34.8 / 24.5 OpenDev Insertion 98.0 / 19.2 98.9 / 22.3 99.2 / 22.6 99.6 / 22.5 99.7 / 22.5 99.9 / 22.4 Deletion 99.3 / 19.0 99.2 / 23.1 99.4 / 24.0 99.4 / 25.8 99.3 / 28.7 98.8 / 36.1 Replacement 98.9 / 19.3 99.1 / 23.4 99.5 / 23.9 99.5 / 26.0 99.3 / 28.9 98.6 / 36.4 GPT-5 mini SWE-agent Insertion 97.7 / 12.3 98.2 / 15.2 98.0 / 16.0 97.9 / 17.1 98.1 / 18.2 98.1 / 20.1 Deletion 96.3 / 17.1 95.9 / 21.5 96.5 / 23.0 96.0 / 25.3 95.1 / 27.7 93.7 / 31.7 Replacement 93.8 / 16.0 95.9 / 20.0 96.3 / 21.1 96.3 / 23.1 96.9 / 25.9 96.8 / 31.1 OpenHands Insertion 91.3 / 22.9 89.2 / 24.8 87.4 / 25.1 82.4 / 25.7 75.5 / 25.8 59.9 / 26.7 Deletion 97.2 / 22.6 93.8 / 24.9 91.9 / 25.4 87.5 / 26.3 82.1 / 27.0 74.4 / 28.5 Replacement 96.2 / 22.1 89.3 / 24.1 87.9 / 24.8 81.4 / 25.6 70.4 / 26.2 49.3 / 27.0 OpenDev Insertion 97.1 / 11.2 98.2 / 11.8 98.3 / 11.8 99.0 / 11.8 99.3 / 11.8 99.6 / 11.8 Deletion 98.2 / 10.9 98.7 / 11.4 99.1 / 11.9 99.4 / 12.7 99.6 / 13.6 99.8 / 15.9 Replacement 99.1 / 10.5 98.7 / 11.2 98.1 / 11.8 98.9 / 12.6 99.6 / 13.4 99.8 / 15.7 MiniMax M3 SWE-agent Insertion 98.4 / 21.3 98.3 / 22.7 98.2 / 22.8 98.2 / 23.9 98.3 / 24.8 98.4 / 26.4 Deletion 96.9 / 26.2 97.3 / 28.5 96.3 / 29.6 95.1 / 32.9 93.2 / 35.7 89.3 / 41.2 Replacement 90.5 / 25.7 97.0 / 27.7 97.4 / 28.3 97.1 / 30.8 96.8 / 33.5 97.1 / 39.7 OpenHands Insertion 86.9 / 24.7 84.9 / 26.6 80.7 / 26.6 73.3 / 26.9 63.8 / 26.7 49.1 / 27.2 Deletion 92.2 / 25.7 85.2 / 27.6 79.7 / 27.8 70.5 / 28.2 60.5 / 28.4 45.0 / 28.8 Replacement 91.5 / 25.5 85.1 / 27.3 79.0 / 27.5 67.4 / 27.7 55.3 / 27.9 34.2 / 28.4 OpenDev Insertion 98.8 / 18.8 99.5 / 21.5 99.6 / 21.5 99.9 / 21.4 99.9 / 21.4 99.9 / 21.2 Deletion 99.3 / 19.3 99.6 / 22.5 99.6 / 23.0 99.2 / 25.8 98.2 / 29.8 95.7 / 39.6 Replacement 99.3 / 18.6 99.5 / 22.4 99.6 / 23.0 99.2 / 25.4 98.3 / 29.0 95.7 / 39.3 
+
+Overall (all displayed cells) 95.8 / 19.8 96.0 / 23.3 95.4 / 23.9 93.9 / 25.5 92.0 / 27.4 88.6 / 31.6 Each condition–attack cell micro-pools the three primary seeds. “1 action” selects one payload action or insertion boundary; the remaining columns select the displayed proportion of visible actions. Targeted seal removal is excluded because it modifies Q12 carriers rather than payload sites. 
+
+8.6 Structural Cost and Task Utility 8.6.1 RQ4: Mechanism-Level Structural Cost 
+
+Owner-only adds no action because it rewrites existing READ choices. For SWE-agent, full TrajMark adds ordinary, group, and terminal seals: 6.98 visible actions per trajectory on average. The mean within-condition overhead relative to the reconstructed natural action count is 22.1%. This is the protocol’s structural cost; the realized turns and tokens in Table 5 also include ordinary run-to-run variation. 
+
+8.6.2 Pass@1 
+
+Each condition is generated as a fresh live agent run rather than by applying a watermark to a fixed No-WM log. Although the agent, LLM, seed, task identifier, and test harness are matched, hosted black-box inference can vary across independent runs because of stochastic generation, retries, context handling, and provider-side scheduling. Pooled over 1,350 outcomes, complete TrajMark reaches 26.9% Pass@1 versus 26.3% for No-WM, a difference of +0.6 percentage points. Across the nine matched agent–LLM conditions, five changes are positive and four are negative; an exact two-sided sign test over the nine non-tied conditions gives p = 1 .00 .23 TrajMark Table 8: Pass@1 across three coding agents and three LLMs. Each row pools three seed-matched batches of 50 tasks, yielding 150 task runs per agent–LLM condition. Superscripts give within-row changes from No-WM in percentage points (cyan: lower; red: higher; black: unchanged). Overall pools all 1,350 agent–LLM–seed task outcomes per method; the final row reports the pooled difference from No-WM. Pass@1 is the percentage of tasks whose single submitted patch passes the corresponding repository-level test harness; empty or invalid patches count as failures.                                                                
+
+> Agent LLM No-WM ActHook-style AgentMark-U Owner-only TrajMark SWE-agent DeepSeek V4 Flash 36.7% 34.0% ↓2.7 36.0% ↓0.7 34.7% ↓2.0 35.3% ↓1.3
+> GPT-5 mini 28.0% 30.7% ↑2.7 4.7% ↓23.3 30.0% ↑2.0 25.3% ↓2.7
+> MiniMax M3 27.3% 31.3% ↑4.0 9.3% ↓18.0 31.3% ↑4.0 30.0% ↑2.7
+> OpenHands DeepSeek V4 Flash 20.0% 18.7% ↓1.3 13.3% ↓6.7 23.3% ↑3.3 18.7% ↓1.3
+> GPT-5 mini 21.3% 22.0% ↑0.7 6.0% ↓15.3 21.3% 0.0 22.0% ↑0.7
+> MiniMax M3 20.7% 19.3% ↓1.3 12.0% ↓8.7 22.0% ↑1.3 24.0% ↑3.3
+> OpenDev DeepSeek V4 Flash 36.0% 39.3% ↑3.3 40.7% ↑4.7 34.0% ↓2.0 35.3% ↓0.7
+> GPT-5 mini 10.7% 8.7% ↓2.0 13.3% ↑2.7 9.3% ↓1.3 14.0% ↑3.3
+> MiniMax M3 36.0% 33.3% ↓2.7 30.7% ↓5.3 34.7% ↓1.3 37.3% ↑1.3
+> Overall 26.3% 26.4% 18.4% 26.7% 26.9%
+> ∆vs. No-WM (pp) –+0.1 -7.9 +0.4 +0.6
+
+# 9 Discussion 
+
+9.1 Visibility and Adaptive Removal 
+
+TrajMark deliberately uses two complementary visibility profiles. The owner layer rewrites sparse filename-selected READs that the agent already intended to execute, adding no trajectory step. The integrity layer inserts explicit READs around protected segments. Consequently, Q6 provides action-count-neutral ownership evidence, while Q12 provides visible, tamper-evident integrity checks. The random-corruption evaluation measures non-targeted damage, whereas the white-box carrier-deletion experiment intentionally grants a stronger adversary than the post-publication editor in our main threat model. The public canonicalizer exposes the candidate pool—the first eligible READ for each normalized basename—but not which candidates were selected or their coefficient rows. The fourth row of Figure 2 gives the attacker this hidden state and decoder access to select among up to 63 deterministic deletion sets. Each candidate is applied to the visible trajectories before evidence is re-extracted and decoded. Removing a natural READ can promote a later READ of the same basename to carrier status; position-indexed evidence can also change when deletion changes the positions used by the native adapter. The resulting curves capture both lost evidence and changes to the reconstructed equations. Raising po
+
+increases the initial equation budget, while an outer erasure code could increase the deletion margin. The ordinary, group, and terminal/root commitments make selective seal removal visible at another level of the Q12 hierarchy. Complete READ removal produces missing structure or owner abstention instead of accepted provenance. A forged seal must match its ordinal, payload, preceding observation, and enclosing commitments under the secret key. 
+
+Why OpenHands is the deletion boundary. The 84.8% floor in Figure 4 is not an inherent weakness of typed tool events; it follows from the evidence topology produced by the evaluated OpenHands profile. OpenHands first joins each typed action to its public observation through the cause relation and admits the action to Q12 state only after a successful outcome. The deletion attack removes that action and all of its cause-linked observations as one public atom. If a critical action and its adjacent seal are both removed, the event that would have created the seal expectation and the local check can disappear together, leaving fewer independent commitments to expose the deletion. The clean streams underlying Figure 4 make the closure gap explicit. Among the OpenHands trajectories with at least one Q12 protector—the population that can enter the deletion denominator—a terminal protector is present in 47/98 (48.0%), 120/138 (87.0%), and 44/98 (44.9%) of the DeepSeek V4 Flash, GPT-5 mini, and MiniMax M3 trajectories, respectively. This ordering tracks their 88.1%, 95.0%, and 84.8% detection rates at 50% deletion; every carrier-bearing SWE-agent trajectory has a terminal protector (150/150 in each cell). Thus the important difference is not merely the number of local seals. SWE-agent’s textual action and outcome form one linear canonical event and, more importantly, its always-closed root commitment remains an independent witness when a local trigger and seal disappear. This also explains why targeted seal removal remains near 100%: retaining the protected action leaves an unmet commitment, whereas random deletion can remove both its trigger and local check and, without terminal closure, leave no higher-level evidence that the segment existed. The direct mitigation is to make every critical typed action enter protected state 24 TrajMark before outcome resolution, map a missing or failed observation to an explicit unknown outcome, and close Q12 on every runtime termination path, including normal finish, timeout, and error. 
+
+9.2 Composing Trajectory and Artifact Watermarks 
+
+Trajectory and artifact watermarks protect different objects. A code watermark can associate a final patch with a provider-specific pattern, whereas TrajMark associates a visible action history with an owner and checks protected regions of that history. A deployment can combine an artifact watermark, natural-action owner equations, and overt integrity seals. Agreement across the trajectory and artifact layers strengthens provenance. A marked patch without a verified trajectory owner, or an owner-verified trajectory with an unmarked patch, flags inconsistent provenance evidence for investigation. A Q12 alarm on an owner-verified trajectory indicates an inconsistency in the protected canonical projection. This composition also provides redundancy when basename collisions reduce trajectory capacity or refactoring weakens an artifact mark. 
+
+9.3 Operational Guidance 
+
+The results suggest five deployment rules: 1. Gate attribution. Require rank six, a unique best owner, and a score meeting the evidence threshold; otherwise abstain. When all three gates pass, accept the claim if the recovered ID matches the predeclared owner ID, and reject it otherwise. 2. Calibrate each adapter. Re-estimate clean replay and eligible-basename distributions after changes to models, serializers, or tool vocabularies. 3. Choose integrity explicitly. Use owner-only for zero-added-action provenance and full mode when redundant integrity alarms justify extra READs. 4. Preserve canonical order. Publish the protocol version and a deterministic visible index, especially for concurrent tool frameworks. 5. Use the strongest surviving channel. If an authenticated sidecar is preserved end to end, a signed or hash-chained log can provide stronger integrity guarantees; additional properties depend on the authentication and freshness mechanisms. TrajMark targets releases that retain the human-readable action stream but discard wrapper metadata, such as exported trace datasets, benchmark or leaderboard trace artifacts, excerpts reproduced in issue threads or papers, and cross-organization hand-offs re-rendered by another viewer. If the action stream itself is not retained, TrajMark is not applicable. Keys should be domain-separated by deployment, owner, and layer, and rotated for future batches without rewriting old trajectories. The resulting signals authenticate the published visible process through owner attribution and tamper detection. 
+
+# 10 Threats to Validity 
+
+10.1 Canonicalization and Implementation Validity 
+
+The canonicalizer is part of the trusted public protocol. It uses published action requests, visible targets, exposed status, and canonical order, and excludes hidden reasoning, debug anchors, and wrapper metadata. A small public action alphabet reduces parser ambiguity. Semantic synonyms and complex shell pipelines can change carrier availability, while basename collisions can repeat equations without increasing rank; the rank and uniqueness gates prevent such batches from producing an unsupported ID. All qualifying live-API runs are retained. Before aggregation, we verify positive API use, valid artifacts, exact instance and model identities, clean round-trip replay, visible order, and synchronized local recomputation. The reported tables are generated directly from the resulting frozen artifacts. 
+
+10.2 Statistical and Construct Validity 
+
+Owner equations are correlated because models revisit files and reuse exploration patterns. We therefore use exact recovery, rank, uniqueness, score margin, and batch resampling as the primary evidence, while Eq. (12) summarizes 25 TrajMark carrier agreement. The 500 owner-corruption trials and 50 integrity trials per trajectory sample the attack distribution at each of the five reported corruption levels. The evaluated configuration fixes owner label 0x3f . Algebraically, this label receives no privileged decoder treatment: Eq. (9) masks bf = ⟨af , w⟩ with a domain-separated keyed bit before the public Q6 choice is oriented, and the decoder applies the same rank, uniqueness, and score gates to all 64 candidates. Under Assumption 5.2 and for a fixed key-independent opportunity pool, the visible carrier choice is marginally uniform for every fixed label. This is an idealized distributional argument rather than an end-to-end empirical label sweep: during live generation, an early Q6 realization can alter later actions and carrier availability. Our empirical recovery results therefore apply to 0x3f ;evaluating multiple labels under live generation is needed to test label invariance of the adaptive online system. The evaluated six-bit owner space permits exhaustive decoding of 64 candidates. The construction scales to larger identifiers with more independent equations or an outer code. Pass@1 is also compared within matched agent–LLM rows because repository families and test harnesses differ. Structural additions are exactly observable, whereas turns and tokens also reflect stochastic generation, retries, context handling, and provider scheduling. 
+
+10.3 External Validity 
+
+Three agents, three model providers, and Python, Java, and JavaScript repositories cover distinct interfaces and ecosystems. Deployment to IDE-native, GUI, multi-agent, or long-horizon systems requires the same adapter calibration used in our crossed grid. The primary evaluation uses three matched 50-task seeds, so the reported capacity reflects their filename diversity and eligible READ supply. Our native tool-dispatch adapters observe selected actions rather than elicited planning-time probability lists. We therefore evaluate AgentMark-U, the uniform adaptation defined in Section 7.5; all reported AgentMark comparisons refer to this executable interface-compatible baseline. 
+
+10.4 Security Validity 
+
+The security model requires HMAC pseudorandomness, a secret K, and an honest embedding runtime. Public canonicalization reveals the eligible action classes, while the key determines selected filenames, expected subtypes, and seal payloads. The attack suite covers random non-key-aware corruption and exact-budget white-box carrier deletion. The public protocol reveals candidate carrier classes and first-occurrence basenames; selected carriers and coefficient rows remain keyed. Our white-box evaluation reveals both and grants decoder access to select among up to 63 deterministic physical-deletion candidates. Recovery is measured after the selected actions are removed and evidence is re-extracted. The main post-publication threat model and random-corruption results do not establish how well a keyless editor could infer selected carriers from repeated releases or verifier feedback. Complete READ erasure removes the authenticated substrate; the verifier then abstains or reports missing Q12 structure instead of accepting an owner or an intact trajectory. 
+
+# 11 Related Work 
+
+11.1 Generated-Content and Agent Watermarking 
+
+Language-model watermarks bias or partition generation choices to accumulate keyed evidence. Prior work studies green lists, provable robustness, unbiased or distortion-free sampling, semantic carriers, and multi-bit messages [3, 4, 14–19]. WaterBench, MarkLLM, and attack studies further separate utility, detectability, and robustness [20–23]. TrajMark adopts that separation but evaluates complete interactive trajectories and executable repository tasks rather than generated text alone. Semantic and distribution-aware schemes move beyond fixed token identities through embedding partitions, token priors, lexical redundancy, or keyed transformations [24–26]. Multi-bit methods additionally encode traceable messages through invariant linguistic features or position allocation [27]. These designs motivate our finite owner identifier, but their evidence is accumulated over generated language. Coding-agent READ actions are sparse, task-constrained, and correlated, which motivates exact finite-identifier decoding and empirical batch calibration rather than an independent-token approximation. Code watermarking must preserve syntax and behavior. Classical software watermarking modifies program structure, while SWEET, CodeIP, and STONE constrain lexical or grammar choices during generation [5, 28–30]. These methods protect the artifact; TrajMark protects the visible process that produced it. The two are complementary because different trajectories can yield the same patch and a trajectory can be edited without changing that patch (Section 9.2). 26 TrajMark Behavioral methods move the carrier into agent actions. AgentMark uses utility-preserving choices conditioned on candidate-action probabilities; AGENTWM, ActHook, and SeqWM construct or trigger marked execution behavior [6–9]. TrajMark indexes natural carriers by normalized filenames and decodes random linear constraints on a finite owner identifier. Its Q12 integrity layer uses ordinary, group, and terminal commitments to turn visible-action edits into protocol alarms. Exact owner recovery and tamper detection are separate verification decisions. This distinction is also methodological. AgentMark elicits candidate-behavior probabilities from the LLM for sampling and decoding. Our evaluated native interfaces provide selected tool calls rather than these planning-time probability lists; AgentMark-U applies uniform-choice watermarking at this tool-dispatch boundary. ActHook and AGENTWM demonstrate that behavior can carry ownership. TrajMark additionally uses nested ordinary, group, and terminal commitments to preserve tamper evidence across the protected trajectory structure. 
+
+11.2 Secure Logs and Fragile Integrity Watermarks 
+
+Secure audit logs and provenance systems use hash chains, signatures, authenticated structures, protected state, or trusted derivation graphs to expose modification [11, 31–36]. These mechanisms are preferable when authenticated metadata is preserved end to end. TrajMark addresses the complementary release boundary in which the visible action stream survives but wrapper metadata or a logging service does not—for example, exported trace datasets, benchmark or leaderboard trace artifacts, republished trace excerpts, and re-rendered cross-organization hand-offs. In such channels the action record is the only surviving carrier; when a sidecar can be preserved, deployments should prefer or combine signed logging. Data-provenance systems similarly bind outputs to derivation histories, usually through a trusted graph or storage layer [37–39]. Our verifier may instead receive only a serialized action trace and a key. The terminal/root commitment borrows the completeness objective of secure logs, but represents it through a visible READ subtype rather than an opaque signature; group commitments amortize protection over pairs of ordinary segments. Fragile watermarks are designed to react to modification, unlike robust ownership marks that aim to survive trans-formation [10, 40]. Recent media systems combine ownership with spatial or temporal tamper localization [41–45]. TrajMark transfers this robust-versus-fragile separation to discrete action traces: sparse filename equations support batch ownership, while ordinary, group, and terminal/root commitments trigger protocol alarms under action edits and seal removal. The three commitment roles provide overlapping integrity checks over the protected action structure. The hierarchy is dependency-structured rather than a collection of independent tags. Each ordinary seal commits to its segment and the previously observed seal, each group binds two ordinary seals, and the terminal/root role commits to the protected projection. These dependencies allow an enclosing commitment to retain tamper evidence when local evidence is modified or removed. This differs from robust media watermarking, where success commonly means recovering the same message after editing. 
+
+11.3 Coding Agents and Repository-Level Benchmarks 
+
+Tool-using agents interleave model responses, actions, and environment feedback. ReAct and Toolformer established core interaction patterns, while AgentBench, WebArena, Mind2Web, and OSWorld evaluate heterogeneous long-horizon environments [46–51]. Repository-level systems additionally require search, cross-file reasoning, execution, and validation; RepoBench, RepoCoder, CodeAgent, AutoCodeRover, and Agentless study these capabilities [52–56]. These benchmarks also clarify why final-output watermarking is insufficient for our setting. Repository repair contains exploration, failed attempts, tests, and revisions that may be absent from the submitted patch but remain valuable audit evidence. At the same time, a useful carrier must not prevent the agent from selecting tools needed to solve the task, which motivates our separation between rewriting existing owner choices and adding explicit integrity actions. SWE-bench made issue resolution executable, SWE-agent highlighted the effect of the agent-computer interface, OpenHands standardized typed tool events, and SWE-PolyBench extended evaluation across languages [1, 2, 12, 13]. These systems supply natural read and search carriers but serialize tools, failures, concurrency, and termination differently. Our adapter contract therefore treats public visible serialization and clean replay as part of the watermark protocol rather than assuming one universal trajectory format. 27 TrajMark 
+
+# 12 Conclusion 
+
+12.1 Summary 
+
+Coding-agent trajectories are valuable process artifacts, but ownership and integrity place opposite demands on a watermark. TrajMark separates them. Its sparse ownership layer turns selected natural filename READs into masked random linear equations and adds no actions. Its overt integrity layer commits to critical-action segments with ordinary Q12 seals, group-of-two protection, and a terminal commitment. Across three agents, three model providers, three task-list seeds, and three repository languages, the visible-only decoder recovers the exact owner in 27 of 27 primary conditions. At 20% random corruption, Owner-only recovers the correct ID in 99.3–100% of trials and complete TrajMark in 96.3–100%; their lowest rates at 50% are 79.1% and 76.5%. Q12 detects 95.5–100% of exhaustive eligible single-site edits. Under 50% proportional corruption, every SWE-agent and OpenDev curve remains at least 99.4%, and the lowest OpenHands condition remains 84.8%. These results establish robust owner recovery and tamper detection across the tested agents and LLMs. Owner-only adds no trajectory action. On SWE-agent, full TrajMark adds 6.98 visible actions per trajectory on average. Its pooled Pass@1 across all three agents is 26.9% versus 26.3% for No-WM; across the nine matched agent–LLM conditions, five changes increase and four decrease (exact two-sided sign test over the nine non-tied conditions, p = 1 .00 ). Thus the owner layer provides zero-added-action attribution, and the full protocol adds explicit integrity evidence with measured structural cost. The resulting design is composable. Applications can deploy owner-only mode for zero-added-action provenance, full mode for segment integrity, and artifact watermarks or secure logs alongside either mode. Each component provides a distinct verification role and measured cost. 
+
+12.2 Future Work 
+
+Two evaluation gaps remain. The primary live-generation study fixes the deployment label at 0x3f and, after the calibration sweep in Table 3, deploys po = 0 .30 ; live runs across labels and deployed densities would test the mask-based symmetry of Eq. (9) empirically. The baseline comparison uses frozen method-specific operating points rather than an equal visible-carrier budget; a carrier-budget-matched analysis would complement this deployment-oriented comparison by separating evidence efficiency from carrier volume. Three directions follow from the current results. First, probability-aware Q6 substitution could improve distribution preservation when an explicit candidate-action distribution is available. Second, an outer erasure- and error-correcting code could expand the owner space beyond six bits while retaining explicit abstention. Third, adaptive evaluations should combine semantic command rewriting, targeted READ removal, and utility-preserving trajectory compression. For integrity, future work can learn adapter-specific natural realizations of Q12 subtypes without changing the public payload and can evaluate key-aware, utility-preserving multi-region attacks and adaptive verifier feedback. A broader provenance stack should also connect trajectory evidence with code watermarks, signed execution environments, and benchmark-grounded patch validation. 
+
+# References         
+
+> [1] John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. SWE-agent: Agent-computer interfaces enable automated software engineering, 2024. URL https://arxiv.org/abs/2405.15793 .[2] Xingyao Wang, Boxuan Li, Yufan Song, Frank F. Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen Li, Jaskirat Singh, Hoang H. Tran, Fuqiang Li, Ren Ma, Mingzhang Zheng, Bill Qian, Yanjun Shao, Niklas Muennighoff, Yizhe Zhang, Binyuan Hui, Junyang Lin, Robert Brennan, Hao Peng, Heng Ji, and Graham Neubig. OpenHands: An open platform for AI software developers as generalist agents, 2024. URL https://arxiv.org/abs/2407.16741 .[3] John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein. A watermark for large language models. In Proceedings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research , pages 17061–17084. PMLR, 2023. URL https://proceedings.mlr.press/v202/kirchenbauer2 3a.html .[4] Xuandong Zhao, Prabhanjan Vijendra Ananth, Lei Li, and Yu-Xiang Wang. Provable robust watermarking for AI-generated text. In International Conference on Learning Representations , 2024. URL https://openreview.net/forum?id=Bwz0fy9Hc9 .[5] Christian S. Collberg and Clark D. Thomborson. Software watermarking: Models and dynamic embeddings. In Proceedings of the 26th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages , pages 311–324. ACM, 1999. doi:10.1145/292540.292569.
+
+28 TrajMark 
+
+[6] Kaibo Huang, Jin Tan, Yukun Wei, Wanling Li, Zipei Zhang, Hui Tian, Zhongliang Yang, and Linna Zhou. AgentMark: Utility-preserving behavioral watermarking for agents, 2026. URL https://arxiv.org/abs/2601.03294 .[7] Liwen Wang, Zongjie Li, Yuchong Xie, Shuai Wang, Dongdong She, Wei Wang, and Juergen Rahmel. On protecting agentic systems’ intellectual property via watermarking, 2026. URL https://arxiv.org/abs/2602.08401 .[8] Wenlong Meng, Chen Gong, Terry Yue Zhuo, Fan Zhang, Kecen Li, Zheng Liu, Zhou Yang, Chengkun Wei, and Wenzhi Chen. Watermarking LLM agent trajectories, 2026. URL https://arxiv.org/abs/2602.18700 .[9] Hyeseon An, Shinwoo Park, Dongsu Kim, and Yo-Sub Han. Sequential behavioral watermarking for LLM agents, 2026. URL 
+
+https://arxiv.org/abs/2605.11036 .[10] Ingemar J. Cox, Matthew L. Miller, Jeffrey A. Bloom, Jessica Fridrich, and Ton Kalker. Digital Watermarking and Steganogra-phy . Morgan Kaufmann, 2 edition, 2007. [11] Bruce Schneier and John Kelsey. Secure audit logs to support computer forensics. ACM Transactions on Information and System Security , 2(2):159–176, 1999. doi:10.1145/317087.317089. [12] Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. SWE-bench: Can language models resolve real-world GitHub issues? In International Conference on Learning Representations , 2024. URL 
+
+https://openreview.net/forum?id=VTF8yNQM66 .[13] Muhammad Shihab Rashid, Christian Bock, Yuan Zhuang, Alexander Buchholz, Tim Esler, Simon Valentin, Luca Franceschi, Martin Wistuba, Prabhu Teja Sivaprasad, Woo Jung Kim, Anoop Deoras, Giovanni Zappella, and Laurent Callot. SWE-PolyBench: A multi-language benchmark for repository-level evaluation of coding agents, 2025. URL https://arxiv.org/ abs/2504.08703 .[14] Rohith Kuditipudi, John Thickstun, Tatsunori Hashimoto, and Percy Liang. Robust distortion-free watermarks for language models. Transactions on Machine Learning Research , 2024. URL https://openreview.net/forum?id=FpaCL1MO2C .[15] Zhengmian Hu, Lichang Chen, Xidong Wu, Yihan Wu, Hongyang Zhang, and Heng Huang. Unbiased watermark for large language models. In B. Kim, Y. Yue, S. Chaudhuri, K. Fragkiadaki, M. Khan, and Y. Sun, editors, International Conference on Learning Representations , volume 2024, pages 45408–45436, 2024. URL https://proceedings.iclr.cc/paper_file s/paper/2024/file/c5b00c5bdcc6fe35907dbcca03d27652-Paper-Conference.pdf .[16] Abe Hou, Jingyu Zhang, Tianxing He, Yichen Wang, Yung-Sung Chuang, Hongwei Wang, Lingfeng Shen, Benjamin Van Durme, Daniel Khashabi, and Yulia Tsvetkov. SemStamp: A semantic watermark with paraphrastic robustness for text genera-tion. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics ,pages 4067–4082, Mexico City, Mexico, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.naacl-long.226. [17] Jie Ren, Han Xu, Yiding Liu, Yingqian Cui, Shuaiqiang Wang, Dawei Yin, and Jiliang Tang. A robust semantics-based watermark for large language model against paraphrasing. In Findings of the Association for Computational Linguistics: NAACL 2024 , pages 613–625, Mexico City, Mexico, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.findings-naacl.40. [18] KiYoon Yoo, Wonhyuk Ahn, and Nojun Kwak. Advancing beyond identification: Multi-bit watermark for large language models. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics , pages 4031–4055, Mexico City, Mexico, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.naacl-long.224. [19] Xiaoyan Feng, He Zhang, Yanjun Zhang, Leo Yu Zhang, and Shirui Pan. BiMark: Unbiased multilayer watermarking for large language models. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 17049–17067. PMLR, 2025. [20] Shangqing Tu, Yuliang Sun, Yushi Bai, Jifan Yu, Lei Hou, and Juanzi Li. WaterBench: Towards holistic evaluation of watermarks for large language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics , pages 1517–1542, Bangkok, Thailand, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.acl-long.83. [21] Leyi Pan, Aiwei Liu, Zhiwei He, Zitian Gao, Xuandong Zhao, Yijian Lu, Binglin Zhou, Shuliang Liu, Xuming Hu, Lijie Wen, Irwin King, and Philip S. Yu. MarkLLM: An open-source toolkit for LLM watermarking. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing: System Demonstrations , pages 61–71, Miami, Florida, USA, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.emnlp-demo.7. [22] Saksham Rastogi and Danish Pruthi. Revisiting the robustness of watermarking to paraphrasing attacks. In Yaser Al-Onaizan, Mohit Bansal, and Yun-Nung Chen, editors, Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 18100–18110, Miami, Florida, USA, November 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.emnlp-main.1005. URL https://aclanthology.org/2024.emnlp-main.1005/ .[23] Hongyan Chang, Hamed Hassani, and Reza Shokri. Watermark smoothing attacks against language models. In Findings of the Association for Computational Linguistics: EMNLP 2025 , pages 4915–4941, Suzhou, China, 2025. Association for Computational Linguistics. doi:10.18653/v1/2025.findings-emnlp.264. [24] Yubing Ren, Ping Guo, Yanan Cao, and Wei Ma. Subtle signatures, strong shields: Advancing robust and imperceptible watermarking in large language models. In Findings of the Association for Computational Linguistics: ACL 2024 , pages 5508–5519, Bangkok, Thailand, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.findings-acl.327. 
+
+29 TrajMark 
+
+[25] Liang Chen, Yatao Bian, Yang Deng, Deng Cai, Shuaiyi Li, Peilin Zhao, and Kam-Fai Wong. WatME: Towards lossless watermarking through lexical redundancy. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics , pages 9166–9180, Bangkok, Thailand, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.acl-long.496. [26] Gregory Kang Ruey Lau, Xinyuan Niu, Hieu Dao, Jiangwei Chen, Chuan-Sheng Foo, and Bryan Kian Hsiang Low. Waterfall: Scalable framework for robust text watermarking and provenance for LLMs. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 20432–20466, Miami, Florida, USA, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.emnlp-main.1138. [27] KiYoon Yoo, Wonhyuk Ahn, Jiho Jang, and Nojun Kwak. Robust multi-bit natural language watermarking through invariant features. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics , pages 2092–2115, Toronto, Canada, 2023. Association for Computational Linguistics. doi:10.18653/v1/2023.acl-long.117. [28] Taehyun Lee, Seokhee Hong, Jaewoo Ahn, Ilgee Hong, Hwaran Lee, Sangdoo Yun, Jamin Shin, and Gunhee Kim. Who wrote this code? watermarking for code generation. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics , pages 4890–4911, Bangkok, Thailand, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.acl-long.268. [29] Batu Guan, Yao Wan, Zhangqian Bi, Zheng Wang, Hongyu Zhang, Pan Zhou, and Lichao Sun. CodeIP: A grammar-guided multi-bit watermark for large language models of code. In Findings of the Association for Computational Linguistics: EMNLP 2024 ,pages 9243–9258, Miami, Florida, USA, 2024. Association for Computational Linguistics. doi:10.18653/v1/2024.findings-emnlp.541. [30] Jungin Kim, Shinwoo Park, and Yo-Sub Han. Marking code without breaking it: Code watermarking for detecting LLM-generated code. In Findings of the Association for Computational Linguistics: EACL 2026 , pages 3990–4002, Rabat, Morocco, 2026. Association for Computational Linguistics. doi:10.18653/v1/2026.findings-eacl.207. [31] Stuart Haber and W. Scott Stornetta. How to time-stamp a digital document. Journal of Cryptology , 3(2):99–111, 1991. doi:10.1007/BF00196791. [32] Mihir Bellare and Bennet S. Yee. Forward integrity for secure audit logs. Technical report, University of California, San Diego, 1997. [33] Scott A. Crosby and Dan S. Wallach. Efficient data structures for tamper-evident logging. In 18th USENIX Security Symposium ,pages 317–334, Montreal, Canada, 2009. USENIX Association. [34] Di Ma and Gene Tsudik. A new approach to secure logging. ACM Transactions on Storage , 5(1):1–21, 2009. doi:10.1145/1502777.1502779. [35] Kiran-Kumar Muniswamy-Reddy, David A. Holland, Uri Braun, and Margo Seltzer. Provenance-aware storage systems. In 
+
+USENIX Annual Technical Conference , pages 43–56, Boston, Massachusetts, 2006. USENIX Association. [36] Ragib Hasan, Radu Sion, and Marianne Winslett. Preventing history forgery with secure provenance. ACM Transactions on Storage , 5(4):1–43, 2009. doi:10.1145/1629080.1629082. [37] Uri Braun, Avraham Shinnar, and Margo Seltzer. Securing provenance. In USENIX Workshop on Hot Topics in Security , San Jose, California, 2008. USENIX Association. [38] Brent R. Waters, Dirk Balfanz, Glenn Durfee, and D. K. Smetters. Building an encrypted and searchable audit log. In Network and Distributed System Security Symposium , San Diego, California, 2004. Internet Society. [39] Viet Tung Hoang, Cong Wu, and Xin Yuan. Faster yet safer: Logging system via fixed-key blockcipher. In 31st USENIX Security Symposium , pages 2389–2406, Boston, Massachusetts, 2022. USENIX Association. [40] E Delp E Lin. A review of fragile image watermarks. pages 25–29, 1999. URL ftp://skynet.ecn.purdue.edu/pub/di st/delp/acm99/paper.pdf . Proceedings of the Multimedia and Security Workshop (ACM Multimedia ’99) Multimedia Contents, October 1999, Orlando, pp. 25-29. [41] Paarth Neekhara, Shehzeen Hussain, Xinqiao Zhang, Ke Huang, Julian McAuley, and Farinaz Koushanfar. FaceSigns: Semi-fragile watermarks for media authentication. ACM Transactions on Multimedia Computing, Communications and Applications ,20(11):1–21, 2024. doi:10.1145/3640466. [42] Xuanyu Zhang, Runyi Li, Jiwen Yu, Youmin Xu, Weiqi Li, and Jian Zhang. EditGuard: Versatile image watermarking for tamper localization and copyright protection. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 11964–11974, Seattle, Washington, 2024. IEEE. [43] Xuanyu Zhang, Zecheng Tang, Zhipei Xu, Runyi Li, Youmin Xu, Bin Chen, Feng Gao, and Jian Zhang. OmniGuard: Hybrid manipulation localization via augmented versatile deep image watermarking. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 3008–3018, Nashville, Tennessee, 2025. IEEE. [44] Tom Sander, Pierre Fernandez, Alain Oliviero Durmus, Teddy Furon, and Matthijs Douze. Watermark anything with localized messages. In International Conference on Learning Representations , 2025. URL https://openreview.net/forum?id=Ik ZVDzdC8M .[45] Haoxin Yang, Bangzhen Liu, Xuemiao Xu, Cheng Xu, Yuyang Yu, Zikai Huang, Yi Wang, and Shengfeng He. StableGuard: Towards unified copyright protection and tamper localization in latent diffusion models. In Advances in Neural Information Processing Systems , volume 38, pages 14692–14720, 2025. 
+
+30 TrajMark 
+
+[46] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. ReAct: Synergizing reasoning and acting in language models. In International Conference on Learning Representations , 2023. URL https: //openreview.net/forum?id=WE_vluYUL-X .[47] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. In Advances in Neural Information Processing Systems , volume 36, pages 68539–68551, 2023. [48] Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen Men, Kejuan Yang, Shudan Zhang, Xiang Deng, Aohan Zeng, Zhengxiao Du, Chenhui Zhang, Sheng Shen, Tianjun Zhang, Yu Su, Huan Sun, Minlie Huang, Yuxiao Dong, and Jie Tang. AgentBench: Evaluating LLMs as agents. In International Conference on Learning Representations , 2024. URL https://openreview.net/forum?id=zAdUB0aCTQ .[49] Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Graham Neubig. WebArena: A realistic web environment for building autonomous agents. In 
+
+International Conference on Learning Representations , 2024. URL https://openreview.net/forum?id=oKn9c6ytLx .[50] Xiang Deng, Yu Gu, Boyuan Zheng, Shijie Chen, Samuel Stevens, Boshi Wang, Huan Sun, and Yu Su. Mind2Web: Towards a generalist agent for the web. In Advances in Neural Information Processing Systems , volume 36, pages 28091–28114, 2023. [51] Tianbao Xie, Danyang Zhang, Jixuan Chen, Xiaochuan Li, Siheng Zhao, Ruisheng Cao, Toh Jing Hua, Zhoujun Cheng, Dongchan Shin, Fangyu Lei, Yitao Liu, Yiheng Xu, Shuyan Zhou, Silvio Savarese, Caiming Xiong, Victor Zhong, and Tao Yu. OSWorld: Benchmarking multimodal agents for open-ended tasks in real computer environments. In Advances in Neural Information Processing Systems , 2024. URL https://arxiv.org/abs/2404.07972 .[52] Tianyang Liu, Canwen Xu, and Julian McAuley. RepoBench: Benchmarking repository-level code auto-completion systems, 2023. [53] Fengji Zhang, Bei Chen, Yue Zhang, Jacky Keung, Jin Liu, Daoguang Zan, Yi Mao, Jian-Guang Lou, and Weizhu Chen. RepoCoder: Repository-level code completion through iterative retrieval and generation, 2023. [54] Kechi Zhang, Jia Li, Ge Li, Xianjie Shi, and Zhi Jin. Codeagent: Enhancing code generation with tool-integrated agent systems for real-world repo-level coding challenges, 2024. URL https://arxiv.org/abs/2401.07339 .[55] Yuntong Zhang, Haifeng Ruan, Zhiyu Fan, and Abhik Roychoudhury. AutoCodeRover: Autonomous program improvement, 2024. [56] Chunqiu Steven Xia, Yinlin Deng, Soren Dunn, and Lingming Zhang. Agentless: Demystifying LLM-based software engineering agents, 2024. 
+
+31 TrajMark 
+
+# A Owner Capacity Calculations 
+
+A.1 Rank and collision recurrence 
+
+Let Qm(r, u ) be the probability that m basename slots have coefficient rank r and u distinct coefficient vectors. Repeated vectors remain separate matrix rows, and Pm(6) = P 
+
+> u
+
+Qm(6 , u ). Initialize Q0(0 , 0) = 1 . From state (r, u ),one further nonzero-vector draw gives 
+
+(r, u ) → (r, u ) with probability u/ 63 ,
+
+(r, u ) → (r, u + 1) with probability (2 r − 1 − u)/63 ,
+
+(r, u ) → (r + 1 , u + 1) with probability (64 − 2r )/63 .
+
+(30) Marginalizing over u, with P0(0) = 1 and out-of-range terms zero, gives 
+
+Pm+1 (r) = Pm(r) 2r − 163 + Pm(r − 1) 64 − 2r−1
+
+63 . (31) 
+
+A.2 Proof of Theorem 5.3 
+
+Proof. Assumption 5.2 makes the DB selection bits independent Bernoulli variables with exact parameter po. Condi-tional on M = m, row generation gives m independent uniform draws from the 63 nonzero vectors. If the current draws have rank r and contain u distinct rows, exactly u choices repeat a row, 2r − 1 − u are unseen rows within the span, and 64 − 2r lie outside it. This proves Eq. (30). In a clean batch, majority aggregation retains one equation for each selected basename, so U = M = m, even when coefficient vectors repeat. Every equation supports w, giving H(w) = m and zowner = √m for m > 0. Rank six makes this solution the unique maximizer. Acceptance is therefore equivalent to rank six and m ≥ Lτ . Conditional on M = m, its probability is 1{m ≥ Lτ }Pm(6) . Averaging over the binomial distribution of M proves Eq. (21); dropping the slot-count gate gives Eq. (22). For exactly six draws, the full-rank probability is Q5
+
+> r=0
+
+(64 − 2r )/63 ≈ 0.322 , so six rows suffice algebraically but are not a high-probability operating point. If the cs observations of basename s are independently erased with probability δ,the expected number of selected basenames retaining at least one observation is 
+
+po
+
+X
+
+> s∈S
+
+(1 − δcs ). (32) This is the expected number of surviving basename slots; it does not by itself determine matrix rank or recovery probability. 
+
+# B Owner Decoding Proofs 
+
+B.1 Robust recovery 
+
+Proof of Theorem 5.4(i). The true label has residual dH (y, A w) = ∥η∥0 = e. Any other label is x = w ⊕ v for some 
+
+v̸ = 0 , and the Hamming triangle inequality gives 
+
+dH (y, A x) ≥ dH (Aw, A x) − dH (y, A w) = ∥Av ∥0 − e ≥ d(A) − e. 
+
+If 2e < d (A), this exceeds the true residual, so no other label ties or wins. Deleting s rows produces Aret with 
+
+d(Aret ) ≥ d(A0) − s, which yields the stated sufficient condition. Rank alone is not robustness: for A = I6,
+
+d(A) = 1 .
+
+B.2 Fixed-claim soundness 
+
+Proof of Theorem 5.4(ii). Condition on the fixed stream and all non-mask domain outputs, including selection, co-efficient vectors, and family-specific orientations. Mask invariance fixes the replay roles and basename slots. After orientation removal, observation i in slot s has right-hand side ys,i = qs,i ⊕ ms, with fixed qs,i and independent fair basename masks ms. All observations in a slot share ms, even across READ families. Flipping this mask preserves ties and complements every non-tied majority. Retention is therefore mask-independent, and each retained majority is a 32 TrajMark fixed bit XOR ms. Distinct slots have independent masks even when their coefficient vectors agree. Conditional on the retained set, the U right-hand sides are thus independent and fair. The predicted bits for fixed wc are constant under this conditioning, so Hc ∼ Binomial( U, 1/2) . Solving zowner (wc) ≥
+
+τz gives Hc ≥ hτ (U ). Summing this binomial tail proves Eq. (24); the additional rank, uniqueness, and claim-equality gates can only reduce acceptance. 
+
+# C Integrity Proofs and Boundary Cases 
+
+C.1 Clean replay 
+
+Proof of the clean-replay clause in Theorem 5.5. We induct on public prefixes. Generator and verifier begin with the same genesis symbol, empty segment, and counters. Equal states serialize the same next payload and predict the same role subtype. Consuming the unchanged successful carrier preserves the common state. The induction applies to ordinary and group roles, and the equal final suffix and seal sequence give the same terminal role. 
+
+C.2 Single-segment and group localization 
+
+Proof of the edit clauses in Theorem 5.5. Let x and x′ be the old and recomputed ordinary inputs. Injective canonical encoding and the changed payload give x′̸ = x. Global freshness makes the new digest uniform conditioned on the old visible subtype, so it matches that subtype with probability at most q12 ,λ , proving Eq. (26). For a completed pair, let dk and d′ 
+
+> k
+
+be the old and new full ordinary digests. The event d′ 
+
+> k
+
+= dk has probability 2−λ.Outside this event, the group input changes and is globally fresh by hypothesis. Avoiding both reports then requires an ordinary residue match and a conditionally fresh group residue match, each with probability at most q12 ,λ . Adding the full-digest collision event gives Eq. (27). The terminal role is deliberately excluded from this multiplication: a quantitative factor would require both a collision bound for Hθ and global freshness of the terminal-domain input. Likewise, insertion, deletion, boundary-changing, seal-carrier, compound, and projection-preserving edits are not reduced to the single-segment theorem. 
+
+# D Protocol Pseudocode and Replay Details 
+
+Table 9: Visible-only verification contract.   
+
+> Retained Action class, READ subtype, normalized basename or critical target, public status, visible order, and a profile’s public carrier header when present.
+> Excluded Hidden reasoning, logits, observation contents beyond public linkage and status, private wrapper state, debug metadata, and sidecars. Native action text remains visible; this includes OpenDev’s published keyed carrier header.
+
+Table 10: Public READ alphabets.                  
+
+> Family Q6 owner pair Q12-only additions Explore dir /meta tree ,files
+> Search content /name symbol ,import
+> Locate range /whole head ,tail
+
+33 TrajMark 
+
+Algorithm 1 TrajMark reference online generation 
+
+Require: online agent/environment loop; key K; owner w; configuration θ; owner threshold ¯po
+
+Ensure: released marked trajectory τw
+
+1: initialize filename-once owner state and public integrity state, with cprev = 0 
+
+2: while the agent loop has not terminated do 
+
+3: receive the next agent-proposed action a
+
+4: if a is a selected first eligible READ of basename s then 
+
+5: rewrite only its Q6 subtype using the declared framework profile 6: end if 
+
+7: execute and publish a; update the current public segment 8: c ← 1[class (a) ∈ C crit ]; b ← c ∧ ¬ cprev ; cprev ← c
+
+9: if b then 
+
+10: emit its ordinary Q12 role; clear the segment buffer 11: if two emitted ordinary roles complete a group then 
+
+12: emit the corresponding group Q12 role 13: end if 
+
+14: end if 
+
+15: end while 
+
+16: emit the terminal Q12 role over the final suffix and public seal state 17: return τw
+
+Algorithm 2 TrajMark reference visible-only verification 
+
+Require: observed batch eB; key K; claim wc; threshold τz ; configuration θ
+
+Ensure: recovered label or abstention; owner decision; localized alarms 1: apply the public transducer and replay role placement from each stream prefix 2: recover Q6 equations from replay-assigned non-seal READs 3: majority-aggregate each basename slot; erase ties; score all 64 labels 4: apply the rank, uniqueness, claim, and evidence gates 5: for each observed trajectory do 
+
+6: replay ordinary, group, and terminal roles from the public state machine 7: report every mismatched, missing, or status-invalid expected role 8: end for 
+
+9: return owner output, diagnostics, and Aint 
+
+Table 11: Reference visible-replay transitions at an expected role. 
+
+Visible condition Replay transition Expected Q12 subtype, success Consume the record and advance with its observed subtype. Wrong subtype or class Consume, alarm, and use the observed subtype or INVALID .Failed or unknown status Consume, alarm, and preserve the public role count. End of stream Consume MISSING and alarm. Record after terminal Report a trailing-record structural alarm. 
+
+A deleted role therefore shifts the next visible record into that public position in the reference replay; the parser never silently skips it. A non-role READ insertion is not recognizable from private origin metadata. It is detected only through a changed protected payload, shifted role, or a later subtype mismatch. Projection-preserving edits can replay cleanly by design. 
+
+# E Framework Adapter Details 
+
+E.1 Core duties and failure semantics 
+
+The reference adapter hooks the agent loop before execution, after the public outcome, and at termination. It must (i) classify public records as READ subtypes, critical classes, terminal classes, or OTHER ; (ii) extract an explicitly visible regular-file target; (iii) realize any requested Q6/Q12 subtype through a read-only action; and (iv) serialize action, outcome, status, and order exactly as replay observes them. 34 TrajMark The owner hook never converts a write or test into a carrier. Integrity carriers are additional actions on the ordinary execution path. In the reference contract, a failed carrier alarms and group placement advances over attempted ordinary roles. The evaluated profiles below specify their actual event filters and state advancement. 
+
+E.2 SWE-agent 
+
+SWE-agent represents a decision as textual action handled by its agent-to-computer interface. Before execution, the adapter recognizes public EXPLORE, SEARCH, and LOCATE families and accepts an owner candidate only when it explicitly names a regular file in the repository. It changes only the command template required by the selected Q6 member, leaving the target and read-only semantics unchanged. The evaluated replay scans public action text in order. It appends the current event’s payload before closing on a critical action whose preceding boundary-state class is noncritical, excluding malformed unexecuted actions from this trigger. Consumed seals leave that class unchanged. A publicly reconstructed selected owner READ also leaves the boundary-state class unchanged, while other non-seal actions update it; owner READs still contribute to the segment’s READ counts. The immediately following Q12 READ is the ordinary carrier, followed by a group READ after every second consumed ordinary. If the expected Q12 READ is absent, replay records a missing role and continues scanning. The final visible Q12 READ is reserved as the terminal commitment over the remaining suffix; its absence raises a terminal report. All roles use the ordinary computer interface, and verification never reads extra_info records. 
+
+E.3 OpenHands 
+
+OpenHands persists typed actions and observations in an event stream. The owner hook intercepts only agent-sourced events entering EventStream.add_event , preserves event identity and tool-call attributes, and realizes the selected Q6 member before serialization. The integrity hook runs after the corresponding public observation and executes scheduled Q12 roles through the normal runtime. The evaluated profile joins observations by their public cause identifier. A non-seal action with no observation, an error observation, or an observation beginning with ERROR does not enter Q12 state and leaves the previous-critical flag unchanged. Every admitted READ or critical action contributes its payload; an admitted noncritical action resets the flag. A critical action closes the buffer immediately only when that flag was false. Replay consumes the next action at an expected ordinary or group position, compares its subtype, and advances even after a mismatch. Consuming an ordinary clears the buffer; every second ordinary schedules a group. Expected carriers are processed before the non-seal success filter, so this evaluated replay does not separately test their observation status. A visible finish action schedules a terminal READ over the remaining suffix, including an empty suffix; end-of-stream raises a missing-role report only if a role was already expected. Runtime exits that bypass the finish hook may therefore leave no terminal protector. The measured closure coverage is reported in Section 9.1. 
+
+E.4 OpenDev 
+
+OpenDev exposes structured tool calls at its dispatcher. A selected natural READ is rewritten before dispatch, and the same arguments are placed in the public tool-call message and sent to the executor. Natural actions and carriers receive monotonically increasing public indices, resolving multiple calls within one response. Diagnostic JSON is retained for tests but excluded from verification. Its Q12 Bash carrier also contains a visible authenticated role/ordinal header. The evaluated verifier retains this header and checks its 64-bit HMAC tag over role, ordinal, and subtype against the visible command template. It uses the resulting role to recognize carriers. Among successful nonterminal natural calls, READs and other noncritical calls reset the previous-critical flag. Critical calls append their payload and close immediately only when the flag was false. The next call must carry the expected ordinary header; a missing or failed carrier is reported. A successful ordinary carrier advances the ordinary sequence and clears the buffer, and every second such carrier schedules the following group call. Replay selects the last unconsumed terminal header with ordinal m + 1 after the last successful natural call and checks it against the suffix and accumulated commitments. A missing terminal is reported. Thus this profile includes an authenticated public header in addition to the Q12 subtype commitments. 
+
+E.5 Canonicalization and validation checklist 
+
+The adapters share semantics rather than concrete commands. The owner selector uses a lowercase normalized basename only after verifying an explicit regular-file target. Critical targets come only from visible edit or execution arguments; absent targets use the public null symbol. A seal’s operational file target does not enter Pint , so changing only that target is projection-preserving. 35 TrajMark Reference conformance requires unique action and observation joins, stable public order, visible failure status, and read-only realization of all Q6/Q12 subtypes. Profile vectors cover selection, rows, the masked and direct owner variants, ordinary/group/terminal seals, and empty inputs. Round-trip tests remove auxiliary metadata before replay and compare owner equations, rank, decoded label, and integrity reports with the profile’s original replay; published native action text is retained. 
+
+# F Watermark Details: Released Trajectories 
+
+This appendix shows sanitized excerpts from two real SWE-agent trajectories in the frozen evaluation. Machine-specific path prefixes are replaced by <workspace> , task and run identifiers are omitted, and long fields are shortened; released action text and order are otherwise retained. Bold field labels and colored role callouts are paper typography and are not inputs to the visible-only verifier. 
+
+F.1 From Prompt Context to a Released Record 
+
+The first example connects unchanged prompt excerpts to one real released action–observation record. Longer interface, demonstration, and issue material is omitted. 
+
+> (a) Unchanged Prompt Context (Excerpts)
+> SYSTEM PROMPT (unchanged excerpt): SETTING: You are an autonomous programmer, and you’re working directly in the command line with a special interface. The special interface consists of a file editor that shows you 100 lines of a file at a time. [...] USER TASK (unchanged excerpt): We’re currently solving the following issue within our repository. Here’s the issue text: ISSUE: Q(...) & Exists(...) raises a TypeError [...]
+
+TrajMark modifies neither prompt. In this record, its intervention occurs after the agent proposes an eligible action and before that action is executed and published.  
+
+> (b) One Real Prompt-to-Trajectory Record
+> AGENT PROPOSAL (generation-side metadata; not released): open reproduce.py ||TrajMark wrapper: action-layer rewrite only vRELEASED ACTION, position 14: cat "$(pwd)/reproduce.py" | head -n 40 VISIBLE OBSERVATION begins: from django.db.models import Q from django.db.models.expressions import Exists ... NEXT RELEASED ACTION, position 15: python reproduce.py
+
+Owner carrier (position 14). This natural R EAD targets the same file as the proposal and occupies the same trajectory position; no extra action is introduced. 36 TrajMark 
+
+F.2 Integrity Seals from the Patch to the Trace Tail 
+
+The next excerpt is a continuous region from a second released trajectory. It moves from environment setup to reproduction, source inspection, a patch, and validation. Positions 22 and 23 are visible read-only actions placed immediately after the edit.           
+
+> (c) Compact View of Released Records 16–25 (Observations Shortened)
+> 16 python -c "import astropy; print(astropy.__version__)" 2>&1 || echo "Not installed" 17 python setup.py build_ext --inplace 2>&1 | tail -20 18 python reproduce_bug.py 19 open astropy/nddata/mixins/ndarithmetic.py 520 20 goto 500 21 edit 515:527 [patch body omitted] end_of_edit 22 sed -n ’1,40p’ <workspace>/astropy/nddata/mixins/ndarithmetic.py 23 find $(dirname -- <workspace>/astropy/nddata/mixins/ndarithmetic.py) -maxdepth 2 -type d -print | head -n 40 24 python reproduce_bug.py 25 python -m pytest astropy/nddata/mixins/tests/test_arithmetic.py -v 2>&1 | tail -40
+
+Ordinary seal (position 22); group seal (position 23). In the verifier-visible projection, their records contain the command and normal environment output: the first returns the opening lines of the edited source file, and the second returns nearby directories. The final excerpt comes from the tail of the same trajectory. It retains the two read-only records, cleanup, submission, and the final visible read in their released order.      
+
+> (d) Tail of the Released Action Stream
+> 37 find $(dirname -- "$(pwd)/reproduce_bug.py") -maxdepth 1 -name $(basename -- "$(pwd)/reproduce_bug.py") -print | head -n 40 38 find $(dirname -- "$(pwd)/reproduce_bug.py") -maxdepth 1 -name $(basename -- "$(pwd)/reproduce_bug.py") -print | head -n 40 39 rm reproduce_bug.py 40 submit 41 find . -maxdepth 2 -name ’*.py’ -print | head -n 40
+
+Ordinary seal (position 37); group seal (position 38); terminal seal (position 41). These callouts explain the otherwise ordinary-looking read commands and are not inputs to verification. Together, the excerpts show the verifier-visible action stream. Verification derives its inputs from released action text and order together with the associated public execution status defined in Appendix D. Ownership marking changes one existing read, while integrity seals appear as additional read-only actions interleaved with the agent’s work. The equations, replay rules, and adapter contracts are defined once in Section 4 and Appendices D–E; they are not repeated here. 37 TrajMark 
+
+# G Disaggregated Ownership Robustness 
+
+Figure 2 pools the three coding agents within each LLM column to keep the main comparison compact. The four figures below retain every agent–LLM condition. Each is one row of the main figure expanded to a three-by-three grid, with agents as rows, LLMs as columns, and methods as curves. 
+
+G.1 Random deletion ActHook (det.) AgentMark-U Owner-only TrajMark 
+
+Random deletion 
+
+> ActHook reports binary detection; the other methods report exact owner-ID recovery.
+
+DeepSeek V4 Flash GPT-5 mini MiniMax M3               
+
+> SWE-agent
+> 025 50 75 100
+> OpenHands
+> 025 50 75 100
+> OpenDev
+> 025 50 75 100
+> 510 20 30 50 510 20 30 50 510 20 30 50
+> Reported success rate (%) Corruption strength (%)
+
+Figure 5: Disaggregated random-deletion results corresponding to the first row of Figure 2. Each point contains 1,500 corrupted B = 50 batches: 500 deterministic trials for each of three seeds. ActHook-style reports binary hook detection; the three ID-bearing methods require exact recovery of 0x3f .Deletion removes visible evidence. The separate panels show that the pooled trend is not caused by a single agent: AgentMark-U loses indexed evidence broadly, whereas the filename-indexed methods degrade mainly in the lowest-margin SWE-agent/GPT-5 mini and OpenDev/GPT-5 mini conditions. 38 TrajMark 
+
+G.2 Random insertion ActHook (det.) AgentMark-U Owner-only TrajMark 
+
+Random insertion 
+
+> ActHook reports binary detection; the other methods report exact owner-ID recovery.
+
+DeepSeek V4 Flash GPT-5 mini MiniMax M3               
+
+> SWE-agent
+> 025 50 75 100
+> OpenHands
+> 025 50 75 100
+> OpenDev
+> 025 50 75 100
+> 510 20 30 50 510 20 30 50 510 20 30 50
+> Reported success rate (%) Corruption strength (%)
+
+Figure 6: Disaggregated random-insertion results corresponding to the second row of Figure 2. Each point contains 1,500 corrupted B = 50 batches under the same seed and success definitions as Figure 5. Unrelated insertions normally add no valid filename equation, so Owner-only and TrajMark retain the evidence already present. AgentMark-U instead depends on global action positions and therefore fails under the induced index shift in every panel. 39 TrajMark 
+
+G.3 Random replacement ActHook (det.) AgentMark-U Owner-only TrajMark 
+
+Random replacement 
+
+> ActHook reports binary detection; the other methods report exact owner-ID recovery.
+
+DeepSeek V4 Flash GPT-5 mini MiniMax M3               
+
+> SWE-agent
+> 025 50 75 100
+> OpenHands
+> 025 50 75 100
+> OpenDev
+> 025 50 75 100
+> 510 20 30 50 510 20 30 50 510 20 30 50
+> Reported success rate (%) Corruption strength (%)
+
+Figure 7: Disaggregated random-replacement results corresponding to the third row of Figure 2. Each point contains 1,500 corrupted B = 50 batches. Replacement may both remove an existing equation and introduce a conflicting visible choice. The full grid exposes the model-dependent evidence margin hidden by pooling: the largest owner-recovery loss occurs in the GPT-5 mini cells, while the remaining filename-indexed conditions stay near their clean decisions through moderate corruption. 40 TrajMark 
+
+G.4 Exact-budget white-box carrier deletion ActHook (det.) AgentMark-U Owner-only TrajMark 
+
+> Exact-budget white-box carrier deletion
+> ActHook reports binary detection; the other methods report exact owner-ID recovery.
+
+DeepSeek V4 Flash GPT-5 mini MiniMax M3               
+
+> SWE-agent
+> 025 50 75 100
+> OpenHands
+> 025 50 75 100
+> OpenDev
+> 025 50 75 100
+> 510 20 30 50 510 20 30 50 510 20 30 50
+> Reported success rate (%) Corruption strength (%)
+
+Figure 8: Disaggregated exact-budget white-box carrier deletion corresponding to the fourth row of Figure 2. Each point contains the three deterministic seed batches for its agent–LLM–method cell. The attacker deletes exactly 
+
+k = ⌊δN + 0 .5⌋ known owner-carrier occurrences from the visible trajectories and reruns evidence extraction and native decoding. Each result uses the strongest of up to 63 deterministic candidate deletion sets. Clean Q12 seal positions are excluded. For each nonzero v ∈ F62, the attacker orders clean owner slots by a⊤v = 1 first, then by increasing occurrence count and slot name. Occurrences within a slot are ordered by task identifier and visible position; the first k form a candidate deletion set. ActHook-style uses 63 deterministic hash-based orderings of its known hooks. Duplicate deletion sets are evaluated once. After physical deletion and native decoding, a failed recovery or hook detection takes precedence; candidate index breaks ties. The curves therefore measure post-deletion decoding, including changes to position indices and first-occurrence carrier selection. 41
