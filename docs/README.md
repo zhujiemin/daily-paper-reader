@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-14</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-15</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 6 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 1 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>0</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-14 22:31:37 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-15 22:22:52 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,10 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共生成 6 篇推荐（精读 2 篇，速读 4 篇）</p>
-<p>精读：《DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory》（10.0/10）, 《Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery》（9.0/10）</p>
-<p>速读：《A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content》（6.0/10）, 《TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories》（6.0/10）, 《A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution》（6.0/10）</p>
-<p>这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。</p>
+<p>今日精读1篇、速读0篇，全部注意力集中在语义水印提取这一细分方向。</p>
+<p>最值得看的是9.0分的《RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction》，其“区域感知+反转网络”的思路是该方向的高分代表。</p>
+<p>普通读者可先读它的摘要与实验部分，重点看区域感知机制如何在图像改动后仍稳定提取水印。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -81,12 +80,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory">DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory</span></li><li><span class="dpr-home-dashboard-paper-title" title="Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery">Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction">RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -94,12 +93,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">4 篇</strong>
+    <strong class="dpr-home-dashboard-count">0 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content">A Trustworthy Watermarking Framework for LLM-Generated Food Safety Content</span></li><li><span class="dpr-home-dashboard-paper-title" title="TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories">TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories</span></li><li><span class="dpr-home-dashboard-paper-title" title="A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution">A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution</span></li></ul>
+<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>4</strong></span></div>
+
 </section>
 </div>
 

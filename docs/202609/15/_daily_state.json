@@ -1,0 +1,25 @@
+{
+  "date": "20260915",
+  "date_label": "",
+  "generated_at": "2026-09-15 22:22:52 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.14856v1",
+      "route": "202609/15/2609.14856v1-rain-region-aware-inversion-network-for-semantic-watermark-extraction",
+      "title": "RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向扩散模型语义水印的单步反演提取",
+      "first_seen_at": "2026-09-15 22:22:52 UTC",
+      "updated_at": "2026-09-15 22:22:52 UTC"
+    }
+  ]
+}

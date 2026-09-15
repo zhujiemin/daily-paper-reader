@@ -1,0 +1,54 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-15T22:21:31.184620+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 0,
+    "quick_skim_target": 12,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2609.14856v1",
+      "source": "arxiv",
+      "title": "RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction",
+      "abstract": "Semantic watermarks for diffusion models embed ownership information into the generative process while preserving perceptual quality, but Gaussian-Shading extraction conventionally requires multi-step diffusion inversion to recover the initial noise. Recent one-step methods show that this cost can be reduced substantially. We study this problem through extended flow matching and conditional regression. The key observation is that, near the high-SNR image endpoint, recovering a useful noise statistic given by the first-step output of the extended flow matching in the high-SNR regime is much simpler than reconstructing the full inverse trajectory, and Gaussian Shading only requires the recovered latent to remain in the correct watermark decision region. Based on this observation, we propose a lightweight, prompt-free extractor that decomposes endpoint recovery into an image-like anchor and a noise-oriented residual, which increases the capability of the model to utilize GPU parallel computation. The resulting method avoids iterative inversion and repeated evaluation of a diffusion-scale U-Net, providing an efficient one-step extraction pipeline with a concise theoretical interpretation. The computational cost of extracting noise is lower than that of both OSI and FARI. The github repo is there: https://github.com/TheLovesOfLadyPurple/RAIN-lightweight-NN-for-one-step-semantic-watermark-extraction",
+      "authors": [
+        "Zilai Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-14T00:07:17+00:00",
+      "link": "https://arxiv.org/pdf/2609.14856v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "semantic watermark extraction for diffusion models via one-step inversion",
+      "llm_evidence_cn": "面向扩散模型语义水印的单步反演提取",
+      "llm_evidence": "面向扩散模型语义水印的单步反演提取",
+      "canonical_evidence": "面向扩散模型语义水印的单步反演提取",
+      "llm_tldr_en": "Semantic watermark extraction for diffusion models conventionally needs costly multi-step diffusion inversion. RAIN replaces it with a region-aware one-step conditional regression of the high-SNR noise statistic, cutting cost while preserving extraction accuracy.",
+      "llm_tldr_cn": "针对扩散模型语义水印提取通常需要多步扩散反演、计算开销大的问题，本文提出RAIN区域感知反演网络，将水印恢复建模为扩展流匹配与条件回归。方法发现高信噪比图像端点附近，只需一步估计噪声统计量即可使恢复潜变量落入正确的水印判决区域。实验表明该方法在保持提取准确率的同时显著降低反演成本，为扩散模型版权溯源与来源认证提供高效提取方案。",
+      "llm_tldr": "针对扩散模型语义水印提取通常需要多步扩散反演、计算开销大的问题，本文提出RAIN区域感知反演网络，将水印恢复建模为扩展流匹配与条件回归。方法发现高信噪比图像端点附近，只需一步估计噪声统计量即可使恢复潜变量落入正确的水印判决区域。实验表明该方法在保持提取准确率的同时显著降低反演成本，为扩散模型版权溯源与来源认证提供高效提取方案。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "digital watermarking for diffusion models that generate images",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

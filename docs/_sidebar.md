@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-15 <!--dpr-date:20260915-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/15/2609.14856v1-rain-region-aware-inversion-network-for-semantic-watermark-extraction" data-sidebar-item="{&quot;title&quot;: &quot;RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.14856v1-rain-region-aware-inversion-network-for-semantic-watermark-extraction&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffusion-wm&quot;}], &quot;evidence&quot;: &quot;面向扩散模型语义水印的单步反演提取&quot;}">RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction</a>
   * 2026-09-14 <!--dpr-date:20260914-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/14/2609.08213v1-drift-removing-diffusion-watermarks-by-deflecting-the-generative-trajectory" data-sidebar-item="{&quot;title&quot;: &quot;DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.08213v1-drift-removing-diffusion-watermarks-by-deflecting-the-generative-trajectory&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffusion-wm&quot;}], &quot;evidence&quot;: &quot;通过偏转生成轨迹移除扩散水印的黑盒攻击&quot;}">DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory</a>
