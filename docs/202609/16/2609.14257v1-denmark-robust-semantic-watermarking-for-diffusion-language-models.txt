@@ -1,0 +1,1217 @@
+Title: DenMark: Robust Semantic Watermarking for Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2609.14257v1
+
+Published Time: Tue, 15 Sep 2026 01:06:03 GMT
+
+Number of Pages: 36
+
+Markdown Content:
+arXiv preprint 
+
+# DEN MARK : R OBUST SEMANTIC WATERMARKING FOR 
+
+# DIFFUSION LANGUAGE MODELS 
+
+Tianhao Ma 1 Weihao Xuan 1,2 Dong-Dong Wu 1,2 Farshid Nooshi 1
+
+Takashi Ishida 2,1 Gang Niu 2 Naoto Yokoya 1,2 Masashi Sugiyama 2,11The University of Tokyo 
+
+> 2
+
+RIKEN Center for Advanced Intelligence Project 
+
+ABSTRACT 
+
+Semantic text watermarks encode signals in meaning rather than surface token choices, offering robustness to paraphrasing and other semantic-preserving edits. Existing semantic watermarking methods are primarily designed for autoregres-sive language models (ARLMs), where completed candidate units can be gener-ated and scored before generation proceeds. This paradigm does not naturally extend to diffusion language models (DLMs), where semantic units remain in-complete during intermediate denoising steps and tokens may be updated in flex-ible orders. We propose DenMark , a semantic watermarking framework that in-jects key-dependent signals directly into the DLM denoising process. DenMark partitions the output into fixed token regions and uses temporary rollouts as se-mantic lookahead: conditional completions estimate the eventual semantics of an incomplete region, enabling DenMark to select local updates with higher es-timated semantic watermark scores. Repeating this procedure across denoising steps progressively accumulates watermark evidence in the final output. For de-tection, DenMark uses calibrated scanning over candidate unit sizes to remain ro-bust to boundary shifts introduced by semantic attacks. Across four DLMs, three datasets, and four semantic attacks, DenMark achieves the best results across all reported detection metrics in all 48 backbone–dataset–attack combinations. These results demonstrate that DenMark provides an effective mechanism for robust se-mantic watermarking in DLMs. 
+
+1 INTRODUCTION 
+
+Large language models (LLMs) have achieved strong performance across a broad range of language generation and reasoning tasks (Brown et al., 2020; Chen et al., 2021; Chowdhery et al., 2023; Touvron et al., 2023; Kasneci et al., 2023; Singhal et al., 2023; Lin et al., 2025; Wang et al., 2026). Most modern language models are autoregressive language models (ARLMs), generating tokens sequentially from left to right conditioned on the preceding prefix (Brown et al., 2020; Chowdhery et al., 2023; Touvron et al., 2023). Recently, diffusion language models (DLMs) have emerged as an alternative generation paradigm. Rather than predicting the next token from a completed prefix, DLMs iteratively denoise partially masked sequences, enabling bidirectional context and flexible updates across multiple positions (Lou et al., 2024; Sahoo et al., 2024; Gong et al., 2025; Nie et al., 2025; Ye et al., 2025). This formulation supports arbitrary-order generation, infilling, parallel refinement, and flexible quality–speed trade-offs. The growing deployment of LLM-generated text has raised concerns about misinformation, mali-cious use, bias, and failures in high-stakes domains, motivating reliable mechanisms for identifying model-generated content (Bender et al., 2021; Bommasani et al., 2021; Weidinger et al., 2021). Text watermarking embeds a hidden statistical signal into generated text while preserving its visible content (Kirchenbauer et al., 2023; Dathathri et al., 2024). Most existing language-model water-marks encode signals through token-level sampling biases, such as key-dependent green–red vocab-ulary partitions (Kirchenbauer et al., 2023; Kuditipudi et al., 2024; Hu et al., 2024; Dathathri et al., 2024). Because these signals depend on token identities, paraphrasing and rewriting can substan-tially weaken them while preserving the underlying meaning. Semantic watermarks instead encode 1arXiv:2609.14257v1 [cs.CL] 13 Sep 2026 arXiv preprint ARLMs                  
+
+> Generate and select the next tokens sequentially.
+> A semantic unit
+> (e.g., a sentence) Score
+> The cat looked outside .0.83 The cat fell asleep .0.21 The cat found atoy .0.48 Prefix: The cat ...
+
+…sample candidates → score → reject → commit (a semantic unit) commit → next semantic unit DLMs                                        
+
+> DLMs denoise multiple masked positions in any order.
+> Any-order decoding
+> … The cat [MASK] [MASK] … [MASK] the [MASK] [MASK] [MASK] … … cat [MASK] [MASK] … [MASK] …
+> A semantic unit
+> Fully decoded candidates for the unit? The cat sat on the mat. The cat slept on the rug. The cat played in the park.
+> full-unit decoding for many candidates sample →reject →commit for each candidate Not feasible in any-order denoising
+> For each local update, we use the current token as a pivot, roll out the remaining masks, and score the completed sequence. A semantic unit … The cat [MASK] [MASK] [MASK] the [MASK] [MASK] [MASK] …
+> Local update (one token) Rollout completion (fill remaining masks) Score
+> soft The cat sat quietly on the soft mat . 0.78 warm The cat slept peacefully by the warm rug . 0.52 fallen The cat rested calmly near the fallen log . 0.36
+> ……Commit the current token and continue denoising
+> … The cat [MASK] [MASK] [MASK] the soft [MASK] [MASK] …
+
+DenMark 
+
+Figure 1: Why semantic watermarks must be injected during DLM denoising. ARLMs: Acomplete next semantic unit can be generated and scored before it is committed. DLMs: Arbitrary-order denoising exposes only partially resolved units, making repeated full-unit candidate generation and rejection impractical. DenMark: Temporary rollouts complete the active unit for each local candidate; only the selected local update is committed before denoising continues. signals in sentence or span representations and have shown stronger robustness to such transforma-tions (Hou et al., 2024a; Ren et al., 2024; Hou et al., 2024b; Dabiriaghdam & Wang, 2025; Huo et al., 2026). A prominent line of semantic watermarking methods relies on complete sentence-level candidate generation and selection (Hou et al., 2024a;b; Dabiriaghdam & Wang, 2025; Huo et al., 2026). Given a fixed prefix, these methods generate a set of complete sentence candidates, score them using a key-dependent semantic watermark criterion, reject candidates that do not satisfy the criterion, and commit an accepted candidate before continuing generation. This procedure is naturally compatible with ARLMs, whose prefix remains fixed while the next sentence is completed and evaluated. This sentence-level procedure does not directly extend to DLMs. During iterative denoising, tokens at multiple locations can be updated before a sentence or span is fully resolved (Lou et al., 2024; Sahoo et al., 2024; Nie et al., 2025; Ye et al., 2025). Under this generation process, it is impractical to construct a set of complete semantic-unit candidates during normal decoding, score and reject them, commit one candidate, and then resume generation. A semantic watermark for DLMs therefore needs to inject semantic signals directly through local updates as denoising proceeds, even when the surrounding semantic unit remains incomplete. Figure 1 illustrates this mismatch and DenMark’s rollout-guided alternative. We propose DenMark , a semantic watermarking method designed for DLMs. DenMark partitions the generated sequence into fixed token regions and, for each candidate local update, uses temporary rollouts to complete unresolved positions and estimate the resulting semantic score. It then commits the update with the highest estimated score, progressively injecting key-dependent watermark evi-dence throughout denoising; our analysis characterizes the final score gain as the accumulated con-tributions of these local selections. At detection time, semantic attacks can alter token boundaries, so we use calibrated scanning over candidate region sizes to recover watermark evidence under such shifts. Experiments across multiple DLMs and datasets show that DenMark substantially improves robustness to semantic attacks over token-level watermark baselines. Our main contributions are summarized as follows: • We identify the mismatch between existing sentence-level semantic watermarking methods and the iterative denoising process of DLMs and, to the best of our knowledge, propose the first semantic watermarking framework specifically designed for DLMs. • We introduce a rollout-guided watermarking algorithm that estimates the semantics of par-tially masked regions and selects the local update with the highest estimated score, pro-gressively injecting key-dependent evidence during denoising. 2arXiv preprint • We develop calibrated scanning over candidate region sizes to improve robustness to boundary shifts and evaluate DenMark across multiple DLMs, datasets, and semantic at-tacks, demonstrating strong watermark detectability under semantic rewriting. 
+
+2 PRELIMINARIES 
+
+Masked DLMs. Recent DLMs generate text through iterative denoising of masked se-quences (Lou et al., 2024; Sahoo et al., 2024; Nie et al., 2025). Let V be the ordinary token vo-cabulary and let [MASK] /∈ V be the mask token. Let xp = ( x1, . . . , x Lp ) ∈ V Lp be a tokenized prompt, and let Tok and Dec denote the tokenizer’s encoding and decoding maps. For a target continuation length N , decoding starts from 
+
+x(0) = ( x1, . . . , x Lp , [MASK] , . . . , [MASK] 
+
+| {z }
+
+> N
+
+) ∈ (V ∪ { [MASK] })Lp+N .
+
+At step t, the masked generation positions are 
+
+Mt = {i ∈ { Lp + 1 , . . . , L p + N } : x(t) 
+
+> i
+
+= [MASK] }.
+
+For each i ∈ M t, the model pϕ provides a categorical distribution pϕ(· | x(t), i ) over V. A decoding rule commits sampled tokens at one or more masked positions to obtain x(t+1) . Decoding terminates at step T when MT = ∅, yielding the completed continuation tokens 
+
+ˆz = x(T ) 
+
+> Lp+1: Lp+N
+
+∈ V N
+
+and the decoded output text ˆy = Dec(ˆ z).
+
+Semantic watermarking. Semantic watermarks encode signals in the meaning of a text unit, which improves robustness to paraphrasing and rewriting (Hou et al., 2024a; Ren et al., 2024; Huo et al., 2026). Let T denote the set of finite decoded text strings, and let u ∈ T be a watermark-ing unit, typically a sentence or short text span. We use a fixed semantic encoder Eη : T → Rd,where η denotes its parameters and d is the embedding dimension. Let K be the key space and 
+
+κ ∈ K the secret key. For every unit index b ≥ 1, the key deterministically specifies C channel pairs 
+
+{(θb,j , s b,j )}Cj=1 , where θb,j ∈ Rd is a semantic direction and sb,j ∈ {− 1, +1 } specifies its target side. Each θb,j is obtained by normalizing a pseudorandom Gaussian vector generated from the key, and an independent random bit generated from the key determines sb,j . The detector can regenerate these directions and signs from the same key. We define the semantic score of a completed unit as 
+
+gb(u) = 1
+
+C
+
+> C
+
+X
+
+> j=1
+
+sb,j ⟨Eη (u), θ b,j ⟩. (1) Here, ⟨a, b ⟩ = a⊤b denotes the Euclidean inner product on Rd. A larger gb(u) indicates stronger alignment with the target specified by the key. Defining the score for arbitrary b also lets the detector regenerate the channel pairs required when it evaluates unit sizes that differ from the generation size. We inject the watermark by guiding each semantic unit toward a larger score gb(u) during denoising, producing evidence that can be recovered by the detector. 
+
+3 METHOD 
+
+We partition the generated continuation into fixed token regions and treat each region as a semantic unit. During denoising, an active unit is only partially observed, so its final semantic representation cannot be scored directly. For each local candidate update at step t, we sample Rt approximate com-pletions of the active unit and average their semantic watermark scores. We commit the candidate with the largest rollout estimate. The repeated local selections gradually move each completed unit toward the target specified by the key. 3arXiv preprint 3.1 LOCAL CANDIDATE SAMPLING WITHIN A SEMANTIC UNIT 
+
+For an integer q ≥ 1, write [q] = {1, . . . , q }. Let m ≥ 1 be an integer semantic unit size and 
+
+B = ⌈N/m ⌉ the number of semantic units, where ⌈a⌉ denotes the smallest integer not less than a.For each b ∈ [B], define 
+
+Ub = {Lp + ( b − 1) m + 1 , . . . , min {Lp + bm, L p + N }} .
+
+At denoising step t, the decoding schedule may select one or more unfinished semantic units. Con-sider a selected unit b ∈ [B]. Its remaining masked positions are Mb,t = Ub ∩ M t. If Mb,t ̸ = ∅,let Kt,b ≥ 1 be the prescribed number of local candidates at step t for unit b, and let rt ≥ 1 be the integer budget for position updates in each candidate. For each k ∈ [Kt,b ], the position policy samples 
+
+It,b,k ∼ πpos 
+
+
+
+· | x(t), Mb,t , r t
+
+
+
+,
+
+with support restricted to subsets satisfying 
+
+It,b,k ⊆ M b,t , |I t,b,k | = min {rt, |M b,t |} .
+
+The candidate is initialized as ct,b,k ← x(t). For every i ∈ I t,b,k , its token is sampled according to 
+
+(ct,b,k )i ∼ πtok 
+
+
+
+· | pϕ(· | x(t), i )
+
+
+
+,
+
+All other positions keep their values from x(t). The distribution πpos may use random or confidence based position selection. The token distribution πtok is defined over V and may use categorical, Gumbel max, or top p sampling. 3.2 SEMANTIC SCORING WITH ROLLOUTS AND CANDIDATE SELECTION 
+
+For each candidate ct,b,k , we draw Rt one-step rollout completions conditioned on the candidate state. For rollout ρ ∈ [Rt], initialize ˜ct,b,k,ρ ← ct,b,k . The remaining masked positions in the current unit are Mb,t \ I t,b,k . For each such position, we sample directly from the candidate-conditioned model distribution: 
+
+(˜ ct,b,k,ρ )i ∼ pϕ(· | ct,b,k , i ), i ∈ M b,t \ I t,b,k ,
+
+using the rollout temperature, which may differ from the candidate temperature used by πtok . The resulting completed text of unit b is ˜ut,b,k,ρ = Dec 
+
+ (˜ ct,b,k,ρ )i
+
+
+
+> i∈U b
+
+
+
+. These rollout tokens are used only for scoring and are never committed. Using the semantic score in Eq. (1), we compute the rollout estimate for candidate k as 
+
+Wt,b,k = 1
+
+RtRtX
+
+> ρ=1
+
+gb(˜ ut,b,k,ρ ). (2) We select 
+
+k⋆t,b ∈ arg max  
+
+> k∈[Kt,b ]
+
+Wt,b,k , (3) and commit the corresponding local update: 
+
+x(t+1)  
+
+> i
+
+=
+
+((ct,b,k ⋆t,b )i, i ∈ I t,b,k ⋆t,b ,x(t) 
+
+> i
+
+, otherwise . (4) When multiple semantic units are selected at the same denoising step, we apply Eq. (3)–Eq. (4) to each selected unit and commit the resulting updates simultaneously because their position sets do not overlap. 
+
+4 DETECTION 
+
+We first define detection at a fixed unit size and then extend it by scanning calibrated candidate unit sizes to recover evidence after boundary shifts. 4arXiv preprint 4.1 DETECTION AT A FIXED UNIT SIZE 
+
+Given a text y, the detector tokenizes it as 
+
+z(y) = Tok( y) = ( z1, . . . , z L) ∈ V L.
+
+For a positive integer candidate unit size m′, define 
+
+nm′ =
+
+ Lm′
+
+
+
+, J (m′) 
+
+> b
+
+= {(b − 1) m′ + 1 , . . . , min {bm ′, L }} ,
+
+for b ∈ [nm′ ]. The corresponding decoded text unit is 
+
+u(m′) 
+
+> b
+
+(y) = Dec 
+
+
+
+(zi)i∈J (m′)
+
+> b
+
+
+
+,
+
+where the final unit may contain fewer than m′ tokens. For each unit index b, the detector regenerates from the secret key κ the same channel pairs {(θb,j , s b,j )}Cj=1 used during watermark generation. Using the same semantic encoder Eη as in generation, the watermark score under candidate unit size 
+
+m′ is 
+
+Sm′ (y) = 1
+
+nm′
+
+> nm′
+
+X
+
+> b=1
+
+1
+
+C
+
+> C
+
+X
+
+> j=1
+
+sb,j 
+
+D
+
+Eη
+
+
+
+u(m′) 
+
+> b
+
+(y)
+
+
+
+, θ b,j 
+
+E
+
+. (5) The score Sm′ (y) measures the average alignment between the detected semantic units and their watermark directions. Detection at the generation size uses m and compares Sm(y) with a threshold calibrated on unwatermarked texts at the target false positive rate. 4.2 ROBUST DETECTION BY SCANNING UNIT SIZES 
+
+Paraphrasing, insertion, deletion, and retokenization can change token length and move the unit boundaries observed by the detector. We scan a fixed finite set of positive candidate unit sizes 
+
+G ⊂ N+ to recover evidence across these shifts. Let D0 = {y(0)  
+
+> i
+
+}n0 
+
+> i=1
+
+be a fixed calibration set of n0 = |D 0| unwatermarked texts that is disjoint from all evaluated texts. For each m′ ∈ G ,we compute Sm′ (y) and calibrate it separately using D0. Using the empirical p value construction of (Phipson & Smyth, 2010), we define 
+
+pm′ (y) = 1 + P 
+
+> y0∈D 0
+
+I{Sm′ (y0) ≥ Sm′ (y)}|D 0| + 1 .
+
+Here, I{A} equals one when event A holds and zero otherwise. Smaller pm′ (y) values indicate stronger watermark evidence for candidate size m′. We evaluate several unit sizes and apply a Bonferroni correction (Dunn, 1961): 
+
+pscan (y) = min 
+
+
+
+1, |G| min  
+
+> m′∈G
+
+pm′ (y)
+
+
+
+.
+
+The corresponding robust detection score is 
+
+Srob (y) = − log pscan (y).
+
+At significance level α ∈ (0 , 1) , the detector classifies y as watermarked when pscan (y) ≤ α. 
+
+Proposition 4.1 (False positive control for calibrated scanning) . Let Y denote a random test text under the unwatermarked null distribution. Suppose that G is a fixed finite set and that 
+
+(Y, y (0) 1 , . . . , y (0)  
+
+> n0
+
+) is exchangeable under this distribution. Then, for every α ∈ [0 , 1] ,
+
+Pr( pscan (Y ) ≤ α) ≤ α. 
+
+where the probability is taken under the unwatermarked null distribution. The Bonferroni corrected scan controls the false positive rate and does not require independence among scores from different unit sizes. 
+
+Appendix G.1 gives the proof. All DenMark detection results use Srob (y) as the ranking statistic unless stated otherwise. Although DenMark uses a simple fixed unit size during generation, it remains robust to non-uniform local length changes, as shown in Appendix E.3. 5arXiv preprint 
+
+5 GENERATION ALGORITHM INTERPRETATION 
+
+We analyze how candidate selection with rollouts accumulates watermark signal during denoising. Let π denote the DenMark decoder defined above. Let π0 be a reference decoder that uses the same candidate sampling rule, draws one local candidate for each selected semantic unit, and commits that candidate directly. At step t, let 
+
+Bt = {b ∈ [B] : b is selected for update at step t}
+
+denote the set of active semantic units. For each b ∈ B t, DenMark selects k⋆t,b according to Eq. (3). Throughout this section, vectors indexed by b ∈ B t have |B t| components ordered by increasing unit index b. Define the joint candidate index vector k⋆t = ( k⋆t,b )b∈B t , and let 1t = (1 , . . . , 1) ∈ { 1}|B t|
+
+denote the reference choice that selects the first candidate for every active unit. We couple the first candidate of each active unit with the candidate committed by π0.For a joint candidate index vector kt = ( kt,b )b∈B t , where kt,b ∈ [Kt,b ] specifies the candidate chosen for unit b, let ct, kt denote the state obtained by jointly committing the corresponding local updates {ct,b,k t,b }b∈B t . At step t, consider a reverse hybrid trajectory in which the first t decisions follow π0. Define the continuation value as 
+
+Qπt, kt = Eπ
+
+h
+
+Sm(ˆ y) x(t+1) ← ct, kt
+
+i
+
+, (6) where the joint candidate update is committed at the current step and all subsequent decisions follow 
+
+π. We define the expected step advantage of the selected candidate over the reference choice as 
+
+∆πt = E
+
+h
+
+Qπt, k⋆t − Qπt, 1t
+
+i
+
+. (7) 
+
+Proposition 5.1 (Exact decomposition of watermark score improvement) . The expected improve-ment in the final watermark score under π relative to the reference decoder π0 decomposes as 
+
+Eπ
+
+h
+
+Sm(ˆ y) x(0) i
+
+− Eπ0
+
+h
+
+Sm(ˆ y) x(0) i
+
+= 
+
+> T−1
+
+X
+
+> t=0
+
+∆πt . (8) Proposition 5.1 attributes the final improvement in watermark score to the sum of the expected step advantages along the denoising trajectory. DenMark uses the rollout score to select a local candidate for each active semantic unit. We estimate the step advantage at each decoding step over 30 prompts for LLaDA-8B and Dream-v0-Instruct-7B. Figure 2 shows the cumulative estimates. Some individual steps have neutral or negative values, and the mean cumulative advantage increases over the trajectory and ends positive for both models. 0.0 0.2 0.4 0.6 0.8 1.0         
+
+> −0.025 0.000 0.025 0.050 0.075
+> Score
+> (a) LLaDA-8B
+> 0.00.20.40.60.81.0
+> (b) Dream-7B
+> Normalized decoding progress
+> Individual unit score Mean ∑s≤tˆ∆π
+> s95% bootstrap confidence interval Individual unit trajectory
+
+Figure 2: Accumulation of empirical step advantages during decoding. Thin curves show indi-vidual unit trajectories. The thick blue curve shows the mean cumulative advantage, and the shaded region gives the 95% bootstrap confidence interval over 30 prompts. The mean cumulative advan-tage increases over the trajectory and remains positive near the end of decoding for both LLaDA-8B and Dream-v0-Instruct-7B. At the final decoding step, the mean cumulative advantages are 0.0387 for LLaDA-8B and 
+
+0.0385 for Dream-v0-Instruct-7B, with 95% bootstrap confidence intervals [0 .0251 , 0.0527] and 6arXiv preprint 
+
+[0 .0260 , 0.0517] , respectively. The positive final values show that candidate selection with rollouts adds watermark signal over the decoding trajectory. Appendix G.2 gives the proof. 
+
+6 EXPERIMENTS 
+
+We evaluate detection under semantic and token attacks, analyze sensitivity to the main hyperpa-rameters and the unit size scan, and compare generation time across methods. 6.1 EXPERIMENTAL SETUP 
+
+We evaluate LLaDA-8B (Nie et al., 2025), LLaDA1.5-8B (Zhu et al., 2025), LLaDA2.0-mini (Bie et al., 2025), and Dream-v0-Instruct-7B (Ye et al., 2025). Following WaterBench (Tu et al., 2024), we use Finance (Maia et al., 2018), Alpaca (Dubois et al., 2023), and LongForm (Fan et al., 2019). We compare DenMark with four recent state-of-the-art watermarking baselines: DLM-KGW (Gloaguen et al., 2026a), DGMark (Hong & No, 2026), PatternMark (Chen et al., 2025), and UMR (Yang et al., 2026). We report AUC and TPR at false positive rates of 0.5% , 1% , and 
+
+5% . At each operating point, we use the empirical score threshold that gives the highest TPR while keeping the measured false positive rate on the held-out negatives no greater than the target. We tune generation hyperparameters for each method to keep output quality comparable across methods. Ta-ble 10 reports the resulting quality measurements, and Appendix B provides baseline descriptions, parameter settings, and complete experimental configurations. 6.2 ROBUSTNESS TO SEMANTIC ATTACKS 
+
+Following prior evaluations of semantic watermarks (Hou et al., 2024a;b; Ren et al., 2024; Dabiriaghdam & Wang, 2025; Huo et al., 2026), we apply rewriting, compression, and expansion sentence by sentence and also apply paraphrasing to the full document. These transformations pre-serve the underlying meaning while changing wording, syntax, sentence structure, and, for com-pression and expansion, text length. All attacks use GPT-4o-mini. Appendix B provides the filtering criteria and prompts. 
+
+Results. DenMark has the highest detection score in every evaluated combination of model, dataset, and attacked condition. Averaged over the 48 attacked combinations, DenMark achieves 63.55%, 71.89%, and 87.45% TPR at 0.5%, 1%, and 5% FPR, respectively, with an AUC of 0.9693. The strongest baseline reaches 35.16% at 0.5% FPR , 41.90% at 1% FPR, 61.80% at 5% FPR , and 0.8915 AUC . DenMark has the best value in all 48 attacked combinations for each of the four metrics. Detection remains high after compression and rewriting. Expansion produces the lowest DenMark scores among the evaluated semantic transformations, and full document paraphrasing still leaves a clear margin over the token watermark baselines. 6.3 SEMANTIC ATTACKS USING OPEN SOURCE MODELS 
+
+We evaluate two open source paraphrasers, Parrot (Damodaran, 2021) and DIPPER (Krishna et al., 2023). For Parrot, we vary the candidate prefix size over {1, 4, 7, 10 } to change the candidate gen-eration configuration. For DIPPER, we vary lexical diversity over {20 , 40 , 60 , 80 } and keep the re-maining decoding settings fixed. Larger lexical diversity values produce stronger changes in wording while preserving semantics. We evaluate Finance-QA and AlpacaFarm and report TPR at 0.5% and 1% FPR. Figure 3 shows that DenMark remains robust under Parrot and loses detection more slowly than the baselines as DIPPER lexical diversity increases. The same pattern appears with open source paraphrasers and with the GPT attacks above. 7arXiv preprint Table 1: Detection robustness on LLaDA-8B and LLaDA1.5-8B. Each entry reports (TPR@0.5% / TPR@1% / TPR@5% FPR / AUC). 
+
+Attack Method Finance Alpaca LongForm 
+
+LLaDA-8B 
+
+Clean DenMark (99.00 / 99.67 / 100.00 / 0.9996) (95.24 / 97.07 / 98.53 / 0.9915) (99.67 / 100.00 / 100.00 / 0.9998) DLM-KGW (99.40 / 99.40 / 100.00 / 0.9998) (93.36 / 95.23 / 98.34 / 0.9957) (99.80 / 99.80 / 99.80 / 0.9998) DGMark (100.00 / 100.00 / 100.00 / 1.0000) (97.98 / 98.32 / 98.65 / 0.9897) (100.00 / 100.00 / 100.00 / 1.0000) PatternMark (100.00 / 100.00 / 100.00 / 1.0000) (98.56 / 98.56 / 100.00 / 0.9997) (100.00 / 100.00 / 100.00 / 1.0000) UMR (100.00 / 100.00 / 100.00 / 1.0000) (98.33 / 99.00 / 99.67 / 0.9995) (99.67 / 100.00 / 100.00 / 1.0000) Rewrite DenMark (63.55 / 74.92 / 90.30 / 0.9784 ) (63.37 / 74.73 / 89.01 / 0.9690 ) (70.33 / 81.00 / 93.67 / 0.9838 )DLM-KGW (10.80 / 18.20 / 38.00 / 0.8224) (19.09 / 25.52 / 46.27 / 0.8354) (9.20 / 13.80 / 29.40 / 0.7730) DGMark (34.00 / 42.33 / 72.33 / 0.9344) (42.42 / 51.18 / 68.01 / 0.9072) (36.67 / 47.33 / 69.33 / 0.9322) PatternMark (35.33 / 42.67 / 63.00 / 0.8917) (35.74 / 40.43 / 60.65 / 0.8930) (30.00 / 36.00 / 51.67 / 0.8542) UMR (34.67 / 40.00 / 59.33 / 0.8889) (48.33 / 56.33 / 75.00 / 0.9254) (23.67 / 29.33 / 53.00 / 0.8676) Compression DenMark (80.94 / 85.28 / 96.32 / 0.9877 ) (79.12 / 84.98 / 93.41 / 0.9813 ) (91.00 / 93.33 / 97.33 / 0.9914 )DLM-KGW (37.20 / 47.00 / 68.40 / 0.9266) (42.53 / 48.76 / 68.26 / 0.9048) (37.60 / 48.20 / 68.20 / 0.9265) DGMark (62.33 / 74.00 / 86.00 / 0.9647) (57.58 / 65.66 / 75.08 / 0.9093) (69.33 / 78.67 / 92.00 / 0.9776) PatternMark (51.00 / 55.33 / 75.33 / 0.9281) (45.85 / 50.90 / 72.56 / 0.9221) (50.67 / 55.67 / 77.33 / 0.9464) UMR (47.67 / 55.00 / 74.67 / 0.9358) (58.67 / 66.33 / 78.67 / 0.9520) (57.33 / 65.00 / 81.33 / 0.9517) Expansion DenMark (33.11 / 44.82 / 70.23 / 0.9209 ) (42.86 / 54.58 / 74.73 / 0.9266 ) (47.33 / 61.00 / 83.00 / 0.9669 )DLM-KGW (7.20 / 10.40 / 28.40 / 0.7658) (12.24 / 18.46 / 35.89 / 0.7873) (4.00 / 6.80 / 21.00 / 0.6944) DGMark (10.67 / 15.33 / 39.33 / 0.8344) (23.57 / 30.30 / 51.52 / 0.8596) (9.67 / 18.33 / 43.33 / 0.8571) PatternMark (32.00 / 39.33 / 60.33 / 0.8761) (24.91 / 28.52 / 50.54 / 0.8434) (15.67 / 19.00 / 41.00 / 0.8144) UMR (21.00 / 24.00 / 45.33 / 0.8461) (36.33 / 42.33 / 63.00 / 0.8879) (22.33 / 29.00 / 44.33 / 0.8223) Document Paraphrase DenMark (56.19 / 67.56 / 84.95 / 0.9578 ) (53.85 / 64.84 / 85.35 / 0.9670 ) (63.00 / 73.00 / 91.00 / 0.9741 )DLM-KGW (11.80 / 15.60 / 36.00 / 0.8047) (20.12 / 29.25 / 46.27 / 0.8216) (7.40 / 11.80 / 27.20 / 0.7417) DGMark (27.00 / 37.33 / 61.00 / 0.8937) (28.96 / 38.72 / 59.60 / 0.8883) (23.67 / 36.00 / 61.00 / 0.9081) PatternMark (19.67 / 27.33 / 50.67 / 0.8507) (29.60 / 35.02 / 54.15 / 0.8604) (17.00 / 23.67 / 43.67 / 0.8038) UMR (28.00 / 33.67 / 57.00 / 0.8796) (43.33 / 50.67 / 69.00 / 0.9082) (24.00 / 31.00 / 50.00 / 0.8599) 
+
+LLaDA1.5-8B 
+
+Clean DenMark (100.00 / 100.00 / 100.00 / 0.9994) (95.41 / 96.47 / 98.59 / 0.9964) (99.00 / 99.67 / 100.00 / 0.9993) DLM-KGW (99.40 / 99.60 / 100.00 / 0.9999) (94.85 / 96.08 / 98.14 / 0.9972) (99.33 / 99.33 / 100.00 / 0.9998) DGMark (100.00 / 100.00 / 100.00 / 1.0000) (96.31 / 97.32 / 97.65 / 0.9792) (100.00 / 100.00 / 100.00 / 1.0000) PatternMark (100.00 / 100.00 / 100.00 / 1.0000) (97.90 / 98.95 / 99.30 / 0.9980) (100.00 / 100.00 / 100.00 / 1.0000) UMR (100.00 / 100.00 / 100.00 / 1.0000) (97.00 / 97.00 / 97.67 / 0.9935) (99.67 / 100.00 / 100.00 / 1.0000) Rewrite DenMark (58.53 / 68.90 / 88.29 / 0.9773 ) (59.01 / 72.08 / 85.87 / 0.9728 ) (71.33 / 80.67 / 91.67 / 0.9822 )DLM-KGW (9.60 / 16.60 / 34.60 / 0.8048) (18.56 / 25.57 / 45.36 / 0.8313) (9.67 / 13.67 / 31.67 / 0.7819) DGMark (29.00 / 41.33 / 65.67 / 0.9100) (36.58 / 45.64 / 67.45 / 0.9099) (37.00 / 49.33 / 73.33 / 0.9429) PatternMark (30.43 / 40.80 / 62.54 / 0.8985) (33.57 / 40.91 / 60.84 / 0.8897) (21.67 / 30.00 / 47.67 / 0.8552) UMR (35.67 / 39.33 / 62.33 / 0.9024) (50.67 / 56.67 / 74.67 / 0.9295) (25.67 / 33.33 / 51.67 / 0.8594) Compression DenMark (80.60 / 85.28 / 92.64 / 0.9842 ) (78.09 / 83.75 / 90.46 / 0.9701 ) (88.33 / 93.00 / 97.00 / 0.9892 )DLM-KGW (37.40 / 48.00 / 68.80 / 0.9301) (41.44 / 52.16 / 70.52 / 0.9229) (41.67 / 50.67 / 71.00 / 0.9291) DGMark (62.33 / 68.00 / 85.67 / 0.9622) (63.09 / 69.46 / 81.54 / 0.9334) (69.33 / 77.67 / 89.67 / 0.9771) PatternMark (53.85 / 63.21 / 77.59 / 0.9498) (45.10 / 53.85 / 69.23 / 0.9058) (44.33 / 55.00 / 78.00 / 0.9540) UMR (53.33 / 62.33 / 79.00 / 0.9467) (57.67 / 61.67 / 77.33 / 0.9312) (58.00 / 64.00 / 82.00 / 0.9537) Expansion DenMark (35.45 / 43.81 / 69.90 / 0.9233 ) (36.40 / 52.65 / 75.97 / 0.9396 ) (47.67 / 61.33 / 80.67 / 0.9517 )DLM-KGW (7.80 / 12.00 / 28.60 / 0.7448) (13.20 / 17.32 / 35.05 / 0.7935) (5.67 / 7.67 / 23.00 / 0.7313) DGMark (10.00 / 15.67 / 39.00 / 0.8260) (17.11 / 23.83 / 47.99 / 0.8403) (13.33 / 20.00 / 44.33 / 0.8676) PatternMark (26.76 / 35.79 / 59.53 / 0.8842) (24.13 / 30.42 / 48.95 / 0.8518) (11.67 / 19.33 / 35.67 / 0.8012) UMR (18.67 / 25.00 / 47.67 / 0.8208) (29.33 / 35.00 / 57.67 / 0.8613) (15.67 / 21.67 / 42.00 / 0.8155) Document Paraphrase DenMark (48.49 / 58.53 / 78.60 / 0.9611 ) (53.00 / 63.96 / 82.69 / 0.9578 ) (65.00 / 74.67 / 89.33 / 0.9776 )DLM-KGW (10.60 / 16.20 / 35.80 / 0.8170) (19.59 / 26.39 / 45.98 / 0.8439) (13.00 / 19.00 / 37.67 / 0.8113) DGMark (24.00 / 33.67 / 55.00 / 0.8916) (31.88 / 41.61 / 62.08 / 0.8909) (30.00 / 42.67 / 69.33 / 0.9236) PatternMark (21.07 / 29.10 / 48.16 / 0.8639) (30.77 / 38.11 / 57.34 / 0.8831) (14.33 / 19.67 / 41.33 / 0.8242) UMR (32.33 / 39.00 / 59.33 / 0.8929) (44.33 / 50.67 / 70.00 / 0.9168) (26.67 / 35.00 / 55.33 / 0.8611) 
+
+8arXiv preprint Table 2: Detection robustness on LLaDA2.0-mini and Dream-v0-Instruct-7B. Each entry re-ports (TPR@0.5% / TPR@1% / TPR@5% FPR / AUC). 
+
+Attack Method Finance Alpaca LongForm 
+
+LLaDA2.0-mini 
+
+Clean DenMark (100.00 / 100.00 / 100.00 / 0.9997) (95.31 / 96.39 / 98.56 / 0.9955) (100.00 / 100.00 / 100.00 / 0.9997) DLM-KGW (100.00 / 100.00 / 100.00 / 1.0000) (97.13 / 97.49 / 98.57 / 0.9977) (100.00 / 100.00 / 100.00 / 1.0000) DGMark (100.00 / 100.00 / 100.00 / 1.0000) (99.26 / 99.63 / 99.63 / 0.9997) (100.00 / 100.00 / 100.00 / 1.0000) PatternMark (100.00 / 100.00 / 100.00 / 1.0000) (97.56 / 98.26 / 99.30 / 0.9975) (100.00 / 100.00 / 100.00 / 1.0000) UMR (99.33 / 99.67 / 100.00 / 0.9999) (90.33 / 93.00 / 95.67 / 0.9886) (100.00 / 100.00 / 100.00 / 1.0000) Rewrite DenMark (68.23 / 75.25 / 91.30 / 0.9846 ) (67.15 / 73.65 / 89.17 / 0.9751 ) (83.67 / 88.67 / 98.00 / 0.9949 )DLM-KGW (26.67 / 35.33 / 58.67 / 0.8949) (41.22 / 47.31 / 64.16 / 0.9102) (32.33 / 40.67 / 64.67 / 0.9261) DGMark (32.67 / 39.67 / 64.33 / 0.9283) (46.86 / 55.72 / 77.86 / 0.9510) (32.33 / 41.00 / 70.00 / 0.9393) PatternMark (35.33 / 42.33 / 65.00 / 0.9178) (38.68 / 45.30 / 66.20 / 0.9059) (39.33 / 47.33 / 73.00 / 0.9349) UMR (18.33 / 25.67 / 53.00 / 0.8647) (32.00 / 42.33 / 61.33 / 0.8876) (17.67 / 27.33 / 51.00 / 0.8602) Compression DenMark (90.64 / 92.98 / 98.33 / 0.9939 ) (70.40 / 76.17 / 88.09 / 0.9690 ) (96.00 / 97.33 / 99.33 / 0.9985 )DLM-KGW (68.67 / 78.00 / 92.00 / 0.9831) (53.41 / 63.08 / 76.70 / 0.9404) (81.00 / 86.33 / 95.00 / 0.9901) DGMark (85.00 / 88.67 / 97.33 / 0.9937) (65.31 / 73.43 / 85.61 / 0.9592) (83.00 / 87.33 / 96.00 / 0.9935) PatternMark (64.00 / 73.00 / 90.67 / 0.9792) (45.99 / 50.52 / 70.03 / 0.9174) (78.33 / 83.67 / 92.33 / 0.9847) UMR (51.67 / 57.00 / 77.67 / 0.9533) (41.00 / 49.00 / 67.00 / 0.9035) (63.67 / 72.67 / 87.33 / 0.9724) Expansion DenMark (27.76 / 33.78 / 66.22 / 0.9149 ) (35.38 / 42.60 / 70.76 / 0.9317 ) (42.67 / 52.67 / 80.67 / 0.9524 )DLM-KGW (6.33 / 10.00 / 26.00 / 0.7564) (25.45 / 31.18 / 53.41 / 0.8651) (6.67 / 12.00 / 33.67 / 0.8070) DGMark (5.67 / 9.33 / 27.67 / 0.8012) (24.35 / 31.37 / 53.51 / 0.8715) (7.33 / 13.33 / 37.33 / 0.8557) PatternMark (20.67 / 27.33 / 50.33 / 0.8485) (25.09 / 29.62 / 50.87 / 0.8490) (23.00 / 29.00 / 53.00 / 0.8849) UMR (9.33 / 15.00 / 33.00 / 0.7727) (22.67 / 27.67 / 45.33 / 0.8070) (7.33 / 13.33 / 30.67 / 0.7733) Document Paraphrase DenMark (54.18 / 64.55 / 82.61 / 0.9647 ) (52.71 / 63.90 / 82.31 / 0.9585 ) (71.00 / 79.33 / 94.67 / 0.9856 )DLM-KGW (19.33 / 27.00 / 51.00 / 0.8607) (35.48 / 40.86 / 64.52 / 0.8999) (27.67 / 34.33 / 58.00 / 0.9105) DGMark (25.00 / 33.00 / 59.33 / 0.9099) (39.11 / 46.13 / 64.94 / 0.9122) (27.67 / 37.33 / 64.67 / 0.9276) PatternMark (27.33 / 33.33 / 58.67 / 0.8830) (37.28 / 41.46 / 60.98 / 0.8852) (33.67 / 39.33 / 66.00 / 0.9146) UMR (21.67 / 28.33 / 53.33 / 0.8738) (31.00 / 38.00 / 59.00 / 0.8645) (24.67 / 32.67 / 54.67 / 0.8874) 
+
+Dream-v0-Instruct-7B 
+
+Clean DenMark (100.00 / 100.00 / 100.00 / 0.9997) (99.59 / 99.59 / 100.00 / 0.9996) (100.00 / 100.00 / 100.00 / 0.9997) DLM-KGW (100.00 / 100.00 / 100.00 / 1.0000) (98.56 / 99.64 / 100.00 / 0.9998) (99.45 / 100.00 / 100.00 / 1.0000) DGMark (99.53 / 100.00 / 100.00 / 0.9998) (100.00 / 100.00 / 100.00 / 1.0000) (100.00 / 100.00 / 100.00 / 1.0000) PatternMark (100.00 / 100.00 / 100.00 / 1.0000) (99.56 / 99.56 / 100.00 / 0.9999) (100.00 / 100.00 / 100.00 / 1.0000) UMR (100.00 / 100.00 / 100.00 / 1.0000) (99.00 / 99.00 / 100.00 / 0.9997) (100.00 / 100.00 / 100.00 / 1.0000) Rewrite DenMark (72.00 / 78.00 / 94.67 / 0.9865 ) (73.88 / 80.82 / 93.88 / 0.9832 ) (84.00 / 88.67 / 95.00 / 0.9914 )DLM-KGW (10.07 / 14.58 / 30.21 / 0.7450) (15.47 / 21.94 / 41.37 / 0.8077) (3.31 / 6.63 / 21.55 / 0.7142) DGMark (16.32 / 23.31 / 41.96 / 0.8114) (48.36 / 58.22 / 77.30 / 0.9425) (31.00 / 43.00 / 68.33 / 0.9265) PatternMark (42.62 / 48.66 / 71.81 / 0.9358) (47.16 / 51.09 / 69.87 / 0.9081) (39.93 / 46.42 / 66.21 / 0.9152) UMR (13.00 / 20.00 / 42.33 / 0.8245) (33.67 / 37.33 / 60.33 / 0.8863) (15.67 / 21.67 / 39.67 / 0.8251) Compression DenMark (88.00 / 91.00 / 97.00 / 0.9949 ) (82.86 / 86.94 / 93.47 / 0.9792 ) (96.33 / 98.00 / 99.33 / 0.9983 )DLM-KGW (49.23 / 58.67 / 73.98 / 0.9294) (45.12 / 57.32 / 76.22 / 0.9113) (50.83 / 59.12 / 79.01 / 0.9405) DGMark (42.89 / 49.65 / 68.30 / 0.8941) (74.67 / 81.58 / 90.13 / 0.9696) (67.00 / 76.67 / 90.00 / 0.9787) PatternMark (70.13 / 77.18 / 89.93 / 0.9790) (55.90 / 62.01 / 78.17 / 0.9423) (59.73 / 67.24 / 82.59 / 0.9551) UMR (39.00 / 48.67 / 72.33 / 0.9376) (41.33 / 47.67 / 69.33 / 0.9209) (41.67 / 48.67 / 72.33 / 0.9501) Expansion DenMark (36.33 / 49.00 / 77.67 / 0.9333 ) (42.04 / 55.10 / 79.18 / 0.9473 ) (55.00 / 66.00 / 87.33 / 0.9735 )DLM-KGW (2.43 / 4.17 / 12.85 / 0.6302) (7.19 / 10.43 / 23.02 / 0.7378) (1.10 / 1.66 / 7.73 / 0.6111) DGMark (4.90 / 10.49 / 28.67 / 0.7381) (26.97 / 38.49 / 59.87 / 0.8931) (9.67 / 17.00 / 40.00 / 0.8573) PatternMark (20.47 / 26.85 / 54.03 / 0.8670) (28.38 / 37.55 / 57.64 / 0.8690) (23.21 / 27.65 / 46.76 / 0.8668) UMR (9.00 / 14.00 / 30.67 / 0.7659) (18.67 / 25.00 / 46.00 / 0.8165) (8.33 / 12.33 / 31.33 / 0.7807) Document Paraphrase DenMark (60.67 / 68.33 / 87.67 / 0.9694 ) (62.04 / 71.84 / 87.76 / 0.9767 ) (71.00 / 77.33 / 90.67 / 0.9786 )DLM-KGW (5.21 / 10.42 / 26.39 / 0.7001) (10.79 / 15.47 / 37.77 / 0.7826) (6.63 / 11.05 / 20.99 / 0.6795) DGMark (11.42 / 14.92 / 33.10 / 0.7677) (40.79 / 48.36 / 68.09 / 0.9204) (20.33 / 30.33 / 56.33 / 0.8852) PatternMark (23.49 / 33.89 / 56.71 / 0.8739) (38.86 / 44.54 / 59.83 / 0.8953) (23.89 / 27.99 / 47.78 / 0.8343) UMR (12.67 / 17.33 / 35.00 / 0.7892) (22.33 / 27.33 / 50.00 / 0.8334) (8.33 / 13.00 / 34.00 / 0.8017) 
+
+9arXiv preprint 1 4 7 10 0% 20% 40% 60% 80% 100%                         
+
+> TPR @ 0.5% FPR
+> Parrot
+> Finance-QA
+> 14710
+> Parrot
+> AlpacaFarm
+> 20 40 60 80
+> DIPPER
+> Finance-QA
+> 20 40 60 80
+> DIPPER
+> AlpacaFarm
+> 14710
+> Candidate prefix size
+> 0% 20% 40% 60% 80% 100%
+> TPR @ 1% FPR
+> 14710
+> Candidate prefix size
+> 20 40 60 80
+> Lexical diversity
+> 20 40 60 80
+> Lexical diversity
+> DGMark DLM-KGW PatternMark UMR DenMark
+
+Figure 3: Robustness under Parrot and DIPPER, averaged over LLaDA-8B and Dream-v0-Instruct-7B on Finance-QA and AlpacaFarm. We vary the candidate prefix size over {1, 4, 7, 10 } for Parrot and lexical diversity over {20 , 40 , 60 , 80 } for DIPPER. 6.4 ROBUSTNESS TO TOKEN ATTACKS 
+
+We evaluate random word deletion, context aware substitution, and adjacent word swapping at mod-ification ratios of {0.1, 0.2, 0.3, 0.4, 0.5} and average the results over the five strengths. Context aware substitution uses the BERT-base model (Devlin et al., 2019). Figure 4 averages Finance and LongForm on LLaDA-8B and Dream-v0-Instruct-7B. DGMark DLM-KGW PatternMark UMR          
+
+> 020 40 60 80 100
+> Value
+> Random Word Delete
+> DGMark DLM-KGW PatternMark UMR
+> Context-Aware Substitute
+> DGMark DLM-KGW PatternMark UMR
+> Adjacent Swap
+> TPR@0.5 TPR@1 TPR@5 AUC
+> DenMark DenMark DenMark
+
+Figure 4: Robustness to token attacks. Results are averaged over five modification ratios, Finance and LongForm, and the Dream and LLaDA-8B backbones. 
+
+Results. DenMark retains high detection under all three token attacks. Its margin is largest at low FPRs for random deletion and context aware substitution. Detection after adjacent swapping remains near saturation, indicating limited sensitivity to local changes in surface form. 6.5 SENSITIVITY ANALYSIS 
+
+Figure 5 measures sensitivity to candidate temperature, the number of candidates Kt,b , the number of rollouts Rt, and semantic unit size m on LLaDA-8B. We report TPR@1%FPR using the empirical threshold rule in Section 6.1 and AUC for detection and ∆ mean(log PPL) for generation quality. 
+
+Results. Higher candidate temperatures improve watermark detection and increase the generation quality cost. Increasing Kt,b from 8 to 16 provides most of the detection gain, and larger candidate sets add smaller improvements. Multiple rollouts improve robustness relative to a single rollout, with most of the gain reached by Rt = 2 –3. Moderate semantic unit sizes perform best across the evaluated settings, and larger units reduce detection on AlpacaFarm. 10 arXiv preprint 0.30 0.50 0.60 0.75 0.90 85% 90% 95% 100%                                      
+
+> TPR@1% FPR
+> (a) Candidate temperature
+> 816 24 32 85% 90% 95% 100%
+> (b) Number of candidates K
+> 1235885% 90% 95% 100%
+> (c) Number of rollouts R
+> 15 25 40 50 100 85% 90% 95% 100%
+> (d) Semantic unit size m
+> 0.30 0.50 0.60 0.75 0.90 0.95 0.96 0.97 0.98 0.99 1.00
+> AUC
+> 816 24 32 0.95 0.96 0.97 0.98 0.99 1.00
+> 123580.95 0.96 0.97 0.98 0.99 1.00
+> 15 25 40 50 100 0.95 0.96 0.97 0.98 0.99 1.00
+> 0.30 0.50 0.60 0.75 0.90 0.0 0.5 1.0 1.5 2.0 2.5
+> Δ mean(log PPL)
+> 816 24 32 0.2 0.3 0.4 0.5
+> 123580.30 0.35 0.40 0.45 0.50
+> 15 25 40 50 100 0.30 0.35 0.40 0.45
+> Finance-QA AlpacaFarm
+
+Figure 5: Sensitivity analysis of candidate temperature, number of candidates Kt,b , number of roll-outs Rt, and semantic unit size m on LLaDA-8B. 6.6 GENERATION EFFICIENCY 
+
+Table 3 reports average generation time per visible output token. DenMark takes 0.654 seconds per token because it scores multiple candidates and rollouts. Rewrite-robust semantic watermarks are likewise costly: SemStamp reports a 20 .9× slowdown, k-SemStamp samples 13.3 candidates per ac-cepted sentence (Hou et al., 2024a;b), and PMark consumes 16.0 and 12.1 sampled tokens per output token in its online and offline variants (Huo et al., 2026). This reflects a practical speed–robustness trade-off, while DenMark’s overhead remains acceptable for robustness-oriented generation. Table 3: Generation time per output token. Seconds per visible output token, averaged over Dream/LLaDA-8B and AlpacaFarm/LongFormQA; model loading is excluded. Clean DenMark DLM-KGW DGMark PatternMark UMR 0.054 0.654 0.118 0.236 0.089 0.070 
+
+7 CONCLUSION 
+
+We introduced DenMark, a semantic watermarking method for DLMs that inserts watermark signals during iterative denoising. Fixed token regions define semantic units, and rollout completions esti-mate the final semantics of partially masked regions before each local update is selected. Calibrated scanning over candidate unit sizes recovers evidence after rewriting changes token boundaries. The theoretical analysis decomposes the final score gain into the accumulated contributions of local se-lections. Experiments across four DLMs, three datasets, semantic attacks, and token perturbations show higher detection robustness than the evaluated baselines. The method provides a direct way to embed semantic watermark signals in DLM decoding and detect them after edits that preserve meaning. 11 arXiv preprint AI U SE STATEMENT 
+
+Generative AI tools assisted with code development, language editing, construction of the GPT attacks, and automated quality evaluations reported in this work. The authors reviewed and verified all code, text, and experimental outputs produced with AI assistance and take full responsibility for the manuscript, analyses, and conclusions. 
+
+REFERENCES 
+
+Li An, Yujian Liu, Yepeng Liu, Yang Zhang, Yuheng Bu, and Shiyu Chang. Defending LLM watermarking against spoofing attacks with contrastive representation learning. In Conference on Language Modeling , 2025. URL https://openreview.net/forum?id=n5hmtkdl7k .Emily M. Bender, Timnit Gebru, Angelina McMillan-Major, and Shmargaret Shmitchell. On the dangers of stochastic parrots: Can language models be too big? In Proceedings of the 2021 ACM Conference on Fairness, Accountability, and Transparency , pp. 610–623, 2021. doi: 10.1145/ 3442188.3445922. Tiwei Bie, Maosong Cao, Kun Chen, Lun Du, Mingliang Gong, Zhuochen Gong, Yanmei Gu, Jiaqi Hu, Zenan Huang, Zhenzhong Lan, Chengxi Li, Chongxuan Li, Jianguo Li, Zehuan Li, Huabin Liu, Lin Liu, Guoshan Lu, Xiaocheng Lu, Yuxin Ma, Jianfeng Tan, Lanning Wei, Ji-Rong Wen, Yipeng Xing, Xiaolu Zhang, Junbo Zhao, Da Zheng, Jun Zhou, Junlin Zhou, Zhanchao Zhou, Liwang Zhu, and Yihong Zhuang. LLaDA2.0: Scaling up diffusion language models to 100B. 
+
+arXiv preprint arXiv:2512.15745 , 2025. URL https://arxiv.org/abs/2512.15745 .Rishi Bommasani et al. On the opportunities and risks of foundation models. arXiv preprint arXiv:2108.07258 , 2021. URL https://arxiv.org/abs/2108.07258 .Tom B. Brown et al. Language models are few-shot learners. In Ad-vances in Neural Information Processing Systems , volume 33, pp. 1877–1901, 2020. URL https://proceedings.neurips.cc/paper/2020/hash/ 1457c0d6bfcb4967418bfb8ac142f64a-Abstract.html .Mark Chen et al. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 , 2021. URL https://arxiv.org/abs/2107.03374 .Ruibo Chen, Yihan Wu, Yanshuo Chen, Chenxi Liu, Junfeng Guo, and Heng Huang. A watermark for order-agnostic language models. In International Conference on Learning Representations ,2025. URL https://openreview.net/forum?id=Nlm3Xf0W9S .Aakanksha Chowdhery et al. PaLM: Scaling language modeling with pathways. Journal of Machine Learning Research , 24(240):1–113, 2023. URL https://www.jmlr.org/papers/v24/ 22-1144.html .Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick, and Øyvind Tafjord. Think you have solved question answering? try ARC, the AI2 reasoning chal-lenge. arXiv preprint arXiv:1803.05457 , 2018. URL https://arxiv.org/abs/1803. 05457 .Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168 ,2021. URL https://arxiv.org/abs/2110.14168 .Amirhossein Dabiriaghdam and Lele Wang. SimMark: A robust sentence-level similarity-based watermarking algorithm for large language models. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pp. 30785–30806. Association for Computational Linguistics, 2025. doi: 10.18653/v1/2025.emnlp-main.1567. URL https: //aclanthology.org/2025.emnlp-main.1567/ .Prithiviraj Damodaran. Parrot: Paraphrase generation for NLU. https://github.com/ PrithivirajDamodaran/Parrot_Paraphraser , 2021. Software, version 1.0. 12 arXiv preprint Sumanth Dathathri et al. Scalable watermarking for identifying large language model outputs. Na-ture , 634(8035):818–823, 2024. doi: 10.1038/s41586-024-08025-4. Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. BERT: Pre-training of deep bidirectional transformers for language understanding. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Lan-guage Technologies, Volume 1 (Long and Short Papers) , pp. 4171–4186. Association for Com-putational Linguistics, 2019. doi: 10.18653/v1/N19-1423. URL https://aclanthology. org/N19-1423/ .Yann Dubois, Chen Xuechen Li, Rohan Taori, Tianyi Zhang, Ishaan Gulrajani, Jimmy Ba, Carlos Guestrin, Percy Liang, and Tatsunori B. Hashimoto. AlpacaFarm: A simulation framework for methods that learn from human feedback. In Advances in Neural Information Processing Systems ,volume 36, pp. 30039–30069, 2023. doi: 10.52202/075280-1308. Olive Jean Dunn. Multiple comparisons among means. Journal of the American Statistical Associ-ation , 56(293):52–64, 1961. doi: 10.1080/01621459.1961.10482090. Angela Fan, Yacine Jernite, Ethan Perez, David Grangier, Jason Weston, and Michael Auli. ELI5: Long form question answering. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics , pp. 3558–3567, Florence, Italy, 2019. Association for Compu-tational Linguistics. doi: 10.18653/v1/P19-1346. URL https://aclanthology.org/ P19-1346/ .Thibaud Gloaguen, Robin Staab, Nikola Jovanovi´ c, and Martin Vechev. Watermarking diffu-sion language models. In International Conference on Learning Representations , 2026a. URL 
+
+https://openreview.net/forum?id=3aBWTYGcaT .Thibaud Gloaguen, Robin Staab, Mark Vero, and Martin Vechev. Every bit, everywhere, all at once: A binomial multibit LLM watermark. arXiv preprint arXiv:2605.11653 , 2026b. URL 
+
+https://arxiv.org/abs/2605.11653 .Shansan Gong, Shivam Agarwal, Yizhe Zhang, Jiacheng Ye, Lin Zheng, Mukai Li, Chenxin An, Peilin Zhao, Wei Bi, Jiawei Han, Hao Peng, and Lingpeng Kong. Scaling diffusion language models via adaptation from autoregressive models. In International Conference on Learning Representations , 2025. URL https://openreview.net/forum?id=j1tSLYKwg8 .Weiqing He, Xiang Li, Tianqi Shang, Li Shen, Weijie Su, and Qi Long. On the empir-ical power of goodness-of-fit tests in watermark detection. In Advances in Neural In-formation Processing Systems , volume 38, 2025. doi: 10.52202/085713-0632. URL 
+
+https://proceedings.neurips.cc/paper_files/paper/2025/hash/ 1b19bf73c2f341a350f9bd05c204d97b-Abstract-Conference.html .Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Ja-cob Steinhardt. Measuring massive multitask language understanding. In International Confer-ence on Learning Representations , 2021. URL https://openreview.net/forum?id= d7KBjmI3GmQ .Pyo Min Hong and Albert No. dgMARK: Decoding-guided watermarking for diffusion language models. In International Conference on Machine Learning , 2026. URL https://arxiv. org/abs/2601.22985 .Abe Bohan Hou, Jingyu Zhang, Tianxing He, Yichen Wang, Yung-Sung Chuang, Hongwei Wang, Lingfeng Shen, Benjamin Van Durme, Daniel Khashabi, and Yulia Tsvetkov. SemStamp: A semantic watermark with paraphrastic robustness for text generation. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pp. 4067–4082, Mexico City, Mexico, June 2024a. Association for Computational Linguistics. doi: 10.18653/v1/2024.naacl-long.226. URL https://aclanthology.org/2024.naacl-long.226/ .Abe Bohan Hou, Jingyu Zhang, Yichen Wang, Daniel Khashabi, and Tianxing He. k-SemStamp: A clustering-based semantic watermark for detection of machine-generated text. In Findings of 
+
+13 arXiv preprint 
+
+the Association for Computational Linguistics: ACL 2024 , pp. 1706–1715, Bangkok, Thailand, August 2024b. Association for Computational Linguistics. doi: 10.18653/v1/2024.findings-acl. 98. URL https://aclanthology.org/2024.findings-acl.98/ .Zhengmian Hu, Lichang Chen, Xidong Wu, Yihan Wu, Hongyang Zhang, and Heng Huang. Unbi-ased watermark for large language models. In International Conference on Learning Representa-tions , 2024. URL https://openreview.net/forum?id=uWVC5FVidc .Jiahao Huo, Shuliang Liu, Bin Wang, Junyan Zhang, Yibo Yan, Aiwei Liu, Xuming Hu, and Mingxun Zhou. PMark: Towards robust and distortion-free semantic-level watermarking with channel constraints. In International Conference on Learning Representations , 2026. URL 
+
+https://openreview.net/forum?id=EhDgP69DJG .Enkelejda Kasneci et al. ChatGPT for good? on opportunities and challenges of large language models for education. Learning and Individual Differences , 103:102274, 2023. doi: 10.1016/j. lindif.2023.102274. John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein. A watermark for large language models. In International Conference on Machine Learning , vol-ume 202 of Proceedings of Machine Learning Research , pp. 17061–17084. PMLR, 2023. URL 
+
+https://proceedings.mlr.press/v202/kirchenbauer23a.html .Kalpesh Krishna, Yixiao Song, Marzena Karpinska, John Wieting, and Mohit Iyyer. Paraphrasing evades detectors of AI-generated text, but retrieval is an effective defense. In Advances in Neural Information Processing Systems , volume 36, pp. 27469–27500, 2023. doi: 10.52202/ 075280-1195. URL https://proceedings.neurips.cc/paper_files/paper/ 2023/hash/575c450013d0e99e4b0ecf82bd1afaa4-Abstract-Conference. html .Rohith Kuditipudi, John Thickstun, Tatsunori Hashimoto, and Percy Liang. Robust distortion-free watermarks for language models. Transactions on Machine Learning Research , 2024. ISSN 2835-8856. URL https://openreview.net/forum?id=FpaCL1M02C .Yukang Lin, Xiang Zhang, Shichang Jia, Bowen Wan, Chenghan Fu, Xudong Ren, Yueran Liu, Wanxian Guan, Pengji Wang, Jian Xu, Bo Zheng, and Baolin Liu. Creative4U: MLLMs-based advertising creative image selector with comparative reasoning. arXiv preprint arXiv:2508.12628 ,2025. URL https://arxiv.org/abs/2508.12628 .Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In Proceedings of the 41st International Conference on Machine Learning , volume 235 of Proceedings of Machine Learning Research , pp. 32819–32848. PMLR, 2024. URL https://proceedings.mlr.press/v235/lou24a.html .Macedo Maia, Siegfried Handschuh, Andr´ e Freitas, Brian Davis, Ross McDermott, Manel Zarrouk, and Alexandra Balahur. WWW’18 Open Challenge: Financial opinion mining and ques-tion answering. In Companion Proceedings of the Web Conference 2018 , pp. 1941–1942, Lyon, France, 2018. International World Wide Web Conferences Steering Committee. doi: 10.1145/3184558.3192301. Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. In Advances in Neural Information Processing Systems , volume 38, 2025. doi: 10.52202/085713-1689. URL https://proceedings.neurips.cc/paper_files/paper/2025/hash/ 48b383b24230e0e6e649d9c98dae4d8c-Abstract-Conference.html .Belinda Phipson and Gordon K. Smyth. Permutation p-values should never be zero: Calculating exact p-values when permutations are randomly drawn. Statistical Applications in Genetics and Molecular Biology , 9(1):Article 39, 2010. doi: 10.2202/1544-6115.1585. Ofek Raban, Gal Chechik, and Ethan Fetaya. LR-DWM: Efficient watermarking for diffusion lan-guage models. In Findings of the Association for Computational Linguistics: ACL 2026 , pp. 43510–43517, San Diego, California, United States, July 2026. Association for Computational Linguistics. doi: 10.18653/v1/2026.findings-acl.2161. URL https://aclanthology. org/2026.findings-acl.2161/ .14 arXiv preprint Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. Journal of Machine Learning Research , 21(140):1–67, 2020. URL https: //www.jmlr.org/papers/v21/20-074.html .Jie Ren, Han Xu, Yiding Liu, Yingqian Cui, Shuaiqiang Wang, Dawei Yin, and Jiliang Tang. Arobust semantics-based watermark for large language model against paraphrasing. In Findings of the Association for Computational Linguistics: NAACL 2024 , pp. 613–625. Association for Computational Linguistics, 2024. doi: 10.18653/v1/2024.findings-naacl.40. URL https:// aclanthology.org/2024.findings-naacl.40/ .Subham Sekhar Sahoo et al. Simple and effective masked diffusion language models. In Advances in Neural Information Processing Systems , volume 37, 2024. doi: 10.52202/079017-4135. URL https://proceedings.neurips.cc/paper_files/paper/2024/hash/ eb0b13cc515724ab8015bc978fdde0ad-Abstract-Conference.html .Juliet Popper Shaffer. Multiple hypothesis testing. Annual Review of Psychology , 46(1):561–584, 1995. doi: 10.1146/annurev.ps.46.020195.003021. URL https://www.annualreviews. org/content/journals/10.1146/annurev.ps.46.020195.003021 .Karan Singhal et al. Large language models encode clinical knowledge. Nature , 620:172–180, 2023. doi: 10.1038/s41586-023-06291-2. Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timoth´ ee Lacroix, Baptiste Rozi` ere, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Ar-mand Joulin, Edouard Grave, and Guillaume Lample. LLaMA: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971 , 2023. URL https://arxiv.org/abs/ 2302.13971 .Shangqing Tu, Yuliang Sun, Yushi Bai, Jifan Yu, Lei Hou, and Juanzi Li. WaterBench: Towards holistic evaluation of watermarks for large language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 1517– 1542. Association for Computational Linguistics, 2024. doi: 10.18653/v1/2024.acl-long.83. URL 
+
+https://aclanthology.org/2024.acl-long.83/ .Bing Wang, Ximing Li, Changchun Li, Jinjin Chi, Gang Niu, and Masashi Sugiyama. Decompos-ing the basic abilities of large language models: Mitigating cross-task interference in multi-task instruct-tuning. arXiv preprint arXiv:2605.05676 , 2026. URL https://arxiv.org/abs/ 2605.05676 .Liang Wang, Nan Yang, Xiaolong Huang, Binxing Jiao, Linjun Yang, Daxin Jiang, Rangan Ma-jumder, and Furu Wei. Text embeddings by weakly-supervised contrastive pre-training. arXiv preprint arXiv:2212.03533 , 2022. URL https://arxiv.org/abs/2212.03533 .Laura Weidinger et al. Ethical and social risks of harm from language models. arXiv preprint arXiv:2112.04359 , 2021. URL https://arxiv.org/abs/2112.04359 .Ke Yang, Dongyang Liang, Jing Yu, Shuguang Yuan, and Chi Chen. You can have a second chance: Unbiased and multi-bit watermarking for diffusion language models with regret-based remasking. In Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 28141–28160, San Diego, California, United States, 2026. Association for Computational Linguistics. doi: 10.18653/v1/2026.acl-long.1297. URL 
+
+https://aclanthology.org/2026.acl-long.1297/ .Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7B: Diffusion large language models. arXiv preprint arXiv:2508.15487 , 2025. URL https://arxiv.org/abs/2508.15487 .Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. HellaSwag: Can a ma-chine really finish your sentence? In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics , pp. 4791–4800, Florence, Italy, July 2019. Association for Com-putational Linguistics. doi: 10.18653/v1/P19-1472. URL https://aclanthology.org/ P19-1472/ .15 arXiv preprint Jingqing Zhang, Yao Zhao, Mohammad Saleh, and Peter J. Liu. PEGASUS: Pre-training with extracted gap-sentences for abstractive summarization. In Proceedings of the 37th Interna-tional Conference on Machine Learning , volume 119 of Proceedings of Machine Learning Research , pp. 11328–11339. PMLR, 2020. URL https://proceedings.mlr.press/ v119/zhang20ae.html .Xuandong Zhao, Lei Li, and Yu-Xiang Wang. Permute-and-flip: An optimally stable and wa-termarkable decoder for LLMs. In International Conference on Learning Representations ,2025. URL https://proceedings.iclr.cc/paper_files/paper/2025/hash/ 50be7e77b9c883144940be925b608acc-Abstract-Conference.html .Fengqi Zhu, Rongzhen Wang, Shen Nie, Xiaolu Zhang, Chunwei Wu, Jun Hu, Jun Zhou, Jianfei Chen, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. LLaDA 1.5: Variance-reduced preference optimization for large language diffusion models. arXiv preprint arXiv:2505.19223 , 2025. URL 
+
+https://arxiv.org/abs/2505.19223 .16 arXiv preprint 
+
+APPENDIX CONTENTS 
+
+Appendix A: Notation Summary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 
+
+Appendix B: Experimental Setup and Implementation Details . . . . . . . . . . . . . 19 B.1 Base Models and Baselines . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 B.2 Datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 B.3 Positive and Negative Samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 B.4 Semantic Attacks Using GPT-4o-mini . . . . . . . . . . . . . . . . . . . . . . . . . 20 B.4.1 Rewrite . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 B.4.2 Compression . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 B.4.3 Expansion . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 B.5 Detection Metrics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 B.6 Generation Quality Evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 B.7 Detailed Configurations of Generation Algorithms . . . . . . . . . . . . . . . . . 22 B.8 Semantic Encoder Training . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 
+
+Appendix C: Detection and Length Analyses . . . . . . . . . . . . . . . . . . . . . . . . . 23 C.1 Ablation of the Candidate Unit Size Scan Range . . . . . . . . . . . . . . . . . . 23 C.2 Effect of Maximum Generation Length . . . . . . . . . . . . . . . . . . . . . . . . 24 
+
+Appendix D: Generation and Model Ablations . . . . . . . . . . . . . . . . . . . . . . . . 25 D.1 Candidate Temperature and Position Selection . . . . . . . . . . . . . . . . . . . . 25 D.2 Candidate Decoding with Multiple Positions . . . . . . . . . . . . . . . . . . . . . 25 D.3 Ablation of the Semantic Encoder . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26 
+
+Appendix E: Robustness and Generalization . . . . . . . . . . . . . . . . . . . . . . . . . 26 E.1 Robustness to Back Translation with GPT-4o-mini . . . . . . . . . . . . . . . . . 26 E.2 Document Compression and Expansion . . . . . . . . . . . . . . . . . . . . . . . . 27 E.3 Robustness to Non-Uniform Local Length Changes . . . . . . . . . . . . . . . . 28 
+
+Appendix F: Additional Evaluations, Baselines, and Ablations . . . . . . . . . . . . . 29 F.1 Generation Quality Evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 F.2 Semantic Baselines with Block Decoding . . . . . . . . . . . . . . . . . . . . . . . 30 F.3 Effect of Candidate and Channel Budgets . . . . . . . . . . . . . . . . . . . . . . . 31 F.4 Downstream Task Performance . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32 
+
+Appendix G: Proofs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 G.1 Proof of Proposition 4.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 G.2 Proof of Proposition 5.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34 
+
+Appendix H: Qualitative Examples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34 
+
+> 17
+
+arXiv preprint 
+
+A NOTATION SUMMARY 
+
+Generation and watermark embedding. 
+
+Symbol Meaning 
+
+[q], ⌈a⌉ Index set {1, . . . , q } for an integer q ≥ 1, and the smallest integer not less than a.
+
+V, [MASK] Ordinary token vocabulary and the special mask token. 
+
+Tok , Dec Tokenizer encoding and decoding maps. 
+
+xp, L p, N Tokenized prompt, prompt length, and prescribed continuation length. 
+
+x(t), Mt, T Decoding state, masked generation positions at step t, and terminal decoding step. 
+
+ˆz, ˆy Completed continuation token sequence and decoded final text. 
+
+pϕ, ϕ Masked DLM and its parameters; pϕ(· | x(t), i ) is the token distribution at position i.
+
+m, B, Ub Semantic unit size, number of units B = ⌈N/m ⌉, and token positions of unit b.
+
+Bt, Mb,t Set of semantic units selected at step t, and the remaining masked positions of a selected unit b ∈ B t.
+
+Kt,b Number of candidates for selected unit b at step t.
+
+rt, It,b,k Positive-integer budget for position updates and selected subset of Mb,t ,with |I t,b,k | = min {rt, |M b,t |} .
+
+ct,b,k , k ⋆t,b Candidate state k for selected unit b at step t, and the candidate index se-lected from rollout scores. 
+
+πpos , π tok Distribution for position selection over allowed subsets of masked positions, and token sampling distribution over V.
+
+Rt, ˜ct,b,k,ρ , ˜ut,b,k,ρ Number of rollout completions at step t, candidate state with the current unit completed, and its decoded unit text for rollout ρ of candidate k.
+
+T , u, E η , η, d Domain of decoded text, text unit, semantic encoder, its parameters, and embedding dimension. 
+
+K, κ, C, (θb,j , s b,j ) Key space, secret key, number of semantic channels, and direction–sign pair for channel j of unit b.
+
+⟨a, b ⟩ Euclidean inner product a⊤b on Rd.
+
+gb(u), W t,b,k Semantic score of a completed unit and rollout estimate for candidate k in selected unit b.
+
+18 arXiv preprint 
+
+Detection and cumulative analysis. 
+
+Symbol Meaning 
+
+y, z (y), L Input text, its retokenized sequence z(y) = Tok( y), and token length. 
+
+m′, J (m′) 
+
+> b
+
+, n m′ Candidate detection unit size, token indices of detected unit b, and number of resulting units. 
+
+u(m′) 
+
+> b
+
+(y), S m′ (y) Decoded unit text and document watermark score for candidate unit size m′.
+
+G, D0, n 0 Scanned set of candidate unit sizes, unwatermarked calibration set, and its size. 
+
+pm′ (y), p scan (y) Empirical right tail p value for each size and Bonferroni corrected scan p
+
+value. 
+
+Srob (y), α Robust ranking score − log pscan (y) and detection significance level. 
+
+y(0)  
+
+> i
+
+, Y Calibration text i in D0, and random test text under the unwatermarked null distribution. 
+
+I{A} Indicator equal to one if event A holds and zero otherwise. 
+
+μ, π, π 0, J (μ) Generic decoding policy, DenMark decoder, reference decoder, and J(μ) = 
+
+Eμ[Sm(ˆ y) | x(0) ].
+
+kt, k⋆t , 1t Candidate index vectors ordered by increasing b: a general choice, Den-Mark’s selected choice, and the reference choice that selects the first candi-date for every active unit. 
+
+ct, kt State obtained by jointly committing the local updates indexed by kt for all units in Bt.
+
+Qπt, kt Expected final watermark score after committing joint update ct, kt at step t
+
+and following π thereafter. 
+
+∆πt Expected step advantage of k⋆t over the reference choice 1t.
+
+π[ℓ] Reverse hybrid policy using π0 for decisions 0, . . . , ℓ − 1 and π from deci-sion ℓ onward. 
+
+B EXPERIMENTAL SETUP AND IMPLEMENTATION DETAILS 
+
+B.1 BASE MODELS AND BASELINES 
+
+Our evaluation uses LLaDA-8B (Nie et al., 2025), LLaDA1.5-8B (Zhu et al., 2025), LLaDA2.0-mini (Bie et al., 2025), and Dream-v0-Instruct-7B (Ye et al., 2025). All models generate at most 300 new tokens with decoding temperature 0.5. DenMark uses sequential masked diffusion decoding with 25 token blocks and random position selection within each block for the LLaDA family. Dream uses its origin diffusion decoder with 300 denoising steps and random position selection. We compare against four baselines. DLM-KGW (Gloaguen et al., 2026a) adapts the KGW green–red watermark to DLMs by applying the bias in expectation over uncertain context hashes and uses the standard green token detector. DGMark (Hong & No, 2026) uses multinomial token sampling, low confidence position selection, and one step lookahead beam search to embed parity constraints induced by hashes, then detects the signal with a sliding window statistic. On Dream, DGMark uses 25 token block decoding following its original configuration because direct decoding frequently produces outputs below the required length. PatternMark (Chen et al., 2025) generates Markov chain key sequences with characteristic frequent patterns and tests the recovered pattern counts. 
+
+UMR (Yang et al., 2026) combines stability aware, bit controlled unbiased modulation with low confidence remasking to reinforce tokens with weak watermark evidence. The unwatermarked clean reference uses random-position decoding at temperature 0.5.B.2 DATASETS 
+
+Following WaterBench (Tu et al., 2024), we evaluate three datasets. Finance (FiQA) (Maia et al., 2018) contains questions that require domain knowledge and financial concepts. Alpaca (Alpaca-Farm) (Dubois et al., 2023) contains diverse instruction prompts spanning everyday and knowledge-intensive tasks. LongForm (ELI5) (Fan et al., 2019) contains open-ended questions that usually require long explanatory responses. Together, these datasets cover finance, general instruction fol-lowing, and long-form explanation. 19 arXiv preprint B.3 POSITIVE AND NEGATIVE SAMPLES 
+
+For each watermarking method, base model, and dataset, we generate 300 watermarked outputs as positive samples. We retain outputs with at least 150 tokens and a word level 4 gram repetition ratio below 0.2, and remove empty, duplicated, anomalous, or otherwise degenerate outputs. Clean detection uses the retained outputs before attack. Robustness evaluation applies attacks to the same retained samples, and the attacked outputs are evaluated directly. Following prior watermarking evaluations that use C4 human-written text as a clean null or empir-ical calibration reference (Raban et al., 2026; He et al., 2025; Zhao et al., 2025; Gloaguen et al., 2026b), for each backbone we sample 40,000 unique clean passages from the C4 RealNewsLike split (Raffel et al., 2020) and tokenize them with the corresponding model tokenizer. We use 30,000 passages for DenMark calibration and 10,000 disjoint passages as the held out negative set. Both sets are stratified so that token lengths are approximately uniform over 150–300 tokens under the corresponding tokenizer. Unless explicitly stated otherwise, all subsequent detection results use this backbone specific setup: DenMark is calibrated on the 30,000 passage pool, and every method is evaluated against the shared 10,000 passage held out pool using the metric and threshold procedure in Appendix B.5. B.4 SEMANTIC ATTACKS USING GPT-4 O-MINI 
+
+We use GPT-4o-mini for three transformations that preserve meaning: rewriting, compression, and expansion. Each transformation is applied at two granularities. For sentence attacks, we segment the input document into sentences, submit each sentence independently to the API, and concatenate the outputs in their original order. For document attacks, we submit the complete response in one API call, allowing sentence and paragraph reorganization. All API calls use temperature 0.7.We cache each response by attack name, model name, and source sentence or document so that repeated evaluations reuse the same output. All three transformations use the same system prompt:            
+
+> You are ahelpful assistant that rewrites text while preserving its meaning.
+
+B.4.1 REWRITE 
+
+The rewrite attack changes wording, syntax, and sentence structure while preserving meaning and factual content. The sentence variant preserves sentence boundaries. The document variant pro-cesses the complete response jointly and may reorganize sentences and paragraphs. 
+
+User prompt for sentence attacks.                                          
+
+> Rewrite the following sentence in anatural and fluent way. Preserve the original meaning, factual content, named entities, numbers, and technical terms. Change the sentence structure, wording, and phrasing as much as possible. Keep the length roughly similar. Do not add explanations. Return only the rewritten sentence. Sentence: {sentence}
+
+User prompt for document attacks.                                                                
+
+> Rewrite the following text in anatural and fluent way. Preserve the original meaning, factual content, named entities, numbers, and technical terms. Change the overall organization, sentence structure, wording, and phrasing as much as possible. You may reorganize sentences and paragraphs, but do not summarize, omit details, or add new information. Keep the total length roughly similar to the original. Do not add explanations, labels, or commentary. Return only the rewritten text. Text: {text}
+
+20 arXiv preprint B.4.2 COMPRESSION 
+
+The compression attack rewrites the input to approximately 60–70% of its original word count. The sentence variant compresses each sentence independently. The document variant compresses the complete response jointly. 
+
+User prompt for sentence attacks. 
+
+Rewrite the following sentence in a shorter and more concise way. Preserve the original meaning, factual content, named entities, numbers, technical terms, and essential qualifiers. Keep the result as exactly one sentence; do not split or merge sentences. The original sentence contains approximately {original_word_count} words. Target approximately 60% to 70% of the original length: about {target_min_words} to {target_max_words} words. Remove only unnecessary modifiers, redundancy, and verbose phrasing. Do not change the core claim or add new information. Do not add explanations. Return only the rewritten sentence. Sentence: {sentence} 
+
+User prompt for document attacks. 
+
+Rewrite the following text into a shorter and more concise version. The original contains approximately {original_word_count} whitespace-separated words. Your rewrite must contain between {target_min_words} and {target_max_words} words (60-70% of the original length); aim for exactly {target_words} words. Preserve the original meaning, factual content, named entities, numbers, and technical terms. Remove redundancy, repetition, unnecessary modifiers, and verbose phrasing. You may reorganize sentences and paragraphs, but do not change the core claims, omit essential information, or add new information. Do not add explanations, labels, or commentary. Return only the rewritten text. Text: {text} 
+
+B.4.3 EXPANSION 
+
+The expansion attack rewrites the input in a more explicit form without adding facts or claims. The sentence variant expands each sentence independently. The document variant expands the complete response jointly to approximately 130–150% of its original length. 
+
+User prompt for sentence attacks. 
+
+Rewrite the following sentence in a more detailed and explicit way. Preserve the original meaning, factual content, named entities, numbers, and technical terms. You may clarify implicit relationships and use richer phrasing, but do not add new facts, examples, numbers, named entities, or claims. Change the sentence structure, wording, and phrasing as much as possible. Do not add explanations. Return only the rewritten sentence. Sentence: {sentence} 
+
+User prompt for document attacks. 
+
+Rewrite the following text into a more detailed and explicit version. The original contains approximately {original_word_count} whitespace-separated words. Your rewrite must contain between {target_min_words} and {target_max_words} words (130-150% of the original length); aim for exactly {target_words} words. Preserve the original meaning, factual content, named entities, numbers, and technical terms. You may clarify implicit relationships, reorganize sentences and paragraphs, and use richer phrasing, but do not add new facts, examples, numbers, named entities, or claims. Do not add explanations, labels, or commentary. Return only the rewritten text. 
+
+21 arXiv preprint 
+
+> Text: {text}
+
+B.5 DETECTION METRICS 
+
+We report AUC and TPR at false positive rates of 0.5% , 1% , and 5% . At each operating point, we use the empirical score threshold that gives the highest TPR while keeping the measured false positive rate on the held-out negatives no greater than the target. The Clean column evaluates watermarked generations before attack, and the remaining columns report detection after the corresponding attack. B.6 GENERATION QUALITY EVALUATION 
+
+We evaluate generation quality with perplexity and an LLM judge. For perplexity, we use Qwen2.5-32B-Instruct and construct a separate clean reference for each combination of base model and dataset from the corresponding retained generations without a watermark. We report 
+
+∆ mean(log PPL) = mean i[log PPL wm ,i ] − mean j [log PPL clean ,j ] . (9) Lower values indicate a smaller quality deviation from the corresponding clean generations. We also use GPT-4o-mini as an evaluator. Each generation receives scores for Style , Consistency ,
+
+Accuracy , and Ethics ; their equally weighted average is the judge score. The evaluator uses the same prompt and temperature zero for watermarked and clean generations. For each combination of base model and dataset, we report the difference between the watermarked judge score and the corresponding clean score ( ∆Clean). Higher judge scores and ∆Clean values closer to zero indicate better preservation of generation quality. The Average row aggregates all four base model groups and all three datasets. B.7 DETAILED CONFIGURATIONS OF GENERATION ALGORITHMS 
+
+DenMark. We use the semantic encoder described in Section B.8. We set semantic unit size to 
+
+m = 25 , use Kt,b = 16 candidates for every selected unit at each denoising step, use C = 2 
+
+semantic channels, and average three one-step rollouts per candidate. Within each semantic unit, the step-dependent rollout count Rt decreases linearly as decoding progresses: early positions receive up to five rollouts and later positions receive as few as one, giving an average of three rollouts over the unit. The base model decoding temperature is 0.5; candidate and rollout temperatures are 0.6
+
+and 0.5. Candidate positions are sampled randomly, and the candidate with the largest watermark score is committed. Detection calibrates each candidate unit size separately and applies Bonferroni correction over G = {12 , . . . , 37 }.
+
+DLM-KGW (Gloaguen et al., 2026a). We use HashDistribution with δ = 4 on LLaDA-8B and LLaDA1.5-8B, δ = 4 .25 on LLaDA2.0-mini, and δ = 4 on Dream-v0-Instruct-7B. Detection uses the corresponding z score. 
+
+DGMark (Hong & No, 2026). We implement DGMark with its parity guided decoding and one step beam search. We use multinomial top 10 decoding with beam size 10 on the three LLaDA checkpoints and top 32 decoding with beam size 32 on Dream. On Dream, we use a block decoder with low confidence position selection because direct decoding frequently produces outputs below the required length. Detection averages squared z scores over sliding windows of size w = 8 .
+
+PatternMark (Chen et al., 2025). We use the OrderAgnostic implementation with δ = 4 , ℓ = 2 ,pattern length 4, and patterns 0101 and 1010. Detection converts the observed pattern count into its right tail null p value. 
+
+UMR (Yang et al., 2026). We use the official bitmap implementation with the 4 bit message 1001, watermark ratio 0.5, secret key 42, temperature 0.5, and low confidence remasking. We set δ = 10 
+
+for Finance and LongForm and δ = 13 for Alpaca on all three LLaDA checkpoints. Dream uses 
+
+δ = 10 for all three datasets. Detection uses the official UMR z score on the full tokenized response. 22 arXiv preprint B.8 SEMANTIC ENCODER TRAINING 
+
+Following prior semantic watermarking work on contrastively trained semantic representations (Hou et al., 2024a;b; An et al., 2025), we fine tune the encoder on original–paraphrase pairs to make its representations stable under meaning-preserving rewrites. We initialize Eη from E5-base-v2 (Wang et al., 2022) and optimize an InfoNCE objective with negatives from the same batch. The source corpus contains 100,000 short text segments collected from publicly accessible web pages. Each segment is truncated to at most 25 words separated by whitespace, with an average length of 18.74 words and a median length of 20 words. The corpus includes finance and business, sports, general knowledge, tabular content, and multilingual text. We sample 8,000 segments for training. For each sampled segment, Pegasus (Zhang et al., 2020) generates a paraphrase that serves as the positive example. Removing empty or unchanged rewrites leaves 7,993 valid (xi, x + 
+
+> i
+
+) pairs. For each input x, we mean pool the final hidden states of E5-base-v2 (Wang et al., 2022) and apply 
+
+ℓ2 normalization: 
+
+Eη (xi) = Normalize(MeanPool( Hη (xi))) , (10) where Hη (xi) denotes the final hidden states of the encoder. We optimize the encoder with InfoNCE and negatives from the same batch: 
+
+Lsem = − 1
+
+Benc 
+
+> Benc
+
+X
+
+> i=1
+
+log exp  Eη (xi)⊤Eη (x+ 
+
+> i
+
+)/τ PBenc  
+
+> j=1
+
+exp  Eη (xi)⊤Eη (x+ 
+
+> j
+
+)/τ  , (11) where x+ 
+
+> i
+
+is the Pegasus paraphrase of xi, Benc is the batch size, and τ = 0 .05 . The objective pulls semantically equivalent segments closer in the embedding space and uses the other examples in the batch as negatives. Table 4 gives the training configuration. Table 4: Training configuration of the semantic encoder.                      
+
+> Component Configuration Base encoder E5-base-v2 (Wang et al., 2022) Source corpus size 100,000 text segments Sampled segments 8,000 Valid training pairs 7,993 Maximum source length 25 words Positive generator PEGASUS (Zhang et al., 2020) PEGASUS beam size 10 Pooling Mean pooling with ℓ2normalization Objective InfoNCE with negatives from the same batch Contrastive temperature τ0.05 Batch size 128 Learning rate 1×10 −5
+> Training epochs 3Optimizer AdamW Learning rate schedule Linear decay with 5% warm up
+
+Encoder training uses no watermark key, semantic direction, generation model, or detection objec-tive. The same trained encoder is used for watermark generation and detection and is optimized to keep paraphrases close in representation space. 
+
+C DETECTION AND LENGTH ANALYSES 
+
+C.1 ABLATION OF THE CANDIDATE UNIT SIZE SCAN RANGE 
+
+We vary the candidate unit sizes used by the calibrated detector. Starting from the generation size of 25 tokens, we compare detection at the fixed size with the ranges {23 , . . . , 27 }, {21 , . . . , 29 },23 arXiv preprint 
+
+{17 , . . . , 33 }, {12 , . . . , 37 }, and {10 , . . . , 40 }. Figure 6 reports the aggregate attacked performance and results for individual attacks. Wider scans improve robustness most under compression and expansion because these attacks can move the effective semantic scale away from the 25 token generation size. The Bonferroni penalty grows with the number of scanned sizes (Shaffer, 1995). Performance improves through the 12 –37 
+
+range, and extending the scan to 10 –40 gives no consistent gain. We use 12 –37 because it covers the observed scale changes while avoiding the additional statistical penalty from larger scans. 25 23–27 21–29 17–33 12–37 10–40  
+
+> 30% 40% 50% 60% 70% 80% 90% 100% (a) Attacked macro
+> 25 23–27 21–29 17–33 12–37 10–40
+> (b) TPR@0.5% FPR
+> 25 23–27 21–29 17–33 12–37 10–40
+> (c) TPR@1% FPR
+> 25 23–27 21–29 17–33 12–37 10–40
+> (d) AUC
+
+Candidate scan range        
+
+> TPR@0.5% FPR TPR@1% FPR TPR@5% FPR AUC Rewrite Compress Expand Paragraph
+
+Figure 6: Ablation of the candidate unit size scan range. Wider scans improve robustness to scale changes caused by attacks, especially compression and expansion, and also increase the Bonferroni penalty. Performance peaks at the 12 –37 range across the evaluated settings, while 10 –40 gives no consistent additional gain. C.2 EFFECT OF MAXIMUM GENERATION LENGTH 
+
+We vary the maximum continuation length over {100 , 150 , 200 , 250 , 300 } tokens. We evaluate Den-Mark on FinanceQA and LongFormQA with LLaDA-8B and Dream. Figure 7 shows TPR near sat-uration at all three false positive operating points and AUC across this range, with small fluctuations across models and datasets. Detection remains stable over the evaluated requested lengths. 100 150 200 250 300             
+
+> 95% 96% 97% 98% 99% 100%
+> (a) TPR@0.5% FPR
+> 100 150 200 250 300
+> (b) TPR@1% FPR
+> 100 150 200 250 300
+> (c) TPR@5% FPR
+> 100 150 200 250 300
+> (d) AUC
+
+Maximum generation length    
+
+> LLaDA-8B · Finance LLaDA-8B · LongForm Dream · Finance Dream · LongForm
+
+Figure 7: Ablation of maximum generation length. We vary the maximum generation length from 100 to 300 tokens and report TPR@0.5% FPR, TPR@1% FPR, TPR@5% FPR, and AUC on Fi-nanceQA and LongFormQA for LLaDA-8B and Dream. Detection remains high across the evalu-ated lengths. 24 arXiv preprint 
+
+D GENERATION AND MODEL ABLATIONS 
+
+D.1 CANDIDATE TEMPERATURE AND POSITION SELECTION 
+
+We vary candidate temperature under low confidence and random position selection on LLaDA-8B and Dream. Each point in Figure 8 averages FinanceQA and LongFormQA. Very low candidate temperatures concentrate the sampling distribution, which increases the chance that independently drawn candidates are identical or nearly identical. Lower candidate diversity gives the watermark selector fewer semantic alternatives and weakens insertion. The effect is larger with low confidence position selection. Random position selection adds positional diversity and retains higher detection at low temperatures. At temperature 0.6, low confidence decoding reaches dataset averaged TPR@1%FPR of 88 .00% on LLaDA-8B and 93 .17% on Dream, with AUCs of 
+
+0.9872 and 0.9966 . We use 0.6 as the default candidate temperature. 0.30 0.50 0.60 0.75 0.90 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%           
+
+> (a) LLaDA-8B - TPR@1% FPR
+> 0.30 0.50 0.60 0.75 0.90 0.75 0.80 0.85 0.90 0.95 1.00
+> (b) LLaDA-8B - AUC
+> 0.30 0.50 0.60 0.75 0.90 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+> (c) Dream - TPR@1% FPR
+> 0.30 0.50 0.60 0.75 0.90 0.75 0.80 0.85 0.90 0.95 1.00
+> (d) Dream - AUC
+> Temperature
+> Low-con fi dence Random
+
+Figure 8: Ablation of candidate temperature and position selection. We vary candidate temperature with low confidence and random position selection on LLaDA-8B and Dream. Each point averages FinanceQA and LongFormQA. Very low temperatures reduce candidate diversity, especially with low confidence position selection, and temperature 0.6 gives high detection on both base models. D.2 CANDIDATE DECODING WITH MULTIPLE POSITIONS 
+
+We test whether updating several unresolved positions per denoising step can reduce decoding cost while preserving semantic watermark detection. We fix Kt,b = 16 and vary the position-update budget over rt ∈ { 2, 4, 8}. For LLaDA-8B, each candidate independently samples rt unresolved positions and proposes their tokens jointly. For Dream, we sample rt unresolved positions globally, group them by their 25 token semantic unit, and sample and roll out each nonempty group. Selected positions can span several semantic units. Table 5 reports clean detection on Finance-QA. Each configuration contains 50 retained positive samples. Table 5: Clean detection with multiple position candidate decoding. We fix Kt,b = 16 and vary the position-update budget rt. We report TPR at three false positive operating points and rank AUC on Finance-QA ( N = 50 positives per row). 
+
+Base model rt TPR@0.5% FPR ↑ TPR@1% FPR ↑ TPR@5% FPR ↑ AUC ↑
+
+LLaDA-8B 2 100.00 100.00 100.00 0.9998 4 100.00 100.00 100.00 0.9998 8 100.00 100.00 100.00 0.9998 Dream-v0-Instruct-7B 2 100.00 100.00 100.00 0.9997 4 98.00 98.00 98.00 0.9966 8 100.00 100.00 100.00 0.9997 
+
+25 arXiv preprint Clean detection is near saturation for every evaluated position count. LLaDA-8B reaches 100% TPR at all three operating points for every rt. Dream reaches 100% for rt ∈ { 2, 8} and 98% for rt = 4 .With N = 50 positives per configuration, the experiment shows no consistent loss in clean detection as more positions are updated jointly. D.3 ABLATION OF THE SEMANTIC ENCODER 
+
+The primary DenMark configuration uses E5-base-v2 after contrastive fine tuning on the 7,993 pairs of original text and Pegasus paraphrases described in Section B.8. We replace this encoder with the original intfloat/e5-base-v2 checkpoint for both watermark generation and detection to measure the effect of the training procedure. The remaining watermark and generation settings use 
+
+m = 25 , Kt,b = 16 , C = 2 , the same rollout schedule and temperatures, and the calibrated scan over G = {12 , . . . , 37 }.Table 6 compares the DenMark results from Tables 1 and 2 with results obtained using the original E5 checkpoint. Table 6: Ablation of the semantic encoder under the GPT-4o-mini attacks in the main tables. Each entry reports TPR@0.5%FPR / TPR@1%FPR / TPR@5%FPR / AUC. Con-trastive FT (main) uses the DenMark values from the main tables; Untuned E5 uses the original 
+
+intfloat/e5-base-v2 checkpoint for generation and detection.                                                                                                                            
+
+> Base model Attack Encoder Finance LongForm LLaDA-8B Rewrite Contrastive FT (main) (63.55 /74.92 /90.30 /0.9784 ) ( 70.33 /81.00 /93.67 /0.9838 )Untuned E5 (24.00 / 26.00 / 41.00 / 0.7958) (20.00 / 26.00 / 47.00 / 0.8773) Compression Contrastive FT (main) (80.94 /85.28 /96.32 /0.9877 ) ( 91.00 /93.33 /97.33 /0.9914 )Untuned E5 (48.00 / 59.00 / 83.00 / 0.9705) (56.00 / 66.00 / 90.00 / 0.9697) Expansion Contrastive FT (main) (33.11 /44.82 /70.23 /0.9209 ) ( 47.33 /61.00 /83.00 /0.9669 )Untuned E5 (13.00 / 16.00 / 38.00 / 0.7876) (5.00 / 8.00 / 33.00 / 0.8119) Document Paraphrase Contrastive FT (main) (56.19 /67.56 /84.95 /0.9578 ) ( 63.00 /73.00 /91.00 /0.9741 )Untuned E5 (25.00 / 28.00 / 34.00 / 0.7752) (17.00 / 21.00 / 51.00 / 0.8353) Dream-v0-Instruct-7B Rewrite Contrastive FT (main) (72.00 /78.00 /94.67 /0.9865 ) ( 84.00 /88.67 /95.00 /0.9914 )Untuned E5 (38.00 / 44.00 / 61.00 / 0.8892) (23.33 / 37.00 / 63.00 / 0.9116) Compression Contrastive FT (main) (88.00 /91.00 /97.00 /0.9949 ) ( 96.33 /98.00 /99.33 /0.9983 )Untuned E5 (75.00 / 83.00 / 91.00 / 0.9881) (72.33 / 81.00 / 96.00 / 0.9916) Expansion Contrastive FT (main) (36.33 /49.00 /77.67 /0.9333 ) ( 55.00 /66.00 /87.33 /0.9735 )Untuned E5 (12.00 / 17.00 / 43.00 / 0.8132) (12.00 / 14.00 / 52.00 / 0.8692) Document Paraphrase Contrastive FT (main) (60.67 /68.33 /87.67 /0.9694 ) ( 71.00 /77.33 /90.67 /0.9786 )Untuned E5 (24.67 / 36.00 / 51.00 / 0.8572) (21.33 / 30.00 / 50.00 / 0.8807)
+
+Contrastive fine tuning improves all 16 combinations of base model, dataset, and attack at all three operating points. Averaged over these combinations, TPR@0.5%, TPR@1%, and TPR@5% in-crease from 30.31%, 37.00%, and 57.75% with the original E5 checkpoint to 67.59%, 76.10%, and 90.99% with the trained encoder; mean AUC increases from 0.8765 to 0.9775. The largest gains occur under rewriting, expansion, and document paraphrasing, which matches the training objective of keeping semantic representations stable after changes in surface form. 
+
+E ROBUSTNESS AND GENERALIZATION 
+
+E.1 ROBUSTNESS TO BACK TRANSLATION WITH GPT-4 O-MINI 
+
+We evaluate translation as another semantic transformation using GPT-4o-mini. Each watermarked response is translated from English to Chinese and then back to English. One attack applies the round trip independently to each sentence before concatenation. The other applies the round trip to the complete response in one call. We use the retained sample sets from before attack for this evaluation. At 1% FPR, DenMark ranks first in all eight combinations of backbone, dataset, and attack. On LLaDA-8B, TPR@1%FPR averaged across AlpacaFarm and LongForm is 93.97% for sentence 26 arXiv preprint back translation and 94.27% for document back translation. On Dream, the corresponding averages are 97.46% and 97.67%. Table 7: Robustness to GPT-4o-mini back translation on LLaDA-8B and Dream-v0-Instruct-7B. Each entry reports TPR@0.5%FPR / TPR@1%FPR / TPR@5%FPR / AUC. Sentence back translation applies the English–Chinese–English round trip independently to each sentence. Docu-ment back translation applies it to the complete response. 
+
+Attack Method Alpaca LongForm 
+
+LLaDA-8B 
+
+Sentence Back Translation DenMark (89.38 / 91.94 / 96.34 / 0.9845 ) ( 93.67 / 96.00 / 99.00 / 0.9975 )DLM-KGW (61.00 / 69.09 / 83.20 / 0.9613) (55.20 / 64.40 / 81.00 / 0.9657) DGMark (76.43 / 83.16 / 90.91 / 0.9606) (92.67 / 95.33 / 99.00 / 0.9943) PatternMark (76.17 / 79.42 / 88.45 / 0.9699) (82.33 / 84.67 / 94.00 / 0.9870) UMR (82.67 / 86.00 / 93.67 / 0.9778) (75.00 / 79.67 / 92.00 / 0.9761) Document Back Translation DenMark (85.35 / 91.21 / 96.70 / 0.9883 ) ( 95.67 / 97.33 / 99.67 / 0.9987 )DLM-KGW (65.77 / 71.78 / 86.72 / 0.9660) (53.60 / 61.60 / 83.80 / 0.9663) DGMark (82.83 / 86.87 / 93.94 / 0.9708) (94.00 / 96.67 / 99.00 / 0.9950) PatternMark (77.98 / 81.95 / 90.25 / 0.9812) (78.33 / 84.33 / 93.67 / 0.9852) UMR (84.67 / 87.33 / 93.33 / 0.9852) (80.67 / 86.00 / 93.33 / 0.9851) 
+
+Dream-v0-Instruct-7B 
+
+Sentence Back Translation DenMark (92.65 / 95.92 / 98.37 / 0.9970 ) ( 98.33 / 99.00 / 99.67 / 0.9992 )DLM-KGW (61.15 / 69.06 / 86.69 / 0.9651) (46.96 / 56.91 / 78.45 / 0.9548) DGMark (87.34 / 90.25 / 93.36 / 0.9686) (93.00 / 95.00 / 98.67 / 0.9969) PatternMark (79.48 / 84.72 / 92.58 / 0.9760) (83.96 / 88.40 / 96.93 / 0.9900) UMR (63.67 / 70.33 / 88.00 / 0.9715) (67.33 / 76.33 / 89.67 / 0.9790) Document Back Translation DenMark (93.47 / 96.33 / 98.37 / 0.9972 ) ( 97.33 / 99.00 / 99.67 / 0.9991 )DLM-KGW (56.12 / 63.67 / 82.01 / 0.9554) (35.36 / 43.09 / 67.40 / 0.9157) DGMark (88.38 / 91.08 / 95.02 / 0.9789) (89.33 / 93.67 / 96.67 / 0.9925) PatternMark (83.84 / 87.34 / 93.89 / 0.9869) (81.23 / 84.98 / 91.81 / 0.9837) UMR (64.33 / 72.67 / 87.67 / 0.9678) (58.33 / 67.67 / 86.00 / 0.9711) 
+
+E.2 DOCUMENT COMPRESSION AND EXPANSION 
+
+Table 8 reports robustness when GPT-4o-mini compresses or expands each complete response in one call while preserving meaning. These attacks can reorganize discourse and change sentence boundaries. Across all four backbones and three datasets, DenMark has the highest TPR@1%FPR, TPR@5%FPR, and AUC in every comparison. 27 arXiv preprint Table 8: Robustness to document compression and expansion across four DLMs. Each entry reports TPR@0.5%FPR / TPR@1%FPR / TPR@5%FPR / AUC. 
+
+Attack Method Finance Alpaca LongForm 
+
+LLaDA-8B 
+
+Document Compression DenMark (64.88 / 73.58 / 86.29 / 0.9671 ) ( 67.03 / 75.46 / 89.01 / 0.9554 ) ( 77.33 / 84.67 / 93.33 / 0.9789 )DLM-KGW (21.60 / 29.80 / 51.80 / 0.8763) (29.67 / 37.14 / 57.05 / 0.8890) (13.00 / 17.80 / 34.20 / 0.7853) DGMark (42.00 / 51.33 / 69.67 / 0.9255) (42.09 / 53.87 / 72.39 / 0.9138) (33.67 / 46.00 / 71.00 / 0.9309) PatternMark (27.33 / 31.33 / 57.00 / 0.8935) (31.05 / 39.71 / 59.93 / 0.8899) (18.00 / 23.33 / 42.67 / 0.8251) UMR (32.33 / 43.00 / 64.00 / 0.9164) (47.33 / 52.00 / 69.00 / 0.9152) (26.00 / 33.33 / 57.33 / 0.8853) Document Expansion DenMark (27.09 / 39.13 / 63.88 / 0.8973 ) (23.44 / 37.00 / 60.44 / 0.8966 ) ( 37.00 / 55.33 / 77.67 / 0.9413 )DLM-KGW (7.00 / 11.00 / 26.60 / 0.7569) (8.92 / 14.32 / 28.63 / 0.7427) (5.60 / 8.20 / 20.00 / 0.6788) DGMark (11.00 / 18.00 / 41.67 / 0.8551) (14.81 / 21.55 / 43.10 / 0.8374) (9.33 / 20.67 / 46.00 / 0.8781) PatternMark (24.00 / 30.00 / 50.67 / 0.8447) (21.66 / 27.80 / 41.88 / 0.8271) (10.33 / 12.33 / 32.67 / 0.7545) UMR (10.67 / 13.33 / 28.33 / 0.7456) ( 24.00 / 29.00 / 44.67 / 0.7892) (11.00 / 14.33 / 32.00 / 0.7900) 
+
+LLaDA1.5-8B 
+
+Document Compression DenMark (56.52 / 66.56 / 86.62 / 0.9664 ) ( 62.90 / 71.02 / 84.45 / 0.9670 ) ( 71.33 / 79.00 / 91.00 / 0.9763 )DLM-KGW (24.80 / 31.20 / 55.20 / 0.8873) (33.40 / 39.38 / 58.56 / 0.8888) (20.67 / 28.67 / 49.00 / 0.8441) DGMark (44.00 / 54.33 / 70.67 / 0.9269) (46.64 / 58.39 / 73.83 / 0.9220) (44.00 / 50.00 / 70.67 / 0.9381) PatternMark (26.09 / 35.45 / 58.53 / 0.8857) (36.01 / 41.26 / 63.64 / 0.8977) (16.33 / 20.67 / 39.00 / 0.7990) UMR (37.33 / 44.33 / 64.33 / 0.9091) (47.67 / 52.67 / 70.00 / 0.9167) (29.67 / 38.00 / 58.33 / 0.8920) Document Expansion DenMark (26.42 / 35.12 / 60.20 / 0.8958 ) ( 26.15 / 36.40 / 60.07 / 0.8946 ) ( 37.67 / 49.67 / 73.33 / 0.9302 )DLM-KGW (7.20 / 12.00 / 26.00 / 0.7501) (12.78 / 17.53 / 33.20 / 0.7656) (7.00 / 10.67 / 22.33 / 0.7295) DGMark (15.00 / 21.33 / 43.67 / 0.8609) (16.11 / 25.50 / 47.99 / 0.8389) (17.33 / 24.67 / 55.33 / 0.8900) PatternMark (22.07 / 28.76 / 50.17 / 0.8571) (21.68 / 26.92 / 48.60 / 0.8085) (6.33 / 10.33 / 34.33 / 0.7687) UMR (9.33 / 12.00 / 29.67 / 0.7634) (20.33 / 25.67 / 43.00 / 0.7984) (10.00 / 17.67 / 36.67 / 0.7832) 
+
+LLaDA2.0-mini 
+
+Document Compression DenMark (60.20 / 67.56 / 86.62 / 0.9662 ) ( 57.04 / 63.18 / 83.75 / 0.9570 ) ( 71.33 / 75.33 / 88.33 / 0.9717 )DLM-KGW (35.67 / 40.67 / 64.67 / 0.9164) (43.73 / 51.97 / 69.18 / 0.9381) (30.00 / 38.33 / 64.67 / 0.9059) DGMark (45.67 / 58.00 / 80.00 / 0.9578) (50.92 / 57.20 / 74.54 / 0.9359) (47.33 / 54.67 / 76.67 / 0.9390) PatternMark (29.00 / 35.67 / 56.00 / 0.8779) (32.40 / 35.54 / 55.75 / 0.8572) (31.33 / 36.67 / 64.33 / 0.9119) UMR (20.00 / 28.67 / 52.00 / 0.8572) (26.33 / 33.00 / 55.33 / 0.8650) (23.33 / 29.67 / 52.00 / 0.8728) Document Expansion DenMark (32.78 / 41.47 / 67.89 / 0.9238 ) ( 30.69 / 39.35 / 63.90 / 0.9178 ) ( 41.33 / 50.00 / 78.67 / 0.9551 )DLM-KGW (9.33 / 16.00 / 36.67 / 0.8133) (26.16 / 34.05 / 56.99 / 0.8795) (12.00 / 19.67 / 45.00 / 0.8452) DGMark (13.67 / 20.33 / 46.67 / 0.8737) (26.94 / 35.06 / 56.46 / 0.9038) (15.33 / 23.67 / 54.33 / 0.9043) PatternMark (21.67 / 24.33 / 48.33 / 0.8424) (25.44 / 29.97 / 49.48 / 0.8366) (18.33 / 23.00 / 47.33 / 0.8692) UMR (6.33 / 10.67 / 30.67 / 0.7653) (15.67 / 20.33 / 40.00 / 0.7861) (8.00 / 14.33 / 36.33 / 0.8137) 
+
+Dream-v0-Instruct-7B 
+
+Document Compression DenMark (72.33 / 78.33 / 93.33 / 0.9820 ) ( 72.65 / 78.37 / 89.39 / 0.9688 ) ( 76.00 / 82.00 / 94.67 / 0.9837 )DLM-KGW (17.36 / 22.57 / 45.14 / 0.7947) (30.22 / 38.49 / 56.12 / 0.8427) (13.26 / 16.02 / 34.25 / 0.7570) DGMark (25.20 / 32.38 / 46.11 / 0.8048) (43.78 / 53.94 / 71.37 / 0.9142) (31.00 / 42.67 / 62.67 / 0.8915) PatternMark (25.84 / 31.54 / 55.70 / 0.8860) (39.30 / 45.41 / 65.50 / 0.9219) (20.82 / 26.62 / 47.44 / 0.8704) UMR (16.67 / 21.33 / 44.00 / 0.8574) (32.67 / 40.00 / 60.67 / 0.8886) (12.33 / 19.00 / 42.00 / 0.8456) Document Expansion DenMark (25.67 / 32.67 / 59.67 / 0.8988 ) (23.67 / 32.24 / 57.14 / 0.8736 ) ( 22.00 / 35.33 / 70.00 / 0.9250 )DLM-KGW (2.08 / 3.82 / 17.71 / 0.7009) (7.19 / 10.79 / 22.66 / 0.7592) (1.66 / 2.21 / 6.63 / 0.5998) DGMark (7.17 / 14.14 / 28.89 / 0.7662) (23.44 / 30.50 / 50.62 / 0.8701) (9.33 / 17.33 / 42.33 / 0.8534) PatternMark (24.16 / 27.52 / 50.34 / 0.8386) ( 26.20 / 30.57 / 51.97 / 0.8552) (18.77 / 22.18 / 41.98 / 0.8086) UMR (8.33 / 12.00 / 28.67 / 0.7741) (17.33 / 22.33 / 44.33 / 0.8103) (5.33 / 10.67 / 26.00 / 0.7678) 
+
+E.3 ROBUSTNESS TO NON -U NIFORM LOCAL LENGTH CHANGES 
+
+Motivation and attack design. DenMark uses fixed-size semantic units during generation, and each candidate size m′ in the detector is applied uniformly across the entire document. To stress-test this global unit-size design, we introduce three attacks that induce different length changes in different parts of the same text, so that a single candidate size need not recover all original unit boundaries. 1. Alternating compression/expansion. Starting with compression, we alternate sentence-level compression to 60–70% of the original word count and expansion, producing adjacent sentences with opposite length changes. 2. Random runs. Each document starts in a randomly selected compression or expansion mode. At each sentence boundary, the mode switches with probability 0.35, creating con-28 arXiv preprint secutive runs with different local length changes. For a multi-sentence document assigned only one mode, one sentence is switched to ensure that both transformations occur. 3. Variable local compression. We partition each document into up to three contiguous, sentence-aligned regions, with approximately equal sentence counts, and assign target word-count ratios of 50–60%, 60–70%, and 70–80% in a seeded random order. Docu-ments with fewer than three sentences use fewer regions. Table 9: Non-uniform local length attack robustness on Dream-v0-Instruct-7B. Results are averaged over FinanceQA and LongFormQA. We report TPR@0.5%FPR, TPR@1%FPR, TPR@5%FPR, and AUC.                                                                  
+
+> Attack Method TPR@0.5% TPR@1% TPR@5% AUC Alternating compression/expansion DenMark 75.67 80.50 93.00 0.9808
+> DLM-KGW 10.99 17.53 36.30 0.7783 DGMark 16.19 23.00 40.81 0.8118 PatternMark 41.60 48.71 70.87 0.9384 UMR 18.33 26.17 49.00 0.8622 Random runs DenMark 53.33 63.33 86.00 0.9641
+> DLM-KGW 13.47 19.22 36.18 0.7867 DGMark 18.33 24.42 43.08 0.8151 PatternMark 43.13 49.38 72.41 0.9275 UMR 21.00 27.50 53.00 0.8809 Variable local compression DenMark 89.33 91.50 97.67 0.9935
+> DLM-KGW 51.09 55.28 70.72 0.9183 DGMark 48.25 53.71 69.10 0.9002 PatternMark 56.81 64.76 83.89 0.9563 UMR 35.17 48.33 70.67 0.9369
+
+Results. DenMark achieves the highest TPR at all three operating points and the highest AUC under each attack. Its TPR@1%FPR is 80.50%, 63.33%, and 91.50% for alternating compression/-expansion, random runs, and variable local compression, respectively. These results demonstrate robustness to the evaluated non-uniform local length changes despite using a global candidate unit size. They are consistent with some units retaining enough semantic watermark evidence for the aggregated document score to remain discriminative even when other units are misaligned; they do not establish invariance to arbitrary local length distortions. 
+
+F ADDITIONAL EVALUATIONS , B ASELINES , AND ABLATIONS 
+
+F.1 GENERATION QUALITY EVALUATION 
+
+Table 10 compares generation quality using ∆ mean(log PPL) and GPT-4o-mini judge scores. Den-Mark has the lowest average ∆LogPPL among the evaluated watermark methods and the highest average judge score. The quality measurements stay in the same range as the strongest baselines while DenMark gives higher detection under the attacks reported in Tables 1 and 2. 29 arXiv preprint Table 10: Generation quality relative to clean outputs. We report the absolute Qwen2.5-32B-Instruct mean(log PPL) and the GPT-4o-mini average judge score over Style, Consistency, Ac-curacy, and Ethics. In both quality columns, the parenthesized value is the difference from the corresponding clean reference. 
+
+LLaDA-8B LLaDA1.5-8B 
+
+Dataset Method Mean LogPPL ( ∆Clean) Judge Avg. ( ∆Clean) Dataset Method Mean LogPPL ( ∆Clean) Judge Avg. ( ∆Clean) Finance Clean 1.47 (+0.00) 7.92 (+0.00) Finance Clean 1.52 (+0.00) 7.91 (+0.00) DenMark 1.83 (+0.36) 7.21 (-0.71) DenMark 1.87 (+0.36) 7.36 (-0.55) DLM-KGW 1.82 (+0.34) 7.40 (-0.52) DLM-KGW 1.87 (+0.35) 7.56 (-0.35) DGMark 1.91 (+0.44) 7.11 (-0.81) DGMark 1.96 (+0.44) 7.37 (-0.54) PatternMark 2.16 (+0.69) 6.97 (-0.95) PatternMark 2.21 (+0.69) 7.17 (-0.74) UMR 1.78 (+0.30) 7.17 (-0.75) UMR 1.81 (+0.29) 7.29 (-0.62) Alpaca Clean 1.36 (+0.00) 7.56 (+0.00) Alpaca Clean 1.40 (+0.00) 7.70 (+0.00) DenMark 1.77 (+0.40) 7.22 (-0.34) DenMark 1.78 (+0.37) 7.31 (-0.39) DLM-KGW 1.74 (+0.38) 7.30 (-0.26) DLM-KGW 1.75 (+0.34) 7.43 (-0.27) DGMark 1.78 (+0.42) 6.94 (-0.62) DGMark 1.84 (+0.44) 7.09 (-0.61) PatternMark 2.07 (+0.70) 6.99 (-0.56) PatternMark 2.05 (+0.64) 7.25 (-0.45) UMR 1.72 (+0.36) 6.91 (-0.64) UMR 1.71 (+0.30) 7.13 (-0.57) LongForm Clean 1.52 (+0.00) 7.83 (+0.00) LongForm Clean 1.56 (+0.00) 7.92 (+0.00) DenMark 1.89 (+0.37) 7.37 (-0.46) DenMark 1.91 (+0.35) 7.50 (-0.42) DLM-KGW 1.90 (+0.38) 7.23 (-0.60) DLM-KGW 1.94 (+0.38) 7.61 (-0.31) DGMark 1.97 (+0.45) 7.18 (-0.65) DGMark 2.00 (+0.44) 7.46 (-0.46) PatternMark 2.33 (+0.81) 6.75 (-1.07) PatternMark 2.34 (+0.78) 7.01 (-0.92) UMR 1.84 (+0.32) 7.09 (-0.74) UMR 1.86 (+0.30) 7.32 (-0.61) 
+
+LLaDA2.0-mini Dream-v0-Instruct-7B 
+
+Dataset Method Mean LogPPL ( ∆Clean) Judge Avg. ( ∆Clean) Dataset Method Mean LogPPL ( ∆Clean) Judge Avg. ( ∆Clean) Finance Clean 2.24 (+0.00) 7.61 (+0.00) Finance Clean 1.78 (+0.00) 7.62 (+0.00) DenMark 2.61 (+0.37) 7.11 (-0.50) DenMark 2.02 (+0.24) 7.42 (-0.20) DLM-KGW 2.58 (+0.34) 7.20 (-0.41) DLM-KGW 2.06 (+0.29) 7.15 (-0.46) DGMark 2.64 (+0.40) 7.29 (-0.32) DGMark 2.11 (+0.33) 7.41 (-0.21) PatternMark 2.76 (+0.52) 6.86 (-0.75) PatternMark 2.15 (+0.38) 7.09 (-0.53) UMR 2.52 (+0.28) 6.61 (-1.01) UMR 2.70 (+0.92) 6.62 (-1.00) Alpaca Clean 2.09 (+0.00) 7.54 (+0.00) Alpaca Clean 1.79 (+0.00) 7.37 (+0.00) DenMark 2.51 (+0.43) 7.13 (-0.41) DenMark 2.10 (+0.31) 7.14 (-0.23) DLM-KGW 2.45 (+0.36) 7.27 (-0.27) DLM-KGW 2.13 (+0.33) 6.85 (-0.52) DGMark 2.50 (+0.42) 7.24 (-0.30) DGMark 2.24 (+0.45) 6.94 (-0.43) PatternMark 2.65 (+0.56) 6.85 (-0.69) PatternMark 2.26 (+0.46) 6.94 (-0.43) UMR 2.42 (+0.33) 6.72 (-0.82) UMR 2.86 (+1.07) 6.62 (-0.75) LongForm Clean 2.39 (+0.00) 7.70 (+0.00) LongForm Clean 1.91 (+0.00) 7.50 (+0.00) DenMark 2.76 (+0.38) 7.18 (-0.52) DenMark 2.09 (+0.18) 7.36 (-0.14) DLM-KGW 2.78 (+0.39) 7.22 (-0.48) DLM-KGW 2.34 (+0.44) 6.85 (-0.65) DGMark 2.81 (+0.42) 7.32 (-0.38) DGMark 2.05 (+0.14) 7.34 (-0.16) PatternMark 2.94 (+0.56) 7.04 (-0.66) PatternMark 2.35 (+0.44) 6.82 (-0.68) UMR 2.75 (+0.36) 6.58 (-1.12) UMR 2.80 (+0.89) 6.54 (-0.96) 
+
+Average 
+
+Method Mean LogPPL ( ∆Clean) Judge Avg. ( ∆Clean) Clean 1.75 (+0.00) 7.68 (+0.00) DenMark 2.10 (+0.34) 7.28 (-0.41) DLM-KGW 2.11 (+0.36) 7.26 (-0.42) DGMark 2.15 (+0.40) 7.22 (-0.46) PatternMark 2.36 (+0.60) 6.98 (-0.70) UMR 2.23 (+0.48) 6.88 (-0.80) PPL uses EOS-corrected Dream cohorts and shared same-base, same-dataset clean references. Judge scores for Dream clean and DGMark are recomputed on the corrected cohorts; other absolute judge scores are unchanged. Judge differences use the corresponding same-base, same-dataset clean reference. 
+
+F.2 SEMANTIC BASELINES WITH BLOCK DECODING 
+
+Some DLMs generate sequentially across blocks and denoise tokens jointly within each block. This structure allows an approximate adaptation of semantic watermarks developed for ARLMs by treat-ing each block as a semantic unit. We evaluate adaptations of SemStamp (Hou et al., 2024a) and PMark (Huo et al., 2026). For each block, the method generates several complete block candidates, evaluates them under the corresponding semantic watermark criterion, and selects a candidate be-fore moving to the next block. The adaptation depends on block decoding and on the chosen block size. Short blocks can contain too little semantic content for stable scoring. Large blocks provide fewer watermark selection opportunities and require completion of longer candidates before each decision. 
+
+Configurations. All three blockwise baselines use 25 token blocks, random remasking, and tem-perature 0.9. To isolate the generation mechanism, they use the same fine-tuned semantic encoder 30 arXiv preprint Table 11: Clean detection for semantic baselines with block decoding. We report Qwen2.5-32B-Instruct ∆ mean(log PPL) , TPR at 0.5%, 1%, and 5% FPR, and AUC.                                                                                                                                          
+
+> LLaDA-8B LLaDA1.5-8B
+> Dataset Method ∆LogPPL TPR@0.5% TPR@1% TPR@5% AUC Dataset Method ∆LogPPL TPR@0.5% TPR@1% TPR@5% AUC Finance DenMark +0.36 99.00 99.67 100.00 0.9996
+> Finance DenMark +0.36 100.00 100.00 100.00 0.9994
+> Block Best-of-K+1.21 54.00 68.00 88.00 0.9825 Block Best-of-K+1.28 60.00 78.00 96.00 0.9759 PMark +1.29 72.00 74.00 88.00 0.9867 PMark +1.09 62.00 72.00 88.00 0.9829 SemStamp +1.36 32.00 40.00 48.00 0.8328 SemStamp +1.31 18.00 22.00 46.00 0.7609 Alpaca DenMark +0.40 95.24 97.07 98.53 0.9915
+> Alpaca DenMark +0.37 95.41 96.47 98.59 0.9964
+> Block Best-of-K+1.43 68.00 78.00 94.00 0.9758 Block Best-of-K+1.04 78.00 90.00 96.00 0.9811 PMark +1.18 42.00 46.00 66.00 0.8411 PMark +1.19 26.53 30.61 61.22 0.8208 SemStamp +1.12 38.00 50.00 70.00 0.8850 SemStamp +1.13 32.00 38.00 44.00 0.8195 LongForm DenMark +0.37 99.67 100.00 100.00 0.9998
+> LongForm DenMark +0.35 99.33 99.67 100.00 0.9993
+> Block Best-of-K+1.18 80.00 94.00 98.00 0.9957 Block Best-of-K+1.24 76.00 82.00 98.00 0.9941 PMark +1.15 50.00 58.00 72.00 0.9575 PMark +0.99 62.00 70.00 84.00 0.9439 SemStamp +1.36 38.78 40.82 59.18 0.8329 SemStamp +1.21 34.00 42.00 60.00 0.8419
+
+and the same calibrated unit-size scan as DenMark for detection. Block Best-of-K selects the high-est scoring candidate among K = 16 complete block candidates using a 2 bit keyed semantic score. PMark uses its prior offline variant with 16 candidates and two keyed semantic channels. SemStamp uses a 2 bit LSH partition with acceptance rate 0.25 and margin 0.02 , sampling proposals in batches of 16 for at most 100 trials per block. 
+
+Results. Table 11 shows lower detection for these block adaptations than for DenMark and a larger increase in mean log perplexity. We use a higher sampling temperature for the baselines to increase candidate diversity. Complete candidates from the same block often receive similar semantic scores, which leaves a small selection margin. Each block also contributes one selection decision. DenMark scores local updates throughout denoising, so several small score gains can accumulate inside a block. These two differences account for the stronger watermark signal observed in the table. F.3 EFFECT OF CANDIDATE AND CHANNEL BUDGETS 
+
+We jointly vary the candidate budget K and the number of semantic channels C over (8 , 1) , (16 , 2) ,
+
+(24 , 3) , and (32 , 4) , while fixing the semantic unit size to m = 25 , the average rollout count to three, the candidate temperature to 0.6, and random position selection. Table 12 shows that 
+
+(K, C ) = (24 , 3) provides strong clean and attacked detection across both datasets, whereas in-creasing the budgets further does not yield a consistent additional gain. Overall, the 24-candidate, 3-channel configuration offers a favorable trade-off between detection performance and generation-time scoring cost. 31 arXiv preprint Table 12: Clean detection and robustness to GPT attacks on LLaDA-8B. We jointly vary the can-didate budget K and channel count C over (8 , 1) , (16 , 2) , (24 , 3) , and (32 , 4) , and report TPR at 0.5%, 1%, and 5% FPR and AUC.                                                                                                                                                                       
+
+> Finance-QA
+> K C Condition TPR@0.5% TPR@1% TPR@5% AUC 81Clean 94.97 96.98 98.99 0.9971 Rewrite 48.24 59.80 77.89 0.9340 Compress 65.33 68.34 85.93 0.9552 Expand 29.15 36.68 62.31 0.8948 Doc. Paraphrase 40.70 48.74 72.36 0.9234 16 2 Clean 100.00 100.00 100.00 0.9997
+> Rewrite 63.55 74.92 90.30 0.9784 Compress 80.94 85.28 96.32 0.9877 Expand 33.11 44.82 70.23 0.9209 Doc. Paraphrase 56.19 67.56 84.95 0.9578 24 3 Clean 99.50 99.50 99.50 0.9991 Rewrite 70.00 81.00 95.50 0.9856
+> Compress 87.50 91.50 95.50 0.9857 Expand 46.50 58.00 81.50 0.9613
+> Doc. Paraphrase 63.00 73.00 92.00 0.9789
+> 32 4 Clean 100.00 100.00 100.00 0.9996 Rewrite 67.00 73.50 90.50 0.9733 Compress 86.50 89.00 94.50 0.9889
+> Expand 46.00 55.50 78.50 0.9492 Doc. Paraphrase 59.50 69.50 85.00 0.9659
+> AlpacaFarm
+> K C Condition TPR@0.5% TPR@1% TPR@5% AUC 81Clean 86.17 92.02 96.28 0.9939 Rewrite 45.21 53.19 73.94 0.9342 Compress 56.38 62.23 81.91 0.9513 Expand 31.38 40.96 62.77 0.8978 Doc. Paraphrase 39.36 47.34 70.74 0.9249 16 2 Clean 95.16 96.24 99.46 0.9953 Rewrite 63.37 74.73 89.01 0.9690 Compress 79.12 84.98 93.41 0.9813
+> Expand 42.86 54.58 74.73 0.9266 Doc. Paraphrase 53.85 64.84 85.35 0.9670 24 3 Clean 95.14 96.22 98.92 0.9981
+> Rewrite 66.49 76.22 90.27 0.9756
+> Compress 82.70 88.65 95.14 0.9735 Expand 49.73 59.46 83.78 0.9583
+> Doc. Paraphrase 58.92 67.57 85.95 0.9698
+> 32 4 Clean 96.84 97.37 98.42 0.9973 Rewrite 68.42 71.58 90.53 0.9734 Compress 80.53 84.21 90.53 0.9763 Expand 42.63 47.37 74.21 0.9425 Doc. Paraphrase 61.58 68.95 80.53 0.9538
+
+F.4 DOWNSTREAM TASK PERFORMANCE 
+
+Following DGMark (Hong & No, 2026), we evaluate downstream capability after watermark in-sertion on four benchmarks: MMLU (Hendrycks et al., 2021), HellaSwag (Zellers et al., 2019), ARC-Challenge (Clark et al., 2018), and GSM8K (Cobbe et al., 2021). All methods use sampling temperature 0.1 on the complete official evaluation splits. We report accuracy for each task and the unweighted average across the four tasks. Table 13: Downstream task performance under watermarking. Accuracy (%) on MMLU, Hel-laSwag, ARC-Challenge, and GSM8K. Bold values indicate the best result among watermarking methods for each backbone and column. 
+
+Method MMLU ↑ HellaSwag ↑ ARC-C ↑ GSM8K ↑ Avg. ↑
+
+LLaDA-8B 
+
+Clean 63.45 76.59 84.28 59.44 70.94 DLM-KGW 50.58 70.94 72.24 53.30 61.77 PatternMark 54.12 72.90 78.93 52.84 64.70 DenMark 62.94 76.52 84.62 48.98 68.26 
+
+DGMark 55.97 72.99 83.28 54.51 66.69 UMR 55.84 72.16 77.59 52.84 64.61 
+
+LLaDA1.5-8B 
+
+Clean 63.97 76.33 84.28 57.62 70.55 DLM-KGW 52.63 72.46 73.58 53.22 62.97 PatternMark 55.63 73.64 80.27 51.40 65.23 DenMark 63.63 76.34 83.95 51.78 68.92 
+
+DGMark 57.93 73.99 82.27 52.31 66.63 UMR 56.87 72.75 79.26 52.69 65.39 
+
+Results. DenMark reaches average accuracies of 68.26% on LLaDA-8B and 68.92% on LLaDA1.5-8B, corresponding to drops of 2.68 and 1.63 percentage points from the clean mod-els. It has the highest accuracy among the evaluated watermark methods on MMLU, HellaSwag, and ARC-Challenge for both backbones. Most of the remaining drop occurs on GSM8K. Relative 32 arXiv preprint to the next best watermark method by average accuracy, DenMark gains 1.57 points on LLaDA-8B and 2.29 points on LLaDA1.5-8B. 
+
+G PROOFS 
+
+G.1 PROOF OF PROPOSITION 4.1 
+
+Lemma G.1 (Superuniformity of the empirical right tail p value) . Fix m′ ∈ G . Under the exchange-ability assumption in Proposition 4.1, 
+
+Pr( pm′ (Y ) ≤ α) ≤ α, for every α ∈ [0 , 1] .
+
+Proof. Write Y0 = Y and enumerate the calibration texts as Y1, . . . , Y n0 . Set 
+
+Zi = Sm′ (Yi), rk i =
+
+> n0
+
+X
+
+> j=0
+
+I{Zj ≥ Zi}.
+
+The corrected empirical right tail p value used in the paper is 
+
+pm′ (Y ) = rk 0
+
+n0 + 1 ,
+
+a standard finite sample construction for exchangeable Monte Carlo scores (Phipson & Smyth, 2010). For any integer h ∈ { 0, . . . , n 0+1 }, exchangeability implies that the indices 0, . . . , n 0 have identical marginal rank distributions. Hence 
+
+Pr(rk 0 ≤ h) = 1
+
+n0 + 1 
+
+> n0
+
+X
+
+> i=0
+
+Pr(rk i ≤ h)= E
+
+"
+
+1
+
+n0 + 1 
+
+> n0
+
+X
+
+> i=0
+
+I{rk i ≤ h}
+
+#
+
+.
+
+For every realized collection Z0, . . . , Z n0 , at most h indices can satisfy rk i ≤ h. To see this, let 
+
+A = {i : rk i ≤ h}. If A̸ = ∅, choose i⋆ ∈ A with the smallest score among indices in A. Every 
+
+j ∈ A then satisfies Zj ≥ Zi⋆ , so 
+
+rk i⋆ =
+
+> n0
+
+X
+
+> j=0
+
+I{Zj ≥ Zi⋆ } ≥ | A|.
+
+Since rk i⋆ ≤ h, we have |A| ≤ h. The argument covers ties because the rank uses ≥. Hence, 
+
+Pr(rk 0 ≤ h) ≤ hn0 + 1 .
+
+For arbitrary α ∈ [0 , 1] , let h = ⌊(n0 + 1) α⌋. Since rk 0 is integer-valued, 
+
+Pr( pm′ (Y ) ≤ α) = Pr(rk 0 ≤ (n0 + 1) α)= Pr(rk 0 ≤ h)
+
+≤ hn0 + 1 ≤ α. 
+
+This proves the stated superuniformity. 
+
+Proof. Let J = |G| . For 0 ≤ α < 1, the definition of pscan gives 
+
+{pscan (Y ) ≤ α} =
+
+
+
+J min  
+
+> m′∈G
+
+pm′ (Y ) ≤ α
+
+
+
+= [
+
+> m′∈G
+
+n
+
+pm′ (Y ) ≤ αJ
+
+o
+
+.
+
+33 arXiv preprint Applying the union bound, followed by Lemma G.1, yields the standard Bonferroni control (Dunn, 1961): 
+
+Pr( pscan (Y ) ≤ α) ≤ X
+
+> m′∈G
+
+Pr 
+
+
+
+pm′ (Y ) ≤ αJ
+
+
+
+≤ X
+
+> m′∈G
+
+αJ = α. 
+
+The case α = 1 is immediate. The proof uses no independence assumption across candidate unit sizes. G.2 PROOF OF PROPOSITION 5.1 
+
+Proof. For any decoding policy μ, write 
+
+J(μ) = Eμ
+
+h
+
+Sm(ˆ y) x(0) i
+
+.
+
+For each ℓ ∈ { 0, . . . , T }, define the reverse hybrid policy π[ℓ] to use π0 for decisions 0, . . . , ℓ − 1
+
+and π for decisions ℓ, . . . , T − 1. The endpoints are 
+
+π[0] = π, π[T ] = π0.
+
+Fix t ∈ { 0, . . . , T − 1}. The adjacent hybrids π[t] and π[t+1] execute the same policy π0 for their first t decisions, so they induce the same distribution over the state x(t) at step t. Given a common realized state, couple the selection of active units, candidate construction, and rollout randomness at this step. Under this coupling, π[t] commits the joint candidate selected from rollout scores ct, k⋆t , and π[t+1] 
+
+commits the reference joint candidate ct, 1t . After the current commitment, both hybrids follow π
+
+for all remaining decisions. By the definition of Eq. (6), 
+
+J
+
+
+
+π[t]
+
+− J
+
+
+
+π[t+1] 
+
+= E
+
+h
+
+Qπt, k⋆t − Qπt, 1t
+
+i
+
+= ∆ πt .
+
+Summing over t telescopes: 
+
+Eπ
+
+h
+
+Sm(ˆ y) | x(0) i
+
+− Eπ0
+
+h
+
+Sm(ˆ y) | x(0) i
+
+= J(π[0] ) − J(π[T ])= 
+
+> T−1
+
+X
+
+> t=0
+
+h
+
+J(π[t]) − J(π[t+1] )
+
+i
+
+= 
+
+> T−1
+
+X
+
+> t=0
+
+∆πt .
+
+H QUALITATIVE EXAMPLES 
+
+Tables 14–16 compare clean generations with DenMark generations for aligned prompts. Each dataset uses the same prompt across the three representative models. We show one readable ex-ample from Finance, Alpaca, and LongForm, covering financial advice, procedural knowledge, and explanatory generation. Passages are truncated for presentation, and detection uses the complete generations. The DenMark outputs remain coherent, relevant to the prompt, and similar in style to the clean outputs, with no visible watermark marker or repeated template. 34 arXiv preprint Table 14: Qualitative comparison of clean and DenMark outputs from LLaDA-8B. Each row uses the same prompt for both outputs. The full responses were manually screened for fluency, factual plausibility, completeness, and repetition. Outputs are truncated for readability. 
+
+Dataset Prompt Clean (no watermark) DenMark (unattacked) Finance Should I replace bonds in a passive investment strategy The decision to replace bonds in a passive investment strategy depends on various factors, including your investment goals, risk tolerance, and market conditions. Here are some key points to consider: 1. Risk Tolerance: Bonds are generally considered low-risk investments, making them suitable for a passive investment strategy. If you’re considering diversifying your portfolio to take on higher risk, you might consider replacing some or all bonds with equities. [...continues] Whether to replace bonds in a passive in-vestment strategy depends on several factors, including individual goals, risk tolerance, and time horizon. However, I’ll provide some perspectives to help you make an informed de-cision. 1. Lower risk: Bonds are generally less volatile compared to stocks, which makes them a good option for those seeking low volatility. 2. [...continues] Alpaca Why do we need AI assistants? AI assistants are essential for several reasons in modern society: 1. Efficiency: AI assistants can automate repetitive tasks, freeing up human workers to focus on more high-priority, creative activities. 2. Productivity: They can perform tasks quickly and accurately, increasing overall productivity and reducing human error. 3. [...continues] We need AI assistants for several reasons: 1. Automation: AI assistants can automate tasks that are typically repetitive, time-consuming and require minimal human intervention. This frees up time for humans to focus on more important activities. 2. Speed and Accuracy: AI systems can process information faster, more accurately and with fewer errors than human operators. [...continues] LongForm Why do humans like to kiss each other? Humans like to kiss each other for several complex biological and psychological reasons. Firstly, kissing is a form of social bonding that helps to strengthen relationships and emotional connection between friends, family, and part-ners. When we kiss, it triggers the release of oxytocin, a hormone that promotes attachment and bonding, as well as endorphins, which is associated with feelings of pleasure and relax-ation. [...continues] Kissing is a universal human behavior that is deeply embedded in cultures and traditions. There are several biological and psychological reasons why humans like to kiss each other. 1. Oxytocin: Kissing releases oxytocin, also known as the ”love hormone.” Oxytocin is a neurotransmitter that improves mood and creates a feeling of bonding, affection, and trust. 2. Physical connection: Kissing involves close physical contact, which creates a strong connection. [...continues] 
+
+Table 15: Qualitative comparison of clean and DenMark outputs from LLaDA1.5-8B. Each row uses the same prompt for both outputs. The full responses were manually screened for fluency, factual plausibility, completeness, and repetition. Outputs are truncated for readability. 
+
+Dataset Prompt Clean (no watermark) DenMark (unattacked) Finance How to calculate how much a large stock position is really worth? To calculate the real value of a large stock po-sition, consider the following factors: 1. Stock Price: Determine the current stock price of the company. You can find this on stock exchanges, investment websites, or financial news. 2. Num-ber of Shares: Know the total number of shares you own in the stock position. This can be found in your investment account, trading app, or brokerage statement. 3. [...continues] Calculating the value of a large stock position involves a few key factors, including the num-ber of shares you own, the price per share, if applicable, and any dividends or appreciation. Here’s a step-by-step guide to determining the total value: 1. Determine the Number of Shares: Count how many shares you own in the stock. 2. [...continues] Alpaca how much of a threat is climate change in the coming years, and what should we do to stop it? Climate change is a very real threat to our en-vironment and society. According to the IPCC, the Earth’s temperature is rising at an alarming rate, and the trend is projected to continue ac-celerating if we don’t take immediate action. The impacts of climate change are already ev-ident, with melting glaciers, rising sea levels, and changing weather patterns, among other things. To stop climate change, we need to take a comprehensive approach: 1. [...continues] Climate change poses a significant threat to humanity in the future. It is real, primarily driven by the burning of fossil fuels, oil, and gas, and human activities such as deforestation and agriculture. It is estimated that by the end of this century, the global average temperature could be up to 2°C higher than pre-industrial levels. [...continues] LongForm What causes mental fatigue while study-ing? Mental fatigue while studying can be caused by a variety of factors, or a combination of them. These factors include: 1. Lack of sleep: Not getting enough hours of sleep per night can impair your ability to function properly, leading to mental fatigue while studying. 2. Hunger: Low blood sugar can cause your energy levels to drop, leading to mental fog and fatigue. 3. [...continues] Mental fatigue, also known as cognitive over-load or burnout, is a state of mental and emo-tional exhaustion caused by prolonged mental effort. When studying, individuals experience mental fatigue when they absorb excessive amounts of information, leading to decreased concentration, motivation, and memory reten-tion. Some common causes of mental fatigue include: 1. Lack of rest: Cognitive function requires adequate sleep and rest to recover. [...continues] 
+
+35 arXiv preprint Table 16: Qualitative comparison of clean and DenMark outputs from Dream-v0-Instruct-7B. Each row uses the same prompt for both outputs. The full responses were manually screened for fluency, factual plausibility, completeness, and repetition. Outputs are truncated for readability. 
+
+Dataset Prompt Clean (no watermark) DenMark (unattacked) Finance Should I Use an Investment Profes-sional? Yes, using an investment professional can help you plan and achieve your financial goals. An investment professional can help you plan, evaluate various investment options, and man-age your investment portfolio. Firstly, using an investment professional can help you to de-termine your financial goals, objectives, and needs. An investment professional can help you create an investment plan that aligns your financial goals, risk tolerance, and investment horizon. [...continues] The decision to use an investment professional is personal and based on individual circum-stances, goals, and preferences. It depends on an individual’s level of knowledge and expe-rience in investing. If you are able to manage your own investments, you have a good under-standing of financial markets and the economic environment. [...continues] Alpaca ideas for building a waitlist for a new product or service 1. Build anticipation on social media platforms by sharing sneak peeks of the product or service and encouraging followers to subscribe to the waitlist as soon as it launches. 2. Offer an exclusive discount or special promotion to those who register for the waitlist before it is available. 3. Create an email marketing campaign that sends updates with the latest information about the product or service as it becomes available. 4. [...continues] Sure, here are some ideas for building a waitlist for a new product or service: 1. Social media promotion: Share teasers, behind-the-scenes, or other information about your product or service on social media channels. Encourage your fol-lowers to provide their contact information for a chance for exclusive access. 2. Online launch event: Host an online launch event or a webinar where you encourage potential customers to sign up for a waitlist. [...continues] LongForm Why does a 2 hour movie take a year to make when a high quality TV show can make 45 minute ones every week. Producing a 2-hour movie involves many different stages, from the development of the script, to casting, filming, and editing. This process involves many professionals, including writers, directors, actors, and editors, and can take several months. On the other hand, TV shows follow a similar process, with scriptwriting, pre-production, production, and editing for each episode. [...continues] There are several key factors that contribute to the longer time to produce a 2-hour movie in comparison to a half-hour-long TV show. One main difference is that movies typically involve a greater degree of complexity in terms of sto-rytelling, effects, cinematography, and editing, while TV shows can be more streamlined and made quickly due to their regular production schedules. [...continues] 
+
+36

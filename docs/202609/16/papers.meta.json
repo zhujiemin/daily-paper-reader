@@ -1,0 +1,24 @@
+{
+  "label": "2026-09-16",
+  "date": "2026-09-16",
+  "generated_at": "2026-09-16T21:35:01",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/16/2609.14257v1-denmark-robust-semantic-watermarking-for-diffusion-language-models",
+      "section": "quick",
+      "title_en": "DenMark: Robust Semantic Watermarking for Diffusion Language Models",
+      "authors": "Tianhao Ma, Weihao Xuan, Dong-Dong Wu, Farshid Nooshi, Takashi Ishida, Gang Niu, Naoto Yokoya, Masashi Sugiyama",
+      "date": "2026-09-13",
+      "pdf": "https://arxiv.org/pdf/2609.14257v1",
+      "score": "6.0",
+      "evidence": "扩散生成模型中的水印嵌入与检测",
+      "tldr": "现有语义文本水印主要面向自回归语言模型，难以直接用于扩散语言模型，因为中间去噪步骤语义单元不完整且 token 更新顺序灵活。DenMark 将密钥相关信号注入扩散去噪过程，划分固定 token 区域，并用临时 rollout 作为语义前瞻，依据估计的语义水印分数选择局部更新。检测阶段采用候选单元尺寸的校准扫描，以应对语义攻击导致的边界偏移。在四类扩散语言模型、三个数据集和四种语义攻击共48种组合中，DenMark 在所有检测指标上均取得最佳结果，证明其可为扩散语言模型提供有效的鲁棒语义水印机制。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Semantic text watermarks encode signals in meaning rather than surface token choices, offering robustness to paraphrasing and other semantic-preserving edits. Existing semantic watermarking methods are primarily designed for autoregressive language models (ARLMs), where completed candidate units can be generated and scored before generation proceeds. This paradigm does not naturally extend to diffusion language models (DLMs), where semantic units remain incomplete during intermediate denoising steps and tokens may be updated in flexible orders. We propose DenMark, a semantic watermarking framework that injects key-dependent signals directly into the DLM denoising process. DenMark partitions the output into fixed token regions and uses temporary rollouts as semantic lookahead: conditional completions estimate the eventual semantics of an incomplete region, enabling DenMark to select local updates with higher estimated semantic watermark scores. Repeating this procedure across denoising steps progressively accumulates watermark evidence in the final output. For detection, DenMark uses calibrated scanning over candidate unit sizes to remain robust to boundary shifts introduced by semantic attacks. Across four DLMs, three datasets, and four semantic attacks, DenMark achieves the best results across all reported detection metrics in all 48 backbone-dataset-attack combinations. These results demonstrate that DenMark provides an effective mechanism for robust semantic watermarking in DLMs.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

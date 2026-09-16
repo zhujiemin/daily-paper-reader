@@ -1,0 +1,61 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-16T21:34:45.268658+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.14257v1",
+      "source": "arxiv",
+      "title": "DenMark: Robust Semantic Watermarking for Diffusion Language Models",
+      "abstract": "Semantic text watermarks encode signals in meaning rather than surface token choices, offering robustness to paraphrasing and other semantic-preserving edits. Existing semantic watermarking methods are primarily designed for autoregressive language models (ARLMs), where completed candidate units can be generated and scored before generation proceeds. This paradigm does not naturally extend to diffusion language models (DLMs), where semantic units remain incomplete during intermediate denoising steps and tokens may be updated in flexible orders. We propose DenMark, a semantic watermarking framework that injects key-dependent signals directly into the DLM denoising process. DenMark partitions the output into fixed token regions and uses temporary rollouts as semantic lookahead: conditional completions estimate the eventual semantics of an incomplete region, enabling DenMark to select local updates with higher estimated semantic watermark scores. Repeating this procedure across denoising steps progressively accumulates watermark evidence in the final output. For detection, DenMark uses calibrated scanning over candidate unit sizes to remain robust to boundary shifts introduced by semantic attacks. Across four DLMs, three datasets, and four semantic attacks, DenMark achieves the best results across all reported detection metrics in all 48 backbone-dataset-attack combinations. These results demonstrate that DenMark provides an effective mechanism for robust semantic watermarking in DLMs.",
+      "authors": [
+        "Tianhao Ma",
+        "Weihao Xuan",
+        "Dong-Dong Wu",
+        "Farshid Nooshi",
+        "Takashi Ishida",
+        "Gang Niu",
+        "Naoto Yokoya",
+        "Masashi Sugiyama"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-09-13T03:37:48+00:00",
+      "link": "https://arxiv.org/pdf/2609.14257v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermark embedding and detection in diffusion generative models",
+      "llm_evidence_cn": "扩散生成模型中的水印嵌入与检测",
+      "llm_evidence": "扩散生成模型中的水印嵌入与检测",
+      "canonical_evidence": "扩散生成模型中的水印嵌入与检测",
+      "llm_tldr_en": "DenMark injects key-dependent semantic watermark signals directly into the denoising process of diffusion language models, extending watermarking beyond autoregressive models.",
+      "llm_tldr_cn": "语义文本水印将信号编码在语义而非表面词元中，对改写等语义保持编辑更鲁棒，但现有方法主要面向自回归语言模型，难以直接迁移到中间去噪步骤中语义单元尚未完成、词元更新顺序灵活的扩散语言模型。作者提出DenMark，将密钥相关信号直接注入扩散语言模型的去噪过程，通过划分固定词元区域并借助临时回滚实现水印嵌入与检测。该方法在扩散语言模型上具备良好鲁棒性，拓展了生成模型水印的适用边界，对扩散模型水印研究具有方法借鉴意义。",
+      "llm_tldr": "语义文本水印将信号编码在语义而非表面词元中，对改写等语义保持编辑更鲁棒，但现有方法主要面向自回归语言模型，难以直接迁移到中间去噪步骤中语义单元尚未完成、词元更新顺序灵活的扩散语言模型。作者提出DenMark，将密钥相关信号直接注入扩散语言模型的去噪过程，通过划分固定词元区域并借助临时回滚实现水印嵌入与检测。该方法在扩散语言模型上具备良好鲁棒性，拓展了生成模型水印的适用边界，对扩散模型水印研究具有方法借鉴意义。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
