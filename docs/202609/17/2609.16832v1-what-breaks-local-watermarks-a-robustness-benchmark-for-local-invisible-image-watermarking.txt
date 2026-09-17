@@ -1,0 +1,455 @@
+Title: What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking
+
+URL Source: https://arxiv.org/pdf/2609.16832v1
+
+Published Time: Wed, 16 Sep 2026 00:53:43 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking 
+
+# Kai Yao ∗
+
+University of Edinburgh Edinburgh, UK kai.yao@ed.ac.uk 
+
+# Bence Szilágyi ∗
+
+Garandor Edinburgh, UK bence@garandor.com 
+
+# Sebestyén Kamp 
+
+Garandor; University of Edinburgh Edinburgh, UK seb@garandor.com 
+
+# Máté Poór 
+
+Garandor Edinburgh, UK mate.poor@garandor.com 
+
+# Máté Szilveszter 
+
+Garandor Edinburgh, UK mate@garandor.com 
+
+# Matyas K. Zsoldos 
+
+Garandor Edinburgh, UK matyas@garandor.com 
+
+# Marc Juarez †
+
+University of Edinburgh Edinburgh, UK marc.juarez@ed.ac.uk 
+
+This work has been accepted for publication in the proceedings of the 19th ACM Workshop on Artificial Intelligence and Security (AISec 2026), co-located with ACM CCS 2026. The final version will be published in the ACM Digital Library. 
+
+## Abstract 
+
+Local image watermarking embeds an invisible signal into selected image regions rather than spreading it across the entire image, en-abling payload recovery from specific objects or regions without perceptibly altering the image. Existing studies evaluate the robust-ness of payload recovery and localization under image transforma-tions, but they often focus on their own proposed method, resulting in narrow evaluations with inconsistent choices of transformations, datasets, and metrics. These inconsistencies across studies limit direct comparisons across methods and muddle the overall picture of local watermark robustness. To address this gap, we present the first systematic robustness benchmark for local watermarks across 55 image transformations, including (i) signal distortions, (ii) changes in image coordinate alignment, (iii) indirect local edits, and (iv) direct watermark edits. The benchmark evaluates MaskWM, WAM, OmniGuard, TrustMark, and PixelSeal, all methods that ei-ther provide native localization or require minimal adaptation to support it. Our results show that all evaluated methods are vulnera-ble to some transformation, with MaskWM standing out as offering the strongest payload recovery and localization, although it has the lowest image quality in the clean setting. Synchronization further improves MaskWM’s payload recovery under several geometric transformations, albeit at an additional cost to image quality. A key finding is that local watermark robustness depends strongly on the nature of the transformation: signal distortions are often tolerated by the strongest methods, while geometric misalignment and gener-ative local edits, such as inpainting and outpainting, can completely impair payload recovery. We observe that payload recovery and localization are related but not interchangeable, and both strongly depend on the transformation’s impact on the watermark region. 
+
+> ∗Both authors contributed equally to this research.
+> †Corresponding author.
+
+## Keywords 
+
+image watermarking, content provenance, robustness benchmark-ing, watermark localization, generative image editing 
+
+## 1 Introduction 
+
+Generative image models have enabled new forms of image ma-nipulation: objects can be easily inserted, erased, or restyled, and images increasingly combine content from multiple human and AI sources [19, 24]. In response, local image watermarking has emerged as a leading approach for protecting intellectual property under such complex image manipulations [13, 20]. As opposed to 
+
+global watermarking, which spreads a detectable signal across the entire image, local watermarking embeds the signal in specific re-gions, so that the watermark can still be detected even when the image has been cropped, outpainted, or spliced with other content. Several methods to address this problem have been proposed in the academic literature. However, the robustness of local water-marks remains difficult to compare, because existing studies tend to focus on the methods they propose and differ in their scheme configurations, choices of datasets, considered image transforma-tions, localization targets, and evaluation metrics [13, 20]. This lack of a systematic evaluation makes it difficult to directly compare schemes and to quantify their relative robustness to manipulation. To address this gap, we present a unified evaluation framework that measures robustness of five state-of-the-art localization-related watermarking methods to 55 image transformations across four datasets. The suite includes four main categories of transforma-tions, including conventional image distortions such as (i) signal distortions, which alter pixel values or frequency content while preserving image coordinates, and (ii) changes in alignment, which modify the image coordinate frame and canvas extent. It also cov-ers two types of local edits: (iii) indirect local edits and (iv) direct watermark edits, including splicing and AI-based inpainting and 
+
+> 1arXiv:2609.16832v1 [cs.CV] 15 Sep 2026 Yao et al.
+
+outpainting—transformations that are underrepresented in existing evaluations despite their relevance for local watermarking. Besides robustness, these schemes aim to keep the watermark imperceptible and, in some cases, to segment the region where it was embedded. Our evaluation thus covers three axes: payload recovery, i.e., whether the embedded message remains decodable; imperceptibility, approximated by image fidelity in the clean setting; and localization accuracy, measured as the Intersection over Union (IoU) between the predicted and ground-truth watermarked regions. Each method is also evaluated with and without SyncSeal [10], an auxiliary synchronization technique that embeds an additional signal to correct geometric image transformations and restore the coordinate frame expected by the watermark decoder. Our results show that no evaluated method is robust across all transformations. In the clean setting, MaskWM achieves the strongest payload recovery and localization accuracy, but its wa-termarked images have the lowest fidelity. Performance also varies with watermark-region area: smaller regions are associated with weaker payload recovery and, for MaskWM and WAM, worse lo-calization accuracy. Under transformations, for (i) signal distortion, only MaskWM remains robust across all five signal-distortion sub-categories; for (ii) changes in alignment, we observe that geometric misalignment causes the sharpest reduction in payload recovery. SyncSeal partly restores the recovery lost to geometric misalign-ment, although its benefit varies widely across methods and trans-formations; for (iii) indirect local edits, the payload recovery can fail for generative edits even when there’s no overlap between the edit and the watermarked region; and for (iv) direct watermark edits, replacing or regenerating the region where the watermark was embedded pushes recovery to random decoding for nearly all methods. Taken together, our results indicate that current local watermarking methods remain too brittle across realistic image manipulations for reliable production deployment. Because the transformations we evaluate are non-adaptive, i.e., their parameters are not tuned against any individual scheme, our results have direct security consequences: a scheme’s lack of ro-bustness to a transformation in our benchmark implies a practical 
+
+black-box attack that removes the watermark. This means that the schemes are vulnerable to simple attacks, agnostic to the wa-termarking scheme and underlying generative models. Given the limited robustness we observe, these schemes are unlikely to pro-vide provenance in realistic copyright scenarios, where there are adversaries with vested interests in removing the watermarks. 
+
+Our contributions. 
+
+• We introduce the first systematic local invisible image water-marking benchmark that evaluates payload recovery, localization accuracy, and imperceptibility, and separately assesses the effect of optional synchronization. 
+
+• Our benchmark evaluates five methods on four datasets under 55 non-adaptive transformations spanning four categories: (i) signal distortions, (ii) changes in alignment, (iii) indirect local edits, and (iv) direct watermark edits. 
+
+• We distinguish and analyze failures caused by signal distortion, misalignment, pixel replacement or regeneration, and diffusion-based reconstruction. We show that payload recovery and local-ization can fail independently, identify when synchronization helps or harms recovery, and highlight implications for water-mark detection evasion. The benchmark code will be available at https://github.com/ garandorinc/markbench. 
+
+## 2 Background and Related Work 
+
+In this section, we first introduce local watermarking , a subcategory of image watermarking that embeds the payload message within a selected region to enable provenance of individual image objects. We then distinguish local watermarking from the closely related task of watermark-based tamper localization . Finally, we review the literature on robustness evaluations of local watermarking. 
+
+## 2.1 Local watermarking 
+
+Image watermarking embeds a hidden payload through changes intended to remain visually imperceptible [6, 7, 12]. While early methods were based on signal-processing techniques, state-of-the-art approaches jointly train a neural network encoder–decoder pipeline that learns to embed and recover the payload from the image, subject to an imperceptibility constraint. Traditional image watermarking methods have been global ,meaning that the watermark signal was spread over the full image [4, 11, 21]. However, as generative models enable new forms of image manipulation and images increasingly combine content from multiple sources, there is a growing need to provide provenance of individual objects within an image, rather than of the entire image. Local watermarking has emerged as the leading technical approach to address these challenges. Local watermarking embeds the watermark payload in specific regions and, during detection, not only decodes the payload but also identifies where these regions are. Representative methods include the Watermark Anything Model (WAM) [20] and MaskWM [13]. WAM reformulates watermark extraction as a segmentation prob-lem: its extractor predicts a watermark-presence score and payload bits at each pixel, enabling pixel-level localization and payload re-covery [20]. MaskWM introduces mask-guided training into the standard encoder–decoder watermarking pipeline. By applying random image masks on regions of the images, it restricts the en-coder to specific regions and teaches the decoder where the water-mark signal is confined. Through a dedicated localization module, MaskWM can also identify watermarked regions before payload extraction [13]. A related but distinct direction of work is designed specifically for tamper localization –estimating where an image has been edited or manipulated. Tamper localization methods also embed payloads into the image, but they aim to estimate a manipulation mask indi-cating where the protected image has been altered after payload embedding. For example, OmniGuard embeds two complementary signals: a payload for copyright protection and another payload for localization. Local edits can selectively corrupt the recovered localization payload, while the copyright payload is designed to remain recoverable [26, 27]. 
+
+## 2.2 Robustness evaluations 
+
+A substantial body of work has evaluated the robustness of conven-tional full-image watermarking against common signal-processing 
+
+> 2What Breaks Local Watermarks?
+
+distortions and watermark removal attacks [3, 8, 22]. More recent studies have further examined robustness against generative trans-formations and attacks enabled by modern image generation and editing models [18, 28]. By contrast, robustness evaluation for lo-cal watermarking remains underexplored, with existing evidence derived primarily from method-specific evaluations introduced in WAM and MaskWM. Sander et al. evaluate full-image watermark detection and pay-load recovery under geometric transformations, valuemetric distor-tions, splicing, and inpainting [20]. For local watermarking, they construct images containing centered watermarked rectangles of varying sizes and evaluate watermark localization and payload re-covery on these controlled composites, but do not apply additional distortions to the locally watermarked images for this evaluation. Thus, although WAM introduces local watermarking capabilities, it does not specifically evaluate their robustness under transforma-tions or attacks. Hu et al. go further by directly evaluating the robustness of local payload recovery and watermark-region localization [13]. They construct a controlled local watermarking test set spanning twelve watermark-region size intervals from 1–5% to 95–99% of the full image. Across these region sizes, the authors evaluate and compare payload bit accuracy and localization performance under ten value-metric distortions and three geometric transformations. However, this evaluation is built around a single mask compositing procedure and a limited set of conventional transformations. Therefore, it provides an important initial evaluation of local watermark robust-ness, but its results do not generalize to a diverse range of realistic transformations, including generative and local edits. 
+
+## 3 Evaluation Framework 
+
+This section describes our evaluation framework in detail, including the watermarking methods, datasets, transformations and metrics that we used. 
+
+## 3.1 Overview 
+
+Figure 1 depicts one run of our evaluation pipeline, which is divided into three stages: embedding , transformation , and decoding .
+
+• In the embedding stage, we draw an input image from our datasets and generate a watermark mask (Section 3.3). For each image and method, we sample a binary payload of the length sup-ported by that method, drawing each bit uniformly from {0, 1}.The watermarking method then embeds the payload within the region defined by the watermark mask. The same payload is used across all image transformations, both with and without SyncSeal. When SyncSeal is enabled, the SyncSeal embedder adds a synchronization signal to the image after the payload embedding. 
+
+• In the transformation stage, we apply an image transforma-tion from our comprehensive taxonomy comprising 55 image manipulation functions (Section 3.4). 
+
+• The decoding stage is blind : the decoder receives only a possibly transformed image, without access to the unwatermarked cover image. Then, if SyncSeal was used during embedding, it estimates the geometric transformation and attempts to map the image back to the coordinate frame expected by the decoder [10]. The watermark decoder then performs payload recovery and, when supported, tries to identify the watermarked region. Finally, we assess the scheme’s performance on an evaluation run along three dimensions: payload recovery, localization accuracy, and imperceptibility (Section 3.5). 
+
+## 3.2 Localization and synchronization 
+
+We distinguish between two types of methods used in the water-marking pipeline: localization and synchronization methods. 
+
+Localization methods. We evaluate five state-of-the-art local watermarking methods with different designs, each with a pub-lic repository and pretrained weights. MaskWM and WAM are the two natively local watermarking methods evaluated in this work. The other three methods ( OmniGuard , TrustMark , and 
+
+PixelSeal ) were originally designed for global (i.e., full-image) wa-termarking, and we have adapted them for local watermarking by confining the embedding of the watermarks to a specific re-gion. We include OmniGuard because it is often compared with MaskWM and WAM for localization capability, though it was origi-nally proposed for tamper localization, as described in Section 2.1. 
+
+TrustMark is relevant for the evaluation because its official im-plementation provides an optional watermark-region detector that returns a rectangular region for watermark localization capabil-ity [1, 4]. Finally, PixelSeal is a recent high-capacity global image and video watermarking method [17, 21]. We adapt it to a local watermarking setting to benchmark how state-of-the-art global watermarking techniques perform when only part of the embedded signal is utilized, compared to watermarking methods specifically designed for localization. We summarize these embedding setups and decoder outputs in Table 1. Appendix A.5 details the embedding and decoding procedures used to adapt OmniGuard, TrustMark, and PixelSeal to local watermarking. 
+
+Synchronization methods. Synchronization and watermark lo-calization address different problems. Watermark localization refers to a decoder capability within the watermarking pipeline: identify-ing the image region that contains a local watermark. Synchroniza-tion, by contrast, is performed by a separate, optional module that estimates and reverses geometric transformations that may have been applied to the image before decoding. We evaluate SyncSeal as a representative standalone synchro-nization module that can be integrated with different watermarking methods [10]. It embeds a learned synchronization signal across the image and uses the recovered signal to estimate the applied geometric transformation, allowing the image to be rectified before watermark decoding. 
+
+## 3.3 Image datasets and watermark masks 
+
+For the evaluation, we selected four datasets chosen to cover differ-ent image distributions and mask sources. 
+
+• COCO 2017 (COCO) [16] provides everyday scenes with in-stance segmentation masks, enabling object-aligned watermark regions in cluttered natural images. 
+
+• SA-1B [15] provides large-scale segmentation masks over diverse image content. 
+
+> 3Yao et al.
+
+Table 1: Watermarking methods used in the evaluation. All methods are evaluated for payload recovery. For MaskWM and WAM, which return pixel-level maps of watermark presence, we report watermark-region localization using intersection-over-union (IoU). MaskWM and WAM are native local methods; OmniGuard, TrustMark, and PixelSeal are adapted reference methods originally designed for global (i.e., full-image) watermarking.                     
+
+> Method Embedding setup Payload bits Decoder output
+> MaskWM [13] Native embedding only within local regions 64 Payload + pixel-level map of watermark presence WAM [20] Native embedding only within local regions 32 Payload + pixel-level map of watermark presence OmniGuard [27] Global embedding confined to watermark region 100 Payload + tamper map †
+> TrustMark [4] Global embedding confined to watermark region 100 Payload + rectangular region ∗
+> PixelSeal [21] Global embedding confined to watermark region 256 Payload only
+> ∗For TrustMark, the predicted watermark region is the rectangular output of its optional watermark-region detector.
+> †OmniGuard’s tamper map estimates edited content rather than the watermark region.
+
+• DIV2K [2] includes high-quality, high-resolution images origi-nally curated for super-resolution, with fine texture and large spatial dimensions. 
+
+• MIRFLICKR-25K (MIRFLICKR) [14] is a large in-the-wild photography dataset with diverse capture conditions and con-tent. 
+
+Watermark masks. For COCO and SA-1B, we use a segmentation mask provided with each image as the watermark region. DIV2K and MIRFLICKR do not provide segmentation masks, so we generate either a rectangular or an irregular region under the procedure described in Appendix A.1. Although MaskWM and WAM support multiple watermark regions, our evaluation uses a single region per image to focus on robustness comparisons across schemes while limiting the additional complexity introduced by multi-region configurations. 
+
+## 3.4 Transformation taxonomy 
+
+To comprehensively evaluate robustness of local watermarks, we include one clean setting as a baseline and 55 transformations. These transformations are organized into a taxonomy of four cate-gories depending on the nature of the underlying transformation mechanism as described below. The signal distortions and changes in alignment categories cover conventional image distortions that treat the image as a whole, without targeting any local regions. In contrast, we also evaluate two categories of local edits: indi-rect local edits and direct watermark edits . These four categories are mutually exclusive, with no transformation belonging to more than one category in our taxonomy. Table 3 in Appendix A lists every transformation by category. Appendix Table 4 specifies the transformation operations and parameter settings; Appendix A.6 explains their sampling. 
+
+• Signal distortions are transformations that preserve image coordinates but alter pixel values or frequency content, such as brightness adjustment, blurring and noising, JPEG compression, and perturbations to coefficients in the frequency domain. 
+
+• Changes in alignment cover transformations that change the image coordinate frame, such as cropping, rotation, flipping, and perspective warping, so the embedded watermark may no longer align with the coordinates expected by the decoder. To evaluate whether synchronization techniques can restore alignment, we evaluate each transformation with and without SyncSeal. This category also includes outpainting (expanded canvas) , which re-sizes and places the watermarked image within a larger canvas before generating the surrounding content, thereby changing the scale and position of the original image content. 
+
+• Indirect local edits include transformations that do not delib-erately target the watermark region itself. Blackout fills a ran-domly sampled region with black pixels, splicing replaces pixels in a sampled region with content from another image in the same dataset, and inpainting uses a Stable Diffusion inpainting pipeline to regenerate the selected region from the surrounding image context [19]. For these three transformations, the edit mask is sampled without reference to the watermark mask, so the two masks overlap only by chance. Because the diffusion pipeline may also alter pixels outside the edit mask, the inpaint-ing (independent region, outside restored) control run copies the watermarked input back outside that mask after generation. Out-painting (fixed canvas) keeps the image size unchanged and uses the complement of the watermark region as the generation mask to outpaint. Appendix Figure 8 illustrates the effect of inpainting and outpainting protocols for generative edits. 
+
+• Direct watermark edits use the watermark region itself as the edit mask and replacement target, applying the same inpainting or splicing operations directly to this region. These conditions test whether any recoverable watermark signal remains after the pixels intended to carry the payload are replaced or regenerated. Together, these transformations capture realistic image manipula-tion workflows that alter or regenerate image content. 
+
+## 3.5 Evaluation metrics 
+
+We evaluate three main dimensions of local watermarking per-formance: (i) payload recovery, (ii) localization accuracy, and (iii) imperceptibility. Each dimension is characterized by specific met-rics, as described below in detail. 
+
+Payload recovery. Payload recovery is quantified with two com-plementary metrics: bit accuracy and evidence score . Bit accuracy is the fraction of payload bits decoded correctly, commonly used in the literature for assessing watermark recovery. However, the payload lengths supported by the schemes range from 32 bits for WAM to 256 bits for PixelSeal, so the same bit accuracy does not provide the same evidence of payload recovery against random 
+
+> 4What Breaks Local Watermarks?
+
+Figure 1: Evaluation pipeline. (i) Embedding. Given a cover image, a watermark mask, and a binary payload, the watermarking method embeds the payload within the masked region. When SyncSeal is enabled, its embedder then adds a synchronization signal across the image. (ii) Transformation. The resulting image undergoes one of the 55 benchmark transformations. (iii) Decoding. When SyncSeal is enabled, its rectifier first attempts to restore the coordinate frame expected by the watermark decoder; otherwise, both SyncSeal operations are skipped. The watermark decoder then recovers the payload and, when supported, localizes the watermarked region. For runs with and without SyncSeal, we report payload recovery for all methods, pixel-level localization for MaskWM and WAM, and also image fidelity in the clean setting. 
+
+decoding for every method. Hence, we report bit accuracy for con-sistency with previous evaluations but also report the evidence score, a measure that takes into account the payload length , en-abling a fairer comparison across methods with different payload lengths. This evidence score is defined as the observed recovery against random decoding, under which each decoded bit matches the corresponding embedded bit independently with probability 0.5 [9]. For 𝑘 correctly decoded bits in an 𝑛 -bit payload, the proba-bility that random decoding would produce at least 𝑘 correct bits is 𝑝 random = Pr [Binomial (𝑛, 0.5) ≥ 𝑘 ]. We report − log 10 (𝑝 random ),so larger values indicate stronger evidence of successful payload recovery. A score of 3 corresponds to 𝑝 random = 10 −3. Equivalently, if recovery were declared whenever the score is at least 3, the theo-retical false positive rate for an individual decoding attempt would be at most 0 .1%, an operating point used in prior watermarking studies [3]. We therefore use 3 as a qualitative reference level. 
+
+Localization accuracy. Watermark localization accuracy is mea-sured by thresholding the predicted map at 0.5 to obtain a predicted watermark-region mask, consistent with MaskWM and WAM’s ref-erence implementations. then computing intersection-over-union (IoU) with the ground-truth watermark-region mask after applying the transformation’s coordinate mapping. The localization compar-ison is restricted to MaskWM and WAM because only these two methods return pixel-level maps of watermark presence, making them comparable to each other. In contrast, OmniGuard produces a tamper map indicating the region of manipulation instead of the region of watermark; TrustMark’s detector returns a rectangular region and not a pixel-level map, creating a shape mismatch; and PixelSeal does not provide spatial output. Hence, the localization accuracy of these three methods cannot be directly compared to MaskWM and WAM. 
+
+Imperceptibility. We quantify the imperceptibility of the scheme by image fidelity in the clean setting, measured between the origi-nal cover image and the watermarked image, using metrics includ-ing PSNR, SSIM [23], and LPIPS [25], which respectively capture pixel-level distortion, structural similarity, and perceptual similar-ity based on deep features. We evaluate only in the clean setting to isolate the visual distortion introduced by watermark embedding itself. After a transformation, fidelity metrics would conflate this distortion with changes caused by the transformation. 
+
+## 4 Results 
+
+In this section, we compare the watermarking methods along the three evaluation axes: payload recovery (Figure 2), watermark-region localization (Figure 3), and image fidelity in the clean setting (Table 2). We then further examine in detail how local watermark performance varies with watermark-region area (Figure 4), and is affected by generative local edits (Figure 5) and SyncSeal synchro-nization (Figure 6). For each method, we evaluate a fixed set of 200 images per dataset (800 in total). Unless otherwise stated, we report results without SyncSeal, and average values first within each dataset and then take the statistics across the four datasets. SyncSeal results and comparisons are labeled explicitly. More details on empirical evaluation are deferred to Appendix A.1. 
+
+## 4.1 Payload recovery 
+
+Figure 2 presents payload recovery across the transformations in terms of both bit accuracy and evidence score (see Table 3 in the appendix for details). These results represent the broadest bench-mark of our evaluation as it covers payload recovery for all five methods under every evaluation condition. 
+
+Payload recovery in the clean setting. The clean setting es-tablishes how well each method recovers its payload before any transformation is applied. Our results show that payload recovery in the clean setting varies substantially across methods (first row of Figure 2). MaskWM, one of the native local methods, gives the strongest recovery, with bit accuracy 0 .973 ± 0.018 and an evidence score of 17 .08 ± 1.37, though it has the lowest image fidelity in the clean setting among the evaluated methods (Section 4.3). WAM is also a native local method, but its clean-setting recovery is much weaker, with bit accuracy of 0 .702 ± 0.033 and an evidence score of 3.39 ± 0.35. 
+
+> 5
+
+Yao et al. 0.5 0.6 0.7 0.8 0.9 1.0  
+
+> Reference Color and tone transformations Filtering and enhancement Noise Compression and quantization Frequency-domain transformations Geometric transformations Diagonal flip Horizontal flip Vertical flip Row/column removal Chained transformation Outpainting (expanded canvas) Blackout (independent region) Inpainting (independent region) Inpainting (independent region, outside restored) Splicing (independent region) Outpainting (fixed canvas) Inpainting (watermark region) Splicing (watermark region)
+> Clean Signal Alignment Indirect local edits Direct watermark edits Category Subcategory
+
+0 5 10 15   
+
+> Bit accuracy Evidence score ( −log 10 prandom )
+
+MaskWM WAM OmniGuard TrustMark PixelSeal SyncSeal off SyncSeal on 50% chance baseline prandom = 10 −3 
+
+Figure 2: Payload recovery over the transformation taxonomy. Rows follow the transformation taxonomy in Appendix Table 3, with categories and subcategories shown at left. The left panel reports bit accuracy; the right panel reports the payload-length-aware evidence score, − log 10 (𝑝 random ), where larger values indicate stronger evidence against random decoding after accounting for payload length. Open markers denote evaluation without SyncSeal and filled markers with SyncSeal; horizontal bars show the sample standard deviation across the four dataset means. The gray dashed line appears only in the bit-accuracy panel and marks the 50% chance baseline; the brown dash-dot line in the evidence-score panel marks the threshold 𝑝 random = 10 −3.
+
+One design difference between the two native local methods is how they use masks during training and decoding. WAM uses masks mainly for mask-based augmentation and pixel-level supervision, while MaskWM instead uses masks to guide local extraction and embedding directly, which may be one of the reasons why MaskWM offers better localization. Notably, strong clean-setting recovery is not limited to the native local methods: PixelSeal reaches an evidence score of 6 .73. Although 
+
+6What Breaks Local Watermarks? 
+
+PixelSeal is a global watermarking scheme adapted for localization, its evidence score even exceeds that of WAM in the clean setting. This result shows that a method need not be designed specifically for local embedding to provide strong evidence of local payload recovery. 
+
+Payload recovery under transformations. The clean-setting performance on payload recovery provides a baseline against which we assess the impact of image transformations on local watermark-ing methods. Overall, we find that payload recovery varies sub-stantially across transformation categories and methods, and we provide a breakdown of the results by category below. 
+
+(I) Signal distortions. Signal distortions alter pixel values or fre-quency content without changing the image coordinate frame or replacing any local region. They therefore provide the most direct evaluation of the watermark signal itself: the payload region re-mains aligned with the coordinates expected by the decoder and is not directly replaced or regenerated. Even in this setting, robustness remains strongly method-dependent. MaskWM’s mean evidence score remains well above the threshold 𝑝 random = 10 −3 in all five signal subcategories, with scores of 11 .51–15 .25. PixelSeal’s mean score exceeds the threshold in four of five subcategories, ranging from 3 .82 to 5 .54, but falls below it under noise (2 .21). The mean scores for WAM, OmniGuard, and TrustMark remain below the threshold in all five subcategories. Thus, only MaskWM shows con-sistently strong evidence of payload recovery across all five signal subcategories. 
+
+(II) Changes in alignment. Unlike signal distortions, misalign-ment disrupts the geometric correspondence between the pixels that carry the payload and those observed by the decoder. Its ef-fect varies sharply across individual transformations. For MaskWM without SyncSeal, the mean evidence score remains high under horizontal flip (12 .35) and row/column removal (11 .31), but falls below 0 .5 under diagonal flip, vertical flip, chained transformation, and outpainting (expanded canvas). SyncSeal improves recovery in some cases: MaskWM’s mean score rises from 5 .14 to 10 .91 for geometric transformations and from 0 .48 to 12 .41 for diagonal flip, but remains below 0 .5 for vertical flip and outpainting (expanded canvas). Section 4.6 examines this effect in detail. 
+
+(III) Indirect local edits. Indirect local edits can be further distin-guished by whether they modify only pixels within the edit region or also affect pixels outside it. This distinction splits indirect lo-cal edits into localized pixel replacement (e.g., blackout, splicing) and generative editing (e.g., inpainting, outpainting) which may induce whole-image reconstruction. MaskWM and PixelSeal retain mean evidence scores above the threshold under blackout (inde-pendent region) and splicing (independent region). Under the same setting, inpainting (independent region) and outpainting (fixed can-vas) instead leave every watermarking method below the threshold. However, under inpainting (independent region, outside restored), where the outside of the edit region is restored with the exact pixels before transformation, the mean score returns above the thresh-old for MaskWM, PixelSeal, and WAM. This control indicates that changes outside the edit mask induced by whole-image reconstruc-tion contribute substantially to the loss of recovery. We analyze this further in detail in Section 4.5. 
+
+(IV) Direct watermark edits. For direct watermark edits, the dis-tinction between localized replacement and broader reconstruction matters less because they both directly replace pixels in the wa-termarked region. Our results confirm this: direct inpainting and splicing both leave every method with a mean evidence score below 1 and drive bit accuracy toward random decoding. 
+
+## 4.2 Localization accuracy 
+
+Besides payload recovery, another important indicator of local wa-termarking performance is the method’s ability to localize the wa-termark region. Figure 3 shows localization accuracy, measured by localization IoU, for MaskWM and WAM, the two methods that return directly comparable pixel-level maps of watermark presence. In the clean setting, MaskWM achieves a localization IoU of 0 .902, substantially higher than WAM’s 0 .293, indicating stronger local-ization performance. Across transformations, localization degrades most sharply under changes in alignment , which disrupt the spatial correspondence between the predicted watermark map and the original watermark region. By restoring this correspondence, Sync-Seal raises MaskWM’s IoU from 0 .741 to 0 .848 and WAM’s from 0.085 to 0 .192, showing that synchronization can partially recover localization performance under misalignment. Some transformations separate localization from payload re-covery, where the watermark region can be localized but payload recovery fails. For example, under vertical flip, MaskWM’s localiza-tion IoU remains high, at 0 .901 without SyncSeal and 0 .864 with SyncSeal, while the corresponding bit accuracies remain at random decoding (0 .502 and 0 .505). Direct watermark inpainting and splic-ing show a similar distinction between localization and payload recovery. Under inpainting, MaskWM and WAM retain localization IoUs of 0 .779 and 0 .906, respectively; under splicing, the corre-sponding IoUs are 0 .673 and 0 .701, demonstrating the capability to localize the watermark region even though both methods’ bit accuracies remain at the random-decoding level for both inpainting and splicing. These results show that localization and payload decoding can respond differently to the transformed signal under certain image transformations: a pixel-level map of watermark presence can re-main informative even when bit accuracy is near random decoding. Payload recovery and localization therefore capture distinct failure modes and should be treated separately for local watermarking methods. 
+
+## 4.3 Imperceptibility 
+
+Payload recovery and localization characterize a local watermark-ing scheme’s ability to recover the watermark and identify the region in which it is embedded. However, imperceptibility must be also considered, as it is a practical constraint in most local wa-termarking use cases. Here we report image fidelity in the clean setting (Table 2) using multiple metrics as defined in Section 3.5. In the clean setting, MaskWM offers the strongest payload re-covery and localization accuracy, but it also introduces the largest embedding distortion. Its mean clean-setting PSNR is 49 .48 dB, sig-nificantly lower than the corresponding values for WAM (62 .55), PixelSeal (56 .80), TrustMark (54 .09), and even OmniGuard (51 .36). MaskWM also has the highest mean LPIPS (0 .006, compared with 
+
+> 7Yao et al.
+
+0.00 0.25 0.50 0.75 1.00     
+
+> Reference Color and tone transformations Filtering and enhancement Noise Compression and quantization Frequency-domain transformations Geometric transformations Diagonal flip Horizontal flip Vertical flip Row/column removal Chained transformation Outpainting (expanded canvas) Blackout (independent region) Inpainting (independent region) Inpainting (independent region, outside restored) Splicing (independent region) Outpainting (fixed canvas) Inpainting (watermark region) Splicing (watermark region)
+> Clean Signal Alignment Indirect local edits Direct watermark edits
+> Category Subcategory Localization IoU
+> MaskWM WAM SyncSeal off SyncSeal on
+
+Figure 3: Localization accuracy over the transformation tax-onomy. Rows follow the transformation taxonomy in Appen-dix Table 3. The plot reports localization IoU for MaskWM and WAM, the methods that return directly comparable pixel-level maps of watermark presence. Open markers denote SyncSeal off and filled markers denote SyncSeal on; horizon-tal bars show the sample standard deviation across the four dataset means. 
+
+values that are approximately 0 .000 for the others), indicating lower image fidelity under this metric. Mean SSIM remains uniformly high across methods, ranging from 0 .998 to 1 .000. Importantly, the fidelity cost goes up when SyncSeal is enabled because SyncSeal adds a full-image synchronization signal. With SyncSeal enabled, mean PSNR remains above 42 dB for all evaluated methods. Relative to the corresponding values without SyncSeal, mean PSNR drops by 7 .17 dB for MaskWM, 18 .99 dB for WAM, 8.63 dB for OmniGuard, 11 .11 dB for TrustMark, and 13 .45 dB for PixelSeal. These results indicate that synchronization techniques, such as SyncSeal, should be applied carefully, weighing their gains in robustness against the associated image fidelity loss. 
+
+## 4.4 Performance by watermark-region area 
+
+Watermarking method design is not the only source of variation in these performance outcomes. Because local embedding confines the watermark signal to a selected region, performance may also vary with the amount of image area available for embedding. We report how this variation unfolds below. We use COCO and SA-1B for this analysis because their water-mark regions are derived from native object-segmentation masks, 
+
+Table 2: Image fidelity in the clean condition, used here as a proxy for imperceptibility. Rows report results with SyncSeal off and on; superscripts give the sample standard deviation across the four dataset means. Higher PSNR and SSIM and lower LPIPS indicate better image fidelity.                                  
+
+> Method PSNR (dB) SSIM LPIPS SyncSeal off SyncSeal on SyncSeal off SyncSeal on SyncSeal off SyncSeal on
+> MaskWM 49.481 ±1.082 42.309 ±0.617 0.998 ±0.001 0.990 ±0.004 0.006 ±0.001 0.009 ±0.002
+> WAM 62.549 ±1.185 43.562 ±0.824 1.000 ±0.000 0.992 ±0.003 0.000 ±0.000 0.003 ±0.001
+> PixelSeal 56.800 ±1.243 43.353 ±0.811 0.999 ±0.000 0.992 ±0.003 0.000 ±0.000 0.003 ±0.001
+> TrustMark 54.092 ±2.075 42.978 ±0.857 0.999 ±0.001 0.991 ±0.003 0.000 ±0.000 0.003 ±0.000
+> OmniGuard 51.361 ±0.837 42.730 ±0.841 0.998 ±0.001 0.991 ±0.003 0.000 ±0.000 0.003 ±0.001
+
+whereas DIV2K and MIRFLICKR use procedurally randomly sam-pled masks; all four distributions are shown in Figure 7 in the ap-pendix. The average watermark-region area is small across datasets: 15 .22% for COCO, 12 .50% for SA-1B, and 8 .80% for DIV2K and MIR-FLICKR. Much of the evaluation therefore focuses on small regions, which both stress-tests the evaluated watermarking methods and reflects practical settings in which the provenance of small objects within an image must be tracked. Across COCO and SA-1B, larger watermark regions are associ-ated with higher payload-recovery evidence scores (Figure 4). On COCO, MaskWM’s post-transformation evidence score rises from 3.84 in the 0–3% bin to 9 .71 in the 40–85% bin. PixelSeal shows an even larger observed increase, from 0 .36 to 27 .42. SA-1B shows the same trend. One reasonable explanation is that a larger region provides the embedder with more pixels over which to distribute the payload and the decoder with more potential redundancy. Localization accuracy follows a similar pattern to payload recov-ery across varying region areas. MaskWM’s post-transformation IoU increases from 0 .634 to 0 .825 on COCO with increased watermark-region area. WAM increases from 0 .052 to 0 .359 over the same range, but remains below MaskWM. WAM also degrades more from the clean setting, indicating that its localization output is less stable under transformations even for larger regions. 
+
+## 4.5 A deeper analysis of generative edits 
+
+One important aspect of our benchmark is its evaluation of the effect of generative edits, a type of manipulation that is underrep-resented in prior work. We therefore provide a deeper analysis here, complementing the results presented in Section 4.1, to explore which factors contribute to the degradation of payload recovery under inpainting transformations. We first analyze whether this degradation is explained by the spatial relationship between the edit and watermark regions. We then examine whether restoring the changes outside the edit region recovers payload. Finally, we investigate whether characteristics of the watermark region, particularly its edge density, affect payload recovery under such edits. 
+
+Recovery does not improve with less overlap or greater dis-tance. In Figure 5, we first test whether overlap or distance between the edit region and the watermark region explains the poor recov-ery under inpainting in an independently sampled edit region. If                   
+
+> 8What Breaks Local Watermarks? 0-3 3-5 5-8 8-12 12-20 20-40 40-85
+> 0310 20 40 60
+> Evidence score ( −log 10  prandom )
+> A. Payload recovery (COCO)
+> 0-3 3-5 5-8 8-12 12-20 20-40 40-85
+> 0310 20 40 60 B. Payload recovery (SA-1B)
+> 0-3 3-5 5-8 8-12 12-20 20-40 40-85
+> Watermark-region area (% of image)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Localization IoU
+> C. Localization IoU (COCO)
+> 0-3 3-5 5-8 8-12 12-20 20-40 40-85
+> Watermark-region area (% of image)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> D. Localization IoU (SA-1B)
+> MaskWM WAM OmniGuard TrustMark PixelSeal Clean condition After transformations
+> prandom = 10 −3
+
+Figure 4: Larger watermark regions are associated with stronger payload recovery and watermark-region localiza-tion. The four panels group COCO and SA-1B examples by the fraction of image area covered by the watermark region, eval-uated without SyncSeal. Panels A and B report the evidence score. Panels C and D report localization IoU for MaskWM and WAM. Dashed curves show clean-setting values. For the solid curves, bit accuracy and localization IoU are first av-eraged across all transformations for each image, and the evidence score is computed from the resulting mean bit accu-racy. The brown dash-dot line in the payload-recovery panels marks 𝑝 random = 10 −3. Vertical bars show the sample standard deviation across image-level values within each area bin. 
+
+degradation were mainly caused by overlap with the watermark re-gion, recovery should improve when the edit mask barely overlaps the watermark. However, the results do not show improvement with less overlap: for MaskWM, the evidence score remains close to zero across the five overlap bins from < 10% to ≥ 70% (Panel A, left, blue line); and WAM follows the same pattern (Panel A, right, blue line). Increasing the distance between the edit region and the water-mark region also does not restore recovery. For example, MaskWM’s evidence score is 0 .451 when the edit touches the watermark region and 0 .346 across the non-touching distance bins (Panel B). 
+
+Restoring pixels outside the edit mask restores payload re-covery. Since overlap and distance do not explain the recovery loss, we next compare splicing, inpainting, and the outside-restored control to isolate the changes that the generative pipeline induces outside the edit mask. Splicing an independently sampled edit re-gion replaces only the edit region with external content and leaves surrounding pixels unchanged. As a result, MaskWM’s splicing evidence score remains high across the overlap bins (15 .95, 15 .95, 10 .42, 10 .42, 8 .75). Inpainting, however, passes the entire image through the reconstruction pipeline, so pixels outside the edit mask change even when the image appears visually preserved. This drives inpainting’s evidence score to near zero. The outside-restored control tests whether changes outside the edit mask contribute to the loss of payload recovery: it restores all pixels outside the edit mask to their original values in the water-marked image. The results show that restoring these outside pixels recovers performance: MaskWM’s evidence score remains high across all overlap bins (14 .62–17 .45), and WAM shows the same pattern. This result indicates that the whole-image reconstruction induced by the Stable Diffusion inpainting pipeline accounts for the loss in payload-bearing signal. When the pixels outside the edit mask are restored, payload recovery improves accordingly. 
+
+Higher edge density is associated with weaker recovery. We next ask which characteristics of the watermark region outside the edit mask are associated with the magnitude of the effect. One hypothesis is that regions containing high-frequency con-tent undergo larger pixel-level value changes from the generative pipeline than smooth, low-frequency regions, such as sky and mead-ows. We test this hypothesis by measuring Canny edge density [5] over watermark-region pixels outside the edit mask, investigating whether it affects payload recovery (Panel C of Figure 5). Interest-ingly, for MaskWM, the evidence score decreases monotonically from 1 .53 in the smoothest quintile to 0 .36 in the highest-edge quintile. Bit accuracy falls from 0 .560 to 0 .499 over the same range. The same trend also applies to WAM, though less significantly. This result suggests that payload recovery is inversely correlated with the edge density of the preserved watermark region, indicat-ing that watermarks embedded in high-frequency content may be more susceptible to changes introduced by the evaluated genera-tive pipeline. This can be concerning for watermark applications because high-frequency regions are often considered favorable for watermark embedding because they allow larger perturbations while preserving imperceptibility [7, 12]. 
+
+## 4.6 Synchronization is selective 
+
+We also examine synchronization and its effect on payload recovery under transformations, particularly those that change image align-ment, since synchronization is designed to correct for exactly this kind of misalignment. We examine where it helps, where it reduces payload recovery, and what fidelity cost it adds. We adopt SyncSeal as a representative synchronization technique, with extension to other approaches left for future investigation. 
+
+SyncSeal helps when transformations match its scope. Our results show that SyncSeal’s gains concentrate on global geometric mappings within its reported scope in SyncSeal’s original paper, consistent with its intended role of estimating and inverting such   
+
+> 9Yao et al. <10 10-30 30-50 50-70 >=70
+
+Edit-mask overlap / watermark-region area (%)     
+
+> 0510 15 20
+> Evidence score ( −log 10  prandom )
+> A. MaskWM
+> prandom = 10 −3
+> <10 10-30 30-50 50-70 >=70
+
+Edit-mask overlap / watermark-region area (%)     
+
+> 0135WAM
+> Inpainting (independent region) Splicing (independent region) Inpainting (independent region, outside restored)
+> touch 0-5 5-20 >=20
+
+Edit distance (% image diagonal)      
+
+> 0135B. Inpainting (independent region)
+> 0.0 0.1 0.2 0.3 0.4
+
+Canny edge density   
+
+> 0135C. Inpainting (independent region)
+> MaskWM WAM
+> prandom = 10 −3
+
+Figure 5: Payload recovery under local edits. The panels examine three factors in local edits: edit-mask overlap, distance from the watermark region, and edge density within preserved watermark-region pixels. Panel A compares inpainting (independent region), splicing (independent region), and the inpainting (independent region, outside restored) control for MaskWM (left) and WAM (right). Panel B shows that increasing the edit-to-watermark distance for inpainting (independent region) does not restore recovery. Panel C divides inpainting (independent region) examples with less than 5% edit-mask overlap into quintiles by Canny edge density over watermark-region pixels outside the edit mask. Markers show the mean edge density and evidence score in each quintile, and vertical bars show standard errors of the evidence-score means across examples within that quintile. MaskWM has higher evidence scores when those preserved pixels have lower Canny edge density, while WAM’s evidence scores remain close to zero. Brown dash-dot lines mark the evidence-score threshold 𝑝 random = 10 −3.
+
+transformations. Figure 6 shows how enabling SyncSeal changes the evidence score for the evaluated transformations that specifically alter alignment. For MaskWM, SyncSeal increases the evidence score by +12 .36 on shearing, +11 .93 on diagonal flip, +9.59 on translation, +8.67 on perspective transform, +8.47 on rotation, and 
+
++8.24 on random affine transform. However, the gains do not extend to every transformation in this category. Under vertical flip, for example, the evidence score remains close to zero after SyncSeal. 
+
+Synchronization can conflict with payload decoding. For Pix-elSeal, the added synchronization signal reduces rather than im-proves recovery in several cases. As shown in Fig. 2, SyncSeal lowers the evidence score for PixelSeal in both the clean setting and the alignment category. The evidence score also drops under signal dis-tortions and indirect local edits when evaluated with SyncSeal. One possible explanation is that the additional full-image signal shifts the residual seen by the PixelSeal decoder away from its expected input distribution. The same trend also applies to TrustMark for certain transformations such as cropping, though relatively mildly. 
+
+## 5 Discussion and Conclusion 
+
+Local watermarking has been proposed to track provenance at the level of individual objects within an image, yet current evaluation of local watermarking methods remains fragmented. We address this gap by developing a comprehensive benchmark spanning five watermarking methods, four datasets, and 55 non-adaptive image transformations, and by analyzing the robustness vulnerabilities of state-of-the-art local watermarking schemes. We now conclude with several key takeaways from our results. 
+
+Current methods fail on smaller regions. Tracing a small object within an image is one of the main motivations for local watermark-ing in composited imagery, with applications such as e-commerce product image compositing. However, we find that even in the clean −5 0 5 10 15 
+
+Change in evidence score  
+
+> Random affine transform Crop Resize and crop Rotation Shearing Translation Horizontal flip Vertical flip Diagonal flip Chained transformation Interpolation resize Perspective transform Small geometric distortions Grid warping Row/column removal Outpainting (expanded canvas)
+> Affine transformations Non-affine transformations
+> Transformation SyncSeal change
+> MaskWM WAM OmniGuard TrustMark PixelSeal No change
+
+Figure 6: SyncSeal effect on payload recovery under changes in alignment. Rows include only transformations in the alignment category, grouped into affine and non-affine blocks. Points report the change in payload-length-aware evidence score, − log 10 (𝑝 random ), from enabling SyncSeal; posi-tive values indicate stronger payload recovery with SyncSeal. Horizontal bars show the sample standard deviation across the four dataset-level changes. 
+
+> 10
+
+What Breaks Local Watermarks? 
+
+setting with no transformations applied, current local watermark-ing methods perform poorly on smaller region sizes. Future designs of local watermarking methods should improve this capability for smaller regions, for example, by dynamically scaling the number of embedded payload bits according to region area, or by embed-ding watermark signals across multiple spatial resolutions so that decoding remains robust even when the target region is small. 
+
+Payload recovery trades off with image fidelity. We also find a significant trade-off between payload recovery and image fidelity. For example, MaskWM achieves the strongest clean payload re-covery but also produces the lowest clean image fidelity. SyncSeal improves recovery for several transformations but also adds a fur-ther fidelity cost across every evaluated method. This trade-off creates a deployment problem. There may be use cases where im-age fidelity is less critical, such as social media previews, where the watermark’s provenance signal matters more than visual quality, but for quality-critical applications such as professional photog-raphy or medical imaging, it is unacceptable for image quality to degrade noticeably. Future work should vary the strength of the added signal within each method to identify the point at which recovery gains stop justifying further image distortion. 
+
+Generative editing can break a local watermark without even targeting it. Inpainting edits affect pixels outside the edit region, which can reduce payload recovery without visible image quality loss in the watermarked region itself. The two outpainting trans-formations also bring payload recovery down to random guessing. This makes generative edits a serious threat to local watermarking robustness, because modern image processing workflows increas-ingly apply those edits. We therefore hope future benchmarks will include these types of transformations, and encourage future local watermarking methods to be robust to them. 
+
+Robustness vulnerabilities expose a security gap. Several transformations in our benchmark reduce payload recovery substantially, sometimes to the level of random guessing. When applied deliberately, these transformations become non-adaptive black-box removal attacks. Therefore, our results generalize to a broader security concern: if a non-adaptive black-box attacker can already achieve this level of degradation, an adaptive, strategic attacker could in principle perform even better. Future work should evaluate adaptive attacks that may use knowledge of the method design or access to decoder outputs. 
+
+Conclusion. Local watermarking becomes increasingly important as AI-assisted editing makes it easier to blend human-created and AI generated content within a single image. However, our bench-mark shows that, within the evaluated scope, none of the current local watermarking methods is ready for reliable production deploy-ment. Payload recovery performs unsatisfactorily on small target regions, trades off against image fidelity, and remains vulnerable to various transformations, including generative edits. Future work will need to address these challenges before local watermarking can be deployed reliably. 
+
+## References 
+
+[1] Adobe Research. 2025. TrustMark Official Implementation. https://github.com/ adobe/trustmark. Accessed: 2026-06-06. [2] Eirikur Agustsson and Radu Timofte. 2017. NTIRE 2017 Challenge on Single Image Super-Resolution: Dataset and Study. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW) . 1122–1131. doi:10.1109/CVPRW.2017.150 [3] Bang An, Mucong Ding, Tahseen Rabbani, Aakriti Agrawal, Yuancheng Xu, Chenghao Deng, Sicheng Zhu, Abdirisak Mohamed, Yuxin Wen, Tom Gold-stein, and Furong Huang. 2024. WAVES: Benchmarking the Robustness of Im-age Watermarks. In Proceedings of the 41st International Conference on Machine Learning (Proceedings of Machine Learning Research, Vol. 235) . PMLR, 1456–1492. https://proceedings.mlr.press/v235/an24a.html [4] Tu Bui, Shruti Agarwal, and John Collomosse. 2025. TrustMark: Robust Water-marking and Watermark Removal for Arbitrary Resolution Images. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) . 18629–18639. doi:10.1109/ICCV51701.2025.01731 [5] John Canny. 1986. A Computational Approach to Edge Detection. IEEE Trans-actions on Pattern Analysis and Machine Intelligence PAMI-8, 6 (1986), 679–698. doi:10.1109/TPAMI.1986.4767851 [6] François Cayre, Caroline Fontaine, and Teddy Furon. 2005. Watermarking Secu-rity: Theory and Practice. IEEE Transactions on Signal Processing 53, 10 (2005), 3976–3987. doi:10.1109/TSP.2005.855418 [7] Ingemar J. Cox, Joe Kilian, F. Thomson Leighton, and Talal Shamoon. 1997. Secure Spread Spectrum Watermarking for Multimedia. IEEE Transactions on Image Processing 6, 12 (1997), 1673–1687. doi:10.1109/83.650120 [8] Mucong Ding, Bang An, Tahseen Rabbani, Chenghao Deng, Anirudh Satheesh, Souradip Chakraborty, Mehrdad Saberi, Yuxin Wen, Kyle Rui Sang, Aakriti Agrawal, Xuandong Zhao, Mo Zhou, Mary-Anne Hartley, Lei Li, Yu-Xiang Wang, Vishal M. Patel, Soheil Feizi, Tom Goldstein, and Furong Huang. 2025. A Technical Report on “Erasing the Invisible”: The 2024 NeurIPS Competition on Stress Testing Image Watermarks. In Advances in Neural Information Processing Systems , Vol. 38. https://proceedings.neurips.cc/ paper_files/paper/2025/hash/15389039ccef67b6bed9b2df8414400f-Abstract-Datasets_and_Benchmarks_Track.html [9] Pierre Fernandez, Hady Elsahar, I. Zeki Yalniz, and Alexandre Mourachko. 2024. Video Seal: Open and Efficient Video Watermarking. arXiv:2412.09492 [cs.MM] https://arxiv.org/abs/2412.09492 [10] Pierre Fernandez, Tomáš Souček, Nikola Jovanović, Hady Elsahar, Sylvestre-Alvise Rebuffi, Valeriu Lacatusu, Tuan Tran, and Alexandre Mourachko. 2026. Geometric Image Synchronization With Deep Watermarking. In Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . 9522–9526. doi:10.1109/ICASSP55912.2026.11464560 [11] Sven Gowal, Rudy Bunel, Florian Stimberg, David Stutz, Guillermo Ortiz-Jimenez, Christina Kouridi, Mel Vecerik, Jamie Hayes, Sylvestre-Alvise Rebuffi, Paul Bernard, Chris Gamble, Miklos Z. Horvath, Fabian Kaczmarczyck, Alex Kaskasoli, Aleksandar Petrov, Ilia Shumailov, Meghana Thotakuri, Olivia Wiles, Jessica Yung, Zahra Ahmed, Victor Martin, Simon Rosen, Christopher Savcak, Armin Senoner, Nidhi Vyas, and Pushmeet Kohli. 2025. SynthID-Image: Image Water-marking at Internet Scale. arXiv:2510.09263 [cs.CR] https://arxiv.org/abs/2510. 09263 [12] Frank Hartung and Martin Kutter. 1999. Multimedia Watermarking Techniques. 
+
+Proc. IEEE 87, 7 (1999), 1079–1107. doi:10.1109/5.771066 [13] Runyi Hu, Jie Zhang, Shiqian Zhao, Nils Lukas, Jiwei Li, Qing Guo, Han Qiu, and Tianwei Zhang. 2025. Mask Image Watermarking. In Advances in Neural Informa-tion Processing Systems , Vol. 38. https://openreview.net/forum?id=da1u6Cy7Mq [14] Mark J. Huiskes and Michael S. Lew. 2008. The MIR Flickr Retrieval Evaluation. In Proceedings of the 1st ACM International Conference on Multimedia Information Retrieval . 39–43. doi:10.1145/1460096.1460104 [15] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C. Berg, Wan-Yen Lo, Piotr Dollár, and Ross Girshick. 2023. Segment Anything. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) . 4015–4026. doi:10.1109/ ICCV51070.2023.00371 [16] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C. Lawrence Zitnick. 2014. Microsoft COCO: Common Objects in Context. In Proceedings of the European Conference on Computer Vision (ECCV) . 740–755. doi:10.1007/978-3-319-10602-1_48 [17] Meta FAIR. 2025. VideoSeal and PixelSeal Official Implementation. https://github. com/facebookresearch/videoseal. Accessed: 2026-06-06. [18] Yunyi Ni, Finn Carter, Ze Niu, Emily Davis, and Bo Zhang. 2025. Diffusion-Based Image Editing for Breaking Robust Watermarks. arXiv:2510.05978 [cs.CV] https://arxiv.org/abs/2510.05978 [19] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. 2022. High-Resolution Image Synthesis With Latent Diffusion Mod-els. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 10684–10695. doi:10.1109/CVPR52688.2022.01042 [20] Tom Sander, Pierre Fernandez, Alain Oliviero Durmus, Teddy Furon, and Matthijs Douze. 2025. Watermark Anything With Localized Messages. In The Thirteenth International Conference on Learning Representations . https://openreview.net/ forum?id=IkZVDzdC8M 11 Yao et al. 
+
+[21] Tomáš Souček, Pierre Fernandez, Hady Elsahar, Sylvestre-Alvise Rebuffi, Va-leriu Lacatusu, Tuan Tran, Tom Sander, and Alexandre Mourachko. 2025. Pixel Seal: Adversarial-Only Training for Invisible Image and Video Watermarking. arXiv:2512.16874 [cs.CV] https://arxiv.org/abs/2512.16874 [22] Sviatoslav Voloshynovskiy, Shelby Pereira, Victor Iquise, and Thierry Pun. 2001. Attack Modelling: Towards a Second Generation Watermarking Benchmark. 
+
+Signal Processing 81, 6 (2001), 1177–1214. doi:10.1016/S0165-1684(01)00039-1 [23] Zhou Wang, Alan C. Bovik, Hamid R. Sheikh, and Eero P. Simoncelli. 2004. Image Quality Assessment: From Error Visibility to Structural Similarity. IEEE Transactions on Image Processing 13, 4 (2004), 600–612. doi:10.1109/TIP.2003. 819861 [24] Tao Yu, Runseng Feng, Ruoyu Feng, Jinming Liu, Xin Jin, Wenjun Zeng, and Zhibo Chen. 2023. Inpaint Anything: Segment Anything Meets Image Inpainting. 
+
+arXiv preprint arXiv:2304.06790 (2023). [25] Richard Zhang, Phillip Isola, Alexei A. Efros, Eli Shechtman, and Oliver Wang. 2018. The Unreasonable Effectiveness of Deep Features as a Perceptual Met-ric. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 586–595. doi:10.1109/CVPR.2018.00068 [26] Xuanyu Zhang, Runyi Li, Jiwen Yu, Youmin Xu, Weiqi Li, and Jian Zhang. 2024. EditGuard: Versatile Image Watermarking for Tamper Localization and Copyright Protection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 11964–11974. doi:10.1109/CVPR52733.2024.01137 [27] Xuanyu Zhang, Zecheng Tang, Zhipei Xu, Runyi Li, Youmin Xu, Bin Chen, Feng Gao, and Jian Zhang. 2025. OmniGuard: Hybrid Manipulation Localization via Augmented Versatile Deep Image Watermarking. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 3008–3018. doi:10. 1109/CVPR52734.2025.00286 [28] Xuandong Zhao, Kexun Zhang, Zihao Su, Saastha Vasan, Ilya Grishchenko, Christopher Kruegel, Giovanni Vigna, Yu-Xiang Wang, and Lei Li. 2024. Invisible Image Watermarks Are Provably Removable Using Generative AI. In Advances in Neural Information Processing Systems , Vol. 37. doi:10.52202/079017-0276 12 What Breaks Local Watermarks? 
+
+## A Additional Evaluation Details A.1 Methodology details 
+
+Images. For each method, we evaluate a fixed set of 200 images from each dataset, giving 800 images per method. Before embedding, input images are resized to 512 × 512 pixels, and watermark masks are generated in the same coordinate frame. 
+
+Masks. For COCO and SA-1B, we sample uniformly among segmentation masks covering at least 2% of the image. DIV2K and MIRFLICKR lack seg-mentation masks, so we generate content-independent masks. For methods that accept arbitrary shapes, rectangles and irregular masks are equally likely. We sample a target area of 4%–14%, a log-uniform bounding-box aspect ratio of 0 .6–1 .8, and a random valid location; irregular masks fill 55%–80% of the box. Because TrustMark requires a rectangle, we use rectangular masks for DIV2K and MIRFLICKR and the smallest rectangle enclosing the selected segmentation mask for COCO and SA-1B. 
+
+Transformations. For each stochastic transformation, such as random crop-ping, Gaussian noise, or blackout applied to a randomly sampled region, we sample a single realization per image using a fixed random seed. 
+
+Reproducibility. We use the released pretrained weights for all watermark-ing methods and SyncSeal without further training, and fix random seeds for transformation parameters, watermark mask sampling, and payload genera-tion. The benchmark code will be available at https://github.com/garandorinc/ markbench. 
+
+Reporting convention. Unless otherwise stated, the text reports results without SyncSeal; SyncSeal results and direct comparisons are labeled explic-itly. We first average within each dataset and then report the unweighted mean across the four dataset means. 
+
+## A.2 Watermark-Region Area Distributions 
+
+Figure 7 reports the area distributions used in Figure 4. 0 50 100 
+
+> 050 100
+> Number of images
+
+COCO   
+
+> 050 100
+
+DIV2K   
+
+> 050 100
+> 050 100
+> Number of images
+
+MIRFLICKR   
+
+> 050 100
+
+SA-1B 
+
+Watermark-region area (% of image) 
+
+Figure 7: Watermark-region area by dataset. Distributions for clean MaskWM examples without SyncSeal. COCO and SA-1B use native masks; DIV2K and MIRFLICKR use sampled masks. Mean areas are 15.22% (COCO), 12.50% (SA-1B), and 8.80% (DIV2K and MIRFLICKR). 
+
+## A.3 Transformation Protocol Examples 
+
+Figure 8 shows the local-edit controls. 
+
+Figure 8: Inpainting and outpainting protocols. Examples show edit masks, transformed images, and absolute differences. The outside-restored control restores pixels outside the edit mask; fixed-canvas outpainting regenerates surrounding content, whereas expanded-canvas outpainting extends and rescales the canvas. 
+
+## A.4 Transformation Taxonomy 
+
+Table 3: Taxonomy of the 55 transformations; the clean setting is listed separately.                         
+
+> Category Subcategory Evaluation conditions
+> Clean Reference -Signal Color and tone transformations brightness, color jitter, randomized color jitter, contrast, gamma correction, grayscale conversion, histogram equalization, color inversion, RGB channel shift, saturation Filtering and enhancement box blur, convolutional filter, Gaussian blur, high-pass filter, low-pass filter, median filter, motion blur, sharpening Noise dither noise, Gaussian noise, Poisson noise, salt-and-pepper noise, speckle noise Compression and quantization color quantization, GIF compression, JPEG compression, JPEG 2000 compression, posterization, uniform quantization Frequency-domain transformations DCT transform, DWT transform, FFT transform Alignment Geometric transformations random affine transform, crop, interpolation resize, perspective transform, resize and crop, rotation, shearing, small geometric distortions, translation, grid warping Diagonal flip diagonal flip Horizontal flip horizontal flip Vertical flip vertical flip Row/column removal row/column removal Chained transformation JPEG + crop + brightness chain Outpainting (expanded canvas) outpainting (expanded canvas) Indirect local edits Blackout (independent region) blackout (independent region) Inpainting (independent region) inpainting (independent region) Inpainting (independent region, outside restored) inpainting (independent region, outside restored) Splicing (independent region) splicing (independent region) Outpainting (fixed canvas) outpainting (fixed canvas) Direct watermark edits Inpainting (watermark region) inpainting (watermark region) Splicing (watermark region) splicing (watermark region)
+
+13 Yao et al. 
+
+## A.5 Local Adaptation of Global Watermarking Methods 
+
+This section describes how we adapt three global watermarking methods, OmniGuard, TrustMark, and PixelSeal, to the local watermarking setting evaluated in this work. For each method, we explain how we restrict payload embedding to a selected image region and how the payload is subsequently recovered during decoding. We use the released pretrained weights without additional training or fine-tuning. During embedding, a binary mask specifies the selected region. We refer to the pixelwise difference between an image before and after embedding as the watermark residual : it records the pixel changes introduced by the embedder. 
+
+OmniGuard. OmniGuard embeds two distinct signals: an auxiliary signal for tamper localization and a binary payload for copyright identification. We first apply its auxiliary embedding stage across the entire image. We then resize this intermediate image to 256 × 256 and pass it through the binary payload encoder. Subtracting the encoder’s input from its output gives the changes introduced specifically by payload embedding. We resize this payload residual back to the benchmark image resolution of 512 × 512, retain it only within the selected mask, and add it to the intermediate image. Consequently, the auxiliary signal remains across the image, while the binary payload signal is confined to the selected region. For payload recovery, we resize the complete received image to 256 × 256 and apply the payload decoder. 
+
+TrustMark. TrustMark operates on rectangular regions. We therefore replace the selected mask with its smallest enclosing axis-aligned bounding box, crop that region, and resize the crop to the encoder’s native resolution. We compute the watermark residual from the encoder’s output and subtract its spatial mean separately for each color channel. We then resize the residual back to the crop’s original dimensions and add it to the corresponding region in the original image. During decoding, TrustMark’s region detector first predicts bounding boxes from the received image. The predicted regions are cropped and resized to the decoder’s native resolution for payload extraction. We use the Q variant with a 100-bit payload and error correction disabled. 
+
+PixelSeal. We first apply PixelSeal’s embedder to the complete image to obtain a globally watermarked output. We subtract the original image from this output, multiply the resulting residual by the selected mask, and add the masked residual back to the original image. This confines all changes introduced by PixelSeal to the selected region. Unlike OmniGuard, this adaptation does not retain a separate auxiliary watermark outside that region. We use the released 256-bit model and decode the payload from the complete received image using its whole-image decoder. For all three methods, the selected mask is used only during embedding. Decoding receives neither the ground-truth mask nor its bounding box. 
+
+## A.6 Transformation Parameters 
+
+Table 4 describes the clean reference and all 55 transformation conditions. For each image and transformation condition, we sample one predefined parameter configuration using fixed random seeds. For brightness and Gaussian blur, intervals denote uniform sampling within the selected configuration; the listed values are not an exhaustive sweep applied to every image. In the Gaussian blur configurations, 𝑘 
+
+denotes a square 𝑘 × 𝑘 kernel unless a rectangular kernel is specified, and 𝑈 [𝑎, 𝑏 ] denotes a uniform draw from [𝑎, 𝑏 ].
+
+Table 4: Definitions of the clean reference and 55 transformation conditions. The clean reference is listed separately; each transformation row gives its category, implementation, and parameter settings.                     
+
+> Category Condition Definition
+> Clean Clean reference No transformation is applied; the watermarked image is decoded directly. Alignment Random affine transform Randomly samples affine parameters: rotation up to 180 degrees, x/y scale between 0.6 and 1.4, shear up to 0.3, and translation up to 0.2 in normalized coordinates. Ground-truth localization masks are transformed with the same operation. Alignment Crop Keeps a randomly located square crop with side ratio 0.32-0.95 and discards the rest of the frame. Ground-truth localization masks are cropped in the same way. Alignment Resize and crop Samples a crop area ratio from 0.10-1.0 and aspect ratio from 0.3-3.0, then resizes the crop back to the original image size. Ground-truth localization masks follow the same crop-and-resize transform. Alignment Interpolation resize Resizes the image with linear interpolation using fixed scale factors of 0.5, 0.75, 1.25, or 1.5, or a random factor between 0.5 and 1.5. Ground-truth localization masks use the same resizing factors. Alignment Perspective transform Applies a projective corner perturbation with distortion scale 0.1-0.8. The image and ground-truth localization masks share the same perspective map. Alignment Rotation Rotates by sampled ranges of +/-10, +/-30, or +/-90 degrees, or by fixed angles of 5, 10, 30, 45, 60, or 90 degrees; ground-truth localization masks use the same rotation. Alignment Shearing Applies horizontal and vertical shear factors of 0.1, 0.2, or 0.3. Ground-truth localization masks are transformed with the same operation. Alignment Small geometric distortions Applies a mild nonrigid warp from small corner shifts, sinusoidal bending, and local wave perturbations. Ground-truth localization masks are resampled with the same grid. Continued on next page
+> 14 What Breaks Local Watermarks?
+> Table 4 continued.
+
+Category Condition Definition 
+
+Alignment Translation Shifts the image by 5, 10, or 20 pixels in both axes. Ground-truth localization masks are shifted consistently. Alignment Grid warping Applies a sinusoidal grid warp with one-pixel default amplitude and grid period 20 pixels. Ground-truth localization masks are warped with the same sampling grid. Alignment Horizontal flip Mirrors the image left to right and applies the same coordinate change to ground-truth localization masks. Alignment Vertical flip Mirrors the image top to bottom and applies the same coordinate change to ground-truth localization masks. Alignment Diagonal flip Transposes the image across its diagonal, swapping the horizontal and vertical axes of the image and ground-truth localization masks. Alignment Row/column removal Randomly removes 10, 30, or 50 rows and the same number of columns, producing a smaller image frame. Ground-truth localization masks use the same retained indices. Alignment JPEG + crop + brightness chain Applies JPEG compression at quality 40, 60, or 80, keeps a random 0.71-side crop, and then multiplies intensity by 0.5. Alignment Outpainting (expanded canvas) Places the full watermarked image on a larger canvas, scaled by 1.5-2.0, optionally rescales the pasted image by 0.8-1.2, and uses inpainting to synthesize the surrounding canvas. Signal Brightness Multiplies image intensity by a factor selected from the fixed values 
+
+{0.1, 0.25 , 0.5, 0.75 , 1, 1.25 , 1.5, 1.75 , 2} or the uniform distributions 𝑈 [0.5, 1.5] and 𝑈 [0.7, 1.3]; clips the result to the valid pixel range. Signal Contrast Changes contrast around the image mean with factors from 0.5 to 2.0, including sampled ranges 0.5-1.5, 0.5-2.0, and 0.7-1.3. Signal Saturation Changes color saturation with factors 0.1, 0.5, sampled 0.5-2.0, sampled 0.7-1.3, 1.0, or 1.5 while preserving image geometry. Signal Gamma correction Applies nonlinear intensity remapping with gamma values 0.5, 0.8, 1.6, and 2.5. Signal Color jitter Shifts hue by 0 .1, 0.2, −0.1, or −0.2 radians, or by a value sampled uniformly from [− 0.1, 0.1], while leaving brightness, contrast, and saturation unchanged. Signal Randomized color jitter Applies Kornia ColorJiggle using one of three amplitude tuples (𝑏, 𝑐, 𝑠, ℎ ): (0.05 , 0.05 , 0.05 , 0.01 ),
+
+(0.1, 0.1, 0.1, 0.02 ), or (0.1, 0.1, 0.1, 0.05 ), where 𝑏, 𝑐, 𝑠, ℎ specify brightness, contrast, saturation, and hue jitter. Signal RGB channel shift Adds symmetric per-channel RGB shifts with limits 0.02, 0.05, or 0.1 in normalized color units. Signal Grayscale conversion Converts the image to grayscale and keeps it in a three-channel representation for decoding. Signal Histogram equalization Redistributes image intensities to equalize the histogram while keeping the image frame fixed. Signal Color inversion Replaces each color value by its complement. Signal Box blur Applies a mean filter with kernel size 3, 5, or 7 pixels. Signal Gaussian blur Samples one kernel/standard-deviation configuration (𝑘, 𝜎 ): (3, 0.5), (3, 𝑈 [0.1, 1] ) , (3, 3), (5, 1),
+
+(5, 𝑈 [0.1, 1.5] ) , (7, 𝑈 [0.1, 2] ) , (9, 1.5), (13 , 2), (17 , 2), or (3, 5); an additional configuration uses a rectangular 3 × 17 kernel with 𝜎 ∼ 𝑈 [0.1, 2].Signal Motion blur Applies directional blur kernels of size 3, 5, 7, or 9 to simulate camera or object motion. Signal Sharpening Enhances local contrast with sharpening factors 0.5, 1.0, or 2.5. Signal High-pass filter Suppresses low-frequency image content and emphasizes edges and fine texture. Signal Low-pass filter Suppresses high-frequency image content with kernel sizes 3, 5, or 7, keeping smoother low-frequency structure. Signal Convolutional filter Applies a fixed 3-by-3 edge-enhancing sharpening kernel. Signal Median filter Replaces each pixel by the median of a 3-, 5-, or 7-pixel local neighborhood, reducing impulse-like noise. Signal Gaussian noise Adds zero-mean Gaussian noise with standard deviation from 1.0 to 25.5 on the 0-255 pixel scale. Signal Poisson noise Applies signal-dependent shot noise with scale factors 0.75, 1.0, or 1.25. Signal Speckle noise Adds multiplicative noise proportional to local image intensity with standard deviation 0.05 or 0.15. Signal Dither noise Applies dithering noise with intensity 0.02, 0.08, or 0.12. Signal Salt-and-pepper noise Randomly sets 5% or 10% of pixels to black or white. Signal JPEG compression Encodes and decodes the image with JPEG quality 40, 50, 60, 70, 80, 90, or 95. Signal JPEG 2000 compression Encodes and decodes the image with JPEG 2000 compression ratios 35 or 100. Signal GIF compression Converts the image through a palette-based GIF representation. Signal Posterization Keeps 3, 4, 5, or 6 bits per color channel by dropping lower-order bits. Signal Uniform quantization Maps pixel values onto 8, 16, or 32 uniformly spaced intensity levels. Signal Color quantization Reduces the color palette to 256, 128, 64, 32, or 16 representative colors. Continued on next page 
+
+> 15 Yao et al.
+> Table 4 continued.
+
+Category Condition Definition 
+
+Signal DCT transform Perturbs discrete cosine transform coefficients with strength levels 1-10 and power 0.01-0.1, with optional coefficient shuffling. Signal DWT transform Perturbs Haar or Daubechies wavelet coefficients with strength levels 1-15 and power 0.05-0.5. Signal FFT transform Perturbs Fourier-domain coefficients with strength levels 1-15 and power 0.001-0.05, with optional coefficient shuffling. Indirect local edits Blackout (independent region) Places a black square occluder with side length 64, 128, or 256 pixels at a randomly sampled image location. The edit region is chosen independently of the watermark region. Indirect local edits Inpainting (independent region) Samples a rectangular edit region independently of the watermark region, with side ratios between 0.05 and one of 0.15, 0.35, or 0.50, then replaces that region with an inpainted fill. Indirect local edits Inpainting (independent region, outside restored) Uses the same rectangular-mask sampling protocol as inpainting (independent region), with independently sampled edit regions, and restores all pixels outside the edit region from the watermarked input after generation. Indirect local edits Splicing (independent region) Pastes donor content from another image in the same dataset into one or more independently sampled edit regions. Indirect local edits Outpainting (fixed canvas) Uses the complement of the watermark region as the generation mask at the original image size, without restoring unmasked pixels after generation. Direct watermark edits Inpainting (watermark region) Uses the watermark region dilated with an odd square kernel whose side length is approximately 3% of the shorter image side (at least three pixels) as the edit region, and replaces it with an inpainted fill. Direct watermark edits Splicing (watermark region) Pastes donor content from another image in the same dataset into the watermark region. 
+
+## Use of Generative AI 
+
+We used large language models only to assist with grammar checking, language polishing, and coding assistance. The authors reviewed all suggested edits and remain responsible for the final manuscript.

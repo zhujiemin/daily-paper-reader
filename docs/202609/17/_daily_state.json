@@ -1,0 +1,57 @@
+{
+  "date": "20260917",
+  "date_label": "",
+  "generated_at": "2026-09-17 22:30:55 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.16832v1",
+      "route": "202609/17/2609.16832v1-what-breaks-local-watermarks-a-robustness-benchmark-for-local-invisible-image-watermarking",
+      "title": "What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "局部不可见图像水印在图像变换下的鲁棒性基准",
+      "first_seen_at": "2026-09-17 22:30:55 UTC",
+      "updated_at": "2026-09-17 22:30:55 UTC"
+    },
+    {
+      "paper_id": "2609.09604v1",
+      "route": "202609/17/2609.09604v1-watermarks-without-verification-ai-text-watermarking-after-the-eu-ai-act",
+      "title": "Watermarks Without Verification: AI Text Watermarking After the EU AI Act",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "欧盟AI法案后AI水印的部署、可移除性与鲁棒性争论",
+      "first_seen_at": "2026-09-17 22:30:55 UTC",
+      "updated_at": "2026-09-17 22:30:55 UTC"
+    },
+    {
+      "paper_id": "2609.15657v1",
+      "route": "202609/17/2609.15657v1-predictive-likelihood-ratios-for-language-model-watermark-detection",
+      "title": "Predictive Likelihood Ratios for Language Model Watermark Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向生成式语言模型密钥水印检测的预测似然比方法",
+      "first_seen_at": "2026-09-17 22:30:55 UTC",
+      "updated_at": "2026-09-17 22:30:55 UTC"
+    }
+  ]
+}

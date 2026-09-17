@@ -1,0 +1,54 @@
+{
+  "label": "2026-09-17",
+  "date": "2026-09-17",
+  "generated_at": "2026-09-17T22:30:59",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202609/17/2609.16832v1-what-breaks-local-watermarks-a-robustness-benchmark-for-local-invisible-image-watermarking",
+      "section": "deep",
+      "title_en": "What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking",
+      "authors": "Kai Yao, Bence Szilágyi, Sebestyén Kamp, Máté Poór, Máté Szilveszter, Matyas K. Zsoldos, Marc Juarez",
+      "date": "2026-09-15",
+      "pdf": "https://arxiv.org/pdf/2609.16832v1",
+      "score": "8.0",
+      "evidence": "局部不可见图像水印在图像变换下的鲁棒性基准",
+      "tldr": "局部不可见水印能将信号嵌入指定区域并从对象恢复载荷，但现有评估多聚焦单一方法，变换、数据集与指标不统一，难以横向比较。本文提出首个系统鲁棒性基准，覆盖55种图像变换，分为信号失真、坐标对齐变化、间接局部编辑和直接水印编辑四类，评估MaskWM、WAM、OmniGuard、TrustMark与PixelSeal。结果显示所有方法均对部分变换脆弱，MaskWM载荷恢复与定位最强但干净图像质量最低，同步可提升其几何变换表现却牺牲质量；几何错位和inpainting、outpainting等生成式局部编辑尤其致命。该基准揭示局部水印鲁棒性瓶颈与评测缺口。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Local image watermarking embeds an invisible signal into selected image regions rather than spreading it across the entire image, enabling payload recovery from specific objects or regions without perceptibly altering the image. Existing studies evaluate the robustness of payload recovery and localization under image transformations, but they often focus on their own proposed method, resulting in narrow evaluations with inconsistent choices of transformations, datasets, and metrics. These inconsistencies across studies limit direct comparisons across methods and muddle the overall picture of local watermark robustness. To address this gap, we present the first systematic robustness benchmark for local watermarks across 55 image transformations, including (i) signal distortions, (ii) changes in image coordinate alignment, (iii) indirect local edits, and (iv) direct watermark edits. The benchmark evaluates MaskWM, WAM, OmniGuard, TrustMark, and PixelSeal, all methods that either provide native localization or require minimal adaptation to support it. Our results show that all evaluated methods are vulnerable to some transformation, with MaskWM standing out as offering the strongest payload recovery and localization, although it has the lowest image quality in the clean setting. Synchronization further improves MaskWM's payload recovery under several geometric transformations, albeit at an additional cost to image quality. A key finding is that local watermark robustness depends strongly on the nature of the transformation: signal distortions are often tolerated by the strongest methods, while geometric misalignment and generative local edits, such as inpainting and outpainting, can completely impair payload recovery. We observe that payload recovery and localization are related but not interchangeable, and both strongly depend on the transformation's impact on the watermark region.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/17/2609.09604v1-watermarks-without-verification-ai-text-watermarking-after-the-eu-ai-act",
+      "section": "quick",
+      "title_en": "Watermarks Without Verification: AI Text Watermarking After the EU AI Act",
+      "authors": "Alexander Nemecek, Vipin Chaudhary, Erman Ayday",
+      "date": "2026-09-09",
+      "pdf": "https://arxiv.org/pdf/2609.09604v1",
+      "score": "6.0",
+      "evidence": "欧盟AI法案后AI水印的部署、可移除性与鲁棒性争论",
+      "tldr": "欧盟AI法案第50条生效后，Anthropic与Google在生成文本中默认嵌入SynthID-Text水印且无法关闭，用户与厂商就质量、隐私、可移除性各执一词却均无法验证。作者指出这种不可验证性本身才是治理失败，并用开源SynthID-Text在两个开放权重模型上实测。结果显示散文上水印影响不超过换采样种子，代码上最多损失三个点正确率、检测接近随机水平。作者据此提出配对输出发布、配置披露、认证审计等制度要求。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "On August 2, 2026, the obligations of Article 50 of the EU AI Act took effect, requiring generative AI providers to mark the content their systems produce and ensure it can be detected as AI-generated. Days later, Anthropic disclosed that every Claude model released after that date embeds a watermark based on SynthID-Text in all generated text, enabled by default with no user opt-out; Google has deployed SynthID-Text in Gemini since 2024. Users objected that the watermark degrades quality, particularly for code, that it secretly encodes identifying information, and, in mutual contradiction, that it is easily removable and inescapable; the vendor answered with assurances of unchanged quality, no identifying information, and robustness to light editing. In this work, we argue that neither the objections nor the assurances can currently be verified and that this unverifiability, rather than watermarking itself, is the substantive governance failure. We sort the contested assertions by what it would take to settle each and evaluate the open-source SynthID-Text implementation on two open-weight models, because no public tool can test the deployed systems. On prose, the measured effect of the watermark does not exceed that of changing the sampling seed. On code, the cost is three points of correctness on one model and below measurement on the other, while detection remains near chance, a limitation of detectability rather than quality. The remaining gaps trace to withheld access or missing institutions and we map each to a requirement: release of matched outputs, configuration disclosure, accredited audits, a shared evaluation protocol, and interoperable detection.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/17/2609.15657v1-predictive-likelihood-ratios-for-language-model-watermark-detection",
+      "section": "quick",
+      "title_en": "Predictive Likelihood Ratios for Language Model Watermark Detection",
+      "authors": "Li Ma",
+      "date": "2026-09-14",
+      "pdf": "https://arxiv.org/pdf/2609.15657v1",
+      "score": "6.0",
+      "evidence": "面向生成式语言模型密钥水印检测的预测似然比方法",
+      "tldr": "语言模型水印检测通过密钥重建伪随机变量，检验其与观测 token 的依赖关系，但概率亏缺与尾分布常不确定。本文基于 pivot 框架构造预测似然比，用混合先验平均尾形状与有效宽度，并允许文档内变化。精确条件零假设下，归一化预测备择构成 Bayes 因子兼检验鞅，控制 I 类错误且支持可选停止。实验表明 union-tail 混合在多种尾备择与三个时间窗上最大 II 类错误 regret 仅 .0080，优于 equal-tail 的 .0962，并在两个开放模型上提升 AUC；但仅支持所评估备择下的稳健性，不保证均匀功效或抗任意编辑。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Keyed watermark detection tests dependence between observed tokens and pseudorandom variables reconstructed from a secret key. Building on the pivotal framework of Li et al. (2025), we construct predictive likelihood ratios that average over uncertain probability deficits and residual-tail distributions. The aim is robust detection power across alternative specifications without requiring a single signal-strength tuning. A mixture prior combines tail shape and effective width; hierarchical extensions allow within-document variation in deficit or width. The test maximizes prior-averaged power at a fixed size, but is not generally uniformly most powerful or minimax. Under the exact conditional pivot null, normalized predictive alternatives selected before each observation yield a Bayes factor that is also a test martingale: Type I error control is unaffected by alternative misspecification and remains valid under optional stopping. This guarantee does not cover violations of the conditional null, and the interpolated implementation has no certified anytime guarantee. Gumbel marginal likelihoods are evaluated by fixed quadrature. Across the evaluated tail-shape and tail-width alternatives and three horizons, the union-tail mixture has maximum observed Type II error regret .0080, compared with .0962 for the equal-tail mixture, relative to the best tested rule. On temperature-matched outputs from two open models, it improves AUC over the equal-tail baseline in all eight non-saturated model-temperature cells, although the leading reference score generally has higher AUC. Supplementary experiments show retained power under independent null-like replacement and smaller changes from hierarchical dependence modeling. The evidence supports robustness across the evaluated alternatives, not uniform power guarantees or resistance to arbitrary text edits.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
