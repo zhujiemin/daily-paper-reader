@@ -1,0 +1,288 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-17T08:07:46.038034+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2609.08213v1",
+      "source": "arxiv",
+      "title": "DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory",
+      "abstract": "Diffusion watermarking embeds verifiable signals into the generative process and commonly verifies them by recovering trajectory-dependent evidence, making the marks robust to conventional pixel-space distortions. Existing removal attacks either regenerate along deterministic trajectories, which often preserve the watermark-bearing latent structure, or optimize every image separately. We identify the reliance on a recoverable generative trajectory as a common attack surface among the schemes we study. Based on this observation, we propose DRIFT, a black-box attack that combines partial forward diffusion with stochastic reverse resampling. Forward re-noising limits source information available to a fixed-depth recovery pipeline, while stochastic reversal supplies alternative noise-driven paths whose removal benefit we isolate through matched sampler comparisons. Adaptive DRIFT searches a selected ladder for each image's first verifier-rejected rung and refines fidelity while retaining only updates rejected by the same verifier. At fixed depth, we derive information-theoretic and Wasserstein source-dependence bounds; under realized-ladder monotonicity, the first rejected rung is least distorted among rejected rungs on that ladder, and verifier-gated refinement preserves rejection. Across nine watermarks spanning three paradigms, DRIFT achieves 98-100% attack success and the best image quality among the compared attacks, without secret keys, verifier internals, or per-image gradient optimization.",
+      "authors": [
+        "Rui Bao",
+        "Zheng Gao",
+        "Xiaoyu Li",
+        "Xiaoyan Feng",
+        "Yang Song",
+        "Jiaojiao Jiang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-09-08T03:54:17+00:00",
+      "link": "https://arxiv.org/pdf/2609.08213v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "black-box attack removing diffusion watermarks from generated images",
+      "llm_evidence_cn": "去除生成图像扩散水印的黑盒攻击",
+      "llm_evidence": "去除生成图像扩散水印的黑盒攻击",
+      "canonical_evidence": "去除生成图像扩散水印的黑盒攻击",
+      "llm_tldr_en": "Diffusion watermarking verifies marks by recovering trajectory-dependent evidence, making them robust to pixel-space distortions. DRIFT is a black-box removal attack that combines partial forward re-noising with stochastic reverse resampling to deflect the generative trajectory and erase the watermark.",
+      "llm_tldr_cn": "扩散水印通过恢复轨迹相关证据来验证标记，使其对像素空间扰动具有鲁棒性，现有去除攻击或沿确定性轨迹重生成而保留水印潜结构，或逐图优化代价高昂。本文识别出对可恢复生成轨迹的依赖是共同攻击面，提出DRIFT黑盒攻击，结合部分前向加噪与随机反向重采样来偏转生成轨迹。实验表明该方法能有效去除所研究方案的水印。该工作揭示了扩散水印在轨迹层面上的脆弱性，为水印鲁棒性防御提供参考。",
+      "llm_tldr": "扩散水印通过恢复轨迹相关证据来验证标记，使其对像素空间扰动具有鲁棒性，现有去除攻击或沿确定性轨迹重生成而保留水印潜结构，或逐图优化代价高昂。本文识别出对可恢复生成轨迹的依赖是共同攻击面，提出DRIFT黑盒攻击，结合部分前向加噪与随机反向重采样来偏转生成轨迹。实验表明该方法能有效去除所研究方案的水印。该工作揭示了扩散水印在轨迹层面上的脆弱性，为水印鲁棒性防御提供参考。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.12909v1",
+      "source": "arxiv",
+      "title": "Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery",
+      "abstract": "Semantic watermarking schemes such as Tree-Ring hide a detectable pattern in the initial noise latent of a diffusion model. Recent work shows these watermarks are not only removable but forgeable: an attacker who never sees the watermarking key can still produce images the genuine detector accepts. We reproduce the Reprompt forgery attack of Müller et al. against Tree-Ring on Stable Diffusion XL, using the authors' released code, on free-tier dual T4 GPUs with 14.6 GB of usable memory per device, substantially less per-GPU memory than the A40 hardware used in the original study. The attack reproduces. Over six trials of three arms we detect genuine images 6/6, clean images 0/6, and forged images 5/6, at 325-332 s per attack. Three further results came out of running it under constraint. The released detector computes a non-central $χ^2$ statistic and hands back only its CDF, so we recovered the discarded statistic; our recovery matches the released detector exactly, and two natural scores built from it separate the forged arm from the clean null at AUC 0.861 and 0.972 on the same eighteen observations. Running SDXL in half precision requires patching the pipeline's direct autoencoder calls, and a controlled probe confirms the patched path leaves the detector statistic unchanged. Finally, we report a prediction we made from reading the detector source that our measurements then contradicted. The notebook, the pinned fork and every measurement artifact are released with the paper.",
+      "authors": [
+        "Saifur Rahman Tamim",
+        "Md Taslimul Hasan Toufique",
+        "A. M. Tayeful Islam"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-09-11T14:35:42+00:00",
+      "link": "https://arxiv.org/pdf/2609.12909v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "black-box semantic watermark forgery against diffusion models",
+      "llm_evidence_cn": "针对扩散模型的黑盒语义水印伪造",
+      "llm_evidence": "针对扩散模型的黑盒语义水印伪造",
+      "canonical_evidence": "针对扩散模型的黑盒语义水印伪造",
+      "llm_tldr_en": "Semantic watermarks like Tree-Ring are claimed detectable, yet recent work shows they can be forged without the key. This paper reproduces the Reprompt forgery attack on Stable Diffusion XL under low memory, detecting genuine images 6/6 and forged images 5/6, exposing serious provenance risks.",
+      "llm_tldr_cn": "扩散模型语义水印（如Tree-Ring）被认为可用于来源认证，但已有研究显示其不仅能被移除，还能在无密钥情况下被伪造。作者在Stable Diffusion XL上复现Reprompt伪造攻击，使用官方代码在低显存的T4 GPU上运行，验证攻击可行。六组试验中真实图像6/6被检出，干净图像0/6，伪造图像5/6被检测器接受，每次攻击约325至332秒。该结果凸显生成内容水印来源认证的安全脆弱性。",
+      "llm_tldr": "扩散模型语义水印（如Tree-Ring）被认为可用于来源认证，但已有研究显示其不仅能被移除，还能在无密钥情况下被伪造。作者在Stable Diffusion XL上复现Reprompt伪造攻击，使用官方代码在低显存的T4 GPU上运行，验证攻击可行。六组试验中真实图像6/6被检出，干净图像0/6，伪造图像5/6被检测器接受，每次攻击约325至332秒。该结果凸显生成内容水印来源认证的安全脆弱性。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.14856v1",
+      "source": "arxiv",
+      "title": "RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction",
+      "abstract": "Semantic watermarks for diffusion models embed ownership information into the generative process while preserving perceptual quality, but Gaussian-Shading extraction conventionally requires multi-step diffusion inversion to recover the initial noise. Recent one-step methods show that this cost can be reduced substantially. We study this problem through extended flow matching and conditional regression. The key observation is that, near the high-SNR image endpoint, recovering a useful noise statistic given by the first-step output of the extended flow matching in the high-SNR regime is much simpler than reconstructing the full inverse trajectory, and Gaussian Shading only requires the recovered latent to remain in the correct watermark decision region. Based on this observation, we propose a lightweight, prompt-free extractor that decomposes endpoint recovery into an image-like anchor and a noise-oriented residual, which increases the capability of the model to utilize GPU parallel computation. The resulting method avoids iterative inversion and repeated evaluation of a diffusion-scale U-Net, providing an efficient one-step extraction pipeline with a concise theoretical interpretation. The computational cost of extracting noise is lower than that of both OSI and FARI. The github repo is there: https://github.com/TheLovesOfLadyPurple/RAIN-lightweight-NN-for-one-step-semantic-watermark-extraction",
+      "authors": [
+        "Zilai Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-14T00:07:17+00:00",
+      "link": "https://arxiv.org/pdf/2609.14856v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "semantic watermark extraction for diffusion models via region-aware inversion",
+      "llm_evidence_cn": "面向扩散模型语义水印提取的区域感知反演",
+      "llm_evidence": "面向扩散模型语义水印提取的区域感知反演",
+      "canonical_evidence": "面向扩散模型语义水印提取的区域感知反演",
+      "llm_tldr_en": "RAIN replaces costly multi-step diffusion inversion for Gaussian-Shading watermark extraction with a region-aware one-step approach based on extended flow matching, greatly reducing cost while preserving watermark decoding.",
+      "llm_tldr_cn": "语义水印为扩散模型嵌入所有权信息，但Gaussian-Shading提取通常需要多步扩散反演恢复初始噪声，代价高昂。本文通过扩展流匹配与条件回归研究该问题，发现高信噪比端点处恢复首步噪声统计量比重建完整逆轨迹简单得多。方法只需恢复的隐变量落入正确水印判决区域即可完成提取。该区域感知反演网络显著降低水印提取开销，为扩散模型版权与来源认证提供高效可行的检测方案。",
+      "llm_tldr": "语义水印为扩散模型嵌入所有权信息，但Gaussian-Shading提取通常需要多步扩散反演恢复初始噪声，代价高昂。本文通过扩展流匹配与条件回归研究该问题，发现高信噪比端点处恢复首步噪声统计量比重建完整逆轨迹简单得多。方法只需恢复的隐变量落入正确水印判决区域即可完成提取。该区域感知反演网络显著降低水印提取开销，为扩散模型版权与来源认证提供高效可行的检测方案。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.10416v1",
+      "source": "arxiv",
+      "title": "TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories",
+      "abstract": "Watermarking the final patch produced by a coding agent provides provenance evidence for the submitted artifact, but does not authenticate the visible process that produced it. Behavioral watermarking methods primarily provide a global detection or identifier-recovery signal, so a locally edited trajectory may retain sufficient ownership evidence without revealing which protected region has become inconsistent. To address this limitation, we propose TrajMark, a training-free, symmetric-key, visible-only trajectory watermarking framework that separates robust ownership attribution from fragile local integrity verification. Our framework consists of two complementary layers: a sparse owner layer that encodes a six-bit deployment identifier by rewriting a keyed subset of naturally occurring READ actions into masked linear equations, and a localization layer that inserts linked Q12 ordinary, group, and terminal seals to commit to protected critical-action segments. This separation allows ownership evidence to accumulate robustly across trajectories, while local modifications perturb nearby keyed commitments and expose the affected protocol region. We further provide a design-level analysis of owner recoverability, integrity collision probability, structural overhead, and localization behavior. Across three coding-agent frameworks and three LLMs, TrajMark recovers the exact owner in all evaluated clean full-watermark batches. Under exhaustive eligible single-site attacks it detects 95.5%-100% of edits, and under random single-action corruption it localizes 95.8% of modified sites to an accepted protocol region rather than to the individual action. Owner marking adds no trajectory actions; the integrity layer adds explicit read-only seals, and matched Pass@1 is 26.9% versus 26.3% for unwatermarked runs.",
+      "authors": [
+        "Bokang Zeng",
+        "Zheng Gao",
+        "Xiaoyu Li",
+        "Xiaoyan Feng",
+        "Jiaojiao Jiang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.SE"
+      ],
+      "published": "2026-09-09T16:33:02+00:00",
+      "link": "https://arxiv.org/pdf/2609.10416v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermark-based ownership attribution and segment-level tamper localization",
+      "llm_evidence_cn": "基于水印的所有权归属与片段级篡改定位",
+      "llm_evidence": "基于水印的所有权归属与片段级篡改定位",
+      "canonical_evidence": "基于水印的所有权归属与片段级篡改定位",
+      "llm_tldr_en": "TrajMark separates robust ownership attribution from fragile local integrity verification in coding-agent trajectories, using a sparse owner layer plus a fragile layer to reveal which protected region became inconsistent after local edits.",
+      "llm_tldr_cn": "现有编码智能体水印方法仅能提供全局的归属检测或标识恢复信号，当轨迹被局部编辑后，仍可能保留足够的归属证据，却无法指出哪一受保护片段已被篡改。本文提出TrajMark，一种无需训练、对称密钥、仅针对可见轨迹的水印框架，将鲁棒的归属认证与脆弱的局部完整性验证分离，通过稀疏所有者层编码部署信息。实验表明该框架可在保持归属能力的同时实现片段级篡改定位。该工作为过程级溯源与完整性校验提供了新思路。",
+      "llm_tldr": "现有编码智能体水印方法仅能提供全局的归属检测或标识恢复信号，当轨迹被局部编辑后，仍可能保留足够的归属证据，却无法指出哪一受保护片段已被篡改。本文提出TrajMark，一种无需训练、对称密钥、仅针对可见轨迹的水印框架，将鲁棒的归属认证与脆弱的局部完整性验证分离，通过稀疏所有者层编码部署信息。实验表明该框架可在保持归属能力的同时实现片段级篡改定位。该工作为过程级溯源与完整性校验提供了新思路。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.11188v1",
+      "source": "arxiv",
+      "title": "A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution",
+      "abstract": "Synthetic image attribution (SIA) has become increasingly important with the rapid advancement of text-to-image generation models. However, accurately identifying the source model of a generated image remains challenging due to the growing similarity among modern diffusion-based generators and the presence of diverse post-processing operations. In this report, we present a multi-view and confusion-guided ensemble framework for the Synthetic Image Attribution Challenge of the DLMMDD Workshop at ICANN 2026. Our approach integrates multiple complementary architectures, including FFT-ConvNeXt, DINOv2, CLIP, and Xception, to capture diverse attribution cues from frequency, semantic, and forensic perspectives. To improve robustness against unknown degradations and image manipulations, extensive data augmentation strategies are employed during training, simulating realistic post-processing operations such as compression, resizing, grayscale conversion, and blur. Furthermore, we analyze the confusion patterns of the ensemble model and observe severe ambiguity between Stable Diffusion 3 and Stable Diffusion 3.5. To address this issue, we introduce a dedicated binary expert classifier that is selectively activated under low-confidence conditions. We additionally apply class-adaptive confidence calibration to improve the discrimination of challenging classes such as Tencent Hunyuan. The proposed framework achieved 99.53% on the public leaderboard and 99.20% on the private leaderboard. The source code and implementation details are publicly available at https://github.com/ZOMIN28/SIA.",
+      "authors": [
+        "Zuomin Qu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-10T07:54:25+00:00",
+      "link": "https://arxiv.org/pdf/2609.11188v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "synthetic image attribution and provenance of generated images",
+      "llm_evidence_cn": "合成图像溯源与生成内容来源识别",
+      "llm_evidence": "合成图像溯源与生成内容来源识别",
+      "canonical_evidence": "合成图像溯源与生成内容来源识别",
+      "llm_tldr_en": "This framework ensembles FFT-ConvNeXt, DINOv2, CLIP and Xception with confusion-guided multi-view cues to attribute generated images to their source models robustly, supporting provenance of text-to-image content.",
+      "llm_tldr_cn": "随着文本到图像生成模型快速发展，合成图像溯源变得愈发重要，但现代扩散生成器之间日益相似且存在多样后处理，准确识别生成图像来源模型仍具挑战。本文提出多视角与混淆引导的集成框架，融合FFT-ConvNeXt、DINOv2、CLIP与Xception等互补架构，从频域、语义与取证视角捕捉溯源线索以提升鲁棒性。该框架面向ICANN 2026合成图像溯源挑战赛，为生成内容来源认证提供了实用方案。",
+      "llm_tldr": "随着文本到图像生成模型快速发展，合成图像溯源变得愈发重要，但现代扩散生成器之间日益相似且存在多样后处理，准确识别生成图像来源模型仍具挑战。本文提出多视角与混淆引导的集成框架，融合FFT-ConvNeXt、DINOv2、CLIP与Xception等互补架构，从频域、语义与取证视角捕捉溯源线索以提升鲁棒性。该框架面向ICANN 2026合成图像溯源挑战赛，为生成内容来源认证提供了实用方案。",
+      "llm_tags": [
+        "query:diffusion-wm:composite"
+      ],
+      "matched_query_tag": "query:diffusion-wm:composite",
+      "matched_query_text": "Papers central to 我关注生成式图像和扩散模型中的数字水印技术。重点关注扩散模型水印、文本到图像水印、生成模型水印、水印嵌入与检测、版权保护、来源认证、训练期水印、输出图像水印、微调与模型编辑后的鲁棒性、水印移除攻击与防御。, especially work that connects or combines: digital watermarking for diffusion models that generate images; watermark embedding and detection in generative models; watermarking latent diffusion models and their generated outputs; embedding and detecting invisible watermarks in generated images; watermark-based provenance and attribution of generated content; attacks that remove, erase, or forge watermarks in generated images; Defenses against watermark removal and adversarial attacks on generated image watermarks.",
+      "matched_requirement_id": "req-composite-diffusion-wm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.14316v1",
+      "source": "arxiv",
+      "title": "Learning Continuous Source Responses For Generalizable AI-Generated Image Detection",
+      "abstract": "Advances in image generation have made synthetic images increasingly difficult to distinguish from real photographs, raising concerns about the trustworthiness of visual media. Existing AI-generated image detectors often perform well on in-domain data, but their robustness and cross-generator generalization remain limited. These limitations are commonly attributed to overfitting to shortcut cues. Although many methods seek to suppress shortcut learning, most retain binary classification as the training task without reconsidering how the task itself shapes the learned representations. We introduce CuRe, a framework for learning Continuous Source Responses that revisits authenticity detection from the perspective of the training task. CuRe reformulates backbone adaptation as regression of real-generated mixing ratios, providing finer supervision that encourages the model to capture authenticity-related variation beyond binary endpoint separation. We further select a compact source-response subspace to suppress nuisance variation and limit the final classifier's access to potential shortcut cues. Across ten public benchmarks, CuRe achieves an average balanced accuracy of 89.7%, exceeding the second-best method by 5.2 percentage points. Further experiments demonstrate consistent generalization gains across visual backbones and strong robustness to common image degradations. Code is available at https://github.com/manic-cui/CuRe",
+      "authors": [
+        "Manni Cui",
+        "Ruiqi Liu",
+        "Zijian Yu",
+        "Hao Tan",
+        "Zibo Wei",
+        "Zian Wang",
+        "Ziheng Qin",
+        "Huijia Zhu",
+        "Weiqiang Wang",
+        "Jun Lan",
+        "Shu Wu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-13T06:24:59+00:00",
+      "link": "https://arxiv.org/pdf/2609.14316v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "AI-generated image detection for authenticity verification",
+      "llm_evidence_cn": "面向真实性验证的AI生成图像检测",
+      "llm_evidence": "面向真实性验证的AI生成图像检测",
+      "canonical_evidence": "面向真实性验证的AI生成图像检测",
+      "llm_tldr_en": "CuRe reframes AI-generated image detection as learning continuous source responses instead of binary classification, reducing shortcut reliance and improving robustness and cross-generator generalization on authenticity judgments.",
+      "llm_tldr_cn": "生成图像的逼真度不断提升，使得合成图像难以与真实照片区分，而现有AI生成图像检测器往往依赖捷径线索，跨生成器的泛化能力有限。本文提出CuRe框架，从训练任务角度重新审视真实性检测，学习连续的来源响应而非简单的二值分类。实验表明该方法在域内与跨生成器场景下均提升了检测的鲁棒性与泛化性。该工作为可泛化的生成图像真实性判别提供了新的训练范式。",
+      "llm_tldr": "生成图像的逼真度不断提升，使得合成图像难以与真实照片区分，而现有AI生成图像检测器往往依赖捷径线索，跨生成器的泛化能力有限。本文提出CuRe框架，从训练任务角度重新审视真实性检测，学习连续的来源响应而非简单的二值分类。实验表明该方法在域内与跨生成器场景下均提升了检测的鲁棒性与泛化性。该工作为可泛化的生成图像真实性判别提供了新的训练范式。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.14437v1",
+      "source": "arxiv",
+      "title": "Lightweight Generalized DeepFake Face Detection with WAVIE: Wavelet Augmented Vision Intermediate Embeddings",
+      "abstract": "Deepfake detection systems often exhibit significant performance degradation when deployed on unseen manipulation methods, limiting their reliability in real-world multimedia environments. This lack of generalization poses critical challenges for misinformation mitigation, digital forensics, and human-centric AI systems. Existing detectors perform well on the forgery methods they are trained on, but their accuracy drops sharply on unseen pipelines. To bridge this generalization gap, we propose WAVIE (Wavelet Augmented Vision Intermediate Embeddings), an end-to-end architecture that combines complementary spatial and frequency cues on top of a frozen CLIP backbone. WAVIE projects intermediate transformer embeddings through a lightweight learnable module, applies a three-level Daubechies-6 (db6) discrete wavelet transform (DWT), refines the low-frequency branch while preserving the high-frequency branch, reconstructs the feature via inverse DWT, and performs classification.   Trained only on FaceForensics++, WAVIE achieves AUROC = 0.852 on Celeb-DF-v1, 0.852 on Celeb-DF-v2 and 0.831 on WildDeepFake (WDF) at the frame level, outperforming several state-of-the-art generalization baselines. Extensive ablation studies confirm the importance of both the wavelet module and the intermediate-feature aggregation for cross-dataset performance, highlighting the necessity of jointly leveraging spatial and frequency domains. These results position WAVIE as a strong baseline for deepfake detection in the wild.",
+      "authors": [
+        "Arya Pulkit",
+        "Aditya Ruhela",
+        "Akarshan Kapoor",
+        "Arnav Bhavsar"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-13T11:24:13+00:00",
+      "link": "https://arxiv.org/pdf/2609.14437v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generalizable DeepFake face detection fusing spatial and frequency cues",
+      "llm_evidence_cn": "融合空域与频域线索的泛化深度伪造人脸检测",
+      "llm_evidence": "融合空域与频域线索的泛化深度伪造人脸检测",
+      "canonical_evidence": "融合空域与频域线索的泛化深度伪造人脸检测",
+      "llm_tldr_en": "Proposes WAVIE, a lightweight end-to-end detector that fuses spatial and frequency cues on a frozen CLIP backbone to generalize DeepFake face detection to unseen manipulation methods.",
+      "llm_tldr_cn": "现有深度伪造检测器在训练过的伪造方法上表现良好，但面对未见过的篡改流程时准确率急剧下降，制约了数字取证与虚假信息治理的可靠性。本文提出WAVIE，在冻结的CLIP主干上融合空间与频域线索，并投影中间Transformer嵌入以增强跨方法泛化能力。实验表明该轻量端到端架构在跨伪造方法的检测任务上取得更稳健的性能。该工作为数字图像篡改迹象的检测提供了可泛化的空频融合技术路线。",
+      "llm_tldr": "现有深度伪造检测器在训练过的伪造方法上表现良好，但面对未见过的篡改流程时准确率急剧下降，制约了数字取证与虚假信息治理的可靠性。本文提出WAVIE，在冻结的CLIP主干上融合空间与频域线索，并投影中间Transformer嵌入以增强跨方法泛化能力。实验表明该轻量端到端架构在跨伪造方法的检测任务上取得更稳健的性能。该工作为数字图像篡改迹象的检测提供了可泛化的空频融合技术路线。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

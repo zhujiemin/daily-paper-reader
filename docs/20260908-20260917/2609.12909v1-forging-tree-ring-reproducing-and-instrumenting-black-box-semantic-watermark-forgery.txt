@@ -1,0 +1,400 @@
+Title: Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery
+
+URL Source: https://arxiv.org/pdf/2609.12909v1
+
+Published Time: Mon, 14 Sep 2026 01:24:21 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery 
+
+Saifur Rahman Tamim 1, Md Taslimul Hasan Toufique 1, and A.M. Tayeful Islam 1
+
+Project Group 7 ∗
+
+> 1
+
+Department of Computer Science and Engineering Northern University Bangladesh, Dhaka, Bangladesh 
+
+tamim_41230201087@nub.ac.bd, ripperthemodder@gmail.com tayef_nubcse@nub.ac.bd 
+
+# Abstract 
+
+Semantic watermarking schemes such as Tree-Ring hide a detectable pattern in the initial noise latent of a diffusion model. Recent work shows these watermarks are not only removable but forgeable: an attacker who never sees the watermarking key can still produce images the genuine detector accepts. We reproduce the Reprompt forgery attack of Müller et al. against Tree-Ring on Stable Diffusion XL, using the authors’ released code, on free-tier dual T4 GPUs with 14.6 GB of usable memory per device, substantially less per-GPU memory than the A40 hardware used in the original study. The attack reproduces. Over six trials of three arms we de-tect genuine images 6/6, clean images 0/6, and forged images 
+
+5/6, at 325 –332 s per attack. Three further results came out of running it under constraint. The released detector computes a non-central χ2 statistic and hands back only its CDF, so we recovered the discarded statistic; our recovery matches the released detector exactly, and two natural scores built from it separate the forged arm from the clean null at AUC 0.861 
+
+and 0.972 on the same eighteen observations. Running SDXL in half precision requires patching the pipeline’s direct au-toencoder calls, and a controlled probe confirms the patched path leaves the detector statistic unchanged. Finally, we re-port a prediction we made from reading the detector source that our measurements then contradicted. The notebook, the pinned fork and every measurement artifact are released with the paper. 
+
+# 1. Introduction 
+
+Text-to-image diffusion models are good enough now that asking whether a picture was machine-generated has stopped being an academic question. Watermarking is one prominent answer. Among the watermarking families, semantic schemes are notable because they add no post-hoc pixel-space perturba-tion: they encode a signal in the initial noise latent the image is generated from, so the mark is a property of the generative trajectory rather than something applied to a finished image. Tree-Ring [16] is the canonical example, and it survives the compression, cropping and blurring that defeat pixel-domain marks. 
+
+> ∗This paper serves as the final project report for CSE 4383: Image Pro-cessing and Computer Vision Lab Work, Northern University Bangladesh.
+
+Surviving distortion is not the only thing a provenance mech-anism has to do. A watermark that resists every attack on its robustness is still useless as evidence of origin if someone can manufacture it. Müller et al. [11] showed exactly that against Tree-Ring and Gaussian Shading [18]. The ring pattern survives DDIM inversion carried out in a different diffusion model, so an attacker who owns one watermarked reference image can invert it in a proxy model and regenerate arbitrary new images the genuine detector will accept. No key, no gra-dients, no privileged access to the target. Figure 1 sketches the whole thing. We set out to reproduce that attack independently. Not be-cause we doubted it, but because we wanted a verified baseline on hardware we control before building anything on top of it. Reproduction turns out to be the right first step more often than the literature admits: a longitudinal study of roughly 750 machine-learning security papers found that 60% shipped no code, and that 56% of the artifacts which did exist would not run [12]. Our constraint was compute. Müller et al. evaluated on NVIDIA A40 hardware, distributing their experimental cam-paign over eight such GPUs; we had a free-tier notebook service offering two NVIDIA T4 accelerators with 14.6 GB of usable memory each. The released code assumes full precision throughout and has no half-precision path. Most of what we report below came out of working inside that limit, because it forced us to instrument parts of the pipeline that a bigger machine would have let us ignore. 
+
+Contributions. 
+
+• A verified reproduction of Reprompt against Tree-Ring on SDXL under a fully pinned software and provenance configuration, with genuine, clean and forged detection rates all consistent with the originally reported ones (Sec-tion 6). • Recovery of the detector’s discarded non-central χ2 statis-tic, matching the released detector exactly, and the ob-servation that two scores derived from it give materially different separation on identical samples (Section 5). • A mixed-precision compatibility fix for SDXL’s direct autoencoder calls, with a controlled probe showing the patched path returns the same detector output as full precision on the tested sample (Section 4.4). 1arXiv:2609.12909v1 [cs.CR] 11 Sep 2026 Figure 1: The Reprompt forgery attack. The defender generates from a key-derived latent (top). The attacker takes one reference image, inverts it in a proxy model that has never seen the key, and regenerates an unrelated image from the recovered latent (bottom). Both images are accepted by the same detector. 
+
+• A four-gate feasibility protocol covering memory, cost, statistic recoverability and hypothesis separation, re-ported with measured outcomes and including one pre-diction our data refuted (Sections 6 and 7). • An exploratory uncertainty analysis of the gate data (boot-strap confidence intervals, pairwise rank tests and effect sizes) that bounds how much the recovered separations can support at this sample size, and finds that bound to be low (Section 6). 
+
+# 2. Background and Related Work 
+
+2.1. Semantic watermarking 
+
+Frequency-domain watermarking predates diffusion models by decades [4], and the learned pixel-space variants that followed, such as HiDDeN [23], embed a message with a jointly trained encoder-decoder pair. A third family fine-tunes the generator itself so that its outputs carry a signature, as in the Stable Signature [5]. Semantic schemes take a fourth route. A latent diffusion model [7, 14] builds an image by repeat-edly denoising an initial Gaussian latent zT . Tree-Ring [16] watermarks the model by overwriting part of zT in the Fourier domain with a fixed, key-derived pattern: concentric rings placed in one channel of the shifted spectrum. Since the pat-tern goes in before generation rather than after, it is carried through the entire sampling trajectory and is not localised anywhere in the output. Detection runs the process backwards. The detector inverts the sampler with DDIM [15] to estimate the latent the image would have come from, applies the same frequency-domain mask, and compares the recovered coefficients against the key pattern. With f the recovered masked coefficients, t the key pattern and σ the standard deviation of f , the released implementation computes 
+
+x = X
+
+> i
+
+ fi − ti
+
+σ
+
+2
+
+, λ = X
+
+> i
+
+t2
+
+> i
+
+σ2 , (1) and reports p = Fχ′2 (x; df , λ ), where df counts the real and imaginary masked coefficients. A detection is declared when 
+
+p < τ ; for SDXL [13] at a 1% false-positive rate, τ = 0 .0261 .One detail matters later: detection works on an estimate of zT ,since DDIM inversion is only approximately invertible. Every detection is already one inference removed from the quantity the scheme embeds. Ci et al. [3] revisited the scheme and found that part of its robustness comes not from pattern matching but from a distribution shift the watermarking process introduces inci-dentally. They also showed that Tree-Ring handles multiple distinct keys poorly, where that shift gives no help, and pro-posed RingID to address it. Both observations bear on our own single-key limitation (Section 8). 
+
+2.2. Removal versus forgery 
+
+Most of the attack literature goes after removal, destroying the mark while keeping the image usable. Zhao et al. [20] give the strongest general result in that direction: adding noise in latent space and regenerating provably removes pixel-level watermarks, though they observe that semantically-embedded marks resist the same attack, which is part of why seman-tic schemes drew attention in the first place. The WAVES benchmark [1] organised this into a stress-test suite spanning distortion, regeneration and adversarial attacks, and found Tree-Ring especially vulnerable to adversarial embedding and surrogate-detector attacks while holding up reasonably well against plain distortion. Forgery runs the other way, and for provenance it is the more damaging direction. Removal causes false negatives: a genuine image stops being recognised. Forgery causes false positives: an image the marked model never produced gets attributed to it. A provenance claim depends entirely on the second error rate, and robustness results say nothing about it. 
+
+2.3. The Reprompt attack 
+
+Müller et al. [11] demonstrate that the ring pattern survives DDIM inversion in a model other than the one that generated the image. The attacker holds a watermarked reference x(w),2inverts it in a proxy uA to get ˆz(w) 
+
+> T
+
+, then generates a new image from that latent under whatever prompt they like. The out-put looks nothing like the reference and the genuine detector accepts it anyway. The same paper introduces Imprint, an optimisation-based variant that learns a perturbation to a cover image’s latent so its inversion matches a target watermarked latent. Imprint buys finer control at roughly two orders of magnitude more cost per run. We reproduce Reprompt only, for reasons given in Section 8. Later work has chased cheaper forgery. Zhu et al. [22] propose Plug-and-Plant, an optimisation-free attack that ex-tracts and re-implants a watermark by regenerating the im-age through an off-the-shelf diffusion model, reporting up to 
+
+100% detectability across two dozen model-data-watermark combinations. Zhou et al. [21] approach the problem from the defensive side with MetaSeal, arguing that content-agnostic marks verified by a detector are structurally forgeable and that cryptographic, content-dependent signatures are the way out. Their framing is useful to us: it identifies the two prop-erties that make a scheme forgeable in the way Tree-Ring is. Zhang et al. [19] attack the same problem from the generative side with SemBind, binding the latent watermark signal to image semantics through a contrastively trained masker so that a latent lifted from one image no longer verifies against unrelated content. Closest to our own observations, Lee et al. [9] model black-box forgery as a rate-distortion problem and argue that proxy-target model mismatch imposes an irre-ducible distortion floor on how faithfully a watermark can be forged, manifesting as structured geometric deviation on the latent manifold rather than as noise, which they exploit for scheme-agnostic detection ahead of watermark verification. Our forged arm occupying a measurable band between the clean null and the genuine arm (Section 6) is an empirical signature consistent with such a floor, arrived at independently and by measurement alone. 
+
+2.4. Reproduction as a research activity 
+
+Independent reproduction is an established genre. Olszewski et al. [12] measured its state across a decade of Tier-1 se-curity venues, finding that 60% of papers shipped no code and that 56% of the artifacts which did exist would not run. They further report no statistically significant change in ar-tifact availability after artifact evaluation committees were introduced, while noting that artifacts which passed evaluation worked at a higher rate than those that did not. Reproductions that diverge are informative in their own right. Hwang et al. [8], reproducing Tree-Ring on the re-moval side, matched the original’s unattacked performance closely but got an AUC of 0.463 under rotation where the original reported 0.935 . Rather than bury it, they traced the gap to rotation in pixel space not corresponding to rotation in latent space, and confirmed the effect held across channel placements, model versions and schedulers. We take the same posture below: where our measurements diverge, we say so.                  
+
+> Table 1: Original and reproduction environments. Müller et al. This work GPU A40, 48 GB nominal T4 ×2, 14.6 GB ea. Precision fp32 fp16 target / fp32 attacker Target SDXL SDXL Attacker SD 2.1 SD 2.1 Resolution 512 512 Scheduler DDIM DDIM Allocation dedicated 30 GPU-h / week, shared
+
+# 3. Reproduction Setup 
+
+3.1. Hardware 
+
+Table 1 sets out the gap we were working across. The notebook service offers two accelerator types, and one of them is unus-able: the P100 reports compute capability sm_60 , which the in-stalled PyTorch 2.10 build has dropped support for. That leaves the dual-T4 configuration. Neither T4 supports bfloat16 ,which puts FLUX.1-dev out of reach even though the released code supports it. This is a hardware exclusion and says nothing about how the scheme behaves on that model. Storage is tiered, and the tiers have different lifetimes. Model weights go to an ephemeral overlay volume of roughly 1 TB; experimental outputs go to a 20 GB persistent volume. Section 4 describes a failure we caused by treating those two as interchangeable. 
+
+3.2. Models and configuration 
+
+The target is Stable Diffusion XL base 1.0 on a DDIM sched-uler and the attacker proxy is Stable Diffusion 2.1 base. Sta-bility withdrew the original SD 2.1 repository while we were working, so we use a mirror of the same weights. Genera-tion and inversion both run at 512 × 512 with 50 steps and guidance scale 7.5. Tree-Ring uses the released defaults: ring pattern, circular mask, radius 10 , channel 3, complex injection,  
+
+> l1_complex
+
+measurement, giving df = 634 . The SDXL threshold is τ = 0 .0261008646426459 , taken from the origi-nal calibration at a 1% false-positive rate. Two seeds are in play and they should not be confused. The generation seed is 123 + i for trial i, so the six trials use 
+
+123 through 128 . The Tree-Ring key is not varied: w_seed is fixed at 999999 for every trial. All eighteen observations there-fore share one watermark key, which is the study’s sharpest limitation and is discussed in Section 8. The recorded session ran PyTorch 2.10.0+cu128 on CUDA 12.8, Python 3.12.13, transformers 4.46.3 and  
+
+> diffusers
+
+0.31.0. 
+
+3.3. Running the released attack 
+
+For reference, and because it is the shortest possible statement of what the original artifact does, the attack is invoked as a single command:         
+
+> python run_reprompting.py \--wm_type TR \--modelid_target \stabilityai/stable-diffusion-xl-base-1.0 \--modelid_attacker \Manojb/stable-diffusion-2-1-base \
+
+3--resolution 512 --seed 123  
+
+> Listing 1: The released Reprompt entry point, exactly as our notebook invokes it. Everything else in this paper is reproduction and instrumentation work built around this one command.
+
+3.4. Provenance 
+
+All our modifications live in a fork of the released reposi-tory [10], pinned by commit hash and listed in the Availability section. We chose that over runtime patching for two rea-sons. Monkey-patching in the notebook process is invisible to anything launched as a subprocess, so a patched detector in the parent does not apply to the attack script it starts. And a dirty working tree satisfies a commit-hash check while run-ning code that is not in the recorded commit. The notebook therefore issues git reset --hard to the pinned SHA fol-lowed by git clean -fd , re-reads HEAD , and asserts both that it matches and that git status --porcelain comes back empty. Session metadata is serialised at the start of every run: com-mit hashes for our fork and the upstream base, model iden-tifiers, dtypes, device assignment, library versions, and the SHA-256 of the resolved dependency lock. It ships with the artifacts. 
+
+3.5. Gates 
+
+We ran the reproduction as a sequence of feasibility gates rather than as an experiment. Each one asks a question that would make the rest pointless if answered badly, and none is meant to produce a finding about watermarking: 
+
+G1 Do both pipelines fit on the hardware? 
+
+G2 What does one attack cost in wall-clock time? 
+
+G3 Can the detector’s underlying statistic be recovered, and does it carry usable range? 
+
+G4 Do genuine, clean and forged observations separate? 
+
+# 4. Environment Reconstruction 
+
+Four things broke before we had a usable pipeline. We report them as findings rather than as a narrative because each one generalises past this particular repository. 
+
+4.1. Package removal is not idempotent in layered images 
+
+The notebook image ships PyTorch 2.10 and  
+
+> transformers
+
+v5; the released code wants the late-2024 stack. Installing the repository’s pinned requirements on top produces a tree where v5 and v4 files sit side by side, because pip cannot fully remove distributions baked into a lower image layer. Every entry point then dies at import with a ModuleNotFoundError naming a module the codebase never references, which sends you looking for a missing dependency instead of a corrupted one. Getting out requires uninstalling, deleting the package directories from site-packages by hand, installing five ex-act pins (transformers 4.46.3, tokenizers 0.20.3,  
+
+> diffusers
+
+0.31.0, huggingface_hub 0.26.2,  
+
+> accelerate
+
+1.1.1), and restarting the interpreter. The restart is not optional, since the half-imported broken modules stay cached in sys.modules and survive reinstallation. One dependency is easy to overlook. lpips is in the re-quirements file but not among the version-critical pins, and without it every entry point fails inside the image-utility mod-ule before a model is ever loaded. 
+
+4.2. Cache paths are frozen at import 
+
+The Hugging Face hub library resolves its cache location the first time it is imported. Setting HF_HOME after any transitive import does nothing, so weights land in the default location, which for us was the 20 GB persistent volume they then filled. The variable has to be set in the first executed cell, above every import in the session. We point weights at the ephemeral high-capacity volume and keep the persistent one for outputs. 
+
+4.3. Guards must interrogate state, not sentinel files 
+
+Our first version of the pinning cell wrote a lock file on success and skipped reinstallation whenever that file existed. The two objects have different lifetimes: the persistent volume survives across sessions, installed packages do not. So a stale lock file caused the pinning step to be skipped in an environment that no longer had the pins, and the session carried on with the platform’s stock diffusers . The guard reported success the whole time. We only caught it by reading library versions out of the session metadata. The fixed guard calls importlib.metadata.version 
+
+on each pinned distribution and compares against the require-ment, treating PackageNotFoundError as failure. The gen-eral lesson is that a guard has to interrogate the state it claims to protect. A marker stored on a medium with a different life-time than the guarded state will eventually tell you something false. 
+
+4.4. Half precision needs the autoencoder handled explic-itly 
+
+The released code sets DTYPE = torch.float32 at module level in its pipeline provider and has no half-precision path at all. We introduced fp16 on the target to buy headroom. Detection then returned NaN latents while the image-quality metrics stayed well-formed, which told us generation was fine and only the detection path was broken. The cause is specific. SDXL’s autoencoder carries    
+
+> force_upcast =True
+
+in its configuration, and the  
+
+> diffusers
+
+pipeline honours that flag inside its own 
+
+> __call__
+
+. The repository, however, calls the autoencoder directly from vae_encode and latents_to_imgs , which bypasses that handling entirely. In fp16 those direct calls overflow. Our fork adds a _vae_upcast helper that saves the autoencoder’s dtype, promotes it to fp32 when it is fp16 and force_upcast is set, and restores it afterwards, wrapped around every direct encode and decode. To check the patched path we built a probe that splits in-version into its two stages, imgs_to_latents (autoencoder encode) and invert_z0 (the U-Net DDIM loop), and runs each under both dtypes against one fixed generated image so the autoencoder dtype is the only thing changing. After the patch, neither stage produced non-finite values under either 4configuration and both returned the same detection p-value of 
+
+1.6648 × 10 −36 to the last digit. That result validates the fix. It does not show that an un-patched fp16 autoencoder would have been safe, and we want to be careful about the difference: the probe ran against a fork that already contains the upcast, so what it demonstrates is that the mixed-precision path preserves detector output on the tested image, not that the original overflow was imaginary. The attacker model stays in fp32 regardless. It needs the head-room through a 50 -step inversion chain and at 5.57 GB there is nothing to gain from shrinking it. 
+
+# 5. Detector Instrumentation 
+
+5.1. The detector discards its own statistic 
+
+The released Tree-Ring detector computes σ, λ and x exactly as in Equation 1, evaluates the non-central χ2 CDF, and returns only the resulting p-value; its accuracy accessor returns 1 − p.The intermediate quantities are computed and thrown away. For a detector whose job is to accept or reject, that is a sensible interface. It gets limiting as soon as a consumer needs to compare evidence strengths instead of outcomes. A CDF value is a tail probability, so the whole range of strong evidence is compressed into a narrow band next to zero; the accuracy accessor saturates at 1.0 and loses more still. More simply, 
+
+x, λ, df and σ are all computed and then not returned, and differences in p do not correspond to comparable differences in how well the recovered spectrum actually matches the key. We had also expected the compression to produce outright numerical censoring; it did not, and Section 6.3 reports that measurement. So we reimplemented Equation 1 with x, λ, df and σ all kept (Listing 2). The computation is the detector’s; only the return value differs.                                                                     
+
+> 1def raw_tr_stat(wm, latents):
+> 2lat_fft =torch.fft.fftshift(
+> 3torch.fft.fft2(latents), dim=(-1, -2))
+> 4mask, gt =wm.watermarking_mask[0], wm.gt_patch[0]
+> 5out =[]
+> 6for one in lat_fft:
+> 7f=one[mask].flatten(); t=gt[mask].flatten()
+> 8f=torch.concatenate([f.real, f.imag])
+> 9t=torch.concatenate([t.real, t.imag])
+> 10 sigma = f.std()
+> 11 lambd = (t ** 2/sigma ** 2).sum().item()
+> 12 x=(((f -t) /sigma) ** 2).sum().item()
+> 13 out.append({"x": x, "lambd": lambd, "df": len(t),
+> 14 "sigma": sigma.item(),
+> 15 "p_value": scipy.stats.ncx2.cdf(
+> 16 x=x, df=len(t), nc=lambd)})
+> 17 return out
+
+Listing 2: Recovering the discarded statistic. The arithmetic mirrors the released detector; the intermediates are kept rather than collapsed into a CDF. 
+
+5.2. Validating the reimplementation 
+
+A reimplemented statistic is only useful if it agrees with the one the detector applies. On every observation we push our recovered x back through the same CDF and compare against what the released detector returns for that latent, asserting agreement below 10 −12 . The assertion held on all eighteen observations at a maximum absolute difference of exactly 
+
+0. The arithmetic is identical rather than approximate, which rules out reimplementation error as an explanation for anything in Section 6. 
+
+5.3. The choice of score is a modelling decision 
+
+Two scores fall out of Equation 1 naturally. The raw discrep-ancy −x is the simpler one: lower x means a closer match to the key. The adjusted form λ − x offsets the discrepancy by the non-centrality parameter, which is itself image-dependent through σ and so varies between observations. They are not the same thing written two ways. Across our runs σ spans 31 .75 to 42 .59 and λ spans 856 .6 to 1541 .4, so the two scores are not monotonically related. On the same eighteen observations the forged arm separates from the clean null at AUC 0.861 under −x and 0.972 under λ − x; the genuine arm reaches 1.000 under both. Figure 5 shows the two curves. A gap that size, produced purely by a choice of transforma-tion, means the score has to be fixed in advance rather than chosen once separation is visible. Picking between candidate scores after seeing how each performs on the samples you then report is selection on the test set. We report both and treat neither as canonical. 
+
+5.4. Measurement harness 
+
+The released attack script writes only the p-value to its metrics output, so our measurement runs do not go through it. We assemble the attack from the repository’s own primitives, with inversion, generation and detection all unmodified, and add a third arm the script does not produce. Each trial yields three observations against a common watermark instance: • genuine : a watermarked latent generated in the target and inverted back; • clean : the same prompt generated from ordinary Gaus-sian noise, an empirical null for both other arms; • forged : the genuine image inverted in the attacker model, regenerated there under an unrelated prompt, and handed back to the target detector. The clean arm is the addition that earns its place. Without an empirical null there is no way to say what a given score is evidence for ; you can only say whether it crossed a threshold. Algorithm 1 states one trial. Line 4 is the whole vulner-ability: the ring pattern survives inversion through a model that never held the key, so line 5 can regenerate an unrelated image from a latent that still carries it. The two models sit on separate devices and are swapped to host memory around each other’s turn. To be explicit about the boundary: the attack concept, the DDIM inversion, the Tree-Ring detector, the diffusion models and the prompt sets are Müller et al.’s. The loop assembly, the clean null arm, the recovery of the discarded statistic and its validation are ours. 5Algorithm 1 One measurement trial. uT is the target, uA the attacker proxy, I inversion, G generation, D the Tree-Ring detector and k the key. Prompts qT and qA are unrelated.                                                           
+
+> 1: z(w)
+> T←WATERMARK (k)▷key-derived latent
+> 2: x(g)← G (uT, q T, z (w)
+> T)▷genuine
+> 3: x(c)← G (uT, q T, ε ), ε ∼ N (0 , I )▷clean null
+> 4: ˆz(w)← I (uA, x (g))▷invert in attacker model
+> 5: x(f)← G (uA, q A,ˆz(w))▷forged
+> 6: for x∈ { x(g), x (c), x (f)}do
+> 7: ˆz← I (uT, x )
+> 8: record (x, λ, df , σ, p )← D (ˆ z, k )
+> 9: end for
+> Figure 2: Peak allocated memory per pipeline, from
+> torch.cuda.max_memory_allocated after one gener-ation. Every configuration fits on a single T4 individually; half precision on the target frees 6.32 GB.
+
+# 6. Evaluation 
+
+The full pipeline was executed twice in independent sessions eleven days apart, from a clean environment build each time. Every statistic reported below reproduced to the last significant digit across both runs; wall-clock time was the only quantity that varied, by 2.2% . Figures quoted here are from the first session. All results below come from six trials of three arms, n = 18 
+
+observations, at generation seeds 123 through 128 under the single fixed Tree-Ring key. 
+
+6.1. G1: memory feasibility 
+
+Figure 2 gives the measured peaks. The attacker at fp32 reaches 5.57 GB, the target at fp16 reaches 7.36 GB, and the target at fp32 reaches 13 .68 GB. All three fit on a sin-gle 14.6 GB card individually, which is what matters here: our configuration places the attacker on cuda:0 and the target on cuda:1 , so the relevant question is per-device headroom rather than the sum. G1 passes. 
+
+Half precision on the target is therefore not required for Reprompt to run on this hardware. What it buys is headroom: 
+
+6.32 GB of it, leaving roughly 7.2 GB free on the target device rather than under 1 GB. We adopted it for that margin, not out of necessity.                                                         
+
+> Table 2: Per-arm outcomes ( n= 6 each) beside the values Müller et al. report for the same model pairing. Arm ¯xλ−xdetected orig. rate genuine 1096 .5+220 .06/61.00
+> clean 1623 .9−626 .30/60.01
+> forged 1391 .2−371 .35/60.97
+> Table 3: Detection p-values. Means are dominated by the largest observation in each arm, so medians are given alongside. Arm median pmean porig. mean p
+> genuine 8.63 ×10 −38 7.96 ×10 −24 1.10 ×10 −21
+> clean 4.56 ×10 −14.80 ×10 −14.72 ×10 −1
+> forged 2.30 ×10 −51.50 ×10 −25.20 ×10 −3
+
+6.2. G2: wall-clock cost 
+
+One Reprompt run through the released entry point completes in 325 –332 s on a T4, measured across two independent ses-sions ( 332 .0 s and 324 .8 s). Müller et al. report roughly 30 sec-onds for the smaller models and up to two minutes for FLUX.1 in single-GPU, single-batch runs, with their full experimental campaign spread over eight A40s. Our figure is therefore sev-eral times their published single-GPU range, which is in line with the gap in memory bandwidth and tensor-core generation between the two cards. G2 passes. 
+
+The number that matters for a threat model is not the ratio but the absolute cost. Forgery is a sub-six-minute operation on hardware anyone can access for free. 
+
+6.3. G3: statistic recoverability and range 
+
+All eighteen observations produced distinct values of x, span-ning 889 .1 to 1802 .2 against df = 634 , and the cross-check against the released detector returned a maximum absolute difference of exactly 0. The statistic is recoverable and carries range. G3 passes. 
+
+The p-value did not behave the way we predicted. From reading the detector source we had inferred that  
+
+> scipy.stats.ncx2.cdf
+
+would underflow to exactly 0.0
+
+on strong genuine detections, left-censoring the genuine distri-bution and making − log 10 p undefined, and we had used that inference to justify recovering x in the first place. What we measured: p was exactly zero in 0 of 18 observations, all eigh-teen values were distinct, and the smallest was 5.45 × 10 −49 .The prediction failed. The case for recovering the raw statis-tic still stands on the grounds in Section 5.3, but not on the grounds we originally gave for it. 
+
+6.4. G4: hypothesis separation The attack reproduces. Tables 2 and 3 put our measure-ments next to the original work’s. The clean arm lines up closely, with a mean p of 0.480 against 0.472 and no false positives in six trials against a reported rate of 0.01 . That is the arm that most directly validates the detector as we config-ured it. The genuine arm is detected every time. The forged arm crosses τ = 0 .0261 in five of six trials at a median p of 
+
+2.30 × 10 −5, three orders of magnitude clear of the threshold 6Figure 3: Recovered statistic x by arm, one point per trial, with arm means marked. The forged arm sits between the clean null and the genuine arm. The circled point is the single forgery the detector missed; its statistic falls inside the clean range.        
+
+> Figure 4: Detector p-values on a log scale against the calibrated threshold τ= 0 .0261 . No observation reached exactly zero; the smallest was 5.45 ×10 −49 .
+
+(Figure 4). Running the released entry point directly gave the same picture: a genuine p of 3.53 × 10 −33 and a forged p of 
+
+3.13 × 10 −6, both detected. 
+
+Separation. Against the clean null the genuine arm sepa-rates perfectly, AUC 1.000 on both scores. The forged arm reaches 0.861 on −x and 0.972 on λ − x. G4 passes. Exploratory uncertainty analysis. Because n = 6 per arm can make a single AUC look more conclusive than it is, we also ran a small battery of post-hoc tests over the same eighteen observations, all of which are repro-duced by the accompanying stat_analysis.py on the published phase0_scores.csv . A 95% bootstrap interval on the forged-vs-clean AUC spans [0 .58 , 1.00] for −x and 
+
+[0 .83 , 1.00] for λ − x. A two-sided Mann-Whitney test sep-arates the forged arm from the clean null at p = 0 .041 and the genuine arm from the clean null at p = 0 .002 , with the forged and genuine arms sitting 1.67 and 2.84 pooled stan-dard deviations below the null in the raw statistic (Cohen’s d). The genuine-forged comparison is the loosest of the three at 
+
+p = 0 .065 . That ordering is Figure 3’s intermediate band in  
+
+> Figure 5: Separating forged from clean under the two candidate scores. Both are derived from the same eighteen observations; only the transformation differs.
+
+different clothes: the forged arm is measurably closer to valid evidence than the null is, while still not being confusable with a genuine image on six draws. Figure 6 shows both candidate scores side by side. These values bound the evidence rather than establish it, and we report them as exploratory throughout. Three limits apply at once. The observations are matched by trial (the forged image of trial i is derived from the genuine image of that trial, and the clean image shares its prompt), so an unpaired test is not the natural one for this design. The sam-ple size puts both candidate tests near their resolution limits: at n = 6 per arm the smallest attainable two-sided Mann-Whitney p is 2/ 12 6
+
+ = 0 .0022 and the smallest attainable exact paired Wilcoxon p is 2/26 = 0 .0312 , so a value at either floor records complete separation and nothing finer. And the three comparisons are uncorrected; under a Bonferroni correc-tion at α = 0 .05 /3 none of the paired tests survives on either score, which the 0.0312 floor already guarantees, while the unpaired tests survive on λ − x but not on −x.Which conclusion one reaches therefore depends on the score and on the test, and we are not in a position to adjudi-cate either at eighteen observations. We draw no inferential conclusion from these numbers and rely on the bootstrap in-tervals and descriptive effect sizes instead, which is also why the AUC values in Section 5.3 carry the argument about score choice rather than these tests. 
+
+One divergence worth naming. Our forged detection rate of 5/6 = 0 .83 comes in under the 0.97 reported originally. At 
+
+n = 6 that difference is not meaningful; a 95% Wilson score interval [17] on 5/6 runs from 0.44 to 0.97 and contains their value. We are not claiming the attack is weaker than reported. The shape of the failure is more interesting than the rate. Figure 3 shows the forged arm occupying a band between the clean null and the genuine arm, and the one forgery the detector missed has x = 1558 .3, sitting inside the clean range 7Figure 6: Per-arm distributions of both candidate scores, boxes spanning the interquartile range with the individual trials overlaid. The genuine arm clears the clean null on both scores; the forged arm occupies the gap between them.                  
+
+> Table 4: Distribution of reproduction code by purpose. Component Lines Category Environment repair, provenance 132 portability Memory measurement (G1) 36 instrumentation Invoking the released attack 1original artifact Timing wrapper (G2) 22 instrumentation Precision patch and probe 49 portability Statistic recovery and harness 71 extension Analysis and gate verdicts 64 extension
+
+of 1483 .7 to 1802 .2. It did not fail narrowly; on the statistic the detector actually uses, that image was indistinguishable from an unwatermarked one. That intermediate band is the observation we would carry forward. A detector working as a binary test reports the five successful forgeries and the six genuine images identically. Whatever would distinguish them is visible in the raw statis-tic and gone from the thresholded decision, and the detector computes it either way. 
+
+# 7. Discussion 
+
+7.1. Where the effort actually went 
+
+Invoking the released attack takes one command, shown in Listing 1. Our reproduction notebook is 375 lines. Table 4 breaks that down, and the ratio is the part worth saying out loud: the published artifact is not the expensive part of repro-ducing a published artifact. None of this is a complaint about the artifact, which ran and produced results consistent with its paper. It is an observation about what artifact evaluation measures. Executability gets checked in the environment the authors specify. Portability across hardware generations, driver stacks and library versions is a different property, and it is the one that decides whether the work can be built on a year later by someone with different hardware. About 45% of our code exists only to construct an environment where the other 55% can run. 
+
+7.2. Detector interfaces decide what can be asked 
+
+The result we most want other researchers to pick up concerns the detector’s return type rather than the attack. Returning a thresholded decision or a CDF value is enough for deploy-ment and not enough for analysis. Our whole instrumentation effort exists to undo one line of the released detector: the deci-sion to return p instead of the intermediate detector quantities 
+
+(x, λ, df , σ ) that p is computed from. Exposing those quantities costs nothing, since they are al-ready computed. Not exposing them costs a downstream con-sumer a reimplementation that then has to be validated against the original, which is exactly the work we did in Section 5. De-tectors meant for research use should return these intermediate quantities alongside whatever decision they make. This is an argument about interface design, not about the correctness of the scheme. 
+
+7.3. Predictions that did not survive measurement 
+
+Two of our inferences came from reading code rather than running it, and both were wrong in the same way. The first was that the detector’s p-value is left-censored at zero. The reasoning was not silly: a non-central χ2 CDF evaluated deep into its lower tail is a plausible underflow candidate. Section 6.3 reports the measurement that disproved it. The second concerned half precision. The targeted autoen-coder upcast resolved the observed failure, but our controlled probe was run after the patch was already in the fork (Sec-tion 4.4). It therefore validates the patched path rather than independently localising the original fault. A probe that cannot fail is not a test, and we report the result as the former rather than the latter. There is a third, smaller correction: we first attributed a PSNR calculation fix to commit 43eec7e , which touches documentation only. The fix is d5885a3 .What links them is that in each case we reasoned from what the code appeared to do rather than from what it measurably did, and in the second case built the check only after the fix. We report them because that shortcut is available at every 8point in a reproduction, and because a study that only surfaces the predictions that held has not shown it could catch one that did not. Arp et al. [2] catalogue related failure modes in machine-learning security research; ours is a variant of their point that assumptions carried into an evaluation tend to survive it unexamined. 
+
+7.4. What this says about the attack 
+
+Our reproduction supports the original conclusion. Forgery worked in five of six trials on the first configuration we tried, at 325 –332 s per attempt on free hardware, using a proxy that shares no weights with the target. The attacker needs one watermarked reference image, and the median forged p-value lands three orders of magnitude below the calibrated threshold. The property being exploited is specific rather than general. Tree-Ring detection is a similarity test against a recoverable artifact, and the secret used to verify is the same secret used to inject. These two properties help explain why this attack shape applies to Tree-Ring and to related inversion-based semantic watermarking schemes, and the pattern’s transferability across models means the attacker never needs the target model itself. We reproduced only Tree-Ring, so we make no claim about schemes we did not test, and this is not a general law relating robustness to forgeability. Schemes that verify with a secret distinct from the one they inject with are not implicated, which is precisely the direction MetaSeal [21] takes with content-dependent cryptographic signatures, and which Gunn et al. [6] approach differently by selecting initial latents with a pseu-dorandom error-correcting code so that watermarked and un-watermarked outputs are computationally indistinguishable. What it does mean is that robustness evaluations of this family measure a property orthogonal to the one a provenance claim rests on. 
+
+# 8. Limitations 
+
+We state these plainly, because several of them materially constrain what our numbers support. 
+
+A single watermark key. Every observation shares one Tree-Ring seed ( w_seed = 999999 ). The variation we report is within-key. These are not independent draws over the key space, and the separation in Section 6 must not be read as a distribution over watermarks. This is the study’s most serious limitation and the first thing we correct in subsequent work. It matters more here than it would for a robustness study, since Ci et al. [3] showed the multi-key setting is exactly where Tree-Ring’s behaviour departs from the single-key case. 
+
+No forgery-detection baseline. We measure what the Tree-Ring detector sees and do not attempt to separate forged from genuine by other means. Lee et al. [9] propose a scheme-agnostic pre-verification detector built on exactly the geomet-ric deviation our intermediate band is consistent with; evaluat-ing it on our arms is the natural next comparison and we have not run it. 
+
+Sample size. Eighteen observations, six per arm. Enough to establish that the attack reproduces and the statistic is recov-erable; not enough for a distributional claim. The AUC values should be read as ordering indicators rather than calibrated estimates, and the gap between our 5/6 forged detection rate and the reported 0.97 cannot be resolved at this size. 
+
+Attack scope. Reprompt only. The optimisation-based Imprint variant costs roughly two orders of magnitude more per run by the original authors’ own reporting, which puts a replication with meaningful sample size outside our compute allocation. We make no claim about how Imprint behaves on this hardware. 
+
+Precision divergence. The original results are fp32 through-out; ours are mixed precision with a patched autoencoder path. Our probe found fp16 and fp32 detection identical on one image after the patch (Section 4.4). That is a narrow result, and it does not establish that fp16 is numerically neutral for the detection statistic in general. 
+
+Excluded target models. FLUX.1-dev needs bfloat16 ,unavailable on the T4. PixArt-Σ is supported by the released code but runs a DPM scheduler rather than DDIM, and the original work’s own ablation shows the scheduler substantially affects latent recovery quality, so an SDXL/PixArt comparison would confound architecture with scheduler. We report neither. 
+
+Pristine images only. Every observation is of an unpro-cessed image. Realistic handling such as recompression, resiz-ing or screenshotting is untested, and both populations would need to pass through matched channels before anything could be concluded about behaviour under it. 
+
+Attacker model substitution. Stability withdrew the origi-nal SD 2.1 repository during this work and we used a mirror. We verified the weights load and produce the expected at-tack behaviour, but did not compare them bitwise against the original release. 
+
+# 9. Conclusion 
+
+We reproduced the Reprompt semantic watermark forgery attack against Tree-Ring on Stable Diffusion XL, using the authors’ released implementation on free-tier dual T4 GPUs with substantially less per-GPU memory than the original eval-uation environment. The attack reproduces: genuine images detected six times out of six, clean images none, forged images five out of six, at 325 –332 s per attempt. The clean arm tracks the original work closely at a mean p of 0.480 against 0.472 ,which is the arm that most directly validates the detector as configured. The finding with the widest reach has to do with the detec-tor’s interface rather than the attack. The released detector computes a non-central χ2 statistic and returns only its CDF. Recovering that statistic, exactly rather than approximately, shows that two natural scores built from it separate the forged arm at AUC 0.861 and 0.972 on identical samples, which makes the choice of score something that has to be fixed be-fore separation is observed. It also shows the forged arm occupying an intermediate band between the clean null and the genuine arm. The detector computes that information and then discards it at the moment it returns a decision. We also report predictions that failed. We had inferred the detector’s p-value was left-censored at zero; across eighteen observations it was never zero, with a minimum of 5.45 ×
+
+10 −49 . We had assumed the half-precision fault localised to 9the autoencoder before building anything capable of testing it, and the probe we did build ran against an already-patched fork. In both cases we trusted what the code appeared to do over what it measurably did. A reproduction that surfaces only its confirmed predictions has not shown it could catch one that failed. The immediate next step is to vary the watermark key across clusters, which is the binding limitation here, and to pass both genuine and forged populations through matched laundering channels so the distributions being compared have had identi-cal handling. 
+
+# Author Contributions 
+
+Saifur Rahman Tamim designed the gate protocol, built the environment reconstruction and provenance pinning, wrote the mixed-precision patch and probe, and implemented the statis-tic recovery and its validation. Md Taslimul Hasan Toufique carried out the post-hoc statistical analysis of the gate data (bootstrap confidence intervals, pairwise Mann-Whitney tests and effect sizes reported in Section 6), produced the distribu-tional figure (Fig. 6) and the script that regenerates it, drafted the related-work section, and ran the notebook sessions along-side the first author. A.M. Tayeful Islam advised on experi-mental design and reviewed the manuscript. All authors con-tributed to the analysis and the writing. 
+
+# Use of Generative AI 
+
+Generative AI language tools were used during drafting and editing of this manuscript. All technical claims, measurements, calculations and citations were verified by the authors against the released artifacts, and the authors take full responsibility for the content. 
+
+# Availability 
+
+Two repositories accompany this work. The repro-duction notebook, the gate artifacts (gate1.json ,
+
+> gate3.json
+
+, gate4.json , precision_probe.json ,
+
+> phase0_scores.csv
+
+, phase0_verdict.json ,
+
+> session_meta.json
+
+), the statistical re-analysis script (stat_analysis.py ), the figure-generating script and the source of this paper are at 
+
+https://github.com/sr-tamim/ watermark-forgery-research , tagged arxiv-v1 at the state described here. The notebook was re-executed in an independent session on 8 September 2026 from a clean environment build; session_meta.json for both sessions records the same fork commit and the same dependency-lock SHA-256. The modified attack code is a fork of Müller et al.’s released repository [10], at 
+
+https://github.com/sr-tamim/ semantic-forgery , pinned for all runs reported here at commit 7f9e7ad , which branches from upstream 
+
+> ca68950
+
+. Both hashes are recorded in session_meta.json 
+
+alongside the SHA-256 of the resolved dependency lock, so any run can be traced to the exact code that produced it. 
+
+# References 
+
+[1] Bang An, Mucong Ding, Tahseen Rabbani, Aakriti Agrawal, Yuancheng Xu, Chenghao Deng, Sicheng Zhu, Abdirisak Mohamed, Yuxin Wen, Tom Goldstein, and Furong Huang. Benchmarking the robustness of image watermarks. In International Conference on Machine Learning (ICML) , 2024. arXiv:2401.08573. [2] Daniel Arp, Erwin Quiring, Feargus Pendlebury, Alexan-der Warnecke, Fabio Pierazzi, Christian Wressnegger, Lorenzo Cavallaro, and Konrad Rieck. Dos and don’ts of machine learning in computer security. In USENIX Security Symposium , 2022. [3] Hai Ci, Pei Yang, Yiren Song, and Mike Zheng Shou. RingID: Rethinking tree-ring watermarking for enhanced multi-key identification. In European Conference on Computer Vision (ECCV) , pages 338–354, 2024. [4] Ingemar J. Cox, Matthew L. Miller, Jeffrey A. Bloom, Jessica Fridrich, and Ton Kalker. Digital Watermarking and Steganography . Morgan Kaufmann, 2nd edition, 2007. [5] Pierre Fernandez, Guillaume Couairon, Hervé Jégou, Matthijs Douze, and Teddy Furon. The stable signa-ture: Rooting watermarks in latent diffusion models. In 
+
+IEEE/CVF International Conference on Computer Vision (ICCV) , pages 22466–22477, 2023. [6] Sam Gunn, Xuandong Zhao, and Dawn Song. An un-detectable watermark for generative image models. In 
+
+International Conference on Learning Representations (ICLR) , 2025. arXiv:2410.07369. [7] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In Advances in Neural Information Processing Systems (NeurIPS) , 2020. [8] Dongjun Hwang, Sungwon Woo, Tom Gao, Raymond Luo, and Sunghwan Baek. Invisible watermarks: Attacks and robustness. arXiv preprint arXiv:2412.12511 , 2024. [9] Cheng-Yi Lee, Yichi Zhang, Yuchen Yang, Chun-Shien Lu, and Jun-Cheng Chen. Rethinking forgery attacks on semantic watermarks in black-box settings: A geometric distortion perspective. In International Conference on Machine Learning (ICML) , 2026. arXiv:2606.29807. [10] Andreas Müller. semantic-forgery. https://github. com/and-mill/semantic-forgery , 2024. Ac-cessed August 2026; pinned at commit ca68950 .[11] Andreas Müller, Denis Lukovnikov, Jonas Thietke, Asja Fischer, and Erwin Quiring. Black-box forgery at-tacks on semantic watermarks for diffusion models. In 
+
+IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2025. arXiv:2412.03283. 10 [12] Daniel Olszewski, Allison Lu, Carson Stillman, Kevin Warren, Cole Kitroser, Alejandro Pascual, Divyajyoti Ukyab, Patrick Traynor, and Kevin Butler. “get in re-searchers; we’re measuring reproducibility”: A repro-ducibility study of machine learning papers in tier 1 se-curity conferences. In ACM SIGSAC Conference on Computer and Communications Security (CCS) , 2023. [13] Dustin Podell, Zion English, Kyle Lacey, Andreas Blattmann, Tim Dockhorn, Jonas Müller, Joe Penna, and Robin Rombach. SDXL: Improving latent diffusion models for high-resolution image synthesis. In Interna-tional Conference on Learning Representations (ICLR) ,2024. [14] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2022. [15] Jiaming Song, Chenlin Meng, and Stefano Ermon. De-noising diffusion implicit models. In International Con-ference on Learning Representations (ICLR) , 2021. [16] Yuxin Wen, John Kirchenbauer, Jonas Geiping, and Tom Goldstein. Tree-rings watermarks: Invisible fingerprints for diffusion images. In Advances in Neural Information Processing Systems (NeurIPS) , 2023. [17] Edwin B. Wilson. Probable inference, the law of succes-sion, and statistical inference. Journal of the American Statistical Association , 22(158):209–212, 1927. [18] Zijin Yang, Kai Zeng, Kejiang Chen, Han Fang, Weiming Zhang, and Nenghai Yu. Gaussian shading: Provable performance-lossless image watermarking for diffusion models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 12162–12171, 2024. [19] Xin Zhang, Zijin Yang, Kejiang Chen, Linfeng Ma, Weiming Zhang, and Nenghai Yu. Sembind: Bind-ing diffusion watermarks to semantics against black-box forgery attacks. In International Conference on Machine Learning (ICML) , 2026. arXiv:2601.20310. [20] Xuandong Zhao, Kexun Zhang, Zihao Su, Saastha Vasan, Ilya Grishchenko, Christopher Kruegel, Giovanni Vigna, Yu-Xiang Wang, and Lei Li. Invisible image watermarks are provably removable using generative AI. In Advances in Neural Information Processing Systems (NeurIPS) ,2024. [21] Tong Zhou, Ruyi Ding, Gaowen Liu, Charles Flem-ing, Ramana Rao Kompella, Yunsi Fei, Xiaolin Xu, and Shaolei Ren. MetaSeal: Defending against image attri-bution forgery through content-dependent cryptographic watermarks. Transactions on Machine Learning Re-search , 2026. arXiv:2509.10766. [22] Chaoyi Zhu, Zaitang Li, Renyi Yang, Robert Birke, Pin-Yu Chen, Tsung-Yi Ho, and Lydia Y. Chen. Optimization-free universal watermark forgery with regenerative diffu-sion models. arXiv preprint arXiv:2506.06018 , 2025. [23] Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei. HiDDeN: Hiding data with deep networks. In European Conference on Computer Vision (ECCV) , pages 657–672, 2018. 11

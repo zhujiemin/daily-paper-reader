@@ -1,0 +1,747 @@
+Lightweight Generalized DeepFake Face Detection with WAVIE:
+Wavelet Augmented Vision Intermediate Embeddings
+Arya Pulkit∗,1, Aditya Ruhela∗,1, Akarshan Kapoor∗,1,2, Arnav Bhavsar1
+Abstract— Deepfake detection systems often exhibit signif-
+icant performance degradation when deployed on unseen
+manipulation methods, limiting their reliability in real-world
+multimedia environments. This lack of generalization poses
+critical challenges for misinformation mitigation, digital foren-
+sics, and human-centric AI systems. Existing detectors perform
+well on the forgery methods they are trained on, but their
+accuracy drops sharply on unseen pipelines. To bridge this
+generalization gap, we propose WAVIE (Wavelet Augmented
+Vision Intermediate Embeddings), an end-to-end architecture
+that combines complementary spatial and frequency cues on top
+of a frozen CLIP backbone [1]. WAVIE projects intermediate
+transformer embeddings through a lightweight learnable mod-
+ule, applies a three-level Daubechies-6 (db6) discrete wavelet
+transform (DWT), refines the low-frequency branch while pre-
+serving the high-frequency branch, reconstructs the feature via
+inverse DWT, and performs classification.
+Trained only on FaceForensics++ [2], WAVIE achieves AU-
+ROC = 0.852 on Celeb-DF-v1 [3], 0.852 on Celeb-DF-v2 and
+0.831 on WildDeepFake (WDF) at the frame level, outperform-
+ing several state-of-the-art generalization baselines. Extensive
+ablation studies confirm the importance of both the wavelet
+module and the intermediate-feature aggregation for cross-
+dataset performance, highlighting the necessity of jointly lever-
+aging spatial and frequency domains. These results position
+WAVIE as a strong baseline for deepfake detection in the wild.
+I. INTRODUCTION
+Powerful generative models, from GANs to Diffusion
+frameworks[4], now produce synthetic media that is hard to
+distinguish from camera imagery. While these models enable
+ease of creating media, they also power deepfakes that can
+depict people saying or doing things they never did, posing
+serious risks for misinformation, identity theft, and fraud.
+There are several deepfake detection proposals for pre-
+venting this, but the central obstacle in detecting deepfakes
+is domain shift: detectors trained on one generator or dataset
+often fail on unseen pipelines because they latch onto the
+model or dataset-specific artifacts rather than universal cues
+of synthesis. As a result, in-domain accuracy can be decep-
+tively high while cross-domain performance collapses. This
+reality raises an urgent need for generalizable detectors that
+keep pace with rapidly evolving synthesis techniques.
+∗Equal contribution from First Authors
+1 School of Computing and Electrical Engineering, IIT Mandi, India
+2 PHYTEC Messtechnik GmbH, Germany
+https://github.com/Kappuccino111/WAVIE-Master
+© 2026 IEEE. Personal use of this material is permitted. Permission from
+IEEE must be obtained for all other uses, in any current or future media,
+including reprinting/republishing this material for advertising or promotional
+purposes, creating new collective works, for resale or redistribution to
+servers or lists, or reuse of any copyrighted component of this work in
+other works.
+Classical CNN detectors tend to overfit low-level patterns
+in the training distribution and may memorize rather than
+learn transferable signals, sometimes even forming a de facto
+sink class for ”Real” [5]. By contrast, features from large,
+frozen vision transformers (e.g., CLIP ViT)[1] have shown
+strong transfer for synthetic-image detection with minimal
+training. However, most prior work relies primarily on the
+final embeddings, which prioritizes semantic content and can
+wash out subtle fabrication artifacts. This limitation suggests
+that more effective detection may require leveraging richer,
+multi-scale representations that preserve both fine-grained
+details and global context along with remaining robust across
+domains.
+Motivated by this, we focus on two complementary aspects
+that are underexplored together: multi-layer representation
+aggregation and frequency-aware feature processing. The in-
+termediate layers of a vision transformer capture a spectrum
+of information, ranging from local textures to global seman-
+tics, while frequency-based filtering can help in revealing
+structural inconsistencies that are less apparent in the spatial
+domain.
+WAVIE builds on this perspective by integrating the com-
+ponents within a unified pipeline. We extract intermediate
+ViT features, learn per-layer, per-dimension importances to
+fuse them, and then apply a lightweight three-level wavelet
+split that refines the low-frequency statistics while preserving
+high-frequency detail. This hybrid spatial–frequency repre-
+sentation yields strong cross-dataset generalization in our
+experiments. Unlike adapter-based or per-layer projection
+designs, our implementation keeps a single shared projection
+per stage (before and after the wavelet block) and learns only
+a small fusion tensor and a low-band linear head, for a total
+of ∼2.14M trainable parameters. Thus, our work makes the
+following contributions:
+• We propose WAVIE, a novel detector that fuses inter-
+mediate ViT features via layer-wise feature aggregation
+and augments them with a representation-level low-band
+wavelet refinement.
+• We demonstrate that WAVIE achieves strong cross-
+domain generalization, reaching 0.8518/0.8520 AUROC
+on Celeb-DF-v1/v2 and 0.8313 on WDF, competitive
+with recent state-of-the-art on Celeb-DF-v1 and best
+among listed methods on Celeb-DF-v2 and WDF, under
+an identical training pipeline and with only ∼2.14M
+trainable parameters atop a frozen backbone.
+• We conduct extensive analyses, including ablations, and
+interpretability studies, highlighting the role of inter-
+arXiv:2609.14437v1  [cs.CV]  13 Sep 2026
+
+
+Fig. 1: Under unseen distribution shifts, the baseline model misclassifies samples, while WAVIE corrects predictions using
+low-frequency feature refinement.
+mediate features, wavelet decomposition, and per-layer
+importance weights.
+• We release code, models, and preprocessing scripts
+to foster reproducibility and further research in cross-
+domain deepfake detection.
+II. RELATED WORK
+A. Deepfake Generation and Early Detection Strategies
+With the advancement in GAN and diffusion mod-
+els, deepfakes have evolved from simple face-swapping
+into highly realistic synthetic media. Early works like
+FaceShifter [6] highlighted the transition. It becomes increas-
+ingly difficult to distinguish synthetic images from the real
+ones with the improvement in the generation quality, not to
+mention the crucial need for performing well on unseen data.
+1) Early Deepfake Detection: Traditional detection meth-
+ods treated the problem as binary classification (Real vs.
+Fake) and relied on artifacts or ”fingerprints” left by gener-
+ative models [7], [8]. These methods, though being effective
+on known datasets, often struggled to generalize on unseen
+generators.
+To improve robustness, researchers have explored patch-
+based classifiers, augmentation strategies, and frequency-
+domain analysis. Methods leveraging SRM filters and
+Fourier-based representations [9], [10], [11], as well as
+F3-Net[10], targeted high-frequency inconsistencies, while
+Face X-ray [12] detected blending artifacts. Despite these
+advances, supervised detectors remained sensitive to dataset
+bias and showed poor cross-domain generalization [13].
+B. CLIP and Vision Transformer (ViT) for Detection
+Recent approaches leverage large pre-trained models such
+as CLIP [1], which combines a text encoder with a ViT-
+based image encoder [14]. Due to its training on diverse
+data, CLIP provides transferable representations suitable for
+deepfake detection.
+Studies show that simple classifiers on frozen CLIP em-
+beddings generalize well across generators [5]. However,
+relying solely on the final embedding emphasizes semantic
+information and may overlook subtle artifacts, motivating the
+use of intermediate ViT features.
+C. RINE: Leveraging Intermediate Transformer Features
+RINE [15] utilizes intermediate ViT representations by
+extracting and concatenating the [CLS] token from multiple
+transformer layers. A Trainable Importance Estimator (TIE)
+assigns weights to each layer, combining low-, mid-, and
+high-level features.
+With CLIP kept frozen and only lightweight modules
+trained, RINE achieves strong generalization across gener-
+ators. However, it operates purely in the spatial domain and
+does not explicitly incorporate frequency information.
+D. Wavelet Based Deepfake Detection (Wavelet-CLIP)
+Frequency-domain methods capture artifacts that may not
+be visible in the spatial domain. Wavelet-CLIP [16] ap-
+plies a discrete wavelet transform (DWT) to the final CLIP
+embedding, separating low-frequency and high-frequency
+components.
+The low-frequency component is refined using a small
+network, while the high-frequency component is preserved
+before reconstruction. Although effective, this approach re-
+lies only on the final embedding and does not leverage
+intermediate transformer features.
+III. METHODOLOGY: WAVIE
+We
+propose
+WAVIE,
+a
+framework
+that
+performs
+representation-level spectral modeling over multi-layer trans-
+former features for robust deepfake detection. Unlike meth-
+ods that rely solely on final-layer embeddings, WAVIE
+leverages intermediate representations and their frequency
+characteristics within a unified pipeline.
+A frozen CLIP ViT-L/14 backbone extracts the [CLS]
+token from each transformer block. WAVIE aggregates these
+features using a learnable layer-weighing mechanism in order
+to construct an improved feature vector.
+We then apply a three-level Daubechies-6 (db6) discrete
+wavelet transform (DWT) on this fused representation. The
+decomposition separates low-frequency components (captur-
+ing global structure) from high-frequency components (cap-
+turing fine details). We refine only the low-frequency branch
+while preserving the high-frequency branch, and reconstruct
+the feature via inverse DWT (IDWT) before classification.
+
+
+This design enables the model to balance stability and sen-
+sitivity: low-frequency refinement stabilizes global statistics,
+while preserved high-frequency components retain artifact
+cues. As a result, WAVIE improves generalization to unseen
+deepfake generators with minimal additional overhead.
+Notation. Let n denote the number of transformer blocks
+in the CLIP-ViT backbone (for ViT-L/14, n = 24). We index
+blocks by l ∈{1, . . . , n} and feature dimensions by j ∈
+{1, . . . , d′}. Unless stated otherwise, we use a feature width
+of d′ = 1024, corresponding to the hidden size of CLIP
+ViT-L/14 before the projection head.
+1. Feature Extraction (Frozen CLIP-ViT): Given an
+input image x ∈R3×224×224, we pass it through a pre-
+trained CLIP Vision Transformer, keeping all weights fixed.
+From each transformer block, we extract the [CLS] token
+representation. For ViT-L/14, each of these embeddings has
+dimension 1024 (prior to the final projection to 768, which
+we do not use). Collecting these across all n blocks yields
+a matrix of intermediate features G ∈Rn×1024, capturing a
+range of information from low-level appearance cues in early
+layers to more abstract semantics in deeper layers.
+2. Per-Layer Projection (Q1): Each [CLS] feature gl ∈
+R1024 (for layer l = 1, . . . , n) is passed through a shared
+learnable projection Q1 (lightweight MLP with Dropout,
+Linear, ReLU, Dropout), producing h′
+l ∈R1024. This step
+aligns features from different transformer layers, which oth-
+erwise vary in scale and distribution, into a common repre-
+sentation space. This improves stability during aggregation
+and helps combine complementary information across layers.
+3. Layer-wise Aggregation: Taking the stacked projected
+features H′ ∈Rn×1024 as input, we learn a set of scalar
+weights for each layer and feature dimension. Let αl,j denote
+the learned logit for layer l and feature index j. We normalize
+these across layers using a softmax:
+wl,j =
+exp(αl,j)
+Pn
+m=1 exp(αm,j).
+The projected features are then aggregated as
+fj =
+n
+X
+l=1
+wl,j h′
+l,j,
+j = 1, . . . , 1024,
+resulting in a single fused feature vector f ∈R1024. This
+allows the model to adaptively balance contributions from
+different layers, rather than relying on a fixed combination.
+4. Wavelet Decomposition: Taking the fused feature
+f ∈R1024 as input, we apply a 3-level Daubechies-6 (db6)
+discrete wavelet transform, separating it into low- and high-
+frequency components:
+f low = WLf,
+f high
+k
+= WHkf,
+k = 1, 2, 3.
+Here, f low
+∈
+R137
+captures coarse structure, while
+f high
+1
+, f high
+2
+, f high
+3
+contain progressively finer details at each
+decomposition level. The wavelet filters are fixed, ensuring
+stable and invertible decomposition.
+5. Low-Frequency Refinement: Taking f low ∈R137 as
+input, we update only the low-frequency component using a
+single linear layer:
+f low′ = Wlow f low + blow,
+Wlow ∈R137×137.
+The high-frequency components {f high
+1
+, f high
+2
+, f high
+3
+} are kept
+unchanged. This design is based on the observation that low-
+frequency signals tend to encode more stable structural pat-
+terns, while high-frequency components are more sensitive to
+noise and dataset-specific variations. Refining only the low-
+frequency part allows the model to focus on consistent cues
+while retaining fine details as auxiliary information.
+6. Reconstruction: Taking the refined low-frequency com-
+ponent f low′ and the original high-frequency components as
+input, reconstruction is performed using the inverse wavelet
+transform:
+ˆf = IDWTdb6
+ f low′, {f high
+1
+, f high
+2
+, f high
+3
+}
+
+,
+yielding ˆf ∈R1024. Since the db6 transform is invertible,
+the reconstruction preserves the overall structure of the
+representation.
+7. Final Projection and Classification: The reconstructed
+feature ˆf ∈R1024 is passed through a second learnable
+projection Q2 (Dropout, Linear, ReLU, Dropout; output
+dimension 1024), followed by a linear classification layer
+that maps R1024 →R1 to produce the final logit. Only the
+lightweight components Q1, the low-frequency linear layer,
+Q2, the classifier, and the layer-wise aggregation weights
+are trained, while the CLIP backbone and wavelet filters
+remain fixed. This keeps the number of learnable parameters
+relatively small (approximately 2.14M for ViT-L/14 with
+d′ = 1024).
+8. Training Objective: The model is trained using a com-
+bination of binary cross-entropy and supervised contrastive
+loss:
+L = LBCE + λ LSupCon.
+The binary cross-entropy loss is applied to the predicted
+probabilities pi:
+LBCE = −1
+|B|
+X
+i∈B
+h
+yi log(pi) + (1 −yi) log(1 −pi)
+i
+,
+where yi ∈{0, 1} is the ground-truth label.
+To encourage better separation between real and fake
+samples, we additionally apply a supervised contrastive loss
+on the normalized representation after Q2. Let zi = ˆfi/∥ˆfi∥
+denote the ℓ2-normalized feature. For each sample i, posi-
+tives are defined as other samples in the batch with the same
+label. The loss is given by:
+LSupCon = 1
+|B|
+X
+i∈B
+−1
+|P(i)|
+X
+p∈P (i)
+log
+exp
+ z⊤
+i zp/τ
+
+P
+a∈B\{i}
+exp
+ z⊤
+i za/τ
+.
+We use a temperature τ = 0.07 and set λ = 0.1 unless stated
+otherwise.
+Implementation Details: We use CLIP’s ViT-L/14 (24
+blocks; per-block hidden width 1024; the CLIP head projects
+to 768 but is unused here). Q1 and Q2 are MLP mapping
+
+
+Fig. 2: WAVIE Framework: Multi-layer transformer features are aggregated, followed by representation-level wavelet decomposition, selective
+low-frequency refinement, and reconstruction for classification.
+1024→1024, each with ReLU and dropout p=0.1. A 3-
+level Daubechies-6 (db6) wavelet yields a low-frequency
+component of length 137 and corresponding high-frequency
+bands; the low-band is refined by a single linear layer
+mapping 137→137. We train with AdamW (lr 1×10−3,
+weight decay 10−2), batch size 32, and AMP; other training
+protocol details are in Sec. IV.
+IV. EXPERIMENTAL SETUP
+A. Datasets and Preprocessing
+We conduct experiments using FaceForensics++ [2],
+Celeb-DF-v1/v2 [3], and WildDeepFake [17]. We use the
+raw (c0) variant of FaceForensics++ for training and val-
+idation, incorporating four manipulation types (Deepfakes,
+Face2Face, FaceSwap, NeuralTextures). To mitigate class
+imbalance, we sample real videos at 1 fps and fake videos
+at 4 fps. Each extracted frame is processed by MTCNN
+(facenet pytorch v2.5): we select the largest detected
+face per frame, expand the bounding box by 20 pixels (when
+in-bounds), crop, and resize to 224×224 pixels. Frames with
+no detected face are discarded. This yields 131,155 real and
+175,465 fake frames, randomly split into training and vali-
+dation subsets (80%/20%) with a fixed seed. Detailed counts
+appear in Table I. We deliberately focus on FF++→Celeb-
+DF/WDF transfer to isolate the effects of intermediate-layer
+fusion and wavelet refinement, avoiding confounds from
+multi-dataset training. All splits use the same pipeline: after
+face cropping and resizing, images undergo CLIP’s standard
+RGB normalization; no additional augmentations (e.g., color
+jitter, blur) are applied, in order to isolate the effect of the
+representation and wavelet stages.
+Dataset
+Split
+Real
+Fake
+Eval.
+FF++
+Train
+104,924
+140,372
+–
+Val
+26,231
+35,093
+Self
+CDF-v1
+Test
+8,073
+16,302
+Cross
+CDF-v2
+Test
+10,165
+21,458
+Cross
+WDF
+Test
+58,659
+107,003
+Cross
+TABLE I: Dataset statistics and evaluation role.
+B. Network Architecture and Hyperparameters
+Complete architectural details are in Section III. Briefly,
+the detector employs a frozen CLIP ViT-L/14 backbone. We
+extract per-block [CLS] tokens (pre projection, width 1024),
+project them to 1024, fuse them via a Trainable Importance
+Estimator, and apply a 3-level Daubechies-6 (db6) wavelet
+with a single linear low-band refinement (137→137) before
+classification. The total number of trainable parameters is
+approximately 2M.
+C. Training Protocol
+We train for 20 epochs using AdamW with learning
+rate 1×10−3 and weight decay 10−2, batch size 32, and
+automatic mixed precision (AMP). A OneCycleLR schedule
+warms up and then decays the learning rate across epochs.
+We also maintain an exponential moving average (EMA) of
+model weights with decay 0.999. The loss is
+L = LBCE + 0.1 LSupCon,
+where the supervised contrastive term is computed from
+a single view per frame using same-class positives within
+the batch (temperature τ=0.07). We do not use class re-
+weighting, since the sampling strategy (1 fps real / 4 fps fake)
+already controls imbalance (131,155 vs. 175,465). We fix
+random seeds (Python/NumPy/PyTorch) and enable cuDNN
+deterministic operations for reproducibility.
+D. Evaluation Protocol
+We evaluate WildDeepFake[17], Celeb-DF-v1 and v2 [3]
+separately, maintaining the same preprocessing as in training.
+The primary metric is frame-level AUROC. Unless stated
+otherwise, all reported numbers are frame-level. We focus
+on cross-dataset tests (trained on FF++, tested on Celeb-DF
+and WildDeepFake) as the most stringent evaluation.
+V. RESULTS
+A. Comparison with State-of-the-Art
+This subsection compares the proposed method with ex-
+isting approaches under cross-domain evaluation settings.
+
+
+Model
+Venue
+Backbone
+FF++
+Celeb-DF-v1
+Celeb-DF-v2
+WDF
+EfficientNet[18]
+ICML’19
+EfficientNet-B4
+0.990
+0.790
+0.748
+Xception[19]
+ICCV’19
+Xception
+0.990
+0.779
+0.736
+0.652
+F3-Net[10]
+ECCV’20
+Xception
+0.990
+0.776
+0.735
+0.677
+Face X-ray[12]
+CVPR’20
+HRNet
+0.970
+0.709
+0.678
+CLIP [5]
+CVPR’23
+ViT-L/14
+0.960
+0.743
+0.750
+LAA[20]
+Neural Networks’24
+ConvNeXt V2-B
+0.993
+0.779
+0.709
+IAL[21]
+ICASSP’25
+EfficientNet-b4
+0.993
+0.796
+0.771
+Wavelet-CLIP[16]
+WACV’25
+ViT
+0.756
+0.759
+WaViT-CDC[22]
+OJSP’25
+ViT
+0.988
+0.816
+0.812
+RSG-DA[23]
+TDSC’25
+EfficientNet-B4
+0.971
+0.860
+0.799
+CDA-Net[24]
+SMC’25
+EfficientNet
+0.981
+0.820
+0.774
+WAVIE (ours)
+–
+Frozen ViT-L/14
+0.980
+0.852
+0.852
+0.831
+TABLE II: Frame-level AUROC on self-domain (FF++) and cross-domain (Celeb-DF, WDF) benchmarks.
+Table II presents results on the FaceForensics++ (FF++)
+self-domain benchmark and the cross-domain Celeb-DF-v1,
+Celeb-DF-v2, and WDF datasets. All results are reported in
+terms of frame-level AUROC.
+a) Self vs. Cross Domain.:
+Most methods achieve
+near-saturated performance on FF++, with several models
+exceeding 0.99 AUROC (e.g., EfficientNet, Xception, F3-
+Net, IAL). However, their performance drops substantially on
+unseen datasets. For instance, Xception achieves 0.779/0.736
+on Celeb-DF-v1/v2, and Face X-ray further degrades to
+0.709/0.678, highlighting the difficulty of cross-domain gen-
+eralization.
+b) Recent Strong Baselines.: Recent approaches im-
+prove robustness but still exhibit performance gaps. RSG-
+DA achieves the best result on Celeb-DF-v1 (0.860), while
+CDA-Net (0.820) and WaViT-CDC (0.816) perform strongly
+on Celeb-DF-v2. On WDF, WaViT-CDC reaches 0.812, rep-
+resenting one of the strongest baselines on this dataset.
+c) WAVIE.: The proposed WAVIE achieves 0.980 AU-
+ROC on FF++, 0.8518 on Celeb-DF-v1, 0.8520 on Celeb-
+DF-v2, and 0.8313 on WDF. Compared with recent state-
+of-the-art methods, WAVIE is competitive with the best-
+performing model on Celeb-DF-v1, while achieving the
+highest performance on Celeb-DF-v2 and WDF among
+all listed methods.
+In particular, WAVIE improves over strong recent base-
+lines such as CDA-Net (+3.2 on v2, +5.7 on WDF) and
+WaViT-CDC (+3.6 on v2, +1.9 on WDF), demonstrating
+enhanced robustness to unseen manipulation pipelines.
+Notably, WAVIE also substantially outperforms the frozen
+CLIP baseline (+10.9/+10.2 on v1/v2) and Wavelet-CLIP
+(+9.6/+9.3), confirming that the layer-wise feature aggrega-
+tion and frequency refinement are complementary.
+Practically, WAVIE achieves consistently strong cross-
+domain performance while keeping the backbone frozen
+and the trainable budget low (∼2M), suggesting that
+representation-level wavelet refinement combined with multi-
+layer fusion provides an effective and parameter-efficient
+approach to generalizable deepfake detection.
+d) t-SNE Evaluations.:
+We visualize representation
+quality on Celeb-DF-v1 and Celeb-DF-v2 using t-SNE.
+For each split, we project both the intermediate (Layer
+Aggregated) and final (IDWT) embeddings produced by
+WAVIE into 2D. On Celeb-DF-v1, applying the complete
+IDWT yields a clearer gap between real and fake clusters; on
+Celeb-DF-v2, IDWT produces increased within-class density
+and tighter clusters relative to the Layer Aggregation stage.
+These trends, shown in Fig. 3, indicate progressively more
+discriminative and compact representations as the pipeline
+advances. We use these plots as qualitative diagnostics;
+quantitative claims rely on AUROC.
+(a) v1: After Layer Aggregation
+(b) v1: After IDWT
+(c) v2: After Layer Aggregation
+(d) v2: After IDWT
+Fig. 3: t-SNE visualizations after the Layer Aggregation (left) and IDWT
+(right) stages on Celeb-DF-v1 (top) and Celeb-DF-v2 (bottom). IDWT
+produces more separable and compact clusters.
+B. Ablation Studies
+To better understand the contribution of each component
+of WAVIE, we conduct ablation experiments on the Celeb-
+DF-v1 and v2 datasets. We evaluate three simplified variants:
+• Without fusing intermediate features: Instead of
+fusing intermediate encoder-block features, we directly
+pass the final CLIP ViT embedding into the wavelet
+module.
+• Without Wavelet Refinement: We bypass the discrete
+wavelet transform and feed the aggregated feature (after
+Q1) directly to the classifier.
+
+
+Variant
+Celeb-DF-v1
+Celeb-DF-v2
+Without Fusion
+0.7532
+0.7854
+Without Wavelet Refinement
+0.7221
+0.7636
+Average Layer Aggregation
+0.8508
+0.8404
+WAVIE (Full)
+0.8518
+0.8520
+TABLE III: Ablation Results (frame-level AUROC).
+• Average Layer Aggregation: Instead of aggregating
+CLS tokens using learnable weights, we take the aver-
+age of the vectors fetched from the encoder blocks.
+The results in Table III highlight the role of each compo-
+nent. Removing the intermediate-layer fusion block (Without
+Fusion) drops cross-domain AUROC by nearly 10 points,
+underscoring the importance of intermediate transformer fea-
+tures. Eliminating the wavelet refinement (Without Wavelet)
+further reduces performance, confirming that frequency-
+domain filtering plays a key role in cross-domain robustness.
+Uniform averaging (Average Layer Aggregation) is compet-
+itive but consistently trails WAVIE, suggesting that learned
+per-layer weights provide a modest yet reliable benefit once
+the wavelet refinement is in place.
+VI. CONCLUSION
+We presented WAVIE, a parameter-efficient deepfake de-
+tection framework that jointly leverages multi-layer trans-
+former representations and frequency-domain refinement for
+improved cross-domain generalization. The model remains
+competitive on FF++ (≈0.98 AUROC) while markedly re-
+ducing the performance drop on unseen datasets, highlighting
+its suitability for deployment where manipulation methods
+are unknown. We believe that by leveraging intermediate-
+layer embeddings, WAVIE preserves fine-grained forgery
+cues often lost in final-layer representations, and the wavelet-
+based refinement further enhances robustness by emphasiz-
+ing frequency inconsistencies introduced during manipula-
+tion.
+Ablation studies confirm that both components are es-
+sential: removing intermediate fusion or wavelet refine-
+ment each cause substantial drops in cross-domain AUROC,
+while uniform layer averaging trails the learned aggregation
+weights, suggesting a practical efficiency–accuracy trade-off
+and a promising target for future compact variants. The total
+trainable parameter count remains low (∼2M) atop a frozen
+backbone.
+Scope and Limitations: Our evaluation is frame-level and
+face-centric, trained exclusively on FF++ (c0) and tested
+on Celeb-DF and WildDeepFake. We employ a fixed 3-
+level db6 DWT without learning the filters and do not use
+image-space augmentations, which isolates the effect of our
+design but may limit robustness. Exploring learnable wavelet
+bases, adaptive decompositions, and stronger augmentations
+are promising directions.
+Future directions: Key avenues include: (i) Temporal mod-
+eling to exploit cross-frame artifacts; (ii) Learnable wavelet
+banks and joint spatial-frequency attention; and (iii) Robust-
+ness to compression and post-processing.
+ACKNOWLEDGMENT
+The work is partly supported through project grant by
+Directorate of Forensic Science, India.
+REFERENCES
+[1] A. Radford et al., “Learning transferable visual models from natural
+language supervision,” in ICML, 2021, pp. 8748–8763.
+[2] A. Rossler, D. Cozzolino, L. Verdoliva, C. Riess, J. Thies, and
+M. Nießner, “FaceForensics++: Learning to detect manipulated facial
+images,” in ICCV, 2019, pp. 1–11.
+[3] Y. Li, X. Yang, P. Sun, H. Qi, and S. Lyu, “Celeb-DF: A large-scale
+challenging dataset for deepfake forensics,” in CVPR, 2020.
+[4] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer,
+“High-resolution image synthesis with latent diffusion models,” in
+CVPR, 2022, pp. 10 684–10 695.
+[5] U. Ojha, Y. Li, and Y. J. Lee, “Towards universal fake image detectors
+that generalize across generative models,” in CVPR, 2023, pp. 24 480–
+24 489.
+[6] L. Li, J. Bao, H. Yang, D. Chen, and F. Wen, “Advancing high fidelity
+identity swapping for forgery detection,” in CVPR, 2020, pp. 5074–
+5083.
+[7] N. Yu, L. S. Davis, and M. Fritz, “Attributing fake images to GANs:
+Learning and analyzing GAN fingerprints,” in ICCV, 2019.
+[8] F. Marra, D. Gragnaniello, L. Verdoliva, and G. Poggi, “Do GANs
+leave artificial fingerprints?” in IEEE MIPR, 2019, pp. 506–511.
+[9] J. Frank, T. Eisenhofer, L. Sch¨onherr, A. Fischer, D. Kolossa, and
+T. Holz, “Leveraging frequency analysis for deep fake image recog-
+nition,” in ICML, 2020, pp. 3247–3258.
+[10] Y. Qian, G. Yin, L. Sheng, Z. Chen, and J. Shao, “Thinking in
+frequency: Face forgery detection by mining frequency-aware clues,”
+in ECCV, 2020, pp. 86–103.
+[11] R. Gong, R. He, D. Zhang, A. K. Sangaiah, and M. J. Alenazi,
+“Robust face forgery detection integrating local texture and global
+texture information,” EURASIP J. Inf. Secur., vol. 2025, no. 1, p. 3,
+2025.
+[12] L. Li, J. Bao, T. Zhang, H. Yang, D. Chen, F. Wen, and B. Guo, “Face
+X-ray for more general face forgery detection,” in CVPR, 2020, pp.
+5001–5010.
+[13] L. Chai, D. Bau, S.-N. Lim, and P. Isola, “What makes fake images
+detectable? Understanding properties that generalize,” in ECCV, 2020,
+pp. 103–120.
+[14] A. Dosovitskiy et al., “An image is worth 16x16 words: Transformers
+for image recognition at scale,” arXiv:2010.11929, 2020.
+[15] C. Koutlis and S. Papadopoulos, “Leveraging representations from
+intermediate encoder-blocks for synthetic image detection,” in ECCV,
+2024, pp. 394–411.
+[16] L. B. Baru, R. Boddeda, S. A. Patel, and S. M. Gajapaka, “Wavelet-
+driven generalizable framework for deepfake face forgery detection,”
+in WACV, 2025, pp. 1661–1669.
+[17] B. Zi, M. Chang, J. Chen, X. Ma, and Y.-G. Jiang, “WildDeepfake: A
+challenging real-world dataset for deepfake detection,” in ACM MM,
+2020, pp. 2382–2390.
+[18] M. Tan and Q. Le, “EfficientNet: Rethinking model scaling for
+convolutional neural networks,” in ICML, 2019, pp. 6105–6114.
+[19] F. Chollet, “Xception: Deep learning with depthwise separable convo-
+lutions,” in CVPR, 2017, pp. 1251–1258.
+[20] C. Peng, F. Sun, D. Liu, N. Wang, and X. Gao, “Local artifacts
+amplification for deepfakes augmentation,” Neural Networks, vol. 180,
+p. 106692, 2024.
+[21] X. Zhou, Z. Deng, and Q. Zhao, “Identity-agnostic learning for
+deepfake face detection,” in ICASSP, 2025, pp. 1–5.
+[22] N. E. A. Badr, J.-C. Nebel, D. Greenhill, and X. Liang, “WaViT-CDC:
+Wavelet vision transformer with central difference convolutions for
+spatial-frequency deepfake detection,” IEEE Open J. Signal Process.,
+2025.
+[23] Z. Gao, X. Zhu, H. Jia, Y. Zhao, C. Ma, and C. Li, “Learning
+generalizable representations for deepfake detection with realistic
+sample generation and dual augmentation,” IEEE Trans. Dependable
+Secure Comput., 2025.
+[24] K. Li, S. Jiang, L. Wang, C. Liu, S. He, and H. Lu, “Mamba: A
+contrastive learning and data augmentation-based model for improving
+deepfake generalization,” in IEEE SMC, 2025, pp. 1783–1790.

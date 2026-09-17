@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-16</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-08 ~ 2026-09-17</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 1 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 7 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>3</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-16 21:35:00 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-17 08:10:52 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,7 +69,8 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日速读 1 篇，聚焦扩散语言模型的水印方案 DenMark（6.0/10）。它尝试用语义水印提升扩散语言模型生成内容的稳健性，方向值得关注但评分中等。普通读者可先把它当作了解“扩散语言模型如何做内容溯源”的入门线索，后续等更成熟或更高分工作再深入。</p>
+<p>2026-09-08至09-17日报收录7篇，主线是水印攻防与AI生成内容溯源，两篇9分精读最抢眼。</p>
+<p>最值得看：DRIFT用偏转生成轨迹移除扩散水印，以及黑盒语义水印伪造的复现与工具化，均9.0/10</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -78,12 +79,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">0 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory">DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory</span></li><li><span class="dpr-home-dashboard-paper-title" title="Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery">Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery</span></li><li><span class="dpr-home-dashboard-paper-title" title="RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction">RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction</span></li></ul>
   </div>
-
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>3</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -91,12 +92,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="DenMark: Robust Semantic Watermarking for Diffusion Language Models">DenMark: Robust Semantic Watermarking for Diffusion Language Models</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories">TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories</span></li><li><span class="dpr-home-dashboard-paper-title" title="A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution">A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution</span></li><li><span class="dpr-home-dashboard-paper-title" title="Learning Continuous Source Responses For Generalizable AI-Generated Image Detection">Learning Continuous Source Responses For Generalizable AI-Generated Image Detection</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>3</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
 </section>
 </div>
 

@@ -1,0 +1,121 @@
+{
+  "date": "20260908-20260917",
+  "date_label": "2026-09-08 ~ 2026-09-17",
+  "generated_at": "2026-09-17 08:10:52 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.08213v1",
+      "route": "20260908-20260917/2609.08213v1-drift-removing-diffusion-watermarks-by-deflecting-the-generative-trajectory",
+      "title": "DRIFT: Removing Diffusion Watermarks by Deflecting the Generative Trajectory",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "去除生成图像扩散水印的黑盒攻击",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    },
+    {
+      "paper_id": "2609.12909v1",
+      "route": "20260908-20260917/2609.12909v1-forging-tree-ring-reproducing-and-instrumenting-black-box-semantic-watermark-forgery",
+      "title": "Forging Tree-Ring: Reproducing and Instrumenting Black-Box Semantic Watermark Forgery",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "针对扩散模型的黑盒语义水印伪造",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    },
+    {
+      "paper_id": "2609.14856v1",
+      "route": "20260908-20260917/2609.14856v1-rain-region-aware-inversion-network-for-semantic-watermark-extraction",
+      "title": "RAIN: Region-Aware Inversion Network for Semantic Watermark Extraction",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向扩散模型语义水印提取的区域感知反演",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    },
+    {
+      "paper_id": "2609.10416v1",
+      "route": "20260908-20260917/2609.10416v1-trajmark-ownership-attribution-and-segment-level-tamper-localization-for-coding-agent-trajectories",
+      "title": "TrajMark: Ownership Attribution and Segment-Level Tamper Localization for Coding-Agent Trajectories",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "基于水印的所有权归属与片段级篡改定位",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    },
+    {
+      "paper_id": "2609.11188v1",
+      "route": "20260908-20260917/2609.11188v1-a-multi-view-and-confusion-guided-ensemble-framework-for-robust-synthetic-image-attribution",
+      "title": "A Multi-View and Confusion-Guided Ensemble Framework for Robust Synthetic Image Attribution",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "合成图像溯源与生成内容来源识别",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    },
+    {
+      "paper_id": "2609.14316v1",
+      "route": "20260908-20260917/2609.14316v1-learning-continuous-source-responses-for-generalizable-ai-generated-image-detection",
+      "title": "Learning Continuous Source Responses For Generalizable AI-Generated Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向真实性验证的AI生成图像检测",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    },
+    {
+      "paper_id": "2609.14437v1",
+      "route": "20260908-20260917/2609.14437v1-lightweight-generalized-deepfake-face-detection-with-wavie-wavelet-augmented-vision-intermediate-embeddings",
+      "title": "Lightweight Generalized DeepFake Face Detection with WAVIE: Wavelet Augmented Vision Intermediate Embeddings",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "融合空域与频域线索的泛化深度伪造人脸检测",
+      "first_seen_at": "2026-09-17 08:10:52 UTC",
+      "updated_at": "2026-09-17 08:10:52 UTC"
+    }
+  ]
+}
