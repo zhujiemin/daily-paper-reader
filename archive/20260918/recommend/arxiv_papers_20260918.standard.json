@@ -1,0 +1,139 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-18T21:31:58.422308+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 12,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.16681v1",
+      "source": "arxiv",
+      "title": "MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks",
+      "abstract": "LLM watermarking helps trace the origin of generated text, but faces stealing attacks that recover watermark information, scrubbing attacks that remove watermark signals, and spoofing attacks that forge text accepted as watermarked. These attacks are often studied in isolation, leaving their connections unclear. Evaluations also often lack shared detector calibration, metric definitions, and reporting protocols. Moreover, measuring attack success and text quality separately makes it difficult to identify attacks that are both effective and quality-preserving.   We propose MarkSec, a general framework that unifies analyses of stealing, scrubbing, and spoofing. We evaluate attacks under a common reporting protocol and introduce a quality-constrained attack success metric to assess effectiveness and text quality jointly. Experiments across representative watermark families, attacks, LLMs, and datasets reveal three findings. First, attacks that appear strongest by watermark removal alone can fall behind general rewriting when success also requires acceptable text quality. Second, general rewriting remains a strong baseline across watermark families, while its advantage over other scrubbers varies by family. Third, in a case study of one watermark family, stealing-based scrubbers often underperform the best general-scrubbing baselines when text quality is required. These results show that apparent attack winners depend on text-quality constraints, attack generality, and capability assumptions.",
+      "authors": [
+        "Kairong Li",
+        "Zhikun Zhang",
+        "Xiao Ren",
+        "Yunjun Gao"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-09-15T06:02:53+00:00",
+      "link": "https://arxiv.org/pdf/2609.16681v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "unifies stealing, scrubbing and spoofing attacks against watermarks",
+      "llm_evidence_cn": "统一分析水印的窃取、擦除与伪造攻击",
+      "llm_evidence": "统一分析水印的窃取、擦除与伪造攻击",
+      "canonical_evidence": "统一分析水印的窃取、擦除与伪造攻击",
+      "llm_tldr_en": "Watermarking traces generated content but faces stealing, scrubbing and spoofing attacks studied in isolation; MarkSec unifies their analysis with a shared protocol and a quality-conscious evaluation.",
+      "llm_tldr_cn": "水印技术可用于追溯生成内容的来源，但其面临窃取水印信息、擦除水印信号以及伪造水印文本等攻击，而现有研究往往孤立分析这些攻击，缺乏统一检测器校准、指标定义与报告协议。本文提出MarkSec框架，统一分析窃取、擦除与伪造三类攻击，并在统一报告协议下评估攻击成功率与文本质量。该工作揭示了三类水印攻击之间的关联，并引入兼顾质量保持的攻击评价方式，为水印攻防的系统性研究提供了评测基础，对生成图像水印的移除与伪造防御亦有借鉴意义。",
+      "llm_tldr": "水印技术可用于追溯生成内容的来源，但其面临窃取水印信息、擦除水印信号以及伪造水印文本等攻击，而现有研究往往孤立分析这些攻击，缺乏统一检测器校准、指标定义与报告协议。本文提出MarkSec框架，统一分析窃取、擦除与伪造三类攻击，并在统一报告协议下评估攻击成功率与文本质量。该工作揭示了三类水印攻击之间的关联，并引入兼顾质量保持的攻击评价方式，为水印攻防的系统性研究提供了评测基础，对生成图像水印的移除与伪造防御亦有借鉴意义。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.16778v2",
+      "source": "arxiv",
+      "title": "Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics",
+      "abstract": "The unchecked proliferation of manipulated images on social media platforms has increased the spread of misinformation, posing a severe threat to public trust and information integrity. Modern deepfake detectors typically rely on Vision Transformers (ViTs) to capture the low-level inconsistencies that characterize fully synthetic or locally tampered images. However, the global understanding of such foundation models is not enough to discriminate alone between real and fake multimedia content, especially in challenging scenarios where images are compressed or transmitted through social media. In this paper we pioneer the application of Joint-Embedding Predictive Architecture (JEPA) models to deepfake detection, taking advantage of the generalized representation of visual reality that such World Models have exhibited. We hypothesize, and empirically demonstrate, that the intrinsic world understanding of JEPA models can be used as a strong prior for a deepfake detector. To fully exploit JEPA capabilities, we propose MoE-JEPA, a dual-stream architecture for deepfake detection. By enhancing a V-JEPA 2 backbone with a Residual Mixture-of-Experts (MoE) mechanism, along with a noise stream branch, our model dynamically internalizes forensic knowledge. Furthermore, a Gated Attention Multiple Instance Learning (MIL) module is employed to ensure precise spatial semantic understanding. Evaluated on the SID-Set benchmark, comprising 300K AI-generated, tampered and authentic images, MoE-JEPA establishes a new state-of-the-art with an accuracy of 95.54%, successfully outperforming vastly larger models.",
+      "authors": [
+        "Simone Teglia",
+        "Irene Amerini"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-15T07:46:01+00:00",
+      "link": "https://arxiv.org/pdf/2609.16778v2",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "synthetic and locally tampered image forensics detection",
+      "llm_evidence_cn": "合成与局部篡改图像的取证检测",
+      "llm_evidence": "合成与局部篡改图像的取证检测",
+      "canonical_evidence": "合成与局部篡改图像的取证检测",
+      "llm_tldr_en": "Deepfake detectors rely on ViTs but struggle with compressed or social-media images. This paper applies JEPA models with a mixture-of-experts design combining semantic priors and high-frequency traces for robust synthetic image forensics, improving detection of fully synthetic and locally tampered content.",
+      "llm_tldr_cn": "现有深度伪造检测器多依赖视觉Transformer，在图像经压缩或社交平台传播等困难场景下全局理解不足，难以区分真实与伪造内容。本文首次将联合嵌入预测架构JEPA引入伪造图像取证，结合语义先验与高频痕迹并采用混合专家设计，增强对完全合成图像与局部篡改图像的检测能力。实验表明该方法在压缩和传播场景下更鲁棒，为应对被篡改图像引发的虚假信息传播提供了新的取证思路。",
+      "llm_tldr": "现有深度伪造检测器多依赖视觉Transformer，在图像经压缩或社交平台传播等困难场景下全局理解不足，难以区分真实与伪造内容。本文首次将联合嵌入预测架构JEPA引入伪造图像取证，结合语义先验与高频痕迹并采用混合专家设计，增强对完全合成图像与局部篡改图像的检测能力。实验表明该方法在压缩和传播场景下更鲁棒，为应对被篡改图像引发的虚假信息传播提供了新的取证思路。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.19693v1",
+      "source": "arxiv",
+      "title": "IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models",
+      "abstract": "The rapid increase of deepfakes has raised significant concerns due to their spread on social media. Traditional multi-face forgery detectors crop and verify each face independently, ignoring background context and inter-face relationships, which often yields suboptimal performance. To overcome these limitations, we leverage instruction-based Large Vision-Language Models (LVLMs), which can interpret entire images and follow complex textual instructions. We propose a simple yet effective single-stage multi-face forgery detector, called IMFD (Instruction-based Multi-face Forgery Detector), which is trained end-to-end to jointly localize faces and predict per-face forgery labels. Rather than treating face box prediction only as a joint objective, IMFD explicitly integrates predicted face bounding boxes into the instruction as visual cues that enhance instruction grounding and forgery detection. To support the training and evaluation of IMFD, we convert existing multi-face forgery datasets into an instruction-based format. Experimental results and analyses show that IMFD improves multi-face forgery detection by integrating face bounding boxes into the instruction, and consistently outperforms various state-of-the-art methods.",
+      "authors": [
+        "Dasom Choi",
+        "Sangjun Moon",
+        "Hyeongchan Im",
+        "Jaeeon Park",
+        "Jingun Kwon",
+        "Hidetaka Kamigaito",
+        "Taro Watanabe",
+        "Manabu Okumura"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-17T04:40:20+00:00",
+      "link": "https://arxiv.org/pdf/2609.19693v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "jointly localizes faces and predicts per-face forgery labels for forgery detection",
+      "llm_evidence_cn": "联合定位人脸并预测逐脸伪造标签的伪造检测",
+      "llm_evidence": "联合定位人脸并预测逐脸伪造标签的伪造检测",
+      "canonical_evidence": "联合定位人脸并预测逐脸伪造标签的伪造检测",
+      "llm_tldr_en": "IMFD leverages instruction-based large vision-language models to jointly localize faces and predict per-face forgery labels in a single stage, exploiting whole-image context and inter-face relations to improve deepfake detection over per-face cropping baselines.",
+      "llm_tldr_cn": "针对传统多脸伪造检测逐脸裁剪、忽略背景与脸间关系导致性能不佳的问题，本文提出基于指令式大型视觉语言模型的单阶段检测器IMFD，端到端联合定位人脸并预测每张脸的伪造标签。实验表明该方法能利用整图上下文与脸间关系提升深伪检测效果，为社交媒体上的伪造人脸识别提供了更有效的方案。",
+      "llm_tldr": "针对传统多脸伪造检测逐脸裁剪、忽略背景与脸间关系导致性能不佳的问题，本文提出基于指令式大型视觉语言模型的单阶段检测器IMFD，端到端联合定位人脸并预测每张脸的伪造标签。实验表明该方法能利用整图上下文与脸间关系提升深伪检测效果，为社交媒体上的伪造人脸识别提供了更有效的方案。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "identifying and localizing manipulated regions in digital images",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

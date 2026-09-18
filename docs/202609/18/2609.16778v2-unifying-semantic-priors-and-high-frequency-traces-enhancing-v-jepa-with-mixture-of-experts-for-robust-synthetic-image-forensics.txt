@@ -1,0 +1,254 @@
+Title: Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics
+
+URL Source: https://arxiv.org/pdf/2609.16778v2
+
+Published Time: Thu, 17 Sep 2026 00:55:05 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics 
+
+## Simone Teglia, Irene Amerini 
+
+## Sapienza University of Rome 
+
+## {teglia, amerini }@diag.uniroma1.it 
+
+## Abstract 
+
+The unchecked proliferation of manipulated images on so-cial media platforms has increased the spread of misinfor-mation, posing a severe threat to public trust and informa-tion integrity. Modern deepfake detectors typically rely on Vision Transformers (ViTs) to capture the low-level incon-sistencies that characterize fully synthetic or locally tam-pered images. However, the global understanding of such foundation models is not enough to discriminate alone be-tween real and fake multimedia content, especially in chal-lenging scenarios where images are compressed or trans-mitted through social media. In this paper we pioneer the application of Joint-Embedding Predictive Architecture (JEPA) models to deepfake detection, taking advantage of the generalized representation of visual reality that such World Models have exhibited. We hypothesize, and empir-ically demonstrate, that the intrinsic world understanding of JEPA models can be used as a strong prior for a deep-fake detector. To fully exploit JEPA capabilities, we propose MoE-JEPA, a dual-stream architecture for deepfake detec-tion. By enhancing a V-JEPA 2 backbone with a Residual Mixture-of-Experts (MoE) mechanism, along with a noise stream branch, our model dynamically internalizes foren-sic knowledge. Furthermore, a Gated Attention Multiple Instance Learning (MIL) module is employed to ensure pre-cise spatial semantic understanding. Evaluated on the SID-Set benchmark, comprising 300K AI-generated, tampered and authentic images, MoE-JEPA establishes a new state-of-the-art with an accuracy of 95.54%, successfully outper-forming vastly larger models. 
+
+## 1. Introduction 
+
+With the rapid advancements of Generative Artificial In-telligence, the creation of artificial multimedia content has witnessed explosive growth. State-of-the-art models like DALL-E 3 [9], FLUX [25] and Nano Banana Pro [34], have democratized the access to such powerful tools, making the generation of highly realistic images, commonly known as deepfakes, no longer a research novelty, but an everyday technology. However, the same technological progress that enables creative expression and productivity gains, also in-troduces profound societal risks. Alongside these techno-logical breakthroughs, society has witnessed an unprece-dented wave of digital disinformation propagating across social media platforms [3, 14, 31]. Synthetic multimedia content is regularly weaponized to manipulate public per-ception, posing a severe threat to public trust, democratic processes, and overall information integrity. Fabricated im-ages depicting sensitive geopolitical conflicts, such as those in Ukraine or Gaza, can rapidly go viral on social media, po-tentially altering narrative and concretely influencing peo-ple’s beliefs, driving real-world actions [13]. These con-cerns have intensified research efforts in multimedia foren-sics, prompting the release of massive deepfake datasets and the development of increasingly powerful detection archi-tectures. Modern detectors, often built upon large-scale vi-sion backbones, aim to discern authentic images from AI-generated or manipulated ones by learning discriminative artifacts introduced during the generation process. In par-ticular, foundation Vision Transformers (ViTs) [16] have emerged as powerful general-purpose feature extractors, achieving remarkable performance across a wide range of visual recognition tasks. By modeling long-range depen-dencies through self-attention, ViTs primarily learn global semantic representations of the image. While this property is advantageous for high-level understanding, it may limit their ability to capture fine-grained, localized inconsisten-cies that are critical in forensic analysis. When applied to the field of deepfake detection, such models can effectively capture global generative patterns that characterize fully synthetic images, but their strong semantic abstraction often suppresses subtle forensic cues that fine-grained detectors rely upon [38]. At the same time, recent progress in self-supervised learning have further improved the transformer-based backbones. In particular Joint-Embedding Predictive arXiv:2609.16778v2 [cs.CV] 16 Sep 2026 Architecture (JEPA) [26] models propose a new learning paradigm that involves the encoder to learn to anticipate the representation of masked regions of the images in the la-tent space, rather than the actual raw pixels. Architectures of this kind serve as a foundational component for building World Models, as their predictive module aims to capture the underlying semantic structure and constraints of the vi-sual world. We hypothesize that this learned generalized understanding of images can act as a fundamental prior to capture the synthetic inconsistencies of AI-generated im-agery. To harness this capability, we introduce MoE-JEPA (see Figure 1), a dual-stream architecture for deepfake de-tection based on the World Model V-JEPA 2 [6], a self-supervised vision model that excel at both video and im-age tasks. Specifically, we employ the V-JEPA 2 backbone to exploit its robust visual representations, and augment its capabilities by injecting into the latest layers a Resid-ual Mixture-of-Experts (MoE) mechanism, allowing the ar-chitecture to internalize forensic features the backbone was not trained to extract. Furthermore, to prevent the seman-tic dilution caused by global pooling that can influence the correct detection of localized forgeries, MoE-JEPA imple-ments a Gated Attention Multiple Instance Learning (MIL) module to ensure precise, unsupervised spatial routing to manipulated regions. Furthermore, we extend the architec-ture with a low-level noise branch, enabling a richer un-derstanding of the image and making the detection more robust, especially against the aggressive degradations intro-duced by social media sharing, resizing, and transmission. By explicitly capturing localized generative and sensor arti-facts, this parallel noise stream compensates for the seman-tic abstraction of the foundation model, providing a resilient defense against in-the-wild media degradation. In summary, our main contributions are: • To the best of our knowledge, we are the first to pioneer the usage of JEPA World Models for deepfake detection. We empirically demonstrate that the intrinsic understand-ing of physical and structural visual reality learned by these models naturally captures generative inconsisten-cies. • We propose MoE-JEPA , a deepfake detector combining a semantic branch with a noise branch. By integrating a Residual Mixture-of-Experts (MoE) and a Gated Atten-tion Multiple Instance Learning (MIL) module, the archi-tecture dynamically internalizes forensic traces and miti-gates background semantic dilution without catastrophic forgetting of the foundation model’s pre-trained knowl-edge. • We design a robust dual-stream framework with an Adap-tive Gated Fusion technique. We demonstrate that while V-JEPA 2 excel at global contextual verification, coupling them with a constrained BayarConv noise branch is criti-cal for isolating semantically coherent, microscopic local manipulations. • MoE-JEPA achieves a new state-of-the-art on the SID-Set benchmark, with a 95.54% overall accuracy. Tested on the RRDataset, it achieves the second best accuracy over-all and the best accuracy on re-digitalized real images. 
+
+## 2. Related Work 
+
+2.1. Deepfake Detection 
+
+In recent years, the emergence of powerful generative ar-tificial intelligence models like GANs [19] and Diffusion Models [20] has called for the development of reliable and effective deepfake detectors. Early deepfake detec-tion methods primarily relied on Convolutional Neural Net-works (CNNs) to expose spatial artifacts, blending bound-aries, and frequency-domain inconsistencies. [2, 28, 33, 42] As generative models advanced, researcher started to adopt foundation Vision Transformers (ViTs) [16] as base model for their architectures [15, 35, 41, 44]. Latest approaches leverage more complex architectures to extract image em-beddings, like Large Vision Language Models [21] or Q-Former [27]. These approaches take advantage of the global context understanding to achieve superior face forgery de-tection performance. However, these large models intro-duce prohibitive computational costs, making real-time in-ference for social media filtering impractical. To overcome these deployment hurdles we explore the usage of the Joint-Embedding Predictive Architecture as vision encoder, com-prising only of 0.3B parameters, providing a remarkable lightweight and efficient foundation model. 
+
+2.2. Mixture of Experts 
+
+Mixture-of-Experts (MoE) [22] aim to increase the model capacity without affecting the computational demand, by dynamically routing input tokens to a specialized subset of feed-forward sub-networks (experts). To drastically scale up the model capacity, without affecting the inference costs, Shazeer et al. [32] proposed the sparsely-gated Mixture-of-Experts, that select only the top-k most relevant experts for each given token. This allows the overall parameter count of the architecture to scale significantly, while the computational complexity remains equivalent to a much smaller dense model. Moreover, to protect the founda-tion model’s universal knowledge, the Residual Mixture-of-Experts [39] paradigm introduced a set of frozen shared experts, responsible to maintain the pretrained knowledge of the model, alongside a dynamically routed trainable ex-perts. This allows for a more stable training, enabling the specialization of routed experts without losing the core se-mantic understanding of the model. While traditional MoEs utilize a Softmax routing function, recent advancements like DeepSeekMoE [29] have demonstrated that Normal-ized Sigmoid Gating prevents the possible routing collapse. In the field of multimedia forensics, works like MoE-FFD [24] and Forensic-MoE [17] have successfully utilized ex-pert modules to extract generalized face forgery clues and aggregate diverse synthetic traces from multiple generators. 
+
+2.3. Joint-Embedding Predictive Architectures 
+
+The Joint-Embedding Predictive Architecture (JEPA), orig-inally proposed by LeCun as a foundational step toward Au-tonomous Machine Intelligence [26], represents a paradigm shift in self-supervised representation learning world. Un-like traditional generative approaches which attempt to re-construct missing patches at the exact pixel or token level, JEPA models operate entirely within an abstract latent space, by predicting the representation of missing parts of the inputs. Extending the base capabilities of JEPA mod-els, I-JEPA [5] and V-JEPA [7] demonstrated that this ab-stract prediction strategy yields highly scalable and seman-tically rich representations even for images and videos re-spectively, by predicting latent visual features rather than raw pixels. Building upon this foundation, V-JEPA 2 [6] extends the V-JEPA framework, successfully obtaining a new state-of-the-art for vision JEPA models. Because JEPA models are explicitly trained to understand the underlying physical rules, motion dynamics, and structural consisten-cies of visual reality, we hypothesize that their latent spaces inherently capture the anomalous and physically inconsis-tent nature of synthetic media. 
+
+## 3. Methodology 
+
+We propose MoE-JEPA, a deepfake detection architecture that leverages the natural vision understanding of the World Model V-JEPA 2. By combining a semantic branch, de-voted to extracting high-level structural anomalies and pro-found physical inconsistencies from the latent space, and a noise branch, responsible for isolating microscopic, high-frequency generative traces, our architecture is able to eval-uate the image in its entirety, comprehending both high and low-level information at the same time. 
+
+3.1. The Semantic Branch 
+
+3.1.1. Pre-trained Vision Backbone 
+
+Given an input image I ∈ RH×W ×C , we first adapt the input for the temporal requirement of V-JEPA by duplicat-ing the frame to simulate a video stream across a synthetic temporal dimension T . Then we process it through a frozen V-JEPA Encoder model E, which outputs a sequence of un-pooled spatial patch tokens: 
+
+Z = E(I) ∈ RN ×D
+
+where N is the number of spatial patches and D is the em-bedding dimension. The first layers of the Vision Encoder 
+
+E are kept frozen to prevent catastrophic forgetting of gen-eral visual representations and to preserve its large-scale pretraining knowledge. 
+
+3.1.2. Residual Mixture-of-Experts 
+
+Rather than completely relying on the generalized vi-sual understanding of the pre-trained backbone, which is inherently optimized for semantic invariance rather than forensic sensitivity, we intervene in the latest transformer blocks to increase adaptability to forensic cues. Specif-ically we replace the last Multi Layer Perceptron (MLP) of the latest encoder blocks of the vision backbone with a Residual Mixture-of-Experts (MoE) module. Concretely, each MoE layer consists of a set of M trainable experts 
+
+{E1, E 2, . . . , E M }, together with a single fully frozen shared expert Eshared , following a Residual Mixture-of-Experts formulation. The shared expert remains always ac-tive and provides a stable semantic pathway, while the train-able experts are dynamically routed to model input-specific variations. To control the routing dynamic we adopt a Nor-malized Sigmoid Gating mechanism, following recent stud-ies [29] that prove that this kind of routing allows for a more uniform saturation across layers than the softmax-gated al-ternative, promoting a more balanced expert utilization and faster router stabilization. Formally, let zi ∈ RD denote a spatial patch token. A learnable router network parameterized by a weight matrix 
+
+WR ∈ RD×M first computes raw affinity logits for all train-able experts s(zi) = WRzi. Let then Tk(zi) denote the selected subset of the Top-k most relevant experts, and let 
+
+gm(zi) represent their corresponding normalized sigmoid gating weights. The final adapted token zout  
+
+> i
+
+is computed as the sum of the deterministic shared expert representation and the dynamically routed trainable experts: 
+
+zout  
+
+> i
+
+= Eshared (zi) + X 
+
+> m∈T k(zi)
+
+gm(zi) · Em(zi)
+
+To encourage diversity among experts and avoid degen-erate specialization, we perturb the weights of the trainable experts at initialization by injecting small stochastic noise. This controlled perturbation promotes heterogeneous adap-tation trajectories, enabling the model to better capture di-verse input distributions. To prevent routing collapse and ensure that all the trainable experts are equally utilized, we employ an auxiliary load balancing loss Lbal . Given a batch of B tokens and M trainable experts, we first compute the routing density dm for each expert m as the mean routing probability across all tokens: 
+
+dm = 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+pi,m 
+
+where pi,m represents the routing probability of token i to expert m. The load balancing loss is then computed as the Figure 1. Overview of the MoE-JEPA architecture. The semantic branch (top) uses a V-JEPA 2 backbone, a MoE module, and a Gated At-tention MIL module to semantically suppress pristine backgrounds and isolate localized tampering ( Hsemantic ). In parallel, the noise branch (bottom) applies a constrained BayarConv layer to extract high-frequency generative and sensor artifacts ( Hnoise ). These complementary features are joined using an Adaptive Gated Multimodal Fusion module and classified via an MLP head. 
+
+scaled sum of the squared densities: 
+
+Lbal = M
+
+> M
+
+X
+
+> m=1
+
+d2 
+
+> m
+
+− 1
+
+The total optimization objective of the network is thus 
+
+Ltotal = LCE +λbal Lbal , where LCE is the primary Cross-Entropy loss and λbal is the balancing coefficient. 
+
+3.1.3. Gated Attention MIL Pooling 
+
+Finally, to isolate the tampered regions and mitigate se-mantic dilution, we apply a Gated Attention Multiple In-stance Learning (MIL) module over the adapted tokens. This module acts as a spatial circuit breaker, dynamically learning to assign near-zero attention weights to pristine background patches, making the model attend more easily to synthetically forged patches. The attention score ai for each adapted patch token zout  
+
+> i
+
+is computed via a dual-branch network: 
+
+ai = Softmax  wT tanh( V z out  
+
+> i
+
+) ⊙ σ(U z out  
+
+> i
+
+) 
+
+with V and U as learnable projection matrices that map the token into a forensic feature space and a relevance gate, re-spectively. The tanh activation models complex feature in-teractions, while the Sigmoid gate σ explicitly masks out irrelevant semantic content via element-wise multiplication (⊙). The final localized semantic representation Hsemantic 
+
+is the attention-weighted sum of the tokens: 
+
+Hsemantic =
+
+> N
+
+X
+
+> i=1
+
+aizout 
+
+> i
+
+3.2. The Noise Branch 
+
+While the semantic branch demonstrates strong capabilities in isolating spatial and contextual anomalies, relying exclu-sively on high-level semantic features can limit the model robustness. For example, many sophisticated forgeries are designed to be semantically coherent: manipulated regions may exhibit perfectly blended boundaries, consistent light-ing, and plausible object structure. Moreover, common post-processing steps, such as resizing, recompression, and platform-specific social media pipelines, can attenuate the semantic inconsistencies that detectors often rely on. To en-hance the overall architecture robustness and enable a more comprehensive understanding of the forgeries, we introduce a parallel noise branch. Rather than processing the latent patch tokens, this branch operates directly on the raw input image I ∈ RH×W ×C to extract a purely high-frequency residual map. To extract the noise residuals we employ a constrained convolutional layer, commonly known as BayarConv [8]. This layer exploits a learnable convolutional kernel W ∈
+
+RK×K that is forced to predict the center pixel value, based only on its neighborhood pixels. This suppresses dominant semantic structures, effectively filtering out the image se-mantic and revealing the subtle high-frequency noise pat-terns beneath. The resulting residual map R is subsequently processed through a lightweight stack of standard convo-lutional blocks. These blocks serve to hierarchically pool the localized high-frequency discrepancies into a dense, ab-stract frequency fingerprint Hnoise ∈ Rd.By fusing this frequency-based fingerprint with the spa-tially localized semantic representation, the architecture achieves a comprehensive, disentangled view of the image: the semantic branch evaluates contextual integrity and se-mantic coherence, while the noise branch provides a more robust verification of physical and generative consistency. Together, they provide a more comprehensive understand-ing of the image, improving the detection of both fully syn-thetic images and carefully crafted local manipulations. 
+
+3.2.1. Adaptive Gated Multimodal Fusion and Classifi-cation 
+
+Rather than just relying on a simple concatenation strategy, we employ an Adaptive Gated Residual Fusion mechanism. After processing the image I through the semantic branch and the noise branch, to dynamically regulate the contribu-tion of the the two vectors Hsemantic ∈ RD and Hnoise ∈ Rd,we compute a modulating gate vector α. This is achieved by concatenating the normalized representations and pass-ing them through a learnable dense projection followed by a Sigmoid activation: 
+
+α = σ  Wgate 
+
+ ¯Hsemantic ⊕ ¯Hnoise 
+
+ 
+
+where ⊕ denotes concatenation. Finally the multimodal representation is constructed by applying the learned gate α via element-wise multiplication (⊙) to the noise embedding, which is then added to the se-mantic embedding: 
+
+Hfused = ¯Hsemantic + ( α ⊙ ¯Hnoise )
+
+This gated formulation allows the network to au-tonomously decide when to rely purely on spatial anoma-lies and when to inject microscopic generative noise. Later 
+
+Hfused is fed to a linear classifier to predict the target classes. 
+
+## 4. Experimental Setup 
+
+4.1. Dataset 
+
+To fully evaluate the discriminative capabilities and cross-domain robustness of the proposed architecture we conduct extensive experiments across two different benchmarks. The following datasets have been chosen due to their com-plementary nature and their ability to extensively reflect the modern landscape of manipulated content shared across so-cial media platforms. SID-Set offers a comprehensive col-lection of contemporary AI-generated and tampered me-dia, required to required to test baseline detection accuracy, while RRDataset focuses on severe image degradation tech-niques, allowing to evaluate model resilience against real-world conditions. 
+
+4.1.1. SID-Set 
+
+For our primary evaluation we employ the Social Media Im-age Detection Dataset (SID-Set) [21]. SID-Set is specifi-cally designed to mimic the complexity of the modern so-cial media landscape, containing highly realistic images uniformly distributed across three categories: Authentic (Real ), Fully Synthetic ( Fake ), and Locally Manipulated (Tampered ), making it one of the most comprehensive and up to date deepfake benchmark. Crucially, because its con-tent is sourced directly from various social media platforms, the dataset inherently captures the real-world degradations such as aggressive algorithmic compression, dynamic resiz-ing, and multiple transmission artifacts that deepfake detec-tors must overcome ”in-the-wild.” We employ the official dataset splits, utilizing 210k images for the training phase, 30k for validation, and 60k for testing. 
+
+4.1.2. RRDataset 
+
+To further asses the forensics capabilities of our framework against real-world degradation and unseen forensic cues, we evaluate MoE-JEPA using the RRDataset. This dataset is explicitly designed to test detector resilience against the aggressive post-processing procedures commonly encoun-tered in social-media environment. RRDataset is catego-rized into three subsets of images: the Original split con-taining pristine images, the Transmission split containing images that have been shared through popular messaging and social-media platforms for multiple rounds, and Re-Digitalization split comprising of images that have been physically recaptured from screens. Moreover, RRDataset comprehends different levels of image sensitivity, involv-ing war, political, religious and disaster scenarios. Testing across these three specific distributions allows us to rigor-ously measure the capacity of the architecture to survive se-vere artifact attenuation and complex domain shifts. 
+
+4.2. Implementation Details 
+
+Architecture Configuration: We instantiate MoE-JEPA using the large-scale V-JEPA 2 foundation model, specif-ically the facebook/vjepa2-vitl-fpc64-256 
+
+checkpoint 1. To introduce forensic adaptability, we inject Residual MoE modules exclusively into the final 3 trans-former blocks. Each MoE layer is configured with 1 frozen shared expert and M = 6 trainable experts. The router utilizes a Top-k selection strategy with k = 2 , meaning each token is processed by the shared expert and the 2 most relevant trainable experts. While the entire architecture consists of 480.46M parameters, the Residual MoE layers allow the model to only activate 379.73M parameters during each forward pass, leaving over 100M parameters inactive per token. This allows MoE-JEPA to comfortably             
+
+> 1https://huggingface.co/facebook/vjepa2- vitl-fpc64-256 (a) SID-Set - Real (b) SID-Set - Fully Synthetic (c) SID-Set - Tampered
+> (d) RRDataset - Original (e) RRDataset - Transmission (f) RRDataset - Re-digital
+> Figure 2. Visual examples from the SIDSet and RRDataset. The top row presents images from the SID-Set benchmark across the three categories: Real, Fully Synthetic and Tampered , while the bottom row displays an image of RRDataset in the three degradation split present in the benchmark: the pristine Original format, the Transmission split (subject to social media compression), and the Re-Digitalization
+> split (captured via screen recapture).
+
+process media on standard consumer hardware, and enables it to outperform massive Vision-Language Models while utilizing a fraction of their active inference parameters. 
+
+Training Setup: The network is optimized using the AdamW optimizer, along with a learning rate scheduler fea-turing 10% linear warmup phase. The joint optimization objective dynamically balances the primary Cross-Entropy loss with the MoE Load Balancing auxiliary loss scaled by a coefficient of λbal = 0 .01 . All experiments were conducted on a single NVIDIA RTX 5090 GPU. The architecture was trained for a maximum of 20 epochs. To prevent overfitting and ensure optimal generalization, we implemented an early stopping callback with a patience of 3 epochs, strictly mon-itoring the validation accuracy to determine the best model checkpoint. 
+
+## 5. Results 
+
+In this section, we present a comprehensive evaluation of MoE-JEPA, benchmarking its performance against state-of-the-art deepfake detection architectures across diverse forensic scenarios. We first evaluate MoE-JEPA on the SID-Set benchmark, specifically testing its ability on detecting pristine, fully synthetic and tampered images. As clearly visible in Table 1, our proposed architecture achieves a new state-of-the-art performance, with an overall accuracy of 95.54% and F1-score of 94.21%, outperforming greatly larger models such as SIDA-13B. Crucially, MoE-JEPA exhibits unparalleled balance across the three differ-ent categories. While highly specialized models like LGrad [33] and Gram-Net [28] achieve marginally higher accuracy on the Tampered class (98.90% and 98.60%, respectively), they suffer from severe mode collapse, failing catastrophi-cally on the Real and Fake distributions. This indicates a Table 1. Detailed Accuracy and F1-Score breakdown across SID-Set categories: Real, Fully Synthetic and Tampered. MoE-JEPA achieves a new state-of-the-art surpassing all the previous approaches tested on the benchmark. Best results are highlighted in bold , and second best are underlined.                                                                                                    
+
+> Model Real Fully Synth. Tampered Total
+> Acc. F1 Acc. F1 Acc. F1 Acc. F1 AntifakePrompt [11] 88.90 89.10 97.50 97.90 90.90 80.40 92.40 89.10 CNNSpot [36] 89.00 90.80 90.70 88.10 68.10 64.00 82.60 85.40 FreDect [18] 46.00 47.60 60.90 66.00 37.10 53.00 47.60 55.40 Fusing [23] 89.20 92.07 88.10 89.10 27.00 31.40 68.10 71.00 Gram-Net [28] 89.20 91.70 97.90 98.60 89.90 86.90 92.10 92.40 UnivFD [30] 68.03 68.50 86.40 98.00 92.50 90.00 82.40 85.40 LGrad [33] 62.00 76.10 58.00 67.30 98.90 98.80 73.00 80.60 LNP [10] 14.40 23.00 36.20 35.60 93.30 94.60 48.00 51.10 SIDA-7B [21] 89.10 91.00 98.70 98.60 92.70 91.00 93.50 93.50 SIDA-13B [21] 89.60 91.10 98.50 98.70 92.90 91.20 93.60 93.50
+> MoE-JEPA (Ours) 91.61 93.06 99.98 99.67 95.12 93.50 95.54 94.21
+
+high sensitivity to local noise, making them not robust for real-world environment deployment. Conversely, our dual-stream architecture is able to extract semantics and noise, making it highly accurate on all types of images. This proves that the Gated Attention MIL and the MoE router effectively prevent the semantic dilution that plagues tradi-tional global pooling methods. To assess the architecture ability in even more challeng-ing real-world scenarios, we evaluate MoE-JEPA on the RRDataset benchmark. Following the training protocol pro-posed by the authors, we pre-train the architecture using 162,000 images from GenImage-SDv1.4 [43] and 162,000 images from ImageNet. Later, we finetune the best check-point on the training split of RRDataset. To ensure a rig-orous comparison, all the baselines, including the VLMs, are reported from the official RRDataset benchmark. As shown in Table 2, MoE-JEPA demonstrate incredible stabil-ity across the different post-processing splits of RRDataset, achieving an overall accuracy of 84.11%, outperforming frontier Vision-Language Models like GPT-4o-latest and Claude-3.7.sonnet. This empirical result underscores the importance of specialized forensic adaptation via Residual MoE when applied to smaller models. Evaluation against specialized deepfake detectors high-lights the challenging nature of the RRDataset, revealing a strongly fragmented landscape with no single architecture dominating across all different splits. DIRE [37], DRCT-ConvB [12], and MoE-JEPA effectively lead the leader-board, each exhibiting distinct trade-offs. MoE-JEPA se-cures a highly competitive second position overall, achiev-ing the best accuracy on the Re-Digitalization Real split, successfully resisting the physical noise introduced by such alteration thanks to the robust V-JEPA world model ini-tialization. Ultimately, this demonstrates that our dual-stream approach provides a reliable, balanced, and struc-turally aware verification for localized noise reconstruction. 
+
+5.1. Ablation Studies 
+
+To empirically validate the architectural design choices of MoE-JEPA, we conduct a comprehensive ablation study on the SID-Set benchmark. By systematically enabling and disabling core modules, we isolate the specific per-formance contributions of the Mixture-of-Experts (MoE) layers, the Gated Attention MIL pooling, and the high-frequency Noise Stream. The results are summarized in Table 3. We first evaluate a naive baseline using only the in-trinsic knowledge of the frozen V-JEPA encoder. This con-figuration yields an overall accuracy of 80.27%. Introduc-ing the noise stream directly into this architecture improves the detection of manipulated images by more than +10% points, underlining the importance of such branch for de-tecting high-frequency anomalies that the semantic branch alone misses. However, the introduction of the MoE mecha-nism triggers a massive performance improvement, with the overall accuracy that spikes by nearly +15% points. Most notably, the accuracy on the Real class jumps to 91.16% and Tampered detection leaps to 93.83%. This proves that the Residual MoE successfully allows the network to in-ternalize domain-specific forensic cues without suffering from the catastrophic forgetting of its pre-trained visual pri-ors. We then replace the standard average pooling with out Gated Attention MIL pooling module. This introduction boosts the performance of the model across all categories, revealing the importance of spatial routing. By attending to only relevant semantic anomalies, the architecture achieves a highly competitive accuracy and sets the maximum score for the Real category. Finally, while the semantic only branch of MoE-JEPA already excels at global understand-ing, the addition of the noise branch allow the network to peak on the Tampered class, reaching 95.12%, while simul-taneously securing the highest overall accuracy across all variants at 95.54%. Although there is a minor trade-off in Table 2. Detailed Performance Comparison on the RRDataset Categories. All metrics are reported as Accuracy (%). Among the detectors, best results are highlighted in bold , and second best are underlined                                                                                                           
+
+> Model RRDataset Original Transmission Re-Digitalization Overall
+> Real Fake Real Fake Real Fake Vision-Language Models (Evaluated in a Zero-Shot configuration)
+> Grok-2-vision [40] 46 .15 91 .84 52 .12 94 .03 48 .01 81 .63 69 .96
+> Gemini-2-flash [34] 71 .10 98 .43 52 .19 97 .41 46 .11 97 .41 77 .28
+> Claude-3.7-sonnet [4] 85 .12 94 .57 71 .26 96 .17 62 .34 85 .41 82 .48
+> GPT-4o-latest [1] 96 .30 92 .68 79 .41 90 .01 69 .23 76 .92 84 .09
+> Detectors (Train on GenImage-SDv1.4 & fine-tune on RRDataset)
+> LGrad [33] 51 .00 81 .29 18 .86 92 .54 14 .71 88 .27 57 .78
+> UnivFD [30] 64 .79 64 .90 44 .61 70 .80 36 .15 75 .69 59 .49
+> Fusing [23] 87 .24 92 .46 7.38 99.04 30 .79 73 .97 65 .15
+> FreDect [18] 79 .60 75 .93 58 .13 82 .11 46 .34 69 .95 68 .68
+> LNP [10] 83 .14 89 .26 38 .23 89 .30 31 .91 91 .05 70 .48
+> CNNSpot [36] 72 .42 89 .09 65 .72 88 .78 43 .12 86 .72 74 .31
+> Gram-Net [28] 81 .34 74 .65 79 .49 75 .69 79 .45 62 .02 75 .44
+> DIRE [37] 89 .72 98.25 90.34 97.87 1.42 98.89 79 .42
+> DRCT-ConvB [12] 93.52 95.52 92.82 95 .09 64.34 96.22 89.59 MoE-JEPA (Ours) 91.36 94 .51 81 .16 84 .18 91.55 61 .89 84.11
+
+Table 3. Ablation Study on SID-Set. Impact of architectural components on class-specific and overall test accuracy.                                                  
+
+> Model Variant Pooling MoE Noise Real Fake Tampered Acc.
+> Baseline 1 Avg. Pooling ××71.59 96.77 72.46 80.27 Baseline 2 Avg. Pooling ×✓69.90 99.25 85.47 84.87 Variant A1 Avg. Pooling ✓×91.16 99.83 93.83 95.09 Variant B Avg. Pooling ✓✓92.76 99.80 92.88 95.15 MoE-JEPA (Sem.) Gated MIL ✓×93.43 99.90 93.17 95.50
+> MoE-JEPA (Full) Gated MIL ✓✓91.61 99.90 95.12 95.54
+
+Real image accuracy, it is outweighed by the enhanced sen-sitivity to local forgeries and the boost in comprehensive detection. This final configuration proves that the parallel noise stream is strictly necessary to reliably isolate micro-scopic, semantically coherent local manipulations, yielding the most robust and accurate overall detector. 
+
+## 6. Conclusions and Future Works 
+
+In this paper we presented MoE-JEPA, a dual-stream ar-chitecture for deepfake detection that pioneers the usage of the world model V-JEPA as semantic backbone. By integrating a Residual Mixture-of-Expert mechanism and Gated Attention Multiple Instance Learning (MIL) pool-ing, MoE-JEPA successfully internalizes domain-specific forensic cues without compromising its robust pre-trained visual world model knowledge. Furthermore, the parallel noise stream extracts high-frequency generative and sen-sor artifacts, improving the detection of localized forg-eries. Our extensive evaluation on the SID-Set benchmark demonstrates the excellent capability of our architecture to distinguish between real, fully-synthetic and tampered images, establishing a new state-of-the-art with an over-all accuracy of 95.54%. The ablation studies systemati-cally confirm the architectural choices, demonstrating the importance of each module of MoE-JEPA and confirm-ing the necessity of both the dynamic expert routing and the dual-stream formulation. For future works, we plan to enhance the interpretability of MoE-JEPA by extract-ing spatial information directly from the processed routed patch tokens, providing localization maps for tampered im-ages. 
+
+## References 
+
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ah-mad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 ,2023. 8 [2] Darius Afchar, Vincent Nozick, Junichi Yamagishi, and Isao Echizen. Mesonet: a compact facial video forgery detection network. In 2018 IEEE international workshop on informa-tion forensics and security (WIFS) , pages 1–7. IEEE, 2018. 2[3] Irene Amerini, Mauro Barni, Sebastiano Battiato, Paolo Bestagini, Giulia Boato, Vittoria Bruni, Roberto Caldelli, Francesco De Natale, Rocco De Nicola, Luca Guarnera, Sara Mandelli, Taiba Majid, Gian Luca Marcialis, Marco Micheletto, Andrea Montibeller, Giulia Orr` u, Alessan-dro Ortis, Pericle Perazzo, Giovanni Puglisi, Nischay Purnekar, Davide Salvi, Stefano Tubaro, Massimo Villari, and Domenico Vitulano. Deepfake media forensics: Status and future challenges. Journal of Imaging , 11(3), 2025. 1 [4] Anthropic. Introducing the next generation of claude., 2024. 8[5] Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bo-janowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture, 2023. 3 [6] Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba, Komeili, Matthew Muckley, Am-mar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, and Nico-las Ballas. V-jepa 2: Self-supervised video models enable understanding, prediction and planning, 2025. 2, 3 [7] Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mahmoud Assran, and Nico-las Ballas. Revisiting feature prediction for learning visual representations from video, 2024. 3 [8] Belhassen Bayar and Matthew C Stamm. A deep learning approach to universal image manipulation detection using a new convolutional layer. In Proceedings of the 4th ACM workshop on information hiding and multimedia security ,pages 5–10, 2016. 4 [9] James Betker, Gabriel Goh, Li Jing, Tim Brooks, Jianfeng Wang, Linjie Li, Long Ouyang, Juntang Zhuang, Joyce Lee, Yufei Guo, et al. Improving image generation with better captions. Computer Science. https://cdn. openai. com/papers/dall-e-3. pdf , 2(3):8, 2023. 1 [10] Xiuli Bi, Bo Liu, Fan Yang, Bin Xiao, Weisheng Li, Gao Huang, and Pamela C Cosman. Detecting generated images by real images only. arXiv preprint arXiv:2311.00962 , 2023. 7, 8 [11] You-Ming Chang, Chen Yeh, Wei-Chen Chiu, and Ning Yu. Antifakeprompt: Prompt-tuned vision-language models are fake image detectors. arXiv preprint arXiv:2310.17419 ,2023. 7 [12] Baoying Chen, Jishen Zeng, Jianquan Yang, and Rui Yang. Drct: Diffusion reconstruction contrastive training towards universal detection of diffusion generated images. In Forty-first International Conference on Machine Learning , 2024. 7, 8 [13] Didier Ching, John Twomey, Matthew P. Aylett, Michael Quayle, Conor Linehan, and Gillian Murphy. Can deepfakes manipulate us? assessing the evidence via a critical scoping review. PLOS ONE , 20(5):1–19, 2025. 1 [14] Dr Dhiman. Exploding ai-generated deepfakes and misinfor-mation: A threat to global concern in the 21st century. Qeios ,2023. 1 [15] Xiaoyi Dong, Jianmin Bao, Dongdong Chen, Ting Zhang, Weiming Zhang, Nenghai Yu, Dong Chen, Fang Wen, and Baining Guo. Protecting celebrities from deepfake with identity consistency transformer. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 9468–9478, 2022. 2 [16] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Syl-vain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representa-tions , 2021. 1, 2 [17] Mingqi Fang, Ziguang Li, Lingyun Yu, Quanwei Yang, Hongtao Xie, and Yongdong Zhang. Forensic-moe: Ex-ploring comprehensive synthetic image detection traces with mixture of experts. In Proceedings of the IEEE/CVF Interna-tional Conference on Computer Vision , pages 17772–17782, 2025. 3 [18] Joel Frank, Thorsten Eisenhofer, Lea Sch¨ onherr, Asja Fis-cher, Dorothea Kolossa, and Thorsten Holz. Leveraging fre-quency analysis for deep fake image recognition. In Inter-national conference on machine learning , pages 3247–3258. PMLR, 2020. 7, 8 [19] Ian Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial networks. Commun. ACM , 63(11):139–144, 2020. 2 [20] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising dif-fusion probabilistic models. In Advances in Neural Infor-mation Processing Systems , pages 6840–6851. Curran Asso-ciates, Inc., 2020. 2 [21] Zhenglin Huang, Jinwei Hu, Xiangtai Li, Yiwei He, Xingyu Zhao, Bei Peng, Baoyuan Wu, Xiaowei Huang, and Guan-gliang Cheng. Sida: Social media image deepfake detection, localization and explanation with large multimodal model. In 
+
+Proceedings of the Computer Vision and Pattern Recognition Conference , pages 28831–28841, 2025. 2, 5, 7 [22] Robert A. Jacobs, Michael I. Jordan, Steven J. Nowlan, and Geoffrey E. Hinton. Adaptive mixtures of local experts. Neu-ral Computation , 3(1):79–87, 1991. 2 [23] Yan Ju, Shan Jia, Lipeng Ke, Hongfei Xue, Koki Nagano, and Siwei Lyu. Fusing global and local features for gen-eralized ai-synthesized image detection. In 2022 IEEE In-ternational Conference on Image Processing (ICIP) , pages 3465–3469. IEEE, 2022. 7, 8 [24] Chenqi Kong, Anwei Luo, Peijun Bao, Yi Yu, Haoliang Li, Zengwei Zheng, Shiqi Wang, and Alex C Kot. Moe-ffd: Mixture of experts for generalized and parameter-efficient face forgery detection. IEEE Transactions on Dependable and Secure Computing , 2025. 3 [25] Black Forest Labs, Stephen Batifol, Andreas Blattmann, Frederic Boesel, Saksham Consul, Cyril Diagne, Tim Dock-horn, Jack English, Zion English, Patrick Esser, et al. Flux. 1 kontext: Flow matching for in-context image generation and editing in latent space. arXiv preprint arXiv:2506.15742 ,2025. 1 [26] Yann LeCun. A Path Towards Autonomous Machine Intelli-gence Version. OpenReview , 2022. 2, 3 [27] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In In-ternational conference on machine learning , pages 19730– 19742. PMLR, 2023. 2 [28] Zhengzhe Liu, Xiaojuan Qi, and Philip HS Torr. Global tex-ture enhancement for fake face detection in the wild. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8060–8069, 2020. 2, 6, 7, 8 [29] Huy Nguyen, Thong T Doan, Quang Pham, Nghi DQ Bui, Nhat Ho, and Alessandro Rinaldo. On deepseekmoe: Statis-tical benefits of shared experts and normalized sigmoid gat-ing. arXiv preprint arXiv:2505.10860 , 2025. 2, 3 [30] Utkarsh Ojha, Yuheng Li, and Yong Jae Lee. Towards uni-versal fake image detectors that generalize across genera-tive models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 24480– 24489, 2023. 7, 8 [31] Jeannie Marie Paterson. Ai deepfakes on the web: The ’wicked’ challenges for ai ethics, law and technology. In 
+
+Proceedings of the ACM Web Conference 2024 , page 3, New York, NY, USA, 2024. Association for Computing Machin-ery. 1 [32] Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz, Andy Davis, Quoc Le, Geoffrey Hinton, and Jeff Dean. Outra-geously large neural networks: The sparsely-gated mixture-of-experts layer. arXiv preprint arXiv:1701.06538 , 2017. 2 [33] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, and Yunchao Wei. Learning on gradients: Generalized arti-facts representation for gan-generated images detection. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 12105–12114, 2023. 2, 6, 7, 8 [34] Gemini Team, Rohan Anil, Sebastian Borgeaud, Jean-Baptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, Katie Millican, et al. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805 , 2023. 1, 8 [35] Junke Wang, Zuxuan Wu, Wenhao Ouyang, Xintong Han, Jingjing Chen, Yu-Gang Jiang, and Ser-Nam Li. M2tr: Multi-modal multi-scale transformers for deepfake detec-tion. In Proceedings of the 2022 International Conference on Multimedia Retrieval , page 615–623, New York, NY, USA, 2022. Association for Computing Machinery. 2 [36] Sheng-Yu Wang, Oliver Wang, Richard Zhang, Andrew Owens, and Alexei A Efros. Cnn-generated images are surprisingly easy to spot... for now. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8695–8704, 2020. 7, 8 [37] Zhendong Wang, Jianmin Bao, Wengang Zhou, Weilun Wang, Hezhen Hu, Hong Chen, and Houqiang Li. Dire for diffusion-generated image detection. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 22445–22455, 2023. 7, 8 [38] Zhikan Wang, Zhongyao Cheng, Jiajie Xiong, Xun Xu, Tian-rui Li, Bharadwaj Veeravalli, and Xulei Yang. A timely sur-vey on vision transformer for deepfake detection, 2024. 1 [39] Lemeng Wu, Mengchen Liu, Yinpeng Chen, Dongdong Chen, Xiyang Dai, and Lu Yuan. Residual mixture of ex-perts, 2022. 2 [40] xAI. Grok-2, 2025. 8 [41] Ziyu Xue, Qingtong Liu, Haichao Shi, Ruoyu Zou, and Xi-uhua Jiang. A transformer-based deepfake-detection method for facial organs. Electronics , 11(24), 2022. 2 [42] Nan Zhong, Yiran Xu, Sheng Li, Zhenxing Qian, and Xinpeng Zhang. Patchcraft: Exploring texture patch for efficient ai-generated image detection. arXiv preprint arXiv:2311.12397 , 2023. 2 [43] Mingjian Zhu, Hanting Chen, Qiangyu Yan, Xudong Huang, Guanyu Lin, Wei Li, Zhijun Tu, Hailin Hu, Jie Hu, and Yunhe Wang. Genimage: A million-scale benchmark for de-tecting ai-generated image. Advances in neural information processing systems , 36:77771–77782, 2023. 7 [44] Wanyi Zhuang, Qi Chu, Zhentao Tan, Qiankun Liu, Haojie Yuan, Changtao Miao, Zixiang Luo, and Nenghai Yu. Uia-vit: Unsupervised inconsistency-aware method based on vi-sion transformer for face forgery detection. In Computer Vi-sion – ECCV 2022 , pages 391–407, Cham, 2022. Springer Nature Switzerland. 2

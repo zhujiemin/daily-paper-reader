@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-17</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-18</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
     <strong class="dpr-home-dashboard-count">共 3 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>3</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-17 22:30:55 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-18 21:32:27 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,10 +69,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共生成 3 篇推荐（精读 1 篇，速读 2 篇）</p>
-<p>精读：《What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking》（8.0/10）</p>
-<p>速读：《Watermarks Without Verification: AI Text Watermarking After the EU AI Act》（6.0/10）, 《Predictive Likelihood Ratios for Language Model Watermark Detection》（6.0/10）</p>
-<p>这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。</p>
+<p>今日速读 3 篇 AI 安全与取证论文，聚焦 LLM 水印攻防、合成图像检测与多脸伪造识别。最值得关注的是 MarkSec 提出的能力感知攻击评测框架，以及 V-JEPA 结合语义先验与高频痕迹、用混合专家提升合成图像取证鲁棒性。普通读者可优先了解水印在对抗攻击下的真实可靠性，再关注多模态取证从单脸走向端到端多脸的进展。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -81,12 +78,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">0 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking">What Breaks Local Watermarks? A Robustness Benchmark for Local Invisible Image Watermarking</span></li></ul>
+<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
+
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -94,12 +91,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Watermarks Without Verification: AI Text Watermarking After the EU AI Act">Watermarks Without Verification: AI Text Watermarking After the EU AI Act</span></li><li><span class="dpr-home-dashboard-paper-title" title="Predictive Likelihood Ratios for Language Model Watermark Detection">Predictive Likelihood Ratios for Language Model Watermark Detection</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks">MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks</span></li><li><span class="dpr-home-dashboard-paper-title" title="Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics">Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics</span></li><li><span class="dpr-home-dashboard-paper-title" title="IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models">IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>2</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
 </section>
 </div>
 

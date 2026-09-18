@@ -1,0 +1,57 @@
+{
+  "date": "20260918",
+  "date_label": "",
+  "generated_at": "2026-09-18 21:32:27 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.16681v1",
+      "route": "202609/18/2609.16681v1-marksec-capability-aware-evaluation-of-adversarial-attacks-against-llm-watermarks",
+      "title": "MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "统一分析水印的窃取、擦除与伪造攻击",
+      "first_seen_at": "2026-09-18 21:32:27 UTC",
+      "updated_at": "2026-09-18 21:32:27 UTC"
+    },
+    {
+      "paper_id": "2609.16778v2",
+      "route": "202609/18/2609.16778v2-unifying-semantic-priors-and-high-frequency-traces-enhancing-v-jepa-with-mixture-of-experts-for-robust-synthetic-image-forensics",
+      "title": "Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "合成与局部篡改图像的取证检测",
+      "first_seen_at": "2026-09-18 21:32:27 UTC",
+      "updated_at": "2026-09-18 21:32:27 UTC"
+    },
+    {
+      "paper_id": "2609.19693v1",
+      "route": "202609/18/2609.19693v1-imfd-end-to-end-multi-face-forgery-detection-through-instruction-based-large-vision-language-models",
+      "title": "IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "联合定位人脸并预测逐脸伪造标签的伪造检测",
+      "first_seen_at": "2026-09-18 21:32:27 UTC",
+      "updated_at": "2026-09-18 21:32:27 UTC"
+    }
+  ]
+}

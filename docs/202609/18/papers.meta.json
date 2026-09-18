@@ -1,0 +1,54 @@
+{
+  "label": "2026-09-18",
+  "date": "2026-09-18",
+  "generated_at": "2026-09-18T21:32:29",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202609/18/2609.16681v1-marksec-capability-aware-evaluation-of-adversarial-attacks-against-llm-watermarks",
+      "section": "quick",
+      "title_en": "MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks",
+      "authors": "Kairong Li, Zhikun Zhang, Xiao Ren, Yunjun Gao",
+      "date": "2026-09-15",
+      "pdf": "https://arxiv.org/pdf/2609.16681v1",
+      "score": "6.0",
+      "evidence": "统一分析水印的窃取、擦除与伪造攻击",
+      "tldr": "LLM水印可追踪生成文本来源，却面临窃取、擦除与伪造攻击，且这些攻击常被孤立研究，评估缺乏统一校准与指标。为此提出MarkSec统一框架，在共同报告协议下评估三类攻击，并引入质量约束的攻击成功指标。实验表明：仅看水印去除时最强的攻击，在要求文本质量时可能不如通用重写；通用重写跨水印家族仍是强基线；窃取型擦除器常逊于最佳通用擦除基线。这说明攻击优劣取决于文本质量约束、攻击通用性与能力假设。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "LLM watermarking helps trace the origin of generated text, but faces stealing attacks that recover watermark information, scrubbing attacks that remove watermark signals, and spoofing attacks that forge text accepted as watermarked. These attacks are often studied in isolation, leaving their connections unclear. Evaluations also often lack shared detector calibration, metric definitions, and reporting protocols. Moreover, measuring attack success and text quality separately makes it difficult to identify attacks that are both effective and quality-preserving.   We propose MarkSec, a general framework that unifies analyses of stealing, scrubbing, and spoofing. We evaluate attacks under a common reporting protocol and introduce a quality-constrained attack success metric to assess effectiveness and text quality jointly. Experiments across representative watermark families, attacks, LLMs, and datasets reveal three findings. First, attacks that appear strongest by watermark removal alone can fall behind general rewriting when success also requires acceptable text quality. Second, general rewriting remains a strong baseline across watermark families, while its advantage over other scrubbers varies by family. Third, in a case study of one watermark family, stealing-based scrubbers often underperform the best general-scrubbing baselines when text quality is required. These results show that apparent attack winners depend on text-quality constraints, attack generality, and capability assumptions.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.16778v2-unifying-semantic-priors-and-high-frequency-traces-enhancing-v-jepa-with-mixture-of-experts-for-robust-synthetic-image-forensics",
+      "section": "quick",
+      "title_en": "Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics",
+      "authors": "Simone Teglia, Irene Amerini",
+      "date": "2026-09-15",
+      "pdf": "https://arxiv.org/pdf/2609.16778v2",
+      "score": "6.0",
+      "evidence": "合成与局部篡改图像的取证检测",
+      "tldr": "社交媒体篡改图像泛滥，虚假信息威胁信息可信度；现有ViT深伪检测器依赖低层不一致，面对压缩或社交传播场景仍显不足。为此，作者首次将JEPA世界模型引入深伪检测，提出双流架构MoE-JEPA：以V-JEPA 2为骨干，结合残差混合专家、噪声流分支和门控注意力MIL，动态内化取证知识并强化空间语义理解。在含30万张图像的SID-Set基准上，MoE-JEPA取得95.54%准确率，刷新最优结果，并超越参数量更大的模型。该工作验证了JEPA语义先验与高频痕迹融合在鲁棒合成图像取证中的潜力。",
+      "tags": "query:image-tamper",
+      "abstract_en": "The unchecked proliferation of manipulated images on social media platforms has increased the spread of misinformation, posing a severe threat to public trust and information integrity. Modern deepfake detectors typically rely on Vision Transformers (ViTs) to capture the low-level inconsistencies that characterize fully synthetic or locally tampered images. However, the global understanding of such foundation models is not enough to discriminate alone between real and fake multimedia content, especially in challenging scenarios where images are compressed or transmitted through social media. In this paper we pioneer the application of Joint-Embedding Predictive Architecture (JEPA) models to deepfake detection, taking advantage of the generalized representation of visual reality that such World Models have exhibited. We hypothesize, and empirically demonstrate, that the intrinsic world understanding of JEPA models can be used as a strong prior for a deepfake detector. To fully exploit JEPA capabilities, we propose MoE-JEPA, a dual-stream architecture for deepfake detection. By enhancing a V-JEPA 2 backbone with a Residual Mixture-of-Experts (MoE) mechanism, along with a noise stream branch, our model dynamically internalizes forensic knowledge. Furthermore, a Gated Attention Multiple Instance Learning (MIL) module is employed to ensure precise spatial semantic understanding. Evaluated on the SID-Set benchmark, comprising 300K AI-generated, tampered and authentic images, MoE-JEPA establishes a new state-of-the-art with an accuracy of 95.54%, successfully outperforming vastly larger models.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.19693v1-imfd-end-to-end-multi-face-forgery-detection-through-instruction-based-large-vision-language-models",
+      "section": "quick",
+      "title_en": "IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models",
+      "authors": "Dasom Choi, Sangjun Moon, Hyeongchan Im, Jaeeon Park, Jingun Kwon, Hidetaka Kamigaito, Taro Watanabe, Manabu Okumura",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.19693v1",
+      "score": "6.0",
+      "evidence": "联合定位人脸并预测逐脸伪造标签的伪造检测",
+      "tldr": "深度伪造在社交媒体上迅速蔓延引发广泛担忧。传统多脸伪造检测通常逐脸裁剪验证，忽略背景上下文和人脸间关系，性能受限。本文提出 IMFD，利用指令式大视觉语言模型进行端到端检测，联合定位人脸并预测每张脸的伪造标签。方法将预测人脸框作为视觉线索写入指令，增强指令接地与伪造检测。实验显示 IMFD 持续优于多种先进方法，并证明人脸框融入指令的有效性。",
+      "tags": "query:image-tamper",
+      "abstract_en": "The rapid increase of deepfakes has raised significant concerns due to their spread on social media. Traditional multi-face forgery detectors crop and verify each face independently, ignoring background context and inter-face relationships, which often yields suboptimal performance. To overcome these limitations, we leverage instruction-based Large Vision-Language Models (LVLMs), which can interpret entire images and follow complex textual instructions. We propose a simple yet effective single-stage multi-face forgery detector, called IMFD (Instruction-based Multi-face Forgery Detector), which is trained end-to-end to jointly localize faces and predict per-face forgery labels. Rather than treating face box prediction only as a joint objective, IMFD explicitly integrates predicted face bounding boxes into the instruction as visual cues that enhance instruction grounding and forgery detection. To support the training and evaluation of IMFD, we convert existing multi-face forgery datasets into an instruction-based format. Experimental results and analyses show that IMFD improves multi-face forgery detection by integrating face bounding boxes into the instruction, and consistently outperforms various state-of-the-art methods.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
