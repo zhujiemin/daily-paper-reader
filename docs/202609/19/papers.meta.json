@@ -1,0 +1,24 @@
+{
+  "label": "2026-09-19",
+  "date": "2026-09-19",
+  "generated_at": "2026-09-19T21:23:45",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/19/2609.14352v1-beyond-natural-images-rethinking-ai-generated-image-detection-in-documents",
+      "section": "quick",
+      "title_en": "Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents",
+      "authors": "Zhangjie Fu, Jiazhen Yan, Yuanwen Chen, Xinquan Yu, Yanzhe Li, Hui Jiang, Lei Gao, Chenfu Bao",
+      "date": "2026-09-13",
+      "pdf": "https://arxiv.org/pdf/2609.14352v1",
+      "score": "6.0",
+      "evidence": "检测AI生成文档图像，属于鉴伪检测任务",
+      "tldr": "现有AI生成图像检测多聚焦自然图像，发票、报销单、证书、病历等文档场景仍缺乏评估。本文构建诊断基准AIGDoc-Pilot，发现现有检测器在AI生成文档图像上平均AUC下降超7%，并揭示生成伪影空间不一致、文本密度影响真假可分性。为此提出更大规模文档数据集AIGDoc，涵盖多类真实文档及多种先进生成与编辑模型产物。实验显示现有检测器仍难可靠识别AI生成文档，文档数据训练可部分缩小差距，为可靠通用检测提供启示。",
+      "tags": "query:image-tamper",
+      "abstract_en": "AI-generated image detection has attracted increasing attention, but existing evaluations mainly focus on natural images, leaving AI-generated document images largely underexplored. This omission is concerning because documents often appear in sensitive real-world scenarios, such as invoices, expense reports, certificates, and medical records. In this paper, we first construct a controlled diagnostic benchmark, AIGDoc-Pilot, and reveal that existing detectors suffer substantial performance degradation on AI-generated document images, with the mean AUC dropping by more than 7%. Based on this, we further reveal two document-specific properties behind this gap: generation artifacts exhibit strong spatial inconsistency across local regions, and text density significantly affects real-synthetic separability, where text-dense regions offer stronger discriminative evidence. Motivated by these findings, we construct AIGDoc, a larger document-centric dataset containing diverse real-world documents and AI-generated counterparts produced by multiple advanced generation and editing models. Extensive experiments on AIGDoc demonstrate that existing detectors still struggle to reliably identify AI-generated documents, while document-based training partially narrows the gap. Together, these results offer valuable insights for developing dependable and generalizable detectors in document-centric scenarios. The code and datasets will be made publicly available upon acceptance of the paper.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

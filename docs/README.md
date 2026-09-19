@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-18</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-19</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 1 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>3</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-18 21:32:27 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-19 21:23:44 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,7 +69,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日速读 3 篇 AI 安全与取证论文，聚焦 LLM 水印攻防、合成图像检测与多脸伪造识别。最值得关注的是 MarkSec 提出的能力感知攻击评测框架，以及 V-JEPA 结合语义先验与高频痕迹、用混合专家提升合成图像取证鲁棒性。普通读者可优先了解水印在对抗攻击下的真实可靠性，再关注多模态取证从单脸走向端到端多脸的进展。</p>
+<p>今日速读 1 篇论文，聚焦文档场景下 AI 生成图像检测这一新问题。该文（6.0/10）提醒我们：现有检测方法多基于自然图像，面对文档类图片可能失灵，值得关注。普通读者若接触扫描件、证件或报表，建议留意其中图片是否可能由 AI 生成，别只信肉眼。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -91,12 +91,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">3 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks">MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks</span></li><li><span class="dpr-home-dashboard-paper-title" title="Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics">Unifying Semantic Priors and High-Frequency Traces: Enhancing V-JEPA with Mixture-of-Experts for Robust Synthetic Image Forensics</span></li><li><span class="dpr-home-dashboard-paper-title" title="IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models">IMFD: End-to-end Multi-Face Forgery Detection through Instruction-based Large Vision-Language Models</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents">Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>2</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 

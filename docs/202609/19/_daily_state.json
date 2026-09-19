@@ -1,0 +1,25 @@
+{
+  "date": "20260919",
+  "date_label": "",
+  "generated_at": "2026-09-19 21:23:44 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.14352v1",
+      "route": "202609/19/2609.14352v1-beyond-natural-images-rethinking-ai-generated-image-detection-in-documents",
+      "title": "Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "检测AI生成文档图像，属于鉴伪检测任务",
+      "first_seen_at": "2026-09-19 21:23:44 UTC",
+      "updated_at": "2026-09-19 21:23:44 UTC"
+    }
+  ]
+}

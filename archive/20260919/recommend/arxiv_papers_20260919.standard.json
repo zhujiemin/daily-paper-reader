@@ -1,0 +1,61 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-19T21:23:19.101207+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.14352v1",
+      "source": "arxiv",
+      "title": "Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents",
+      "abstract": "AI-generated image detection has attracted increasing attention, but existing evaluations mainly focus on natural images, leaving AI-generated document images largely underexplored. This omission is concerning because documents often appear in sensitive real-world scenarios, such as invoices, expense reports, certificates, and medical records. In this paper, we first construct a controlled diagnostic benchmark, AIGDoc-Pilot, and reveal that existing detectors suffer substantial performance degradation on AI-generated document images, with the mean AUC dropping by more than 7%. Based on this, we further reveal two document-specific properties behind this gap: generation artifacts exhibit strong spatial inconsistency across local regions, and text density significantly affects real-synthetic separability, where text-dense regions offer stronger discriminative evidence. Motivated by these findings, we construct AIGDoc, a larger document-centric dataset containing diverse real-world documents and AI-generated counterparts produced by multiple advanced generation and editing models. Extensive experiments on AIGDoc demonstrate that existing detectors still struggle to reliably identify AI-generated documents, while document-based training partially narrows the gap. Together, these results offer valuable insights for developing dependable and generalizable detectors in document-centric scenarios. The code and datasets will be made publicly available upon acceptance of the paper.",
+      "authors": [
+        "Zhangjie Fu",
+        "Jiazhen Yan",
+        "Yuanwen Chen",
+        "Xinquan Yu",
+        "Yanzhe Li",
+        "Hui Jiang",
+        "Lei Gao",
+        "Chenfu Bao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-13T07:26:45+00:00",
+      "link": "https://arxiv.org/pdf/2609.14352v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Detects AI-generated document images, a forgery detection task",
+      "llm_evidence_cn": "检测AI生成文档图像，属于鉴伪检测任务",
+      "llm_evidence": "检测AI生成文档图像，属于鉴伪检测任务",
+      "canonical_evidence": "检测AI生成文档图像，属于鉴伪检测任务",
+      "llm_tldr_en": "The paper builds AIGDoc-Pilot to show AI-generated image detectors degrade on document images, and analyzes document-specific spatial inconsistency and text artifacts.",
+      "llm_tldr_cn": "针对现有AI生成图像检测评测多聚焦自然图像、忽视发票、报销单、证书与病历等敏感文档场景的问题，本文构建受控诊断基准AIGDoc-Pilot，发现现有检测器在AI生成文档图像上性能显著下降，平均AUC下降超过7%。作者进一步揭示两类文档特有属性：生成伪影在局部区域呈现强空间不一致性，以及文本相关线索的差异。该工作拓展了生成式图像鉴伪的评测范围，对文档伪造检测具有重要参考价值。",
+      "llm_tldr": "针对现有AI生成图像检测评测多聚焦自然图像、忽视发票、报销单、证书与病历等敏感文档场景的问题，本文构建受控诊断基准AIGDoc-Pilot，发现现有检测器在AI生成文档图像上性能显著下降，平均AUC下降超过7%。作者进一步揭示两类文档特有属性：生成伪影在局部区域呈现强空间不一致性，以及文本相关线索的差异。该工作拓展了生成式图像鉴伪的评测范围，对文档伪造检测具有重要参考价值。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

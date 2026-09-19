@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-19 <!--dpr-date:20260919-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/19/2609.14352v1-beyond-natural-images-rethinking-ai-generated-image-detection-in-documents" data-sidebar-item="{&quot;title&quot;: &quot;Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.14352v1-beyond-natural-images-rethinking-ai-generated-image-detection-in-documents&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;image-tamper&quot;}], &quot;evidence&quot;: &quot;检测AI生成文档图像，属于鉴伪检测任务&quot;}">Beyond Natural Images: Rethinking AI-Generated Image Detection in Documents</a>
   * 2026-09-18 <!--dpr-date:20260918-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/18/2609.16681v1-marksec-capability-aware-evaluation-of-adversarial-attacks-against-llm-watermarks" data-sidebar-item="{&quot;title&quot;: &quot;MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.16681v1-marksec-capability-aware-evaluation-of-adversarial-attacks-against-llm-watermarks&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffusion-wm&quot;}], &quot;evidence&quot;: &quot;统一分析水印的窃取、擦除与伪造攻击&quot;}">MarkSec: Capability-Aware Evaluation of Adversarial Attacks Against LLM Watermarks</a>
