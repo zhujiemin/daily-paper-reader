@@ -1,0 +1,73 @@
+{
+  "date": "20260922",
+  "date_label": "",
+  "generated_at": "2026-09-22 22:06:15 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.24377v1",
+      "route": "202609/22/2609.24377v1-on-the-information-theoretic-limits-of-latent-space-watermarking-through-pretrained-generators",
+      "title": "On the Information-Theoretic Limits of Latent-Space Watermarking Through Pretrained Generators",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "通过预训练生成器的潜空间水印与容量界",
+      "first_seen_at": "2026-09-22 22:06:15 UTC",
+      "updated_at": "2026-09-22 22:06:15 UTC"
+    },
+    {
+      "paper_id": "2609.23586v1",
+      "route": "202609/22/2609.23586v1-an-efficient-and-effective-watermarking-scheme-for-the-protection-of-the-intellectual-property-rights-of-video-generative-models",
+      "title": "An Efficient and Effective Watermarking Scheme for the Protection of the Intellectual Property Rights of Video Generative Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向视频生成模型知识产权与归属验证的生成期水印方案",
+      "first_seen_at": "2026-09-22 22:06:15 UTC",
+      "updated_at": "2026-09-22 22:06:15 UTC"
+    },
+    {
+      "paper_id": "2609.22981v1",
+      "route": "202609/22/2609.22981v1-dual-locking-learned-ai-models-a-pin-based-sparse-qim-watermarking-and-adaptive-index-permutation-approach",
+      "title": "Dual-Locking Learned AI Models: A PIN-Based Sparse QIM Watermarking and Adaptive Index Permutation Approach",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "基于PIN的稀疏QIM模型权重水印嵌入",
+      "first_seen_at": "2026-09-22 22:06:15 UTC",
+      "updated_at": "2026-09-22 22:06:15 UTC"
+    },
+    {
+      "paper_id": "2609.23345v1",
+      "route": "202609/22/2609.23345v1-anipro-interpretable-anime-image-provenance-detection-via-multi-dimensional-semantic-reasoning",
+      "title": "AniPrO: Interpretable Anime Image Provenance Detection via Multi-Dimensional Semantic Reasoning",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "AI生成与编辑图像的来源归属检测",
+      "first_seen_at": "2026-09-22 22:06:15 UTC",
+      "updated_at": "2026-09-22 22:06:15 UTC"
+    }
+  ]
+}

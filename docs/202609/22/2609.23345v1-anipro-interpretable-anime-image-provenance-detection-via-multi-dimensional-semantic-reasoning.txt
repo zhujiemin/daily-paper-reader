@@ -1,0 +1,256 @@
+Title: AniPrO: Interpretable Anime Image Provenance Detection via Multi-Dimensional Semantic Reasoning
+
+URL Source: https://arxiv.org/pdf/2609.23345v1
+
+Published Time: Tue, 22 Sep 2026 01:15:51 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# AniPrO: Interpretable Anime Image Provenance Detection via Multi-Dimensional Semantic Reasoning 
+
+Yan Liu 1(B) , Baoxiang Huang 1 , Zi’an Wang 2, and Wenbo Xie 1 
+
+> 1
+
+School of Computer Science and Technology, Tongji University, Shanghai, China 
+
+{y_an,2351753}@tongji.edu.cn  
+
+> 2
+
+College of Electronic and Information Engineering, Tongji University, Shanghai, China 
+
+Abstract. As generative AI becomes increasingly used in anime-style image creation, distinguishing human-drawn, AI-inpainted, and text-to-image images is important for copyright attribution, visual provenance, and content governance. Existing AI-generated image detectors mainly target real-world photographs and often overlook anime-specific cues such as flat coloring, exaggerated structures, and artistic line control. To address this gap, we propose AniPrO, a multi-dimensional description-enhanced framework for interpretable anime image provenance. Built upon AnimeDL-2M , AniPrO contains 15 ,000 balanced samples from a 
+
+35 ,000 -image candidate pool, covering Real, Inpainting, and Text2Image categories with structured five-dimensional descriptions. We further in-troduce AniPrO-SFD-Bench and AniPrO-MFR-Bench to evaluate prove-nance detection from statistical feature discrimination and multimodal fusion reasoning perspectives. Experiments show that structured seman-tic guidance reveals systematic AI-generation biases, such as the gap between global visual plausibility and local detail coherence, and im-proves the detection of challenging inpainting samples. The dataset and code will be released at: https://github.com/YAN-LIU05/AniPrO .
+
+Keywords: AI-Generated Content (AIGC) · Anime Image Provenance Detection · Multimodal Semantic Reasoning. 
+
+1 Introduction 
+
+Recent text-to-image and image-editing models, such as Stable Diffusion [19] and Midjourney [16], have made anime-style image generation increasingly accessible. These models can synthesize complete artworks from prompts and perform local inpainting, style transfer, and fine-grained editing, raising new challenges for copyright attribution, visual provenance, and AIGC governance. In this paper, we study anime image provenance detection, aiming to distinguish human-drawn artworks from AI-inpainted and text-to-image generated samples. 
+
+Accepted at the Computer Graphics International (CGI) 2026. arXiv:2609.23345v1 [cs.CV] 20 Sep 2026 2 Y. Liu et al. Public Dataset  Screening  manual selection  
+
+> Tu
+> 5000
+> Human Original
+> 15000
+> AI Inpainting 15000
+> AI Text2Image
+
+Dataset Construction 
+
+Multi-dimensional Annotation 
+
+> Lighting & Textures
+> Fine Details
+> 3D Structures & Spatial
+> Contour & Line Quality
+> Drawing Logic &
+> Manual Control
+
+Statistical Metrics 
+
+LLM-as-a-Judge 
+
+> The overall lighting in the image is bright, with the main light source coming from the upper right, creating clear highlights on the character’s hair, skin, and clothing. Different…
+> The character’s hair strands are clearly defined, with well-organized grouping. The fingers are structurally complete, and the fingernails have a consistent shape. The clothing texture is …
+> The character is shown in a half-body, forward-leaning pose, with the connections between different parts of the body appearing natural. The right hand holds an object in front of the chest…
+> The overall contours of the image are clear, and the lines are continuous and smooth. Variations in line thickness, such as in the character’s hair strands and the folds of the clothing…
+> The overall composition has a clear visual hierarchy, with a distinct separation between the character and the background. The linework is clean and crisp, the coloring is mainly flat…
+> AI
+> Real
+
+Fig. 1. Overview of the proposed multi-dimensional description-enhanced framework. The pipeline consists of three main stages: (1) Dataset Construction of the AniPrO dataset; (2) Multi-dimensional Annotation, which extracts five-dimensional structured scores and texts using multimodal LLMs; and (3) A dual-track evaluation system utiliz-ing Statistical Metrics and LLM-as-a-Judge for final AI vs. Real image discrimination. 
+
+Existing AI-generated image detectors are mainly designed for real-world photographs and often rely on cues such as GAN artifacts, frequency anoma-lies, and facial distortions [8,21]. However, these cues are less reliable for anime images, where simplified line art, flat colors, non-photorealistic shading, exagger-ated anatomy, and intentional perspective distortion are common artistic con-ventions. As a result, visual irregularities may indicate either AI generation or deliberate human stylization. This makes anime provenance detection not only a classification problem, but also an interpretability problem: a detector should expose which visual evidence supports its decision. To address this issue, we construct AniPrO based on AnimeDL-2M [23], a balanced benchmark covering human-drawn, AI-inpainted, and text-to-image anime samples. Each image is annotated with structured descriptions along five anime-oriented semantic dimensions: lighting and textures, fine details, 3D struc-tures and spatial relationships, contour and line quality, and drawing logic and manual control. Based on these annotations, we propose a multi-dimensional description-enhanced framework for interpretable anime provenance reasoning. We further design two complementary evaluation tracks. AniPrO-SFD-Bench evaluates whether statistical patterns in multidimensional scores can dis-criminate Real and AI samples, while AniPrO-MFR-Bench evaluates whether structured descriptions improve multimodal fusion reasoning. Together, these two tracks assess the proposed framework from both statistical and semantic perspectives. The main contributions are as follows: 1) We construct AniPrO, a balanced 15 ,000 -image benchmark for anime image provenance with structured five-dimensional descriptions. AniPrO: Interpretable Anime Image Provenance Detection 3
+
+2) We propose a five-dimensional interpretable reasoning framework tailored to anime-style visual provenance. 3) We design a dual-track evaluation scheme combining statistical feature dis-crimination and multimodal semantic reasoning. 
+
+2 Related Work 
+
+2.1 AI-Generated Image Detection 
+
+AI-generated image detection has been widely studied in digital image foren-sics, especially with the rise of diffusion models. Existing methods detect syn-thetic images using explicit artifacts such as abnormal textures and frequency inconsistencies [21], or implicit cues such as reconstruction consistency, physi-cal constraints, and cross-model generalization [20]. Recent vision-language and multimodal large language models further reformulate detection as visual ques-tion answering, description generation, or language-assisted classification [10]. However, most existing methods still emphasize authenticity prediction, while fine-grained provenance cues and interpretable reasoning remain insufficiently explored. 
+
+2.2 Anime Image Analysis and Provenance 
+
+Anime images differ from natural photographs in line art, flat coloring, shadow organization, and stylized deformation. Such visual irregularities may reflect either AI artifacts or deliberate artistic choices, making natural-image detectors difficult to transfer to anime-style images [23]. Existing anime datasets such as Manga109 and Danbooru2024 [4] support retrieval, character recognition, pose estimation, and style analysis, but fine-grained anime provenance among human-drawn, AI-generated, and AI-inpainted images remains underexplored. 
+
+2.3 AI-Generated Image Detection Benchmarks 
+
+Existing AI-generated image detection benchmarks mainly focus on real-vs-fake classification and generative attribution [24,12]. Although some provide annota-tions such as class labels, editing types, degradation conditions, or manipulation masks, their evaluation is still largely accuracy-oriented. This limitation is more evident in anime images, where stylized visual cues often require interpreta-tion beyond low-level artifacts. Therefore, an anime-specific benchmark with interpretable multidimensional descriptions is needed to evaluate both detection performance and reasoning quality. 
+
+3 Method 
+
+3.1 Overview of the Framework 
+
+The framework converts anime provenance detection from direct Real or AI 
+
+classification into structured multidimensional reasoning. Given an input im-age, a VLM first generates scores and textual descriptions along five semantic 4 Y. Liu et al. Human Original  
+
+> AI
+> Inpainting
+> AI
+> Text2Image
+> Description The image features an anime-style character with bunny ears, a blue bow…
+> An anime-style illustration of a girl with long blonde hair, wearing a school …
+> The image features an anime-style character with long, light-colored hair, wearing a wide …
+
+Fig. 2. Representative Real, Inpainting, and Text2Image samples from AniPrO with structured descriptions. 
+
+dimensions. These outputs are then used in two evaluation tracks: AniPrO-SFD-Bench, which analyzes statistical patterns in multidimensional scores, and AniPrO-MFR-Bench, which evaluates whether structured descriptions improve multimodal provenance reasoning. The two tracks jointly assess score-level reg-ularities and semantic reasoning ability. 
+
+3.2 Dataset Construction 
+
+We construct AniPrO based on the publicly available AnimeDL-2M dataset [23], which provides anime images with provenance labels, including hand-drawn im-ages (Real), AI-inpainting images (Inpainting), and text-to-image generated im-ages (Text2Image). The AI-generated samples are produced by three mainstream diffusion models, including FLUX.1 [2], Stable Diffusion [19], and Stable Diffu-sion XL [18]. We manually select 5,000 high-quality Real images with complete compo-sitions, clear subjects, and representative anime-style characteristics. For each selected Real image, we retain its corresponding Inpainting and Text2Image re-sults, forming a 35 ,000 -image candidate pool. To build a balanced benchmark, we keep all Real images and randomly sample 5,000 images from each AI cat-egory, resulting in 15 ,000 images with 5,000 samples per class. Representative samples are shown in Fig. 2. To reduce potential size-related bias, Real images are resized by setting the longer side to the median length while preserving the original aspect ratio. AniPrO is designed as a balanced diagnostic benchmark rather than a large-scale training corpus. Its balanced class distribution supports controlled compar-AniPrO: Interpretable Anime Image Provenance Detection 5
+
+ison among Real, Inpainting, and Text2Image samples, while cross-generator and cross-style generalization beyond FLUX.1, Stable Diffusion, and Stable Diffusion XL remains a direction for future expansion. 
+
+3.3 Multi-dimensional Description and Prompt Design 
+
+Instead of directly asking large language models to judge image authenticity, we prompt them to produce fine-grained descriptions and scores along five inter-pretable dimensions that reflect key visual cues of anime-style image naturalness. 
+
+Lighting and Textures. This dimension evaluates tonal range, lighting con-sistency, shadows, highlights, and material rendering. AI-generated images may exhibit abnormal highlights, inconsistent shadows, or unnatural texture [11]. 
+
+Fine Details. This dimension examines local shape coherence, edges, and de-tail organization. AI-generated images often contain excessive or chaotic de-tails [11], while human-drawn works show more deliberate and smoother ar-rangements [22]. 
+
+Three-dimensional Structures and Spatial Relationships. This dimen-sion evaluates spatial hierarchy, occlusion, perspective, object relationships, and body structure. AI-generated graphics may show spatial irregularities or unclear relationships [13]. 
+
+Contour and Line Quality. This dimension focuses on line continuity, stabil-ity, and thickness variation. Human-drawn lines are generally purposeful and controlled [22], whereas AI-generated lines may show breaks, drifting edges, clumping, or abrupt thickness changes [14]. 
+
+Drawing Logic and Manual Control. This dimension evaluates layering, visual hierarchy, and intentional artistic control. Human-drawn images often show purposeful simplification and emphasis, while AI-generated images may show uneven detail distribution or inconsistent rendering logic. 
+
+3.4 AniPrO-SFD-Bench 
+
+AniPrO-SFD-Bench evaluates whether AI traces can be captured by statistical patterns in five-dimensional scores. We formulate provenance discrimination as binary classification, where Real images are labeled as Real , and both Inpainting and Text2Image samples are labeled as AI .
+
+Feature Construction. For each image i, the five-dimensional scores corre-sponding to lighting, details, structure, lines, and manual control are denoted as: 
+
+si = [ si, 1, s i, 2, s i, 3, s i, 4, s i, 5] . (1) Based on this multidimensional scoring representation, to characterize the systematic bias in the score distribution of AI images from different perspectives, four types of derived statistical features are further constructed for subsequent discriminant analysis. 6 Y. Liu et al. 
+
+The bucket effect captures the weakest dimension of an image: 
+
+Fmin = min ( si) . (2) The variance feature measures the degree of imbalance among the five di-mensions, where ¯si is the mean score: 
+
+Fvar = 14
+
+> 5
+
+X
+
+> j=1
+
+(si,j − ¯si)2 . (3) The skewness feature describes the asymmetry of the score distribution, es-pecially when only a few dimensions receive abnormally low scores: 
+
+Fskew =
+
+> 15
+
+P5 
+
+> j=1
+
+(si,j − ¯si)3
+
+ 15
+
+P5 
+
+> j=1
+
+(si,j − ¯si)23/2 . (4) The macro–micro gap measures the discrepancy between macro-level lighting consistency (si, 1) and micro-level detail coherence (si, 2), capturing the mismatch between overall visual plausibility and fine-grained local reliability: 
+
+Fgap = si, 1 − si, 2. (5) 
+
+Single-feature Threshold Classification. To ensure balanced discrimination between real and AI-generated images, we adopt a unified criterion for threshold selection based on Youden’s J index [7]: 
+
+J = Recall Real + Recall AI − 1. (6) This objective explicitly balances the recognition performance of both classes and reduces the impact of data imbalance. For each feature, the decision direction is defined according to its statistical characteristics, enabling consistent and interpretable threshold-based classification. 
+
+3.5 AniPrO-MFR-Bench 
+
+AniPrO-MFR-Bench, namely the Multimodal Fusion Reasoning Benchmark, evaluates the comprehensive discrimination capabilities of multimodal large lan-guage models after integrating visual information with structured textual de-scriptions. Unlike the statistics-driven approach of AniPrO-SFD-Bench, this scheme adopts the “LLM-as-a-Judge” paradigm, in which the large language model directly acts as an expert in image source authentication, combining vi-sual perception with semantic reasoning to make judgments. In terms of task formulation, we also define source discrimination as a bi-nary classification task between human-drawn images labeled as Real and AI-generated images labeled as AI , including Inpainting and Text2Image samples. The two benchmarks validate the effectiveness of the proposed framework at both the statistical regularity and semantic reasoning levels. They complement each other and together constitute the comprehensive evaluation system of this paper. AniPrO: Interpretable Anime Image Provenance Detection 7
+
+4 Experiment 
+
+To validate the proposed multi-dimensional description-enhanced framework, we evaluate AniPrO from four aspects: statistical discrimination based on five-dimensional scores, multimodal provenance reasoning with structured descrip-tions, ablations of input modalities and semantic dimensions, and comparisons with supervised visual classifiers and human rater baselines. 
+
+4.1 Experimental Setup 
+
+All experiments are conducted on AniPrO under the binary setting in Sec. 3.4, where Real images are treated as Real and Text2Image/Inpainting samples as AI. We report Real Retention (Real Ret.), Text2Image Interception Rate (T2I Int.), Inpainting Interception Rate (Inpainting Int.), and Overall Accuracy (Overall Acc.). Real Ret. measures correctly retained human-drawn images, while the two interception rates measure correctly detected AI samples in each subtype. For the feature extraction and semantic classification stages, we incorpo-rate current mainstream vision-language models (VLMs) and large language models (LLMs), including Gemini-2.5-Pro [3], GPT-5.2 [17], Doubao-1.5-vision-pro [5], and GLM-4.5V [9], as well as open-source models such as Qwen3-VL (235B/30B) [1] and Llama-4 (Maverick/Scout) [15], to verify the framework’s generalizability across different base models. During evaluation, less than 5% of the images were excluded from the final quantitative analysis because they triggered API providers’ safety filters, leading to refusals or empty responses. 
+
+4.2 Quantitative Discrimination Experiment Based on Statistical Features 
+
+This section examines whether AI-generated and inpainting images exhibit sta-tistically detectable anomalies based solely on five-dimensional score distribu-tions, without relying on complex semantic reasoning. 
+
+Single-feature Threshold Discriminant Analysis. To validate the effec-tiveness of the constructed statistical features in the source discrimination task, we first evaluate the discriminative ability of each derived statistical feature on AniPrO-SFD-Bench. Using scores extracted by Gemini-2.5-Pro as an example, the univariate threshold results are shown in Table 1. Table 1 reports the univariate discrimination results. Among all features, the macro–micro gap Fgap achieves the best overall performance, suggesting that AI images may preserve global lighting plausibility while showing weaker local detail coherence. Fmin and Fvar retain more Real samples but provide weaker AI inter-ception. However, all single features remain limited on Inpainting, with the best interception rate only 49.5%, indicating that local AI traces can be masked by the largely preserved real-image structure and motivating joint multidimensional classification. 8 Y. Liu et al.                   
+
+> Table 1. Univariate discriminatory performance based on derived statistical features using scores extracted from Gemini-2.5-Pro as an example. Features Real Ret. Inpainting Int. T2I Int. Overall Acc. The Bucket Effect 0.883 0.321 0.561 0.588 Analysis of Variance 0.862 0.300 0.492 0.551 Skewness Analysis 0.644 0.390 0.485 0.506 Gap Analysis 0.768 0.495 0.762 0.675
+
+Multi-dimensional Feature Joint Discrimination. A single threshold can-not fully capture complex artifact patterns. Therefore, we concatenate the five original scores and four derived features into a 9-dimensional vector and train a Random Forest classifier with 5-fold stratified cross-validation. The results are shown in Table 2.                                                                                           
+
+> Table 2. Results of 5-fold cross-validation based on Random Forest. Scoring Models Real Ret. Inpainting Int. T2I Int. Overall Acc. GPT-5.20.578 ±0.018 0.465 ±0.011 0.706 ±0.015 0.588 ±0.011
+> Gemini-2.5-Pro 0.841 ±0.014 0.428 ±0.021 0.838 ±0.014 0.702 ±0.007
+> Doubao-1.5-Vision-Pro 0.252 ±0.009 0.754 ±0.014 0.927 ±0.009 0.644 ±0.003
+> Qwen3-VL-235B 0.572 ±0.014 0.557 ±0.017 0.788 ±0.015 0.639 ±0.007
+> Qwen3-VL-30B 0.612 ±0.021 0.534 ±0.030 0.783 ±0.032 0.643 ±0.015
+> Llama-4-Maverick 0.459 ±0.021 0.599 ±0.026 0.764 ±0.012 0.607 ±0.009
+> Llama-4-Scout 0.291 ±0.007 0.778 ±0.009 0.819 ±0.010 0.630 ±0.006
+
+Table 2 shows that joint features improve over single-feature thresholding, with Gemini-2.5-Pro achieving the best overall accuracy, increasing from 67.5% to 70.2%, mainly due to its high Real retention and strong Text2Image intercep-tion. Doubao-1.5-Vision-Pro and Llama-4-Scout obtain higher AI interception but much lower Real retention, indicating stronger AI-biased tendencies. Across models, Inpainting remains harder than Text2Image, suggesting that global sta-tistical cues alone are insufficient for subtle local edits. 
+
+4.3 Semantic Reasoning Experiment Based on Multimodal Large Models 
+
+In AniPrO-MFR-Bench, we fix GLM-4.5V as the multimodal judge to evalu-ate how structured descriptions generated by different annotation models affect provenance reasoning. For each sample, GLM-4.5V receives the original image to-gether with the five-dimensional structured descriptions produced by the model listed in the first column of Table 3, and then predicts whether the image is Real 
+
+or AI .As shown in Table 3, Text2Image samples are generally easier to identify. In contrast, Inpainting samples are more challenging because they preserve much of AniPrO: Interpretable Anime Image Provenance Detection 9 
+
+> Table 3. Results of AniPrO-MFR-Bench with GLM-4.5V as the fixed judge.
+
+Description Extraction Models Real Ret. Inpainting Int. T2I Int. Overall Acc. GPT-5.2 0.485 0.626 0.835 0.649 Gemini-2.5-Pro 0.584 0.657 0.967 0.738 
+
+Doubao-1.5-Vision-Pro 0.481 0.642 0.920 0.684 Qwen3-VL-235B 0.489 0.613 0.902 0.678 Qwen3-VL-30B 0.410 0.696 0.929 0.665 Llama-4-Maverick 0.479 0.663 0.934 0.695 Llama-4-Scout 0.354 0.795 0.975 0.710 
+
+the original image structure while introducing only local AI-generated regions. This supports evaluating Inpainting as a separate subcategory rather than simply merging all AI samples. Another important observation is the relatively low Real retention across models. This suggests that multimodal models tend to over-classify stylized anime images as AI , possibly because intentional artistic exaggerations, such as simplified shading, distorted perspective, or flat color blocks, can be confused with AI-generated artifacts. Therefore, anime image provenance requires not only artifact detection, but also a better understanding of human artistic intent and stylized visual conventions. Under the fixed GLM-4.5V judge, different annotation models lead to notice-ably different provenance results, suggesting that structured descriptions provide discriminative cues beyond the image input alone. Gemini-2.5-Pro descriptions achieve the best overall accuracy with a relatively balanced Real/AI trade-off, whereas Llama-4-Scout achieves the strongest AI interception but the lowest Real retention. This further indicates that reliable provenance detection should balance AI interception with false-positive control on human-drawn images. 
+
+4.4 Ablation Study Input Modality Ablation. To analyze the roles of visual input and seman-tic descriptions, we evaluate three settings: Image-Only, Description-Only, and Ours. They use the image alone, Gemini-extracted descriptions alone, and both inputs, respectively. The results are shown in Table 4.                          
+
+> Table 4. Results of multimodal input ablation experiments. All descriptive texts are extracted uniformly by Gemini-2.5-Pro. Judge Models Experimental Setup Real Ret. Inpainting Int. T2I Int. Overall Acc. Gemini-2.5-Pro Image-Only 0.986 0.181 0.968 0.807 Gemini-2.5-Pro Ours 0.938 0.501 0.970 0.825
+> GLM-4.5VImage-Only 0.817 0.296 0.697 0.585 GLM-4.5VDescription-Only 0.630 0.522 0.838 0.663 GLM-4.5VOurs 0.584 0.657 0.967 0.738
+
+10 Y. Liu et al. 
+
+Table 4 shows that structured descriptions improve Inpainting detection in both same-model and cross-model settings. With Gemini-2.5-Pro extracting de-scriptions and judging provenance, adding descriptions increases Inpainting in-terception from 18.1% to 50.1%, maintaining high Real retention. For GLM-
+
+4.5V, where Gemini-extracted descriptions serve as external semantic evidence, Description-Only already outperforms Image-Only in overall accuracy, and the full multimodal setting further improves overall accuracy to 73.8% and Inpaint-ing interception to 65.7%. These results indicate that five-dimensional descrip-tions provide transferable provenance cues complementary to visual perception. 
+
+Dimension-level Ablation. To further examine the necessity of each semantic dimension, we conduct a leave-one-dimension-out ablation study. The results are shown in Table 5. 
+
+Table 5. Leave-one-dimension-out ablation results. Setting Real Ret. Inpainting Int. T2I Int. Overall Acc. ∆Acc. Full 5D 0.584 0.657 0.967 0.738 –w/o 3D Structures and Spatial Relationships 0.588 0.594 0.871 0.693 −0.045                     
+
+> w/o Drawing Logic and Manual Control 0.433 0.704 0.894 0.678 −0.060
+> w/o Lighting and Textures 0.651 0.604 0.944 0.712 −0.026
+> w/o Fine Details 0.580 0.578 0.897 0.673 −0.065
+> w/o Contour and Line Quality 0.653 0.556 0.804 0.704 −0.034
+
+As shown in Table 5, removing any dimension reduces overall accuracy, con-firming the complementary roles of the five provenance cues. Removing Fine Details causes the largest accuracy drop, while removing Contour and Line Qual-ity most severely reduces Inpainting interception. The decline in Real retention after removing Drawing Logic and Manual Control further suggests its role in distinguishing intentional human stylization from AI-generated artifacts. Single-dimension-only ablations are provided in the supplementary material. 
+
+4.5 Additional Baseline Comparison 
+
+To contextualize AniPrO, we evaluate two supervised visual classifiers and a small-scale human rater baseline. CNN and ViT-B/16 [6] are tested on the full AniPrO benchmark, while five anime enthusiasts classify a random 10% subset. 
+
+Table 6. Supervised visual classifiers and human rater baselines. Human results are averaged over five anime enthusiasts on a randomly sampled 10% subset. Method Real Ret. Inpainting Int. T2I Int. Overall Acc. CNN baseline 0.522 0.656 0.982 0.720 ViT-B/16 0.835 0.211 0.551 0.532 Human raters 0.619 0.479 0.833 0.644 AniPrO: Interpretable Anime Image Provenance Detection 11 
+
+Table 6 shows that CNN favors AI interception, whereas ViT-B/16 is more conservative and misses many AI samples. Human raters retain more Real images than CNN but still struggle with Inpainting, indicating that anime provenance judgment remains difficult even for anime-familiar users. 
+
+5 Conclusion 
+
+We presented AniPrO, a balanced anime image provenance benchmark with five-dimensional semantic annotations, and a dual-track evaluation framework com-bining statistical feature discrimination with multimodal fusion reasoning. Sta-tistically, the macro–micro score gap reveals a systematic discrepancy between global visual plausibility and local detail coherence in AI-generated anime im-ages. Semantically, structured descriptions provide complementary provenance cues and improve the detection of challenging inpainting samples over image-only judging in our ablation setting. Meanwhile, the moderate overall accu-racy and relatively low Real Retention show that anime provenance detection remains difficult, especially for highly stylized human-drawn artworks. Future work will extend AniPrO to more generators and artistic styles, and explore scalable deployment with lower-cost open-source models. Overall, interpretable visual decomposition provides a useful diagnostic foundation for AIGC copyright attribution, platform governance, and multimodal provenance research. 
+
+References 
+
+1. Bai, S., Cai, Y., Chen, R., et al.: Qwen3-VL technical report. arXiv preprint arXiv:2511.21631 (2025) 2. Black Forest Labs: FLUX.1-dev. https://huggingface.co/black-forest-labs/ FLUX.1-dev , last accessed 2024/05/20 3. Comanici, G., Bieber, E., Schaekermann, M., et al.: Gemini 2.5: Pushing the fron-tier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 (2025) 4. DeepGHS: Danbooru2024-SFW dataset. https://huggingface.co/datasets/de epghs/danbooru2024-sfw , last accessed 2026/03/20 5. Dong, G., Faming, W., Feida, Z., et al.: Seed1.5-VL technical report. arXiv preprint arXiv:2505.07062 (2025) 6. Dosovitskiy, A., Beyer, L., Kolesnikov, A., et al.: An image is worth 16x16 words: Transformers for image recognition at scale. In: International Conference on Learn-ing Representations (2021) 7. Fluss, R., Faraggi, D., Reiser, B.: Estimation of the Youden Index and its associated cutoff point. Biometrical Journal: Journal of Mathematical Methods in Biosciences 
+
+47 (4), 458–472 (2005) 8. Frank, J., Eisenhofer, T., Schönherr, L., Fischer, A., Kolossa, D., Holz, T.: Leverag-ing frequency analysis for deep fake image recognition. In: International Conference on Machine Learning (ICML). pp. 3247–3258. PMLR (2020) 9. Hong, W., Yu, W., Gu, X., et al.: GLM-4.5V and GLM-4.1V-Thinking: Towards versatile multimodal reasoning with scalable reinforcement learning. arXiv preprint arXiv:2507.01006 (2025) 12 Y. Liu et al. 10. Ji, Y., Hong, Y., Zhan, J., Chen, H., Lan, J., Zhu, H., Zhang, J.: Towards explain-able fake image detection with multi-modal large language models. In: Proceedings of the 33rd ACM International Conference on Multimedia (ACM MM). pp. 4398– 4407 (2025) 11. Ji, Y., Yan, H., Lan, J., Zhu, H., Wang, W., Fan, Q., Zhang, J.: Interpretable and reliable detection of ai-generated images via grounded reasoning in MLLMs. arXiv preprint arXiv:2506.07045 (2025) 12. Lu, Z., Huang, D., Bai, L., Qu, J., Wu, C., Liu, X., Ouyang, W.: Seeing is not always believing: Benchmarking human and model perception of ai-generated images. In: Advances in Neural Information Processing Systems (NeurIPS). vol. 36, pp. 25435– 25447 (2023) 13. Ma, L., Cao, K., Liang, H., Lin, J., Li, Z., Liu, Y., Cui, B.: Evaluating and predicting distorted human body parts for generated images. arXiv preprint arXiv:2503.00811 (2025) 14. Menn, D., Liang, F., Chiang, H.Y., Marculescu, D.: Similarity trajectories: Linking sampling process to artifacts in diffusion-generated images. In: Proceedings of the Winter Conference on Applications of Computer Vision (WACV). pp. 197–206 (2025) 15. Meta: The Llama 4 herd: The beginning of a new era of natively multimodal ai innovation. https://ai.meta.com/blog/llama-4-multimodal-intelligence/ ,last accessed 2026/03/20 16. Midjourney Inc.: Midjourney (version 7). https://www.midjourney.com , last accessed 2026/03/20 17. OpenAI: Update to GPT-5 system card: GPT-5.2. https://openai.com/index/g pt-5-system-card-update-gpt-5-2/ , last accessed 2026/03/20 18. Podell, D., English, Z., Lacey, K., Blattmann, A., Dockhorn, T., Müller, J., Rom-bach, R.: SDXL: Improving latent diffusion models for high-resolution image syn-thesis. arXiv preprint arXiv:2307.01952 (2023) 19. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., Ommer, B.: High-resolution image synthesis with latent diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 10684– 10695 (2022) 20. Wang, Z., Bao, J., Zhou, W., Wang, W., Hu, H., Chen, H., Li, H.: DIRE for diffusion-generated image detection. In: Proceedings of the IEEE/CVF Interna-tional Conference on Computer Vision (ICCV). pp. 22445–22455 (2023) 21. Xi, Z., Huang, W., Wei, K., Luo, W., Zheng, P.: Ai-generated image detection using a cross-attention enhanced dual-stream network. In: 2023 Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC). pp. 1463–1470. IEEE (2023) 22. Yang, R., Li, H., Long, Y., Wu, X., He, S.: Stroke2Sketch: Harnessing stroke at-tributes for training-free sketch generation. In: Proceedings of the IEEE/CVF In-ternational Conference on Computer Vision (ICCV). pp. 16545–16554 (2025) 23. Zhu, C., Zhang, X., Sun, Y., Chang, C.C., Echizen, I.: AnimeDL-2M: Million-scale ai-generated anime image detection and localization in diffusion era. In: Proceed-ings of the 1st Workshop on Deepfake Forensics: Detection, Attribution, Recog-nition, and Adversarial Challenges in the Era of AI-Generated Media. pp. 45–54 (2025) 24. Zhu, M., Chen, H., Yan, Q., Huang, X., Lin, G., Li, W., Wang, Y.: GenImage: A million-scale benchmark for detecting ai-generated image. In: Advances in Neural Information Processing Systems (NeurIPS). vol. 36, pp. 77771–77782 (2023)

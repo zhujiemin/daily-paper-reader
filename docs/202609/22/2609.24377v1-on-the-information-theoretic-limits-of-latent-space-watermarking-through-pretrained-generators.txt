@@ -1,0 +1,1783 @@
+Title: On the Information-Theoretic Limits of Latent-Space Watermarking Through Pretrained Generators
+
+URL Source: https://arxiv.org/pdf/2609.24377v1
+
+Published Time: Tue, 22 Sep 2026 02:30:25 GMT
+
+Number of Pages: 38
+
+Markdown Content:
+1
+
+# On the Information-Theoretic Limits of Latent-Space Watermarking Through Pretrained Generators 
+
+Jinwan Jeon, Minju Lee, and Sung Hoon Lim 
+
+Abstract 
+
+We study latent-space watermarking through a pretrained generator using a prescribed latent-to-output stochastic mapping, called the renderer. A watermark encoder selects the latent input using a message and secret key. For every message and semantic context, the released output must have exactly the desired conditional output distribution. For finite alphabets, we derive rate–key inner and outer bounds and characterize the coding and coordination requirements for realizing watermark communication through the prescribed latent interface. When the target output distribution of the generator uniquely determines the corresponding latent input distribution through the renderer, a strengthened converse yields the capacity region; the same region governs explicit preservation of the pretrained latent distribution. We extend the analysis to general jointly Gaussian models and identify a sufficient statistic of the latent that captures both the watermark-bearing information available at the generated output and the latent coordination required to preserve its target distribution. For the vector Gaussian model, we further characterize the optimal allocation of the secret-key resource across the resulting modes. Finally, we turn to an emerging robustness threat that is particularly natural in generative watermarking: an adversary can regenerate the released sample to obtain a fresh realization of the same underlying content while attenuating or destroying the embedded watermark. We incorporate this robustness axis into our framework and characterize the one-pass compound capacity of the scalar Gaussian model when the semantic context is known to the encoder but hidden from the detector, while the regeneration attack may depend on that context. Extending the analysis to multiple rounds of repeated canonical regeneration, we characterize the resulting watermark-capacity decay. 
+
+Index Terms 
+
+Generative watermarking, latent-space watermarking, information embedding, exact distribution preservation, secret key, Gaussian channels, regeneration attacks. 
+
+I. I NTRODUCTION 
+
+Generative models increasingly produce images, audio, video, and text whose provenance is difficult to establish from the content alone. Watermarking addresses this problem by embedding information that can later be detected or 
+
+J. Jeon, M. Lee, and S. H. Lim are with Hallym University, CHUNCHEON-SI, GANGWON-DO, South Korea (e-mail: jeonjw@hallym.ac.kr; mjlee@hallym.ac.kr; shlim@hallym.ac.kr). Sung Hoon Lim is the corresponding author. arXiv:2609.24377v1 [cs.IT] 21 Sep 2026 2
+
+recovered. Alongside classical information-hiding methods and learned post-hoc image watermarks [1]–[4], recent methods integrate watermarking into language-model sampling and diffusion-based generation [5]–[13]. A particularly attractive architecture is latent-space watermarking : information is inserted into the latent random-ness driving a pretrained generator, while the generator remains unchanged. Tree-Ring modifies the initial diffusion noise [14]; Gaussian Shading uses distribution-preserving sampling of a Gaussian latent [15]; and related work studies identification and extraction from such watermarks [16], [17]. Working through the generator’s native latent interface avoids redesigning the generation pipeline and can preserve its ordinary sampling behavior. However, selecting distinguishable latent inputs is not enough. The watermark is embedded in latent space before generation; it must then survive a stochastic mapping that the watermark designer does not control so that a legitimate party possessing the key can recover it from the generated output. In recent work, Guo et al. [18] studied an information-theoretic approach to generative watermarking by combining Gel’fand–Pinsker coding with channel synthesis. Building on this perspective, we specialize the setting to ask what changes when the watermark must be embedded through the fixed latent interface of a pretrained generator. The central question is therefore 
+
+What are the fundamental limits of reliably embedding watermark information through the fixed latent interface of a pretrained generator while preserving its ordinary conditional generation distribution? 
+
+We model that interface by a fixed renderer qr(x|u, s ), where S is semantic context, U the physical latent, and X
+
+the released sample. The encoder controls how the latent interface is driven, not how the renderer transforms latent variation into public output. This restriction therefore shapes both the design of reliable watermark communication and the coordination needed to preserve the target generation distribution. Preserving generation quality supplies the second part of the question. We require the released sample to have exactly the desired conditional distribution for every watermark message, after averaging the secret key. Exact statistical invisibility is classical in steganography and information hiding [19]–[22]; coupling-based and distortion-free constructions also appear in modern generative watermarking [6], [23], [24]. Our criterion combines finite-block distributional equality with message-wise, context-conditioned preservation. It is stronger than the asymptotically vanishing message-wise total-variation criterion of [18]; the central question here is how exact preservation and reliable communication interact when generation must pass through a fixed renderer. The resulting key requirement has an operational interpretation. The encoder must coordinate a watermark representation with the physical latent, whereas the detector sees only what the renderer releases. A chosen representation can therefore contain latent dependence that must be coordinated before the stochastic generator but remains unresolved from the public sample. The question is not whether every unused latent coordinate consumes key; it is which dependence the watermark representation needs, and which part of it the renderer makes useful for decoding the watermark. Generative watermarking also introduces a robustness threat that is particularly natural to the generative setting. Rather than perturbing the released sample directly, an adversary can regenerate it to obtain a fresh realization of the same underlying content while attenuating or removing the embedded watermark. In the latent-space setting, such an attack can map the released sample back to a latent representation and invoke the generator again. Empirical work 3
+
+shows that generative regeneration can degrade or remove invisible watermarks [25], [26]. Because our framework already treats watermark communication through a prescribed generator, it provides a natural basis for studying this regeneration mechanism as a robustness problem. We therefore ask how much watermark information can survive repeated use of the same prescribed renderer when each regenerated sample must retain the desired distribution and satisfy a per-pass distortion constraint. 
+
+Contributions. The paper develops four primary answers to these questions. 1) Fixed-interface rate–key limits. We derive finite-alphabet inner and outer bounds and explain their resource structure through context adaptation, detector packing, and latent coordination. For the general finite-alphabet setting, a random-projection example shows that the outer bound can be strictly loose, while the inner bound is capacity-achieving for that example. 2) Capacity through latent-distribution identification. We specialize our bounds to the unique-preimage condition in which the fixed renderer and the target output distribution uniquely determine the latent input distribution. That is, only one latent distribution is compatible with the pretrained generation model. For this specialization, we obtain the capacity region and an equivalent interpretation of the secret key as a latent-coordination budget. We further show that the same capacity region applies when preservation of the pretrained latent distribution is imposed explicitly, in which case the unique-preimage condition is unnecessary. 3) Gaussian renderer geometry. We extend our results to the general jointly Gaussian vector setting. We show that the physical latent can be reduced losslessly to its renderer-visible effect, revealing a sufficient statistic of the latent for watermark communication and generation coordination. We characterize the finite-key capacity, show that hiding the context at the detector causes no loss, and derive the optimal secret-key allocation across renderer-visible modes. A scalar case study explains the within-mode coordination tradeoff before we turn to the vector allocation problem. 4) Regeneration robustness. We also extend the framework to a same-generator regeneration attack, an emerging threat in which a released sample is regenerated through the generative model in an attempt to weaken or remove the watermark. Focusing on this attack family, we show that a fixed attack changes the effective renderer and therefore allows the base coding theory to be reused. For the scalar Gaussian model with random context known at the encoder and hidden from the detector, we characterize the minimum distortion of a genuine rerender and the compound capacity achieved by a single code and detector over the full admissible one-pass attack family. We then extend the analysis to repeated canonical Gaussian regeneration and characterize the resulting capacity decay and the number of regeneration rounds compatible with a positive target rate. The unrestricted multiround compound minimax problem remains outside the present scope. Section II defines the fixed interface and preservation criterion. Sections III and IV develop the general bounds, their interpretation, and the capacity region under latent-distribution identification. Section V gives the Gaussian theory, Section VI studies regeneration, and Section VII draws together the implications. The proofs are in the appendices. 
+
+Notation. We closely follow the notation in [27]. Random variables are denoted by uppercase letters and their 4
+
+realizations by the corresponding lowercase letters; sets and alphabets use calligraphic letters. We use p for a generic probability mass function or density, with arguments and conditioning identifying its joint, marginal, or conditional form. Distinguished distributions are assigned separate symbols when their roles require it. Probabilities of events and expectations are denoted by P and E, respectively; measure notation is used when a density need not exist. A length-n sequence is Xn = ( X1, . . . , X n), and X ⊥ Y denotes independence. For random vectors, ΣX and 
+
+ΣX|Y denote covariance and conditional covariance matrices, respectively, and A ≻ 0 means that the symmetric matrix A is positive definite. All logarithms are to base two and information quantities are measured in bits. For a finite alphabet A, ∆( A) denotes its probability simplex. II. P ROBLEM FORMULATION 
+
+We specify the pretrained generator, then the watermarking code and its preservation requirement. 
+
+A. Pretrained Generator and Latent Interface 
+
+Let (S, X ) ∼ q0(s, x ) be a memoryless source pair on S × X , where S represents the semantic/context state and 
+
+X the corresponding observable/generated sample. We call q0 the desired distribution , using the same symbol for its joint, marginal, and conditional forms. The pair specifies the desired public statistics: in the watermarking problem, the encoder observes Sn and generates Xn through the pretrained system, rather than observing Xn beforehand. For one invocation, the pretrained system realizes q0(x|s) through a physical latent U ∈ U . Its conditional latent prior is described by qlat (u|s), which we call the pretrained latent law . Given (u, s ), the system generates X through the fixed stochastic mapping qr(x|u, s ), called the renderer . In channel terms, this is a fixed state-dependent channel from the latent U to the public output X. Thus ordinary generation follows 
+
+U ∼ qlat (·| S), X ∼ qr(·| U, S ), (1) and the pretrained-system joint law is 
+
+qpre (s, u, x ) = q0(s)qlat (u|s)qr(x|u, s ). (2) Its (S, X ) marginal is the desired distribution q0(s, x ); equivalently, for every relevant s,
+
+q0(x|s) = X
+
+> u
+
+qlat (u|s)qr(x|u, s ). (3) Sums have the corresponding integral/kernel interpretation on continuous alphabets. The renderer is inherited from the pretrained system and transferred unchanged into the watermarking problem. In watermark design, however, the latent-input distribution p(u|s) is designable. Choosing p(u|s) = qlat (u|s)
+
+preserves the pretrained latent law, but this equality is not required in the base problem. Once q0 and qr are fixed, the latent-input distribution may change as long as the prescribed output distribution is preserved through the fixed renderer. 5
+
+B. Watermark Code and Performance Criteria 
+
+At blocklength n, the watermark latent encoder is an arbitrary conditional distribution 
+
+p(un|sn, m, k ), (4) where M is the watermark message and K the secret key, with 
+
+M ∼ Unif[1 : 2 nR ], K ∼ Unif[1 : 2 nR k ]. (5) The message, key, and context sequence are mutually independent, and q0(sn) = Qni=1 q0(si). The encoder may couple its latent inputs across the block. Its stochasticity subsumes encoder-private randomization, with deterministic encoding as a special case. The renderer operates memorylessly: 
+
+qr(xn|un, s n) = 
+
+> n
+
+Y
+
+> i=1
+
+qr(xi|ui, s i). (6) The detector observes the released sample Xn and the secret key K, but not Sn.
+
+Definition 1 (Watermarking code) . An (n, R, R k; q0, q r) watermarking code consists of a watermark latent en-coder (4). The watermarked latent U n with context Sn is processed through the fixed renderer (6) which outputs 
+
+Xn. A detector applies the mapping 
+
+gn : X n × [1 : 2 nR k ] → [1 : 2 nR ]. (7) The detector produces ˆM = gn(Xn, K ) and does not observe the semantic context Sn.With the uniform message and key distributions denoted by p(m) and p(k), the full joint distribution induced by a code is 
+
+p(sn, m, k, u n, x n)= q0(sn)p(m)p(k)p(un|sn, m, k )qr(xn|un, s n). (8) In particular, averaging over the key and the encoder and renderer randomness gives 
+
+p(xn|sn, m )= X
+
+> k,u n
+
+p(k)p(un|sn, m, k )qr(xn|un, s n), (9) which we call the induced output distribution .A rate pair (R, R k) is achievable if there exists a sequence of blocklength-n watermarking codes satisfying 
+
+P{ ˆM̸ = M } → 0 (10) and, at every blocklength and for every message m,
+
+p(xn|sn, m ) = 
+
+> n
+
+Y
+
+> i=1
+
+q0(xi|si), (11) 6             
+
+> Encoder Renderer
+> qr(x|u, s )
+> Attack
+> a(y|x, s )Detector
+> MUnXnYnˆMKSn
+> Fig. 1. Latent-space watermarking through a fixed pretrained renderer and the same-generator attack extension. In the no-attack baseline the attack block is omitted, equivalently Yn=Xn. The possible context dependence of the attack is suppressed in the diagram and written explicitly in Sec. VI-A.
+
+that is, the code induced output distribution matches exactly with the target law q0(xn|sn) for every fixed message. The equality holds for almost every sn under q0(sn); on finite alphabets, it holds for every sn with q0(sn) > 0.Distributional equalities are interpreted as equalities of measures, or of densities where these exist. The conditioning in (11) does not include the key: the induced output distribution is the key-averaged distribution in (9). The capacity region C is the closure of the set of achievable rate pairs. Concatenating exact codes preserves (11), so coded time sharing makes C convex; unused key bits imply that it is upward closed in Rk. For a fixed key-rate budget Rk, define its upper envelope by 
+
+C(Rk) ≜ sup {R : ( R, R k) ∈ C} .
+
+When the detector additionally observes Sn (benchmark case), we use Cctx and Cctx (Rk) for the corresponding capacity region and upper envelope, with the encoder, renderer, and exact preservation criterion unchanged. We call (11) exact output preservation . It serves two related roles. It is a message-wise watermark invisibility 
+
+requirement, since the message produces no distributional signature for an observer without the key. It also preserves the pretrained generator’s desired conditional output statistics for every relevant context. The desired distribution q0
+
+is fixed by the problem, whereas p(xn|sn, m ) is induced by the chosen code; the constraint requires these public statistics to agree exactly. It does not require the code to preserve qlat . Wang and Moulin’s perfect-security criterion requires equality of the covertext and stegotext block marginals [21]. Here equality is imposed separately for each message and context; it is also finite-block exact, rather than asymptotically vanishing message-wise total variation as in [18]. The distinction of interest here is not exactness alone, but exactness when watermark communication must be realized through the prescribed latent renderer. As a final note on the formulation, the key restriction is that the watermark is embedded through a renderer inherited from a pretrained generative model and held fixed during watermark design. If the renderer were fully redesignable, the encoder could realize the desired output mechanism directly, and the latent structure would no longer constitute an operational constraint. In this fully designable limit, the model reduces to the output-watermarking formulation studied by Guo et al. [18]. Thus, the distinction considered here is precisely the restriction imposed by watermarking through a fixed pretrained renderer. The regeneration-attack model and its associated 7
+
+robustness criterion are introduced separately in Section VI. III. G ENERAL RATE –K EY LIMITS FOR LATENT -S PACE WATERMARKING 
+
+In this section, we first state the general finite-alphabet bounds, then expose their coding mechanism and the additional information needed for a capacity converse. Let V denote an auxiliary random variable, distinct from the physical latent U , with single-letter conditional distribution 
+
+p(v, u |s) = p(v|s)p(u|s, v ). (12) The latent-completion kernel p(u|s, v ) maps the auxiliary V , together with the context S, into the physical latent alphabet U inherited from the pretrained renderer. Together with p(v|s), it determines the joint conditional distri-bution (12). This is a single-letter design object, not a claim that the operational watermark encoder acts symbol by symbol. The resulting full joint distribution is restricted to the class 
+
+P(q0; qr) = 
+
+
+
+p(s, v, u, x ) = q0(s)p(v, u |s)qr(x|u, s ) : 
+
+p(s, x ) = q0(s, x )
+
+ . (13) Thus p(u|s) = P 
+
+> v
+
+p(v, u |s) must satisfy P 
+
+> u
+
+p(u|s)qr(x|u, s ) = q0(x|s), but need not equal qlat (u|s). Unless stated otherwise, the information quantities below are evaluated under the selected distribution p ∈ P(q0; qr).
+
+A. General Finite-Alphabet Bounds 
+
+Theorem 1 (General finite-alphabet rate–key bounds) . Let S ∼ q0(s) be the semantic source, qr(x|u, s ) be the fixed renderer, and q0(x|s) be the desired conditional output distribution. Every rate pair in the convex hull of all rate pairs satisfying 
+
+R < I (V ; X) − I(V ; S), (14) 
+
+Rk > R + I(V ; S, U |X) (15) 
+
+for some p ∈ P(q0; qr) is achievable. Conversely, every achievable rate pair (R, R k) must satisfy 
+
+R ≤ I(V ; X) − I(V ; S), (16) 
+
+Rk ≥ R + I(V ; S|X) (17) 
+
+for some p ∈ P(q0; qr). The auxiliary alphabet may be restricted to |V| ≤ |S||U| + 1 .
+
+The familiar Gel’fand–Pinsker form of the payload expression does not remove the renderer restriction: the optimization is over the constrained class (13), not over freely chosen public-output channels. Achievability combines a Gel’fand–Pinsker likelihood-encoding/soft-covering construction, which coordinates the physical latent before the fixed renderer, with an encoder-local maximal-coupling step that enforces exact output preservation. The converse uses Fano’s inequality and the exact product distribution of (Sn, X n) to obtain the single-letter outer bound. Complete proofs are given in Apps. A and B. 8                                    
+
+> Conditional latent-coordination cost Net packing budget
+> I(V;S, U |X)RtRtRktI(V;X)−I(V;S) = R+t
+> ˆR=I(V;S) + t
+> Fig. 2. Boundary resource accounting for a fixed admissible p(v, u |s). The net packing budget I(V;X)−I(V;S)is shared by the payload rate Rand the excess covering rate t. The conditional latent-coordination cost is supplied by the same excess covering rate together with the key rate Rk. The aligned segments show that allocating more packing to payload leaves less available for excess covering and therefore more coordination to be supplied by the key. Equalities in the figure are boundary relations in closure.
+
+The outer region is convex because time sharing between admissible distributions preserves the common (S, X )
+
+marginal q0, so both outer-bound functionals average linearly. The single-letter inner region need not be convex, and its convex hull is achievable by coded time sharing. 
+
+Remark 1 (Loose converse) . The outer bound in Thm. 1 is not tight in general; Prop. 1 in App. B gives an explicit strict example. 
+
+B. From Coding Resources to the Key Requirement 
+
+We next summarize the coding construction at the level needed to interpret the rate–key bounds. The discussion isolates the covering, packing, and latent-coordination requirements that determine the key resource. For a fixed admissible p(v, u |s), generate codewords 
+
+V n(m, ℓ, k ), m ∈ [1 : 2 nR ], ℓ ∈ [1 : 2 n ˆR], k ∈ [1 : 2 nR k ].
+
+The encoder selects the covering index L so that V n(M, L, K ) covers the context sequence Sn. For each fixed m,the aggregate key and covering indices synthesize the required pair (Sn, U n). Given the key, the detector decodes 
+
+(m, ℓ ) through the renderer output. These tasks give 
+
+ˆR > I (V ; S), covering , (18) 
+
+R + ˆR < I (V ; X), packing , (19) 
+
+Rk + ˆR > I (V ; S, U ), latent synthesis . (20) These three conditions concern the same codebook and are not independent resource expenditures. Note that Fourier– Motzkin elimination of ˆR from (18)–(20) yields the inner bound in Thm. 1. We explain this resource allocation with the aid of Fig. 2, which illustrates how the covering, packing, and latent-synthesis requirements interact in determining the message and key rates. Write 
+
+ˆR = I(V ; S) + t. (21) 9
+
+Here t measures the excess auxiliary-codebook rate above that required to cover the context sequence Sn. The remaining constraints are 
+
+R + t < I (V ; X) − I(V ; S), t > 0, (22) 
+
+Rk + t > I (V ; U |S). (23) The right-hand side of (22) is the net packing budget shared between the payload rate R and the excess auxiliary-codebook rate t. The right-hand side of (23) is a conditional latent-coordination cost . Allocating more of the packing budget in (22) to the payload rate R leaves less available for the excess covering rate t. The key must then supply the remaining coordination rate in (23). Increasing t does not reduce this fixed distribution’s cost; it supplies more of that cost while using packing that could otherwise carry payload. Thus t and Rk substitute one-for-one inside (23), but not throughout the construction. The key is already known to the detector and does not enter its packing load. It cannot, however, replace the covering rate needed to cover the context sequence Sn. The payload rate R plays a different role: exact preservation in (11) is imposed for each fixed message, so diversity across messages cannot contribute to latent synthesis even though the payload consumes the packing budget in (22). This gives a useful comparison with Wagner’s finite-common-randomness rate–distortion–perception formula-tion [28]. There, the source-dependent description index also contributes reconstruction-synthesis diversity. In the present multicoding construction, its closest counterpart is the covering index L, not the independent watermark message M . Our detector must recover L through the fixed renderer, so the covering index shares a packing budget with payload; the key supplies coordination without joining that decoded load. 
+
+C. Latent Completion: What the Renderer Does Not Resolve 
+
+For feasible payload under the selected distribution, the largest excess covering rate for multicoding in closure is t = I(V ; X) − I(V ; S) − R. Substituting it into (23) gives (15), since V − (S, U ) − X. The key overhead decomposes as 
+
+I(V ; S, U |X) = I(V ; S|X) + I(V ; U |S, X ). (24) The second term, 
+
+I(V ; U |S, X ), (25) is the latent-completion cost . It does not represent additional watermark information available to the detector; rather, it quantifies the dependence between the watermark representation V and the physical latent U that remains unresolved after S and X are known. For example, if U = ( Upub , U hid ) and X = Upub , then (25) is I(V ; Uhid |S, X ). Only dependence of the hidden part on the coding representation contributes. There is no charge merely for having a renderer-invisible coordinate: the encoder may choose its representation to avoid unnecessary dependence. Section V makes this point constructive by generating unused physical-latent detail privately. 10 
+
+At the full payload supported by a selected distribution, R = I(V ; X) − I(V ; S) and t = 0 in closure. The key requirement becomes Rk ≥ I(V ; U |S) = I(V ; X|S) + I(V ; U |S, X ). The corresponding fully designable-output construction in [18] has the public-output requirement I(V ; X|S). The additional term here concerns realizing the representation in the physical latent before rendering. We note that this comparison is for a selected distribution and its factorization; it is not automatically the gap between two optimized regions, nor a converse obliging every possible code to use that representation. Two endpoints sharpen the interpretation. First, exact message-wise preservation gives M ⊥ Xn, while reliable decoding from (Xn, K ) requires H(M |Xn, K ) ≤ nϵ n. Hence H(M ) ≤ H(K) + nϵ n, so R ≤ Rk and zero key cannot support positive payload. Second, with unlimited key, the inner and outer bounds have the common payload capacity 
+
+C(∞) = max 
+
+> p∈P(q0;qr)
+
+[I(V ; X) − I(V ; S)] . (26) The finite-key gap disappears, but the fixed-renderer restriction on the optimization remains. IV. C APACITY REGION UNDER A UNIQUE -P REIMAGE CONDITION 
+
+Exact output preservation becomes more informative when the desired output has a unique latent preimage. We first show that this one-letter property identifies the full block latent distribution, then use it to strengthen the converse. 
+
+A. Unique-Preimage Condition 
+
+For each context value s, define the preimage set 
+
+Ps(q0; qr) = 
+
+(
+
+μ ∈ ∆( U) : X
+
+> u
+
+μ(u)qr(x|u, s ) = q0(x|s), ∀x
+
+)
+
+. (27) That is, Ps(q0; qr) is the set of viable latent priors that, when paired with the pretrained renderer qr, induce the desired context-conditioned output distribution q0(x|s).
+
+Definition 2 (Unique preimage relative to the desired distribution) . The renderer satisfies the unique-preimage (UP) condition relative to q0 if, for every s with q0(s) > 0,
+
+Ps(q0; qr) = {qlat (·| s)}. (28) Since qlat (·| s) is the pretrained latent prior by construction, uniqueness of the viable latent prior implies (28). The condition is relative to the desired distribution q0: the renderer need not distinguish every possible latent distribution, only the pretrained latent preimage that produces q0(·| s). A simple stronger sufficient condition is distributional injectivity of the renderer. In finite alphabets, if the matrix Ws(x|u) = qr(x|u, s ) has full input-row rank for every relevant s (which requires |U| ≤ |X | ), then the map μ 7 → μW s is injective and the UP condition holds. 11 
+
+Lemma 1 (Latent-distribution identification under UP) . Under the UP condition, every conditionally exact code satisfies, after averaging the secret key and stochastic encoder randomness, 
+
+p(un|sn, m ) = 
+
+> n
+
+Y
+
+> i=1
+
+qlat (ui|si) (29) 
+
+for every message m and every relevant context sequence sn.
+
+Lem. 1 shows that, under UP, every exact code induces the pretrained latent distribution qlat for each message and context sequence. Thus exact output preservation also enforces exact latent-distribution preservation, which enables the strengthened converse in the next subsection. The proof is given in App. C. 
+
+B. Capacity Region and Explicit Latent Preservation 
+
+Theorem 2 (Finite-alphabet rate–key capacity region under UP) . Suppose qr satisfies the UP condition relative to 
+
+q0. Then the capacity region is the closure of the inner bound in Thm. 1. 
+
+Thm. 1 already gives achievability. Lem. 1 upgrades exact preservation of the public product distribution to exact preservation of the key-averaged latent product distribution. Details are given in App. C. We note that the random-projection example showing that the outer-bound is loose in Rem. 1 does not satisfy the UP condition. Prop. 1 also contains a distributionally injective specialization for which the original outer bound in Thm. 1 remains loose; thus UP enables the strengthened converse here rather than making the original outer bound tight. 
+
+Corollary 1 (Explicit latent preservation) . Relative to our primary problem, consider the narrower problem that additionally requires (29) with the pretrained latent law qlat (u|s) for every message and relevant context sequence 
+
+sn. For any fixed renderer, not necessarily satisfying UP, the rate–key capacity region is the closure of the inner bound in Thm. 1, restricted to choices satisfying P 
+
+> v
+
+p(v, u |s) = qlat (u|s). Its capacity is given by (30) under the same marginal and key-budget constraints. Proof. The latent-synthesis and encoder-local exactification in App. A achieve the prescribed latent product distri-bution. For the converse, the product distribution (117) used in App. C now follows directly from the imposed latent constraint and the memoryless renderer, rather than from UP. The remaining key-accounting, single-letterization, and auxiliary-erasure arguments are unchanged. This additional operational constraint gives a direct interpretation of distribution-preserving latent sampling [15]. It preserves the prescribed input statistics even when the output distribution does not identify them. 
+
+C. Equivalent Capacity Characterization 
+
+The capacity admits a simpler equivalent form. Under UP, the latent marginal is fixed to qlat . Moreover, any admissible auxiliary with I(V ; U |S) > R k can be independently erased to reduce its latent-coordination cost to Rk
+
+without decreasing the best feasible payload; see App. C. Consequently, 
+
+C(Rk) = max 
+
+> p(v,u |s)
+
+I(V ; X) − I(V ; S). (30) 12 
+
+The maximization is over conditional pmfs p(v, u |s) satisfying 
+
+X
+
+> v
+
+p(v, u |s) = qlat (u|s), I(V ; U |S) ≤ Rk.
+
+Full physical-latent identification is stronger than necessary for the Gaussian model below. There, the output identifies the renderer-visible component, and the remaining physical latent can be supplied privately. V. J OINTLY GAUSSIAN LATENT -S PACE WATERMARKING 
+
+We now extend the fixed-renderer model to the general jointly Gaussian vector setting. Classical scalar and vector Gaussian watermarking games characterize embedding under covertext modification and attack-distortion constraints [29], [30]. Our Gaussian problem has a different architecture: the latent-to-output renderer is fixed, the released sample must preserve its prescribed conditional distribution exactly, and the shared secret key has a finite entropy rate. These constraints make the renderer-visible component of the latent, rather than the full physical latent itself, the natural Gaussian object. We begin by identifying that component. 
+
+A. Renderer-Visible Innovation 
+
+Let the pretrained-system joint law qpre (s, u, x ) be jointly Gaussian, with S ∈ Rds , U ∈ Rdu , and X ∈ Rd,and assume the nondegenerate renderer residual covariance ΣX|S,U ≻ 0. To define the conditional means and covariance matrices associated with the renderer, we first consider the pretrained-system joint distribution qpre ,which characterizes the distribution under which the renderer was trained. Define 
+
+T ≜ E[X|S, U ] − E[X|S]. (31) Thus, T captures the renderer-visible effect of the latent beyond the context S.Define also the irreducible renderer residual 
+
+Z ≜ X − E[X|S, U ]. (32) Then 
+
+X = E[X|S] + T + Z. (33) For jointly Gaussian variables, T ⊥ S and Z ⊥ (S, U ). Moreover, 
+
+ΣT = Σ X|S − ΣX|S,U , ΣZ = Σ X|S,U . (34) Thus, once S is fixed, changing U can alter the conditional output law only through the conditional mean, and T
+
+records exactly this renderer-visible effect. A linear Gaussian example makes the interpretation concrete. Let 
+
+X = AS + BU + Z, (35) where A and B are deterministic matrices, Z is the independent Gaussian renderer noise, and U ⊥ S for simplicity. Then E[X|S] = AS and E[X|S, U ] = AS + BU , so 
+
+T = BU. (36) 13 
+
+The renderer exposes the effect BU , not the raw physical latent U . That is, watermark information is useful only through latent variation that the pretrained mapping makes visible at the output. Latent directions in the null space ker B are annihilated by B: they cannot change the released sample and therefore cannot carry watermark information to a detector that observes the output. This characterization suggests a practical inductive bias for Gaussian latent-space watermarking applications; see, e.g., [15], [17]. Distribution-preserving latent sampling can maintain the generator’s ordinary input statistics, but reliable watermark recovery additionally requires embedding information in latent variation that remains visible through the fixed generator. In the Gaussian model, T identifies exactly this renderer-visible component. Thus the theory suggests favoring latent representations or directions that are strongly expressed at the generated output, rather than treating all distribution-preserving latent variation as equally useful. 
+
+B. Reduction to the Effective Gaussian Renderer 
+
+Equation (33) and Gaussianity imply 
+
+qpre (x|s, u ) = qpre (x|s, t ), (37) or equivalently U − (S, T ) − X. Once (S, T ) is given, the remaining variation in U does not affect the renderer output distribution. 
+
+Lemma 2 (Effective-latent reduction) . Let qpre (s, u, x ) be the jointly Gaussian pretrained-system law. Any effective-latent code producing T n(Sn, M, K ), with each (Si, T i) lying almost surely in the support of (S, T ), can be lifted to a physical-latent code U n that induces the same output distribution as the effective-latent code and has the same decoding performance. The lift uses only encoder-private randomness and consumes no additional secret key. Hence, the reduction to T is operationally lossless. 
+
+App. D gives the block deconvolution and lifting details. 
+
+C. The Scalar Case: Context Adaptation and Coordination 
+
+We first consider the scalar case to develop intuition, and then extend the analysis to the vector setting in Sec. V-D. Consider the scalar renderer 
+
+X = aS + U + Z, (38) where U ∼ N (0 , σ 2 
+
+> U
+
+) and Z ∼ N (0 , σ 2 
+
+> Z
+
+) are independent of each other and of the Gaussian context S. Here 
+
+T = U and γ = σ2 
+
+> U
+
+/σ 2 
+
+> Z
+
+. We assume σ2 
+
+> U
+
+> 0 and σ2 
+
+> Z
+
+> 0 to avoid degenerate cases. The zero-visible-variance case has zero capacity and is handled separately. We now analyze the scalar Gaussian case in parallel with the finite-alphabet treatment of Sec. III, exposing the corresponding coding and coordination requirements. A Gaussian auxiliary performs two distinct operations: 
+
+V = U + αaS + NV , α = γ
+
+1 + γ , (39) 14 
+
+where the independent Gaussian noise has variance σ2 
+
+> NV
+
+= σ2 
+
+> U
+
+/(2 2r − 1) for r > 0. The affine term adapts to the hidden context in the Costa sense [31]. Indeed, V − αX = (1 − α)U − αZ + NV is independent of (S, X )
+
+by Gaussianity and the choice of α, so I(V ; S|X) = 0 . Separately, the noise level sets the coordination cost 
+
+r = I(V ; U |S).Define 
+
+fγ (r) = 12 log 1 + γ
+
+1 + γ2−2r . (40) Gaussian evaluation then gives 
+
+I(V ; X) − I(V ; S) = I(V ; X|S) = fγ (r), (41) 
+
+I(V ; U |S, X ) = r − fγ (r). (42) The r = 0 endpoint uses a constant auxiliary. Recall from (21) that t denotes the excess auxiliary-codebook rate above the covering requirement. The resource constraints (22)–(23) then become R + t < f γ (r) and Rk + t > r ,with t > 0. Taking closure and eliminating t gives 
+
+R ≤ fγ (r) − [r − Rk]+. (43) The derivative reveals which representation to choose: 
+
+0 < f ′ 
+
+> γ
+
+(r) = γ2−2r
+
+1 + γ2−2r < 1. (44) Below the available key budget, more coordination improves the payload ceiling. Above it, every extra coordination bit consumes one bit of packing through t but gains less than one bit in that ceiling. Thus (43) is maximized at 
+
+r = Rk, giving 
+
+C(Rk) = 12 log 1 + γ
+
+1 + γ2−2Rk
+
+. (45) The Gaussian converse in Thm. 3 below establishes that this achieved value is capacity. The optimum has t = 0 
+
+in closure; the context-adaptation part I(V ; S) of multicoding need not vanish. The endpoints are C(0) = 0 and 
+
+C(∞) = 12 log(1 + γ).This separates adaptation to the state from selection of the amount of latent detail. A richer representation is not always better under finite key. Across several modes, the remaining question is where that coordination is most productive. 
+
+D. Vector Gaussian Finite-Key Capacity 
+
+Define the covariance of the whitened renderer-visible latent T as 
+
+Γ ≜ Σ−1/2 
+
+> Z
+
+ΣT Σ−1/2 
+
+> Z
+
+= Σ −1/2
+
+> X|S,U
+
+ ΣX|S − ΣX|S,U 
+
+Σ−1/2 
+
+> X|S,U
+
+. (46) Let γ1, . . . , γ d denote the eigenvalues of Γ. After whitening the renderer noise and diagonalizing Γ, the eigenvectors define orthogonal renderer-visible directions. We refer to the resulting decoupled scalar Gaussian subchannels as 
+
+renderer-visible modes ; the corresponding eigenvalue γj is the effective SNR of mode j.15 
+
+Theorem 3 (Jointly Gaussian finite-key capacity) . Let S ∈ Rds , U ∈ Rdu , and X ∈ Rd have the jointly Gaussian pretrained-system law qpre with ΣX|S,U ≻ 0, γ1, . . . , γ d be the eigenvalues of the renderer-visible matrix Γ in (46) ,and rj ≥ 0 denote the secret-key rate allocated to renderer-visible mode j. Then 
+
+C(Rk) = Cctx (Rk) = max    
+
+> rj≥0
+> Pdj=1 rj=Rk
+> d
+
+X
+
+> j=1
+
+12 log 1 + γj
+
+1 + γj 2−2rj . (47) The theorem characterizes finite-key capacity and shows that revealing the context to the detector does not increase it. The condition ΣX|S,U ≻ 0 excludes deterministic renderers and noiseless output directions. Such cases require separate support analysis; singular covariance alone does not imply infinite capacity, because a noiseless direction may contain no renderer-visible latent variation. The proof is deferred to App. D. 
+
+E. Renderer-Visible Modes and Key Allocation 
+
+In the linear example (36), directions eliminated by B generate zero renderer-visible modes and contribute no watermark rate. At unlimited key, 
+
+C(∞) = 12 log det Σ X|S
+
+det Σ X|S,U 
+
+= I(U ; X|S) = I(T ; X|S). (48) Thus unlimited secret key cannot make renderer-invisible latent variation useful. A higher key rate can coordinate visible modes more completely, but it cannot create an output effect in a latent direction that the pretrained renderer does not expose at the output. For finite key rate, the optimal allocation has the log-threshold form 
+
+r⋆j = 12
+
+h
+
+log γj
+
+λ
+
+i+
+
+, (49) for γj > 0, with r⋆j = 0 when γj = 0 ; λ is selected so that the key constraint is active when appropriate. The latent coordination budget from Sec. IV therefore acquires a geometric meaning: with scarce key, coordination is allocated first to the renderer-visible modes with the largest effective SNRs. 
+
+F. Numerical Illustration of Renderer Geometry 
+
+Figure 3 evaluates (47) for two renderer-visible mode-SNR profiles with the same total effective SNR, 
+
+γflat = (2 , 2, 2, 2) , γaniso = (7 , 0.5, 0.3, 0.2) , (50) so that P 
+
+> j
+
+γj = 8 in both cases, and compares optimal key allocation with uniform allocation for the anisotropic renderer. With scarce secret key, the optimally allocated anisotropic profile is superior because the coordination budget can be concentrated on its strongest mode. The two optimally allocated curves cross at approximately 
+
+Rk = 2 .36 bits/sample, after which the flat profile is superior. At unlimited key, (48) gives approximately 3.17 
+
+bits/sample for the flat profile and 2.11 bits/sample for the anisotropic profile; under a fixed sum P 
+
+> j
+
+γj , this large-key ordering follows from the concavity of log(1 + γ). Thus renderer anisotropy is neither uniformly beneficial nor uniformly harmful: it trades low-key efficiency against high-key aggregate watermark capacity. The uniform-allocation curve further shows the cost of ignoring the renderer-induced mode geometry. 16 0 1 2 3 4 5 6         
+
+> Rk(bits/sample) 0.0 0.5 1.0 1.5 2.0 2.5
+> C(Rk) (bits/sample) Flat spectrum, optimal Anisotropic spectrum, optimal Anisotropic spectrum, uniform
+> Fig. 3. Jointly Gaussian capacity versus secret-key rate for two renderer-visible mode-SNR profiles with equal total effective SNR P
+> jγj= 8 .The anisotropic uniform-allocation curve uses rj=Rk/4; the other two curves use the optimal allocation (49).
+
+VI. R OBUSTNESS TO SAME -G ENERATOR REGENERATION 
+
+The preceding section studied how watermark information is retained through a generator. From a robustness perspective, the generator itself can already be viewed as a transformation that may attenuate or erase watermark-bearing variation. In this section, we take this viewpoint one step further and ask what happens when an adversary deliberately invokes the generator again to produce a fresh realization of the same underlying content. Would a watermark be robust against such attacks? We first formalize this regeneration attack and its reduction to an effective renderer, and then study compound robustness and repeated regeneration in the scalar Gaussian model. 
+
+A. Regeneration Model and Preservation 
+
+We now formulate the regeneration attack model. The attack is modeled as a state-dependent memoryless channel with the following properties. The attacker maps a previously generated sample X, together with its semantic context S, to a new generation 
+
+Y . In the regeneration attack considered here, this mapping is realized by reusing the pretrained generator. At blocklength n,
+
+a(yn|xn, s n) = X
+
+> un
+> a
+
+a(un 
+
+> a
+
+|xn, s n)qr(yn|un 
+
+> a
+
+, s n), (51) where a(un 
+
+> a
+
+|xn, s n) specifies the attacker’s choice of latent input. We assume this attack-latent mapping is memo-ryless, 
+
+a(un 
+
+> a
+
+|xn, s n) = 
+
+> n
+
+Y
+
+> i=1
+
+a(ua,i |xi, s i). (52) Since the pretrained renderer is also memoryless, the resulting regeneration channel satisfies a(yn|xn, s n) = 
+
+Qni=1 a(yi|xi, s i). We allow the attack remapping to depend on the semantic context S, while the attack remains independent of the watermark message and secret key except through its permitted observations. 17 
+
+Under attack, the same watermark detector is applied to the regenerated sample and the secret key, ˆM =
+
+gn(Y n, K ). Reliability under an admissible one-pass attack requires P{gn(Y n, K )̸ = M } → 0. For compound robustness, the same watermark code and detector must satisfy this requirement uniformly over the specified attack family. The attacked sample must itself remain a valid ordinary generation. Operationally, for every watermark message 
+
+m,
+
+p(yn|sn, m ) = 
+
+> n
+
+Y
+
+> i=1
+
+q0(yi|si) (53) for almost every sn under q0(sn); on finite alphabets, equality is imposed whenever q0(sn) > 0. This restriction prevents the attacker from winning by simply destroying the sample: the regenerated output must continue to have the desired conditional output distribution. Finally, each regeneration pass is restricted by the block-average fidelity constraint 
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+Eda(Xi, Y i) ≤ D. (54) We next derive the corresponding single-letter family and distinguish a fixed attack from uniform reliability over the family. 
+
+B. Renderer-Realizable Regeneration and Fixed-Attack Reduction 
+
+Definition 3 (Renderer-realizable attack) . For each context s, let As denote the transition operator of the attack kernel a(y|x, s ). On finite alphabets, As is the stochastic matrix with entries [As]x,y = a(y|x, s ); on continuous alphabets, the corresponding Markov-kernel interpretation is used. We write A = ( As)s for the context-indexed attack. We say that As is renderer-realizable if there exists an attack-latent kernel a(ua|x, s ) such that 
+
+a(y|x, s ) = X
+
+> ua
+
+a(ua|x, s )qr(y|ua, s ). (55) Operationally, the attacker first maps the released sample X to an attack latent Ua through a(ua|x, s ), after which the unchanged pretrained renderer qr(y|ua, s ) produces Y . Equation (55) is the resulting single-letter composition of those two kernels and is precisely the channel induced by (51)–(52). 
+
+Lemma 3 (Fixed-attack reduction) . Suppose the incoming watermarked sample satisfies (11) . For a memoryless, message- and key-independent attack A, the post-attack exact output requirement (53) is equivalent to 
+
+q0(·| s)As = q0(·| s) (56) 
+
+for every relevant s. The end-to-end channel from U to Y is the effective renderer 
+
+qA 
+
+> r
+
+(y|u, s ) = X
+
+> x
+
+qr(x|u, s )a(y|x, s ), (57) 
+
+which has the same desired output distribution q0(·| s).
+
+The proof follows by composing the incoming exact product law with the memoryless attack. Importantly, the stationarity condition (56) is not an additional modeling assumption: it is the single-letter consequence of requiring the regenerated block output to remain a valid ordinary generation as specified in Sec. VI-A. 18 
+
+We can therefore define the exact-output-preserving renderer-realizable family 
+
+Areg = {A : A is renderer-realizable and q0A = q0}, (58) and, for the one-letter distortion induced by the operational per-pass criterion, D(A) = E[da(X, Y )] , define 
+
+Areg (D) = {A ∈ A reg : D(A) ≤ D}. (59) The minimum distortion of any genuine output-preserving renderer-realizable regeneration is 
+
+Dmin ≜ inf 
+
+> A∈A reg
+
+D(A). (60) For any fixed A ∈ A reg (D), Lem. 3 turns the attack problem into the base latent-space watermarking problem with detector observation Y and renderer qA 
+
+> r
+
+. Thus, the inner and outer bounds in Thm. 1 apply directly, and if qA
+
+> r
+
+satisfies the UP condition relative to q0, Thm. 2 gives the fixed-attack capacity region. The genuinely new issue is therefore uniformity: one code and one detector must work over an attack family. The resulting robustness problem is compound: the same watermark code and detector must work uniformly for every A ∈ A reg (D). In general finite alphabets, such a capacity does not follow by simply inserting inf A into the fixed-attack formulas. A useful endpoint is independent resampling. The attacker discards X, draws Ua ∼ qlat (·| S), and rerenders, giving [Ares ,s ]x,y = q0(y|s). Define 
+
+Dres ≜ E[da(X, ˜X)] , (61) where, conditioned on S, X and ˜X are independent draws from q0(·| S). Then 
+
+D ≥ Dres =⇒ Ccmp ,1(D, R k) = 0 . (62) This is a guaranteed zero-capacity threshold, not necessarily the smallest distortion at which some admissible attack can kill the watermark. 
+
+C. Scalar Gaussian Regeneration Geometry 
+
+We now specialize the regeneration model to the scalar Gaussian renderer (38), while retaining the original information pattern: the random context Sn is known noncausally to the watermark encoder, the detector does not observe Sn, and the attacker may use S as allowed in Sec. VI-A. Define the residual 
+
+¯X ≜ X − aS = U + Z, (63) where σ2¯X = σ2 
+
+> U
+
++ σ2 
+
+> Z
+
+and σ2 
+
+> S
+
+= Var( S). The residual is an analytical device; the detector continues to observe only the attacked public sample and the secret key. A same-generator rerender takes the form Y = aS + Ua + Za,
+
+with fresh renderer noise Za ∼ N (0 , σ 2 
+
+> Z
+
+). Exact preservation of the conditional Gaussian output law requires, for every relevant s,
+
+Y |S = s ∼ N (as, σ 2¯X ). (64) Equivalently, with ¯Y ≜ Y − aS , we have ¯Y |S = s ∼ N (0 , σ 2¯X ) for every s, and hence ¯Y ⊥ S. Gaussian deconvolution further gives Ua|S = s ∼ N (0 , σ 2 
+
+> U
+
+) for every s.19 
+
+Under squared-error attack distortion, the context shift cancels and E[( X − Y )2] = E[( ¯X − ¯Y )2]. Therefore the minimum genuine rerendering distortion remains Dmin = 2 σ2¯X − 2σ ¯X σU . A stochastic renderer necessarily injects fresh noise on every genuine rerender, so Dmin > 0 whenever σ2 
+
+> Z
+
+> 0; if σ2 
+
+> Z
+
+= 0 , then Dmin = 0 .For the canonical Gaussian regeneration family, let Ua = β ¯X + Na, where independent Gaussian Na is chosen so that Ua has the required marginal. The attacked residual satisfies 
+
+¯Y = β ¯X + W, (65) where W is independent Gaussian with variance σ2¯X (1 − β2). The distortion is D(β) = 2 σ2¯X (1 − β), so 
+
+β(D) = 1 − D
+
+2σ2¯X
+
+. (66) For Dmin ≤ D ≤ Dres , where Dres = 2 σ2¯X , the canonical remapping is renderer-realizable exactly when Var( Na) = 
+
+σ2 
+
+> U
+
+−β2σ2¯X ≥ 0. In the range above, this is 0 ≤ β ≤ σU /σ ¯X . Thus the lower endpoint is the least-distorting genuine rerender and the upper endpoint is independent resampling. Below Dmin , the genuine one-pass attack family is empty, rather than a family whose capacity is given by extrapolating the formula. 
+
+D. One-Pass Gaussian Compound Capacity 
+
+Let CGcmp ,1(D, R k) be the largest watermark rate achieved by one code and one detector uniformly over the full one-pass scalar Gaussian family Areg (D) defined above. The detector remains the base-model detector gn(Y n, K )
+
+and therefore does not know Sn.
+
+Theorem 4 (One-pass compound Gaussian capacity) . For the scalar Gaussian model (38) with squared-error attack distortion and the full renderer-realizable one-pass family Areg (D), for Dmin ≤ D ≤ Dres ,
+
+CGcmp ,1(D, R k) = 12 log σ2¯X
+
+σ2¯X − β(D)2σ2 
+
+> U
+
+(1 − 2−2Rk ) . (67) 
+
+Moreover, CGcmp ,1(D, R k) = 0 for D ≥ Dres . The canonical Gaussian regeneration (65) is least favorable over the full admissible one-pass family, and one common state-adapted Gaussian watermark construction achieves (67) 
+
+uniformly over that family. 
+
+The achievability combines the common-auxiliary compound Gel’fand–Pinsker covering/packing structure [32] with the latent-synthesis and exactification requirements of the present problem. A single attack-independent Costa-type auxiliary adapts to the random context while a universal compound decoder operates directly on the attacked sample Y n, without observing Sn. App. E gives the details. In this scalar model, the same capacity value also holds over the larger class of all memoryless state-dependent Gaussian-output-preserving attacks with distortion at most D, throughout Dmin ≤ D ≤ Dres .
+
+E. Repeated Regeneration and Watermark Survival 
+
+Prior work studies diffusive and regeneration attacks that degrade or remove image watermarks [25], [26]. The result below is a distortion-parameterized capacity calculation for a specified canonical Gaussian channel sequence; it retains the random hidden-context information pattern of Thm. 4. 20 
+
+For the ℓ-th regeneration round of the canonical Gaussian model, write 
+
+¯X[ℓ] = β(D) ¯X[ℓ−1] + Wℓ. (68) Every residual ¯X[ℓ] is independent of S and distributed as N (0 , σ 2¯X ), so each regenerated public sample preserves the desired conditional law exactly. Iterating (68) and collecting the independent Gaussian noises gives 
+
+X[L] = aS + β(D)LU + NL, (69) where NL ⊥ (S, U ) is Gaussian with variance σ2¯X − β(D)2Lσ2 
+
+> U
+
+. After L additional renderer uses, the original latent contribution is attenuated by β(D)L. The effective renderer-visible SNR is 
+
+γL(D) = β(D)2Lσ2
+
+> U
+
+σ2¯X − β(D)2Lσ2
+
+> U
+
+. (70) The effective renderer (69) is jointly Gaussian, so Thm. 3 applies directly and shows that hiding the context from the detector causes no capacity loss. Hence the exact canonical repeated-regeneration curve is 
+
+CG 
+
+> L
+
+(D, R k) = 12 log σ2¯X
+
+σ2¯X − β(D)2Lσ2 
+
+> U
+
+(1 − 2−2Rk ) . (71) For this canonical family, CG 
+
+> L
+
+is nonincreasing in both D and L, and if |β(D)| < 1, then CG 
+
+> L
+
+(D, R k) → 0 as 
+
+L → ∞ .In particular, for a stochastic renderer σ2 
+
+> Z
+
+> 0, β(Dmin ) = σU 
+
+> σ¯X
+
+< 1, so even the least-distorting genuine canonical rerender eventually drives every positive target watermark rate below threshold. The distortion D is imposed per renderer reuse . Under the canonical family, the end-to-end distortion after 
+
+L passes is D(L)end = 2 σ2¯X
+
+ 1 − β(D)L, which generally differs from D. Thus L regeneration rounds cannot be reinterpreted as one distortion-D attack. For a target rate 0 < R ≤ CG0 (Rk), define the survival horizon, where CG0 (Rk) denotes the unattacked scalar capacity and L = 0 means no regeneration, 
+
+LGsurv (R; D, R k) = max {L ≥ 0 : CG 
+
+> L
+
+(D, R k) ≥ R}. (72) Let 
+
+ρR(Rk) = σ2¯X
+
+σ2
+
+> U
+
+1 − 2−2R
+
+1 − 2−2Rk
+
+. (73) For Rk > 0, 0 < β (D) < 1, and 0 < ρ R(Rk) ≤ 1 (equivalently, the target is feasible without attack), 
+
+LGsurv (R; D, R k) = 
+
+ ln ρR(Rk)2 ln β(D)
+
+
+
+. (74) A value of zero means that the target is achievable before attack but no positive number of passes preserves it. If ρR(Rk) > 1, the target is already infeasible without regeneration and the defining set is empty. At D =
+
+Dres , β(D) = 0 and the survival horizon is zero for every positive feasible target. These conventions avoid extrapolating (74) outside its stated domain. Thm. 4 concerns the full one-pass scalar Gaussian attack family with random context hidden from the detector. Equation (71) instead concerns repeated canonical Gaussian regeneration under the same information pattern. It is not an unrestricted multiround minimax result: the canonical attack is not claimed to be least favorable over arbitrary L > 1 attack sequences. 21 1 2 3 4 5 6 7 8Regeneration attack rounds L                 
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6
+> CG
+> L (D, Rk) (bits/sample)
+> D= 0
+> D= 0.25
+> D= 0.5
+> D= 0.75
+> D= 1
+> Fig. 4. Canonical Gaussian watermark capacity versus regeneration attack rounds Lfor several normalized per-pass distortion levels δD.Parameters are σ2
+> Z= 1 ,σ2
+> U= 4 , and Rk= 2 bits/sample.
+
+F. Numerical Illustration of Regeneration Survival 
+
+Figure 4 plots (71) versus the number of regeneration attack rounds L for fixed normalized per-pass distortions 
+
+δD ≜ D − Dmin 
+
+Dres − Dmin 
+
+∈ { 0, 0.25 , 0.5, 0.75 , 1}. (75) The parameters are σ2 
+
+> Z
+
+= 1 , σ2 
+
+> U
+
+= 4 , and Rk = 2 bits/sample. For any fixed attack severity, the plot directly shows the progressive loss of watermark rate across repeated same-generator regeneration. The endpoints δD = 0 and 
+
+δD = 1 correspond to the least-distorting genuine rerender and independent resampling, respectively. VII. D ISCUSSION 
+
+We studied latent-space watermarking through a fixed pretrained generator. The encoder controls the latent input, but reliable recovery depends on how the generator transforms that input into the released sample. The Gaussian case gives a useful illustration of this distinction. Even when the latent prior is isotropic, the generator need not preserve information equally well in every direction. The optimal key allocation accounts for these differences and, when the key rate is small, concentrates the available key on the stronger modes. This suggests that watermark design should account for the generator’s behavior, even when the generator itself is not modified. The same generator also provides a natural way to study regeneration attacks. In the scalar Gaussian model, a single state-adapted watermark code and context-blind detector can be made robust to the full admissible one-pass attack family, even though the attack itself may use the semantic context. Repeated canonical regeneration can nevertheless progressively reduce the recoverable watermark rate while preserving the desired conditional output distribution at every round. Thus, preserving the statistical properties of an ordinary generation does not by itself protect the watermark. Extending the compound minimax analysis to arbitrary multiround attack sequences, beyond the canonical Gaussian family considered here, remains an interesting direction for further work. 22 
+
+APPENDIX APROOF OF THEOREM 1: A CHIEVABILITY 
+
+In this appendix, we prove the achievability part of Thm. 1. For a fixed p ∈ P(q0; qr), we first establish the standard state-dependent synthesis and packing conditions in the native variables (S, V, U, X ). We then address the step specific to the present problem: the preliminary synthesis construction only approximates the desired key-averaged latent distribution, whereas (11) requires finite-block exact message-wise output preservation. We therefore finish the proof by a conditional maximal-coupling exactification before the fixed renderer. Fix p ∈ P(q0; qr). Its conditional latent marginal is p(u|s) ≜ P 
+
+> v
+
+p(v, u |s). Since p ∈ P(q0; qr),
+
+X
+
+> u
+
+p(u|s)qr(x|u, s ) = q0(x|s). (76) The exactification target is this selected p(u|s), not necessarily qlat (u|s); both produce the same desired output, but the general problem does not require them to agree. Generate a random codebook whose codewords V n(m, ℓ, k ) are drawn independently according to Qni=1 p(vi).Here m and k are the message and key indices, while ℓ ∈ [1 : 2 n ˆR] is an internal randomization index. Condition on a realization of this codebook. Given (sn, m, k ), the likelihood encoder selects ℓ using the posterior 
+
+p(ℓ|sn, m, k ) = 
+
+Qni=1 p(si|vi(m, ℓ, k )) 
+
+P
+
+> ℓ′
+
+Qni=1 p(si|vi(m, ℓ ′, k )) . (77) If the denominator is zero, use any fixed distribution over the index set. Selecting V n = vn(m, ℓ, k ) induces the likelihood-encoder distribution p(vn|sn, m, k ). The single-letter factors p(s|v) are obtained from the chosen 
+
+p(s, v, u, x ); the block likelihood encoder is not assumed to be the memoryless extension of p(v|s) [33]. Given the selected auxiliary sequence V n, generate a preliminary latent sequence ¯U n through the memoryless extension of the latent-completion kernel: 
+
+p(¯ un|sn, v n) = 
+
+> n
+
+Y
+
+> i=1
+
+p(¯ ui|si, v i). (78) Each factor is the same single-letter kernel p(u|s, v ) evaluated at (u, s, v ) = (¯ ui, s i, v i). We call (78) the memoryless latent-completion kernel . The bar distinguishes the latent produced by this preliminary construction from the final latent U n: a later encoder-local correction will enforce exactness at the renderer input, before public generation. In particular, 
+
+p(¯ un|sn, m, k ) = X
+
+> vn
+
+p(vn|sn, m, k )p(¯ un|sn, v n). (79) For each fixed (m, k ), the likelihood encoder and high-probability soft covering for the channel V → S give simultaneous approximation of the source product distribution whenever 
+
+ˆR > I (V ; S). (80) For each fixed message m, averaging over the aggregate (k, ℓ ) subcodebook synthesizes the target pair (S, U )
+
+whenever 
+
+Rk + ˆR > I (V ; S, U ). (81) 23 
+
+The likelihood encoder uses the ideal posterior associated with the selected target distribution [33]. Standard packing over the induced V → X channel gives reliable decoding, with K available at the detector, if 
+
+R + ˆR < I (V ; X). (82) Cuff’s high-probability soft-covering theorem makes the two covering conditions hold simultaneously over the exponentially many relevant subcodebooks [34], while standard random-coding packing makes the packing-good event hold with probability tending to one. Hence their intersection is nonempty, and a deterministic codebook satisfying all three properties exists. In particular, the preliminary latent sequence from (78) satisfies 
+
+max  
+
+> m
+
+δn(m) → 0, (83) where 
+
+δn(m) ≜ p(sn, ¯un|m) −
+
+> n
+
+Y
+
+> i=1
+
+q0(si)p(¯ ui|si)
+
+> TV
+
+. (84) Eliminating ˆR from (80)–(82) yields 
+
+R < I (V ; X) − I(V ; S), (85) 
+
+Rk > R + I(V ; S, U |X), (86) where the second identity uses the Markov relation V − (S, U ) − X.It remains to replace the preliminary approximation (84) by the exact condition required by the watermarking problem. The two joint distributions in (84) have the same Sn marginal. For every (sn, m ) define 
+
+δn(sn, m ) ≜ p(¯ un|sn, m ) −
+
+> n
+
+Y
+
+> i=1
+
+p(¯ ui|si)
+
+> TV
+
+. (87) Then 
+
+δn(m) = X
+
+> sn
+
+" nY
+
+> i=1
+
+q0(si)
+
+#
+
+δn(sn, m ). (88) For each (sn, m ), choose a maximal coupling between the two conditional distributions in (87) [35]. Equivalently, there exists a latent-exactification kernel p(un|sn, m, ¯un) that uses only (Sn, M, ¯U n) and encoder-private random-ness and whose output U n satisfies 
+
+p(un|sn, m ) = 
+
+> n
+
+Y
+
+> i=1
+
+p(ui|si) (89) exactly, with P{U n̸ = ¯U n|M = m} = δn(m). This block kernel is constructed from the key-averaged preliminary distribution and is not generally memoryless. It uses (Sn, M, ¯U n) and private randomness, but need not observe or modify K, so it consumes no additional secret-key rate. Exactification takes place at the latent input, leaving the physical renderer unchanged. The encoder knows the conditioning variables (sn, m ) and can implement this correction locally. Wagner’s near-perfect-to-perfect realism argument uses the same excess/deficit-mass correction at a reconstruction marginal [28, Theorem 1]. In remote exact channel synthesis, an output-generating decoder generally does not know the source conditioning the target channel, so this local correction is not automatically available at no rate cost [36]. 24 
+
+The likelihood encoder, latent-completion kernel, and latent-exactification kernel are internal stages realizing one watermark latent encoder: 
+
+p(un|sn, m, k )= X
+
+> vn,¯un
+
+p(vn|sn, m, k )p(¯ un|sn, v n)
+
+· p(un|sn, m, ¯un). (90) This expression records the side information retained at each stage; in particular, the exactification kernel still depends on the message and context. The construction does not impose this factorization on a generic code in Def. 1. Passing the exactified latent through the unchanged renderer gives, for every (sn, m ),
+
+p(xn|sn, m )= X
+
+> un
+
+" nY
+
+> i=1
+
+p(ui|si)
+
+# " nY
+
+> i=1
+
+qr(xi|ui, s i)
+
+#
+
+=
+
+> n
+
+Y
+
+> i=1
+
+q0(xi|si), (91) where the last equality follows from (76). Thus the finite-block exact output requirement (11) holds message-wise. Finally, couple the preliminary and exactified renderer outputs using the same downstream renderer randomness whenever U n = ¯U n. If Ppre  
+
+> e,n
+
+and Pex  
+
+> e,n
+
+denote the corresponding average decoding errors for the selected deterministic codebook, then Pex  
+
+> e,n
+
+≤ Ppre  
+
+> e,n
+
++ max m δn(m). The two terms on the right tend to zero by packing and (83), respectively. Thus the strict component inequalities in Thm. 1 are achievable. Standard coded time sharing yields the convex hull stated there. The closure operation belongs to the capacity-region definition in Sec. II, not to the achievability statement itself. APPENDIX BPROOF OF THEOREM 1: C ONVERSE 
+
+In this appendix, we prove the converse part of Thm. 1. We first use the exact message-wise output constraint to obtain a product distribution and a key-accounting inequality. We then apply the standard Csisz´ ar/Gel’fand–Pinsker single-letterization to the message and key bounds. Exact conditional equality (11) implies, for every message m,
+
+p(sn, x n|m) = 
+
+> n
+
+Y
+
+> i=1
+
+q0(si)q0(xi|si). (92) 25 
+
+Hence M ⊥ (Sn, X n). Let W ≜ (M, K ). By Fano’s inequality, H(M |Xn, K ) ≤ nϵ n, ϵ n → 0. To bound the key rate, 
+
+nR k = H(K)
+
+≥ I(K; M, S n|Xn)= I(K; M |Xn) + I(K; Sn|M, X n)
+
+> (a)
+
+≥ nR + I(W ; Sn|Xn) − nϵ n, (93) where (a) uses I(K; M |Xn) = H(M ) − H(M |Xn, K ) ≥ nR − nϵ n, since M ⊥ Xn, and I(K; Sn|M, X n) = 
+
+I(W ; Sn|Xn), since M ⊥ (Sn, X n) and W = ( M, K ).For the message rate, 
+
+nR = H(M )
+
+≤ I(M ; Xn|K) + nϵ n
+
+≤ I(W ; Xn) − I(W ; Sn) + nϵ n, (94) where I(W ; Sn) = 0 since (M, K ) is independent of the source sequence. Define 
+
+Vi ≜ (W, X i−1, S ni+1 ). (95) Using the Csisz´ ar sum identity in the standard Gel’fand–Pinsker single-letterization [27], together with the product distribution (92), 
+
+I(W ; Xn) − I(W ; Sn) = 
+
+> n
+
+X
+
+> i=1
+
+I(Vi; Xi) − I(Vi; Si). (96) For the key term, 
+
+I(W ; Sn|Xn) = H(Sn|Xn) − H(Sn|W, X n)=
+
+> n
+
+X
+
+> i=1
+
+H(Si|Xi) −
+
+> n
+
+X
+
+> i=1
+
+H(Si|W, X n, S ni+1 )
+
+> (a)
+
+≥
+
+> n
+
+X
+
+> i=1
+
+h
+
+H(Si|Xi) − H(Si|W, X i, S ni+1 )
+
+i
+
+=
+
+> n
+
+X
+
+> i=1
+
+I(Vi; Si|Xi). (97) where (a) follows because conditioning reduces entropy. By the memoryless renderer law, p(xi|si, v i, u i) = qr(xi|ui, s i). Let Q ∼ Unif[1 : n] be independent of all other variables and define S = SQ, U = UQ, X = XQ, and V = ( VQ, Q ). Then, 
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+I(Vi; Xi) − I(Vi; Si) = I(V ; X) − I(V ; S), (98) 
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+I(Vi; Si|Xi) = I(V ; S|X). (99) 26 
+
+The time-shared distribution satisfies the renderer factorization by memorylessness and p(s, x ) = q0(s, x ) by (92); hence it belongs to P(q0; qr). Combining (94), (96), (93), and (97), dividing by n, and letting n → ∞ yields (16)– (17). Finally, standard support reduction preserves the required source/latent marginal together with the two information functionals, so the auxiliary alphabet may be restricted to |V| ≤ |S||U| + 1 [27], [37]. 
+
+A. A Strict-Looseness Example for the General Converse 
+
+We close the proof of Thm. 1 by giving the counterexample referenced in Rem. 1. Let the semantic source be constant and the physical latent be U = ( U1, U 2) ∈ { 0, 1}2, with U1 and U2 independent Bern(1 /2) bits under ordinary generation. The fixed renderer outputs X = ( F, X b) according to 
+
+F ∼ Unif[1 : 2] , Xb = UF ⊕ Z, Z ∼ Bern( δ), (100) where F and Z are independent of the latent and 0 < δ < 1/2. The prescribed desired output distribution is then q0(f, x b) = 14 . Let h2(·) denote the binary entropy function, let h−12 take values in [0 , 1/2] , let a ⋆ b =
+
+a(1 − b) + (1 − a)b, and define 
+
+gδ (r) ≜ 1 − h2
+
+ δ ⋆ h −12 (1 − min {r, 1}) . (101) 
+
+Proposition 1 (Strict looseness of the general converse) . For the renderer (100) and desired distribution q0(f, x b) =  
+
+> 14
+
+, the operational capacity and the outer bound in Thm. 1 are, respectively, 
+
+C(Rk) = gδ (Rk), (102) 
+
+C(Rk) = min {Rk, 1 − h2(δ)}. (103) 
+
+Consequently, for every 0 < R k < 1 and 0 < δ < 1/2,
+
+gδ (Rk) < min {Rk, 1 − h2(δ)}. (104) 
+
+Thus the inner construction is optimal and the gap in Thm. 1 is a converse deficiency. For this two-coordinate renderer, the diagonal and independent latent distributions give different preimages of the same q0, so UP fails. Hence the example demonstrates inner-bound optimality outside the identifiable class. Proof. For a selector sequence f n ∈ [1 : 2] n, define the selected latent bits Bnf n ≜ (U1,f 1 , . . . , U n,f n ), where 
+
+Ui = ( Ui, 1, U i, 2) denotes the physical latent at time i. The selector F n is fresh renderer randomness and is independent of the encoder variables. By the exact output requirement, conditioned on (M = m, F n = f n) the binary output Xn 
+
+> b
+
+is uniform on {0, 1}n. The product BSC (δ) is distributionally injective, so its input must also be uniform. Writing bn for a realization of Bnf n ,
+
+p(bn|m, f n) = 2 −n, bn ∈ { 0, 1}n. (105) 27 
+
+Hence Bnf n ⊥ M and H(Bnf n ) = n. With W = ( M, K ),
+
+I(W ; Bnf n |F n = f n) = I(K; Bnf n |M, F n = f n) (106) 
+
+≤ H(K) ≤ nR k, (107) 
+
+1
+
+n H(Bnf n |W, F n = f n) ≥ (1 − Rk)+. (108) The conditional vector form of Mrs. Gerber’s lemma [38], applied to the BSC (δ), therefore gives 
+
+1
+
+n H(Xn 
+
+> b
+
+|W, F n = f n) ≥ h2
+
+ δ ⋆ h −12 ((1 − Rk)+) . (109) Since exact output preservation also gives H(Xn 
+
+> b
+
+|F n) = n, Fano’s inequality yields 
+
+nR ≤ I(M ; F n, X n 
+
+> b
+
+|K) + nϵ n (110) 
+
+≤ I(W ; Xn 
+
+> b
+
+|F n) + nϵ n (111) 
+
+≤ ng δ (Rk) + nϵ n, (112) with ϵn → 0. This proves the converse in (102). For achievability, restrict the physical latent to the diagonal form U = ( A, A ) with A ∼ Bern(1 /2) , and choose a binary auxiliary V = A ⊕ Nt with Nt ∼ Bern( t) independent. Then the desired output distribution is uniform on 
+
+{1, 2} × { 0, 1}, and I(V ; U ) = 1 − h2(t) and I(V ; X) = 1 − h2(δ ⋆ t ). At the full rate R = I(V ; X) in closure, the inner key requirement in Thm. 1 reduces to Rk ≥ I(V ; U ). Choosing t so that 1 − h2(t) = min {Rk, 1} achieves 
+
+R = gδ (Rk), proving (102). For the two-coordinate construction, the diagonal achieving distribution preserves the released-output law but not the pretrained product latent law. Thus the example also separates output preservation from the additional latent-preservation constraint in Cor. 1. Finally, for every admissible auxiliary distribution in the outer bound, data processing gives R ≤ I(V ; X) ≤
+
+I(U ; X) = 1 − h2(δ), where the last equality follows from the uniform desired output distribution and the fact that every renderer row has conditional entropy 1 + h2(δ). The outer key condition gives R ≤ Rk. Conversely, the same diagonal latent with V = A attains the outer ceiling, yielding (103). For 0 < R k < 1, the shaping parameter satisfies 0 < t < 1/2; strict data processing through the nontrivial BSC gives gδ (Rk) < R k, while δ ⋆ t > δ gives 
+
+gδ (Rk) < 1 − h2(δ). The strict inequality follows. For comparison, consider the one-coordinate specialization obtained by removing the selector F and taking a scalar latent U ∈ { 0, 1} with renderer X = U ⊕ Z. This renderer is a distributionally injective BSC and satisfies the UP condition in Def. 2. The same capacity and general-outer-bound formulas above yield the same strict gap for 0 < R k < 1. Thus preimage ambiguity is not the cause of the general outer-bound looseness. 28 
+
+APPENDIX CPROOF OF LEMMA 1 AND THEOREM 2Fix a relevant context value s and let Us ≜ supp qlat (·| s). Consider the renderer matrix Ws whose row indexed by u ∈ U s is qr(·| u, s ). We first show that these rows are linearly independent. Otherwise there would exist a nonzero real vector z, supported on Us, such that 
+
+X
+
+> u
+
+z(u)qr(x|u, s ) = 0 for every x. (113) Since every renderer row sums to one, summing (113) over x gives P 
+
+> u
+
+z(u) = 0 . Because qlat (u|s) > 0 on Us,sufficiently small perturbations qlat (·| s)±ϵz remain probability distributions and both render to q0(·| s), contradicting Def. 2. Hence Ws has full row rank on Us.We now prove the block identification in Lem. 1. Fix a message m and a relevant context sequence sn. For each coordinate i, define the key-averaged latent marginal μi(u) ≜ p(ui|sn, m ). Marginalizing the exact output constraint (11) to coordinate i gives P 
+
+> u
+
+μi(u)qr(x|u, s i) = q0(x|si) for every x. Thus μi ∈ P si (q0; qr). Recall that Ps(q0; qr) is the preimage set defined in (27); by the UP condition in Def. 2, this set contains only the pretrained latent law qlat (·| s). Hence μi(u) = qlat (u|si). Consequently, the full key-averaged conditional distribution 
+
+p(un|sn, m ) is supported on Qni=1 Usi .On this product support, let Wsn denote the Kronecker product of the renderer matrices Ws1 , . . . , W sn . Because each Wsi has full row rank, Wsn also has full row rank. Hence the product renderer is injective on probability distributions supported on Q 
+
+> i
+
+Usi . The operational key-averaged latent distribution satisfies 
+
+X
+
+> un
+
+p(un|sn, m )
+
+> n
+
+Y
+
+> i=1
+
+qr(xi|ui, s i) = 
+
+> n
+
+Y
+
+> i=1
+
+q0(xi|si) (114) by exact output preservation. The ordinary product latent distribution satisfies the same equation: 
+
+X
+
+> un
+
+" nY
+
+> i=1
+
+qlat (ui|si)
+
+# " nY
+
+> i=1
+
+qr(xi|ui, s i)
+
+#
+
+=
+
+> n
+
+Y
+
+> i=1
+
+q0(xi|si). (115) Injectivity of Wsn therefore forces 
+
+p(un|sn, m ) = 
+
+> n
+
+Y
+
+> i=1
+
+qlat (ui|si), (116) which proves Lem. 1. We next prove the strengthened converse in Thm. 2, only highlighting the key differences from the converse of Thm. 1. To that end, Lem. 1 and the memoryless renderer give, for every message m,
+
+p(sn, u n, x n|m) = 
+
+> n
+
+Y
+
+> i=1
+
+qpre (si, u i, x i), (117) which also implies M ⊥ (Sn, U n, X n). Repeat the key-accounting steps leading to (93), with (Sn, U n) in place of Sn, which gives 
+
+H(K) ≥ H(M ) + I(W ; Sn, U n|Xn) − nϵ n. (118) Using (117), we have 
+
+I(W ; Sn, U n|Xn) ≥
+
+> n
+
+X
+
+> i=1
+
+I(Vi; Si, U i|Xi), (119) 29 
+
+where Vi is defined in (95). By the same time-sharing steps as in App. B, Rk ≥ R + I(V ; S, U |X), while the message-rate converse is unchanged. This matches the closure of the achievable component of Thm. 1, proving the capacity region in Thm. 2. It remains to prove the equivalent capacity form (30). For any admissible conditional pmf p(v, u |s) whose 
+
+U -marginal is the pretrained latent law qlat (u|s), define A ≜ I(V ; X) − I(V ; S) and J ≜ I(V ; U |S). Since 
+
+V − (S, U ) − X,
+
+J − A = I(V ; S, U |X) ≥ 0. (120) For this fixed conditional pmf, Thm. 2 permits 
+
+R ≤ min {A, R k + A − J}. (121) If J ≤ Rk, the key constraint is inactive and the minimum in (121) is A. Suppose instead that J > R k. Let 
+
+θ ≜ Rk 
+
+> J
+
+, and let Q ∼ Bern( θ) be independent of (S, V, U, X ). Define a new auxiliary V ′ by retaining V when 
+
+Q = 1 and replacing it by a fixed erasure symbol when Q = 0 . This independent erasure leaves the pretrained latent law qlat (u|s) unchanged and gives 
+
+I(V ′; U |S) = θJ = Rk, (122) 
+
+I(V ′; X) − I(V ′; S) = θA. (123) Moreover, 
+
+θA − (Rk + A − J) = (1 − θ)( J − A) ≥ 0 (124) by (120). Thus any nonnegative rate available from a conditional pmf with J > R k can be matched or exceeded by another admissible auxiliary satisfying I(V ′; U |S) ≤ Rk. Therefore there is no loss in restricting the maximization to I(V ; U |S) ≤ Rk, which proves (30). APPENDIX DPROOF OF LEMMA 2 AND THEOREM 3In this appendix, we prove the effective-latent reduction in Lem. 2 and the vector-Gaussian capacity in Thm. 3. 
+
+A. Effective-Latent Reduction and Exact Deconvolution 
+
+Let μ(S) ≜ E[X|S], so that the Gaussian decomposition in (33) is X = μ(S) + T + Z, where T ⊥ S and 
+
+Z ⊥ (S, U ), with ΣZ = Σ X|S,U ≻ 0. We first prove Lem. 2. Any physical-latent watermark encoder producing Ui
+
+also produces Ti = E[Xi|Si, U i] − E[Xi|Si] deterministically, where these conditional-mean functions are fixed by 
+
+qpre , and the conditional renderer distribution depends on (Si, U i) only through (Si, T i). That is, conditioned on 
+
+Si, any change in Ui that does not change Ti does not affect the conditional renderer distribution. Conversely, suppose an effective-latent watermark construction specifies T n(Sn, M, K ) with each (Si, T i) lying almost surely in the support of the ordinary (S, T ) distribution. Under qpre , fix a regular conditional distribution 30 
+
+qpre (u|s, t ). After producing T n, the physical encoder generates the latent coordinates using private randomness according to 
+
+p(un|sn, t n) = 
+
+> n
+
+Y
+
+> i=1
+
+qpre (ui|si, t i). (125) For every (si, t i) in the support of the ordinary (S, T ) distribution, this conditional distribution satisfies the defining relation between Ui and Ti almost surely. Hence applying the unchanged renderer after (125) produces the same Gaussian conditional distribution, i.e., Xi conditioned on (Si = si, T i = ti) follows N  μ(si) + ti, ΣZ
+
+.
+
+Thus the composition of the lift in (125) with the unchanged physical renderer is exactly the effective renderer on every support-compatible (sn, t n). Consequently, the lifted physical-latent code induces the same output distribution and the same decoding performance as the effective-latent code, proving Lem. 2. We next establish the separate identification consequence needed for Thm. 3: exact output preservation fixes the entire key-averaged block distribution of the effective latent T n. Fix a message m and a context sequence sn. Let 
+
+˜T n denote the key-averaged renderer-visible innovation induced by an arbitrary exact code. That is, for each i,
+
+Xi = μ(si) + ˜Ti + Zi, where the Zi are independent N (0 , ΣZ ) and independent of all upstream variables. For 
+
+tn = ( t1, . . . , t n), the noise characteristic function is 
+
+ϕZn (tn) = 
+
+> n
+
+Y
+
+> i=1
+
+exp 
+
+
+
+− 12 tT 
+
+> i
+
+ΣZ ti
+
+
+
+, (126) which is nowhere zero. Exact output preservation gives the desired conditional product distribution Qni=1 q0(xi|si).Hence 
+
+ϕXn−μ(sn)|Sn=sn,M =m(tn) = ϕ ˜T n|Sn=sn,M =m(tn)ϕZn (tn), (127) 
+
+ϕ ˜T n|Sn=sn,M =m(tn) = 
+
+> n
+
+Y
+
+> i=1
+
+exp 
+
+
+
+− 12 tT 
+
+> i
+
+ΣT ti
+
+
+
+,
+
+where the second line follows by division by the nonzero noise factor. Therefore 
+
+˜T n | (Sn = sn, M = m) ∼
+
+> n
+
+Y
+
+> i=1
+
+N (0 , ΣT ) (128) for every (sn, m ). In particular, exact output preservation fixes the entire key-averaged block distribution of the effective latent ˜T n in (128), including independence across coordinates. This identification property is used in the finite-key converse below. 
+
+B. Key-Conditioned Domination 
+
+Before applying conditional differential-entropy inequalities, we show a regularity consequence of the finite key. Fix (sn, m ) and a key value k with probability p(k) > 0. Let μk denote the conditional probability measure of 
+
+˜T n given (sn, m, k ) and let G denote its key-averaged conditional probability measure given (sn, m ), which is the Gaussian measure in (128). Since G = P 
+
+> k
+
+p(k)μk, for every measurable set B, p(k)μk(B) ≤ G(B). Thus μk ≪ G
+
+and 
+
+dμ k
+
+dG ≤ 1
+
+p(k) G-a.e. ,D(μk∥G) ≤ log 1
+
+p(k) . (129) 31 
+
+In particular, each key-conditioned component inherits finite second moments and finite relative entropy with respect to G. Differential entropies below are taken on the active Gaussian support, after zero-variance modes are removed. The Gaussian entropy identity and (129) then justify the conditional entropy quantities in the EPI argument. 
+
+C. Vector Converse 
+
+We next prove the capacity upper bound in Thm. 3. Whiten the renderer noise and rotate into an eigenbasis of 
+
+Γ. On each active mode, write the transformed renderer output as 
+
+Wj = Ej + Nj , Ej ∼ N (0 , γ j ), Nj ∼ N (0 , 1) , (130) with independent modes. Modes with γj = 0 contribute zero rate and may be omitted from the differential-entropy calculation. For the nth code, let Rn and Rk,n denote its message and key rates. Let En = ( En 
+
+> 1
+
+, . . . , E nd ) and W n =(W n 
+
+> 1
+
+, . . . , W nd ) collect the length-n sequences across the renderer-visible modes. By (128), the distribution of En
+
+after averaging over the key is the ordinary product Gaussian distribution and is independent of (Sn, M ). Therefore 
+
+I(Sn, M, K ; En) = I(K; En|Sn, M ) ≤ H(K) ≤ nR k,n . (131) Define the modewise key-information quantities 
+
+rj,n ≜ 1
+
+n I(Sn, M, K ; Enj |En 
+
+> 1
+
+, . . . , E nj−1). (132) The chain rule and (131) give X
+
+> j
+
+rj,n ≤ Rk,n . (133) Since the unconditional E modes are independent Gaussian, 
+
+h(Enj |Sn, M, K, E n 
+
+> 1
+
+, . . . , E nj−1) = n
+
+2 log(2 πeγ j ) − nr j,n . (134) Given (Sn, M, K, E n 
+
+> 1
+
+, . . . , E nj−1), the noises in the previous output modes are independent of W nj , so conditional data processing gives 
+
+h(W nj |Sn, M, K, W n 
+
+> 1
+
+, . . . , W nj−1) ≥ h(W nj |Sn, M, K, E n 
+
+> 1
+
+, . . . , E nj−1). (135) Since N nj is independent of (Enj , S n, M, K, E n 
+
+> 1
+
+, . . . , E nj−1), the conditional entropy-power inequality [27], together with (134), gives 
+
+h(W nj |Sn, M, K, E n 
+
+> 1
+
+, . . . , E nj−1) ≥ n
+
+2 log  2πe [1 + γj 2−2rj,n ] . (136) The domination bound (129) ensures that the conditional entropy quantities used here are well-defined. Since exact output preservation fixes h(W nj ) = n 
+
+> 2
+
+log(2 πe (1 + γj )) , we obtain 
+
+I(Sn, M, K ; W n) = X
+
+> j
+
+h(W nj ) − h(W nj |Sn, M, K, W n 
+
+> 1
+
+, . . . , W nj−1)
+
+≤ n X
+
+> j
+
+12 log 1 + γj
+
+1 + γj 2−2rj,n . (137) 32 
+
+For the converse, we additionally reveal Sn to the detector. Fano’s inequality and the invertible whitening/rotation of the centered output give 
+
+nR n ≤ I(M ; Xn|Sn, K ) + nϵ n ≤ I(Sn, M, K ; W n) + nϵ n, ϵn → 0. (138) The allocation vectors (r1,n , . . . , r d,n ) lie in a compact simplex by (133); passing to a convergent subsequence and using continuity yields a limiting allocation rj ≥ 0 with P 
+
+> j
+
+rj ≤ Rk. Combining with (137) gives the right side of (47). Since revealing the context Sn can only help the detector, this upper bound applies to both Cctx (Rk)
+
+and C(Rk). Because the objective is nondecreasing in every rj , any unused key budget may be assigned without decreasing the value, so the maximization may be written with P 
+
+> j
+
+rj = Rk as in Thm. 3. 
+
+D. Achievability and Key Allocation 
+
+We finally show that the base-model detector attains the converse. If γj = 0 for every j, the capacity is zero and the claim is immediate. Otherwise, in the whitened and rotated coordinates, write ¯X = ¯ μ(S) + ¯T + N, where the active coordinates satisfy ¯Tj ∼ N (0 , γ j ) and Nj ∼ N (0 , 1) independently, with both independent of S. This is a vector Gaussian dirty-paper channel with state ¯μ(S), input ¯T , and unit noise covariance. Let 
+
+Dα ≜ diag( αj ), αj = γj
+
+1 + γj
+
+, (139) and define the standard vector-DPC auxiliary V0 = ¯T + Dα ¯μ(S). The vector Gaussian dirty-paper result gives the Costa cancellation for the state ¯μ(S) [31], [39]. Since the transformed channel depends on S only through ¯μ(S),this gives I(V0; S| ¯X) = 0 .
+
+We impose the finite-key budget by independently degrading this vector-DPC auxiliary. Choose a nonnegative allocation (r1, . . . , r d) that attains the maximization in (47); all key can be assigned among modes with γj > 0, so 
+
+P 
+
+> j
+
+rj = Rk. For an active mode with rj > 0, let νj ≜ γj /(2 2rj − 1) and choose independent NV,j ∼ N (0 , ν j ).Define 
+
+Vj = V0,j + NV,j = ¯Tj + αj ¯μj (S) + NV,j . (140) Modes with rj = 0 or γj = 0 are omitted from the coding auxiliary and generated privately according to their ordinary Gaussian distribution. Conditioned on S, the deterministic shifts disappear, and (140) gives I(V ; T |S) = P 
+
+> j
+
+rj = Rk. Because V
+
+is obtained from V0 through independent Gaussian degradation, the Costa conditional independence is preserved. Since the whitening/rotation is invertible, equivalently I(V ; S|X) = 0 . Consequently, 
+
+I(V ; X) − I(V ; S) = I(V ; X|S)= X
+
+> j
+
+12 log 1 + γj
+
+1 + γj 2−2rj . (141) It remains to meet the finite-block exactness criterion. The exactification step follows the same conditional maximal-coupling argument as App. A, now applied to the effective latent T n, so we only summarize the Gaussian adaptation. For this memoryless nonsingular Gaussian law, the general-source/channel soft-covering theorem applies: 33 
+
+the relevant information density has finite moments, so the i.i.d. law of large numbers gives the usual mutual-information threshold, and the likelihood-encoder formulation has no finite-alphabet restriction [33], [40]. Apply the likelihood-encoding/soft-covering construction to the effective latent T with the auxiliary in (140). For message 
+
+m, let δn(m) denote the preliminary synthesis error in total variation, and define the message-average error ¯δn ≜
+
+> 1
+> |M n|
+
+P 
+
+> m∈M n
+
+δn(m). The random-coding analysis gives an ensemble for which the expected ¯δn and the expected average decoding error both tend to zero. Hence a deterministic codebook can be selected for which both quantities vanish. Retain only messages satisfying δn(m) ≤ p¯δn. By Markov’s inequality, the removed fraction is at most 
+
+p¯δn → 0, so the asymptotic message rate is unchanged and the retained messages satisfy max m δn(m) → 0.Since the retained fraction tends to one, their average decoding error also remains vanishing. Apply the conditional maximal-coupling correction from App. A, now with T n as the exactified latent. The correction forces the product Gaussian distribution (128) exactly for every retained message, and its mismatch probability changes the average decoding error by at most max m δn(m) → 0. Finally, generate any inactive modes privately and implement the resulting T n construction through the physical latent by (125). Hence the base-model detector achieves (141), matching the converse. For completeness, optimizing the allocation in (47) is a standard KKT calculation for a separable concave program [41]. Differentiating the Lagrangian over the active modes gives 22rj = γj 
+
+> λ
+
+for a common threshold λ,which is equivalent to (49). APPENDIX EPROOF OF THEOREM 4In this appendix, we prove the one-pass compound Gaussian capacity in Thm. 4 under the random hidden-context information pattern of the base model. For D ≥ Dres , independent resampling is admissible and gives zero capacity, so it remains to consider Dmin ≤ D < D res .Assume Rk > 0; the case Rk = 0 follows by continuity and gives zero rate. Fix a target rate strictly below the right side of (67). By continuity, choose r with 0 < r < R k such that the target rate is strictly below 
+
+CD (r) ≜ 12 log σ2¯X
+
+σ2¯X − β(D)2σ2 
+
+> U
+
+(1 − 2−2r ) . (142) Let NV be independent Gaussian noise with variance σ2 
+
+> U
+
+/(2 2r − 1) and define the attack-independent Costa-type auxiliary 
+
+V = U + αD aS + NV , αD ≜ β(D) σ2
+
+> U
+
+σ2¯X
+
+. (143) Then I(V ; U |S) = r and Var( V |S) = σ2 
+
+> U
+> 1−2−2r
+
+. The coefficient αD depends only on the prescribed attack budget, not on the realized attack. For any admissible attack, exact output preservation (64) gives ¯Y ≜ Y − aS ∼ N (0 , σ 2¯X ) and ¯Y ⊥ S. Since the context shift cancels in squared error, the distortion constraint gives 
+
+Cov( ¯X, ¯Y ) ≥ σ2¯X − D
+
+2 = β(D)σ2¯X . (144) 34 
+
+The attack obeys the conditional Markov relation U − ( ¯X, S ) − ¯Y , while the original jointly Gaussian pair satisfies 
+
+E[U | ¯X, S ] = σ2
+
+> U
+> σ2¯X
+
+¯X. Therefore (144) implies Cov( U, ¯Y ) ≥ β(D)σ2 
+
+> U
+
+. Consequently, using ¯Y ⊥ S,
+
+Var( V ) = σ2
+
+> U
+
+1 − 2−2r + α2 
+
+> D
+
+a2σ2 
+
+> S
+
+, (145) 
+
+Var( Y ) = σ2¯X + a2σ2 
+
+> S
+
+, (146) 
+
+Cov( V, Y ) ≥ β(D)σ2 
+
+> U
+
++ αD a2σ2 
+
+> S
+
+= αD
+
+ σ2¯X + a2σ2
+
+> S
+
+. (147) Thus both marginals of (V, Y ) are fixed Gaussian distributions independent of the attack, while their joint distribution need not be Gaussian. For fixed Gaussian marginals and fixed covariance, the jointly Gaussian coupling maximizes joint entropy and therefore minimizes mutual information. Since the covariance floor in (147) is nonnegative over the present distortion range, every admissible attack satisfies 
+
+I(V ; Y ) − I(V ; S) ≥ 12 log σ2¯X
+
+σ2¯X − β(D)2σ2 
+
+> U
+
+(1 − 2−2r )= CD (r). (148) The cancellation of a2σ2 
+
+> S
+
+in (148) is the Gaussian dirty-paper cancellation adapted to the least favorable covariance permitted by the attack budget. We next turn the pointwise bound (148) into one detector that works over the continuum family. Let p(v) and 
+
+p(y) denote the fixed Gaussian marginal densities in (145)–(146), and define the enlarged coupling family 
+
+JD,r ≜
+
+
+
+Π : Π V (dv ) = p(v) dv, ΠY (dy ) = p(y) dy, 
+
+Z
+
+vy d Π ≥ αD (σ2¯X + a2σ2 
+
+> S
+
+)
+
+
+
+. (149) Every physical renderer-realizable attack induces a coupling in JD,r . The set of couplings of the two fixed Gaussian marginals is tight and weakly closed, hence weakly compact [42]. The covariance half-space is also weakly closed because V Y is uniformly integrable over the fixed-marginal coupling family. Indeed, 
+
+sup 
+
+> Π
+
+EΠ[|V Y |1{| V Y | > τ }]
+
+≤ pVar( Y )  E[V 21{| V | > √τ }]1/2
+
++ pVar( V )  E[Y 21{| Y | > √τ }]1/2 → 0. (150) Thus JD,r is compact. Let [x]b denote a nested finite interval quantization of a real variable x, with partitions refining to the Borel sigma-field and boundaries of zero probability under the fixed Gaussian marginals. For Π ∈ J D,r , define Ib(Π) ≜
+
+IΠ([ V ]b; [ Y ]b). The same refining quantizer sequence can be chosen independently of the coupling, and Ib(Π) ↑
+
+IΠ(V ; Y ) for every Π ∈ J D,r [43, Lemma 5.5.5]. For each fixed b, Ib(Π) is continuous in Π under weak convergence. Since the target rate is strictly below CD (r), choose ϵ > 0 such that 
+
+R + I(V ; S) + 3 ϵ < C D (r) + I(V ; S) ≤ inf 
+
+> Π∈J D,r
+
+IΠ(V ; Y ). (151) The increasing open sets 
+
+Ob ≜ {Π ∈ J D,r : Ib(Π) > R + I(V ; S) + 2 ϵ} (152) 35 
+
+cover the compact set JD,r . Hence there exists one finite b∗ such that 
+
+inf 
+
+> Π∈J D,r
+
+IΠ
+
+ [V ]b∗ ; [ Y ]b∗
+
+ > R + I(V ; S) + 2 ϵ. (153) This finite detector interface is attack independent and uses the actual attacked observation Y , not the unobservable residual Y − aS .Because [V ]b∗ is a function of V , data processing gives 
+
+I([ V ]b∗ ; S) ≤ I(V ; S), (154) 
+
+I([ V ]b∗ ; U |S) ≤ I(V ; U |S) = r < R k. (155) Choose 0 < η < ϵ and set the total multicoding rate ˆR = I([ V ]b∗ ; S) + η. Then the finite detector interface and the key margin imply the three raw coding inequalities 
+
+ˆR > I ([ V ]b∗ ; S), (156) 
+
+R + ˆR < inf 
+
+> Π∈J D,r
+
+IΠ([ V ]b∗ ; [ Y ]b∗ ), (157) 
+
+Rk + ˆR > I ([ V ]b∗ ; S, U ). (158) The first two inequalities have the usual state-covering and compound-packing structure of a common-auxiliary Gel’fand–Pinsker construction [32]; the third is the additional latent-coordination requirement imposed by exact preservation. The project-wide excess variable t = ˆR − I(V ; S) is a derived quantity and is not the raw codebook rate in this argument. Generate one i.i.d. p([ v]b∗ ) codebook indexed by (m, ℓ, k ) with ℓ ∈ [1 : 2 n ˆR]. Given (Sn, m, k ), use the likelihood encoder associated with the channel [V ]b∗ → S to select ℓ, and generate a preliminary latent sequence through the memoryless kernel p(u|s, [v]b∗ ). For a fixed key index, the detector quantizes the attacked public sample coordinatewise to [Y ]nb∗ and decodes (m, ℓ ) over the finite compound family induced by (153). The universal decoder must work for the same i.i.d. p([ v]b∗ ) codebook ensemble used by the likelihood encoder and synthesis layer. For this finite-alphabet memoryless family, apply the universal decoder of [44] relative to the collection of matched maximum-likelihood metrics. Its ensemble-average error under the given random-coding distribution is within a subexponential factor of the best decoder in that class. The strict uniform information margin in (153), together with compactness of the induced channel family, gives a uniformly positive matched-decoding random-coding exponent; hence this same i.i.d. ensemble has vanishing expected worst-attack average decoding error under the corresponding ideal memoryless law. The likelihood-encoder transfer from the ideal state law to the operational observed state is controlled by (156); every renderer and attack is downstream, so total variation contracts uniformly over A ∈ A reg (D).The synthesis layer is attack independent. For each fixed (m, k ), the ℓ-subcodebook has total rate ˆR > I ([ V ]b∗ ; S),so ordinary general-alphabet soft covering yields vanishing expected state-covering total variation. For each fixed message m, the aggregate (k, ℓ )-indexed subcodebook has rate Rk + ˆR > I ([ V ]b∗ ; S, U ), so the same general-alphabet likelihood-encoder/soft-covering machinery gives vanishing expected synthesis total variation for the joint 
+
+(S, U ) law [33], [40]. Averaging over the relevant indices, together with the worst-attack decoding bound above, 36 
+
+allows one deterministic codebook to be selected for which all three average criteria vanish. Expurgate the o(1) 
+
+fraction of messages with atypically large preliminary synthesis error. This preserves the asymptotic message rate and worst-attack average reliability while making the preliminary synthesis error uniformly vanishing over the retained messages. For every retained message, apply the conditional maximal-coupling exactification from App. A before the physical renderer. The correction forces 
+
+p(un|sn, m ) = 
+
+> n
+
+Y
+
+> i=1
+
+qlat (ui|si) (159) exactly. Passing this latent through the fixed renderer gives the exact desired conditional output law before attack, and every A ∈ A reg (D) preserves that law by definition. If the exactification mismatch probability for message m
+
+is δn(m), total variation contracts under the renderer and every downstream attack, so the reliability change is at most δn(m) uniformly over the entire attack family. This proves achievability of every rate strictly below (67). For the converse, the canonical Gaussian regeneration (65) belongs to the admissible renderer-realizable family. Expanding its residual recursion gives the effective renderer 
+
+Y = aS + β(D)U + Zeff , (160) where Zeff ⊥ (S, U ) is Gaussian with variance σ2 
+
+> Z, eff
+
+= σ2¯X − β(D)2σ2 
+
+> U
+
+. This is a scalar instance of the jointly Gaussian renderer in Thm. 3. That theorem already allows the context to remain hidden from the detector and shows that revealing it causes no capacity increase. Evaluating (47) at the effective SNR γeff (D) = β(D)2σ2 
+
+> U
+
+/[σ2¯X −
+
+β(D)2σ2 
+
+> U
+
+] gives exactly the right side of (67). Since every compound code must work against this particular admissible attack, this fixed-attack capacity upper-bounds the compound capacity. Combined with the uniform achievability above, it proves Thm. 4. REFERENCES [1] I. J. Cox, J. Kilian, F. T. Leighton, and T. Shamoon, “Secure spread spectrum watermarking for multimedia,” IEEE Transactions on Image Processing , vol. 6, no. 12, pp. 1673–1687, 1997. [2] P. Moulin and J. A. O’Sullivan, “Information-theoretic analysis of information hiding,” IEEE Transactions on Information Theory , vol. 49, no. 3, pp. 563–593, Mar. 2003. [3] J. Zhu, R. Kaplan, J. Johnson, and L. Fei-Fei, “Hidden: Hiding data with deep networks,” in Proceedings of the European Conference on Computer Vision , 2018, pp. 657–672. [4] M. Tancik, B. Mildenhall, and R. Ng, “Stegastamp: Invisible hyperlinks in physical photographs,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2020, pp. 2117–2126. [5] J. Kirchenbauer, J. Geiping, Y. Wen, J. Katz, I. Miers, and T. Goldstein, “A watermark for large language models,” in Proceedings of the 40th International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, vol. 202, 2023, pp. 17 061–17 084. [6] R. Kuditipudi, J. Thickstun, T. Hashimoto, and P. Liang, “Robust distortion-free watermarks for language models,” Transactions on Machine Learning Research , 2024. [7] M. Christ, S. Gunn, and O. Zamir, “Undetectable watermarks for language models,” in Proceedings of the 37th Conference on Learning Theory , ser. Proceedings of Machine Learning Research, vol. 247, 2024, pp. 1125–1139. [8] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” in Advances in Neural Information Processing Systems , vol. 33, 2020, pp. 6840–6851. [9] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole, “Score-based generative modeling through stochastic differential equations,” in International Conference on Learning Representations , 2021. 37 
+
+[10] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022, pp. 10 684–10 695. [11] P. Fernandez, G. Couairon, H. J´ egou, M. Douze, and T. Furon, “The stable signature: Rooting watermarks in latent diffusion models,” in 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 22 466–22 477. [12] A. Rezaei, M. Akbari, S. R. Alvar, A. Fatemi, and Y. Zhang, “Lawa: Using latent space for in-generation image watermarking,” in Computer Vision—ECCV 2024 , 2024, pp. 118–136. [13] S. Gunn, X. Zhao, and D. Song, “An undetectable watermark for generative image models,” in International Conference on Learning Representations (ICLR) , 2025. [14] Y. Wen, J. Kirchenbauer, J. Geiping, and T. Goldstein, “Tree-ring watermarks: Fingerprints for diffusion images that are invisible and robust,” in Advances in Neural Information Processing Systems , vol. 36, 2023, pp. 58 047–58 063. [15] Z. Yang, K. Zeng, K. Chen, H. Fang, W. Zhang, and N. Yu, “Gaussian shading: Provable performance-lossless image watermarking for diffusion models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2024, pp. 12 162–12 171. [16] H. Ci, P. Yang, Y. Song, and M. Z. Shou, “Ringid: Rethinking tree-ring watermarking for enhanced multi-key identification,” in Computer Vision – ECCV 2024 , 2024, pp. 338–354. [17] J. Yang, H. Fang, W. Zhang, N. Yu, and K. Chen, “Fari: Robust one-step inversion for watermarking in diffusion models,” in International Conference on Learning Representations , 2026. [18] S. Guo, T. Kann, T. Baluta, and M. R. Bloch, “Covert multi-bit LLM watermarking: An information theory and coding approach,” 2026, accepted to IEEE Information Theory Workshop (ITW) 2026; arXiv:2605.16709. [19] C. Cachin, “An information-theoretic model for steganography,” in Information Hiding , ser. Lecture Notes in Computer Science, vol. 1525. Springer, 1998, pp. 306–318. [20] N. J. Hopper, J. Langford, and L. von Ahn, “Provably secure steganography,” in Advances in Cryptology—CRYPTO 2002 , ser. Lecture Notes in Computer Science, vol. 2442. Springer, 2002, pp. 77–92. [21] Y. Wang and P. Moulin, “Perfectly secure steganography: Capacity, error exponents, and code constructions,” IEEE Transactions on Information Theory , vol. 54, no. 6, pp. 2706–2722, 2008. [22] R. J. Barron, B. Chen, and G. W. Wornell, “The duality between information embedding and source coding with side information and some applications,” IEEE Transactions on Information Theory , vol. 49, no. 5, pp. 1159–1180, May 2003. [23] C. S. de Witt, S. Sokota, J. Z. Kolter, J. Foerster, and M. Strohmeier, “Perfectly secure steganography using minimum entropy coupling,” in International Conference on Learning Representations (ICLR) , 2023. [24] D. Tsur, C. X. Long, C. M. Verdun, H. Hsu, H. Permuter, and F. P. Calmon, “Optimized couplings for watermarking large language models,” in 2025 IEEE International Symposium on Information Theory (ISIT) , 2025, preprint: arXiv:2505.08878. [25] B. An, M. Ding, T. Rabbani, A. Agrawal, Y. Xu, C. Deng, S. Zhu, A. Mohamed, Y. Wen, T. Goldstein, and F. Huang, “Waves: Benchmarking the robustness of image watermarks,” in Proceedings of the 41st International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, vol. 235, 2024, pp. 1456–1492. [26] X. Zhao, K. Zhang, Z. Su, S. Vasan, I. Grishchenko, C. Kruegel, G. Vigna, Y.-X. Wang, and L. Li, “Invisible image watermarks are provably removable using generative ai,” in Advances in Neural Information Processing Systems , vol. 37, 2024, pp. 8643–8672. [27] A. E. Gamal and Y.-H. Kim, Network Information Theory . Cambridge University Press, 2011. [28] A. B. Wagner, “The rate-distortion-perception tradeoff: The role of common randomness,” arXiv:2202.04147, 2022. [Online]. Available: https://arxiv.org/abs/2202.04147 [29] A. S. Cohen and A. Lapidoth, “The Gaussian watermarking game,” IEEE Transactions on Information Theory , vol. 48, no. 6, pp. 1639–1667, 2002. [30] ——, “The capacity of the vector Gaussian watermarking game,” in Proceedings of the IEEE International Symposium on Information Theory , 2001. [31] M. H. M. Costa, “Writing on dirty paper,” IEEE Transactions on Information Theory , vol. 29, no. 3, pp. 439–441, May 1983. [32] P. Piantanida and S. Shamai, “On the capacity of compound state-dependent channels with states known at the transmitter,” in 2010 IEEE International Symposium on Information Theory , 2010, pp. 624–628. [33] E. C. Song, P. Cuff, and H. V. Poor, “The likelihood encoder for lossy compression,” IEEE Transactions on Information Theory , vol. 62, no. 4, pp. 1836–1849, Apr. 2016. [34] P. Cuff, “Soft covering with high probability,” in 2016 IEEE International Symposium on Information Theory (ISIT) , 2016, pp. 2963–2967. 38 
+
+[35] H. Thorisson, “On maximal and distributional coupling,” The Annals of Probability , vol. 14, no. 3, pp. 873–876, 1986. [36] L. Yu and V. Y. F. Tan, “Exact channel synthesis,” IEEE Transactions on Information Theory , vol. 66, no. 5, pp. 2799–2818, 2020. [37] T. M. Cover and J. A. Thomas, Elements of Information Theory , 2nd ed. Wiley, 2006. [38] A. D. Wyner and J. Ziv, “A theorem on the entropy of certain binary sequences and applications—i,” IEEE Transactions on Information Theory , vol. 19, no. 6, pp. 769–772, Nov. 1973. [39] W. Yu and J. M. Cioffi, “Sum capacity of Gaussian vector broadcast channels,” IEEE Transactions on Information Theory , vol. 50, no. 9, pp. 1875–1892, Sep. 2004. [40] P. Cuff, “Distributed channel synthesis,” IEEE Transactions on Information Theory , vol. 59, no. 11, pp. 7071–7096, Nov. 2013. [41] S. Boyd and L. Vandenberghe, Convex Optimization . Cambridge University Press, 2004. [42] P. Billingsley, Convergence of Probability Measures , 2nd ed. Wiley, 1999. [43] R. M. Gray, Entropy and Information Theory , 2nd ed. Springer, 2011. [44] N. Merhav, “Universal decoding for arbitrary channels relative to a given class of decoding metrics,” IEEE Transactions on Information Theory , vol. 59, no. 9, pp. 5566–5576, Sep. 2013.
