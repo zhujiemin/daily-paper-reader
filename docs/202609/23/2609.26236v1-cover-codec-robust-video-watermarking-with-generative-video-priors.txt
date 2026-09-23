@@ -1,0 +1,1212 @@
+COVER: Codec-Robust Video Watermarking with Generative
+Video Priors
+Yuxin Cao∗
+National University of Singapore
+Singapore
+Hao Yang∗
+Beijing University of Post and
+Telecommunications
+China
+Ziqi Ding
+University of New South Wales
+Australia
+Jie Hao
+Beijing University of Post and
+Telecommunications
+China
+Wei Song
+University of New South Wales
+Australia
+Abstract
+Video watermarking underpins copyright protection and prove-
+nance for generated media, yet almost every video is compressed
+by a codec before it is stored or shared. A codec discards precisely
+the perceptually redundant components that most watermarks rely
+on, so the payload is often lost even when the marked video looked
+flawless beforehand. Existing methods leave this path open, since
+they treat compression as one entry in a generic list of distortions,
+while a real codec is not differentiable and cannot enter gradient-
+based training. We present COVER, the first learned video water-
+mark built around codec compression as its design target, which
+survives that compression by embedding the payload in the latent
+space of a frozen generative video autoencoder and recovering it
+by re-encoding the received video into that same latent space. To
+make codec robustness trainable, we build a differentiable codec
+surrogate bank that simulates the dominant degradation modes of
+practical compression, and we train the embedder and the latent
+decoder through three shared recovery paths under a fidelity objec-
+tive that constrains the residual in the pixel and frequency domains.
+Across four codecs at 12 settings, COVER attains 93.72% average bit
+accuracy, ranks first on 11 of the 12, improves the strongest prior
+method by 2.68 points, and lifts the worst operating point from
+68.90% to 73.72% while each marked video stays visually close to
+the source clip that produced it.
+1
+Introduction
+Generative video models now synthesize long, high resolution clips
+with coherent motion and semantics [26, 37], and video platforms
+increasingly rely on automated systems to produce and moder-
+ate such content at scale. This progress raises pressing questions
+about the ownership and authenticity of synthetic media [23], and it
+makes reliable video watermarking a core requirement for identify-
+ing and tracing generated content [9, 11, 41]. A watermark is useful
+only when its payload survives the processing a video meets on
+its way to a viewer [1], so robustness to that everyday processing,
+rather than imperceptibility alone, now decides whether a deployed
+watermark is worth anything at all.
+Learning-based watermarking has largely replaced handcrafted
+embedding rules. Early neural schemes cast embedding and ex-
+traction as an end-to-end problem trained against differentiable
+distortion layers [29, 40], and later work steadily strengthened
+∗These authors contributed equally.
+their robustness [3, 16, 32]. With the rise of generative models,
+recent methods place the watermark inside the generation process
+itself [8, 33, 38], and a growing line of work extends the idea to
+video by modeling temporal structure and generation-aware em-
+bedding [9, 11]. These systems show that a learned watermark can
+stay imperceptible under many distortions, yet the distortions that
+they train and report against remain the image-level operations
+inherited from work on still images.
+A gap therefore remains on the one step that almost every real
+video must pass through, namely codec compression, as Figure 1
+illustrates. When a marked video is saved or shared, it is re-encoded
+by a codec that discards the fine spatial and temporal detail a viewer
+is least likely to notice, which is exactly where many watermarks
+place their energy, so the payload weakens or disappears even
+though the marked video looked flawless beforehand. Two obsta-
+cles have kept this failure open, and both of them come from the
+codec itself. A modern codec degrades a clip by composing several
+mechanisms at once and by adapting each of them to the content
+and the target bit rate [28, 35], so no single fixed distortion of the
+kind used in image watermarking stands in for it. A real codec is
+also not differentiable, so it enters gradient-based training only
+through a proxy. Prior video watermarks list compression among
+the distortions they train on, and none makes surviving a real codec
+the objective the whole design answers to.
+We take that position with COVER (Codec-Robust Video
+Watermarking), which moves the watermark away from fragile
+pixel detail and into the latent space of a frozen video autoen-
+coder [37]. A lightweight adapter writes the payload into the latent
+as a residual, and detection re-encodes the received video into
+that same space so a latent decoder can read the payload back, as
+Figure 2 shows. The design follows the way a codec spends its bit
+budget. Compression keeps the low and mid frequency structure
+that shapes what a viewer sees and drops the detail a viewer rarely
+notices, and a generative video prior organizes a clip around that
+same perceptually important structure, so embedding in the latent
+places the payload where the codec has the least reason to remove
+it and detection never has to undo quantization in the pixel domain,
+where the discarded detail is gone for good.
+COVER makes this trainable with a differentiable codec surro-
+gate bank that simulates the degradation of modern codecs, so the
+embedder and the latent decoder learn against realistic compres-
+sion instead of a single image distortion. One shared latent decoder
+reads the payload from the marked latent, from its re-encoding, and
+arXiv:2609.26236v1  [cs.CV]  17 Sep 2026
+
+
+Cao et al.
+Figure 1: The gap this paper targets. A watermark is usually verified on the marked video itself, whereas a real video is
+compressed before it is stored or shared, so a payload that reads back perfectly on the first path can be lost entirely on the
+second, which is the path that a real viewer sees.
+from its re-encoding after the surrogate, and the objective couples
+payload recovery with fidelity terms in the pixel and frequency
+domains. We then evaluate against real compression rather than
+against the surrogate, on 500 videos passed through four codec fam-
+ilies at 12 strengths, where COVER leads every family and widens
+its advantage exactly at the settings where compression is most
+aggressive and the payload is at its hardest to read back.
+Our main contributions are summarized as follows.
+• We make codec compression the design target of a video
+watermark rather than one distortion among many, and
+realize it in COVER, which embeds a payload in a frozen
+video latent and reads it back from the re-encoded video.
+• We build a differentiable codec surrogate bank that models
+the dominant degradation modes of a codec, which turns
+robustness to real compression into a trainable objective
+across three recovery paths that share one latent decoder.
+• We evaluate on 500 videos under four real codecs at 12 set-
+tings, where COVER ranks first on 11 of them and improves
+the strongest prior method by 2.68 points, lifting the worst
+of the 12 settings from 68.90% to 73.72%.
+2
+Related Work
+Deep Image and Generative Watermarking. Learning-based meth-
+ods replaced handcrafted embedding rules by training an encoder
+and a decoder jointly against a differentiable distortion layer, an
+idea introduced by HiDDeN and StegaStamp [29, 40] and steadily
+strengthened since [2, 3, 15, 16, 20, 27]. Diffusion models then
+moved the watermark from a post-processing step into genera-
+tion itself, rooting it in the latent decoder or in the initial noise [5, 8,
+33, 38], and later work showed that a signal placed on a generative
+prior survives heavy image editing [17, 19, 25]. This line establishes
+the generative prior as a stable place to hide a payload, yet it targets
+images throughout and models neither temporal structure nor the
+degradation that a real codec inflicts.
+Video Watermarking. Video asks the payload to survive spa-
+tial content and temporal change. Early systems carried image
+techniques across frames through attention or temporal residu-
+als [34, 39], whereas recent methods build the watermark into
+modern video pipelines. Video Seal trains an efficient embedder
+and extractor for general videos [9], and LVMark writes the pay-
+load into the latent of a video diffusion model [14]. VideoShield
+and VideoMark instead plant the payload in the noise a generator
+starts from and read it back by inverting generation [11, 12], so they
+hold no trainable watermark parameter and can mark only the clips
+they synthesize, and VideoSignature follows the same route with
+an implicit signature [13]. Newer systems continue to strengthen
+watermarking inside video generation [22, 36, 41]. All treat com-
+pression as one distortion among many and read the payload from
+processed frames rather than a re-encoded latent, and this leaves
+the codec channel that we target essentially open right across the
+line of work that we have just described.
+Robustness against Compression. Lossy compression is the hard-
+est distortion for a watermark, since it removes the perceptually
+redundant signal a watermark relies on to stay hidden. For images,
+robustness to a codec is usually learned by approximating it with a
+differentiable proxy or by mixing real and simulated compression
+into training [7, 15, 20, 31]. A video codec is far harder to imitate,
+since it couples spatial transform coding with motion compensa-
+tion across frames [4, 18, 21, 28, 35], so a single fixed proxy cannot
+represent it while the codec itself provides no gradient. Classical
+video watermarking answered this by writing the payload into the
+compressed bitstream of a specific standard [6, 10, 24, 30], which
+buys robustness at the price of binding the scheme to that standard
+and of re-embedding whenever the video is transcoded. COVER
+keeps the flexibility of a learned watermark and resolves the tension
+by pairing a differentiable surrogate bank with latent re-encoding
+on a spatiotemporal generative prior [26, 37], so training targets the
+mechanisms realistic compression shares rather than one distortion
+standing in for every codec at once.
+3
+Problem Formulation
+Given a video x ∈R𝑇×𝐶×𝐻×𝑊and a binary payload b ∈{0, 1}𝐿,
+our goal is a marked video x𝑤that stays visually close to x and
+from which b can still be recovered after real codec compression,
+
+
+COVER: Codec-Robust Video Watermarking with Generative Video Priors
+Figure 2: Overview of COVER. The payload is written into the latent of a frozen video autoencoder as a residual, and one shared
+latent decoder reads it back on three paths that expose it to the autoencoder round trip and to a differentiable codec surrogate.
+where 𝑇, 𝐶, 𝐻, and 𝑊are the frame, channel, height, and width
+counts and 𝐿is the payload length. A realistic distribution pipeline
+degrades the mark in two stages. Rendering a marked latent into the
+pixel domain and reading it back introduces a reconstruction gap,
+and lossy compression then removes spatial and temporal detail
+through quantization and the other steps of a codec. A decoder
+trained on the clean latent alone meets neither stage, which is the
+failure the three recovery paths below are built to prevent.
+We consider a provider that marks its own videos and later ver-
+ifies them, as in provenance and attribution for generated media.
+The provider holds the frozen encoder and the trained latent de-
+coder, so detection is informed and needs no access to the source
+video, whereas the codec in between is a black box whose standard
+and strength are unknown and whose steps carry no gradient. We
+model the distribution channel rather than an adversary who sets
+out to erase the mark, so removal attacks and geometric editing
+both lie outside the scope of what this present paper sets out to
+study, and we do not evaluate them here.
+4
+Method
+4.1
+Overview
+COVER addresses both stages through three shared recovery paths,
+as illustrated in Figure 2. The latent path checks that the payload
+is present in the marked latent. The re-encoding path sends the
+marked video through the frozen video decoder and encoder, so
+the latent decoder learns to tolerate the reconstruction gap. The
+codec path additionally applies a differentiable surrogate in the
+pixel domain before re-encoding, so the latent decoder learns to
+tolerate compression. We keep the pretrained encoder and decoder
+frozen and train only the lightweight modules on top, namely a
+payload encoder and an adapter that together form the embedder,
+one latent decoder shared by the three paths, and two discrimina-
+tors. Freezing the autoencoder preserves its generative prior and
+confines watermark learning to compact modules, which keeps
+training stable while the prior carries most of the representation.
+4.2
+Latent Watermark Embedding
+Let 𝑉enc and 𝑉dec denote the frozen video encoder and decoder. The
+input video is mapped to a spatiotemporal latent z = 𝑉enc(x) ∈
+R𝑇𝑧×𝐶𝑧×𝐻𝑧×𝑊𝑧, which is compressed relative to the input along
+time and space alike. A payload encoder maps the payload to a con-
+ditioning tensor e𝑏= 𝐸𝑏(b), broadcast to the spatiotemporal layout
+the adapter expects. The adapter reads the video latent together
+with the payload condition and predicts a payload dependent resid-
+ual Δz𝑤= 𝐺𝜃(z, e𝑏), which the embedding step adds back to the
+video latent that the encoder produced,
+z𝑤= z + 𝛼Δz𝑤,
+(1)
+where the strength 𝛼scales the residual. Residual embedding keeps
+the semantic structure of the pretrained latent while letting the
+adapter write payload dependent information into its stable compo-
+nents. The frozen decoder renders the marked video x𝑤= 𝑉dec(z𝑤)
+and the clean reconstruction x𝑐= 𝑉dec(z). We use x𝑐rather than the
+source x as the fidelity reference during training, which separates
+the perturbation caused by embedding from the reconstruction
+error that the frozen autoencoder introduces before any payload
+has been written into the latent at all.
+4.3
+Robust Detection via Latent Re-Encoding
+The detector reads latent representations rather than pixel frames,
+so it reasons over the same spatiotemporal features used during
+embedding. It holds the frozen encoder used at embedding, which
+makes detection informed and independent of the source video.
+The re-encoding path maps the marked video back to the latent
+
+
+Cao et al.
+as ˆz𝑤= 𝑉enc(x𝑤), which exposes the decoder to the full decode
+then encode cycle and stops it from relying on latent detail that
+disappears once z𝑤becomes a pixel video. The codec path first
+passes the marked video through a differentiable surrogate A ∼
+S, drawn from the codec surrogate distribution S defined below,
+and then re-encodes it, giving ˜z𝑤= 𝑉enc(A(x𝑤)). A shared latent
+decoder 𝐷𝜓reads each of these three latents in turn and produces
+one prediction per path,
+ˆblat = 𝐷𝜓(z𝑤),
+ˆbre = 𝐷𝜓(ˆz𝑤),
+ˆbcod = 𝐷𝜓(˜z𝑤).
+(2)
+The latent prediction supplies a direct capacity signal, while the
+re-encoding and codec predictions force the payload to survive
+the autoencoder and compression. Sharing 𝐷𝜓encourages a single
+payload representation that stays readable in all three conditions
+rather than three specialized ones.
+4.4
+Differentiable Codec Surrogate Bank
+Real codecs rely on discrete, non-differentiable operations, so they
+cannot be placed inside gradient-based training. Rather than repro-
+duce any single codec, we build a differentiable surrogate bank that
+models the degradation mechanisms shared by practical compres-
+sion, following the differentiable distortion layers used for image
+compression [15, 20]. Let G = {𝑔qb,𝑔lp,𝑔rs,𝑔ch} denote four sur-
+rogate groups, and let A𝑔denote the differentiable operator that
+group 𝑔applies at a sampled strength. A surrogate A chains 𝐾≥1
+such operators, with repetition allowed,
+A = A𝑔𝐾◦A𝑔𝐾−1 ◦· · · ◦A𝑔1,
+𝑔𝑘∈G.
+(3)
+The quantization and block group 𝑔qb reduces value precision and
+adds locally structured block artifacts, which approximates the loss
+of fine coefficients and the discontinuities of block-based processing.
+The low pass group 𝑔lp applies differentiable blur, which models
+the suppression of fine spatial detail at stronger compression. The
+resampling group𝑔rs performs differentiable downsampling and up-
+sampling, which represents resolution adaptation during transcod-
+ing. The chroma group 𝑔ch converts the video to a luminance and
+chrominance space, reduces chroma resolution or precision, and
+converts back, which approximates the weaker preservation of
+color under codecs that allocate fewer samples to chroma. Figure 3
+shows the effect of each group on a frame.
+The bank stores composite recipes, each chaining several opera-
+tors at a preset strength, and the distribution S draws one recipe
+per training step from a fixed mixture that favors the harder compo-
+sitions, so the latent decoder meets compound rather than isolated
+distortions in every forward pass. The harder recipes also add a
+small amount of noise, which stands for the residual coding error a
+codec leaves behind at a low bit rate. Every operator acts within
+a frame, so the bank models the per-frame degradation a codec
+makes visible and leaves inter-frame prediction to the temporal
+terms of the objective. These surrogates remain approximations
+that capture effects associated with H.264, H.265, AV1, and VP9
+without reproducing the decisions any specific codec makes, and
+our evaluation therefore reports real codecs only.
+Original
+Quantization
+& block
+Low-pass
+& blur
+Resampling
+Chroma
+subsampling
+Figure 3: Effect of each codec surrogate group on an example
+frame. The strengths are exaggerated for visibility.
+4.5
+Training Objectives
+The full objective combines payload recovery with fidelity terms
+that regulate the residual in the pixel and frequency domains. Pay-
+load recovery drives the three shared paths through a binary cross
+entropy term applied to each of them in turn,
+Lwm = 𝜆lat BCE(b, ˆblat) + 𝜆re BCE(b, ˆbre)
++ 𝜆cod BCE(b, ˆbcod),
+(4)
+where 𝜆lat, 𝜆re, and 𝜆cod weight the latent, re-encoding, and codec
+paths, and are set so that the two re-encoded paths dominate the
+recovery term throughout the training.
+Fidelity Terms. Let r = x𝑤−x𝑐denote the pixel residual in-
+troduced by embedding, and let every fidelity term be averaged
+over the mini-batch. A pixel term and a structural term bound its
+magnitude and protect local structure,
+Lmse =
+1
+𝑇𝐶𝐻𝑊∥r∥2
+2,
+Lssim = 1 −SSIM(x𝑤, x𝑐),
+(5)
+where ∥· ∥2 is the Euclidean norm, 𝑇𝐶𝐻𝑊counts the pixel entries
+of a clip, and SSIM is the structural similarity index evaluated per
+frame and channel and averaged over the clip. A small frame resid-
+ual can still flicker, so we also match the temporal differences of the
+two videos through the same residual. Writing (Δr)𝑡= r𝑡+1 −r𝑡for
+its first-order difference at frame 𝑡and (Δ2r)𝑡= r𝑡+2 −2r𝑡+1 + r𝑡
+for its second-order difference, the two temporal terms are
+L(1)
+tmp =
+1
+𝑇−1
+𝑇−1
+∑︁
+𝑡=1
+∥(Δr)𝑡∥1,
+L(2)
+tmp =
+1
+𝑇−2
+𝑇−2
+∑︁
+𝑡=1
+∥(Δ2r)𝑡∥1.
+(6)
+The term L(1)
+tmp aligns the frame-to-frame velocity of the two videos
+and L(2)
+tmp aligns their acceleration, both under an ℓ1 norm over the
+valid frame pairs, so the marked video keeps the motion of the clean
+reconstruction and suppresses the temporal flicker that a spatial
+term alone would miss.
+Spectral Shaping. High frequency watermark energy is the first
+to be removed by quantization and low pass degradation, so we
+penalize the residual spectrum by its radial frequency. Let ˆr𝑡,𝑐=
+F2D(r𝑡,𝑐) denote the spatial Fourier transform of the residual at
+frame 𝑡and channel 𝑐, let Ω be the set of frequency positions on
+the 𝐻×𝑊grid, and |Ω| its cardinality. Each position 𝜔∈Ω carries
+a radial frequency 𝜌𝜔∈[0, 1] normalized by the Nyquist radius,
+and its weight 𝑤(𝜌𝜔) = 𝑤low + (𝑤high −𝑤low)𝜌𝑝
+𝜔rises from 𝑤low at
+low frequency to 𝑤high at high frequency, with the exponent 𝑝> 0
+
+
+COVER: Codec-Robust Video Watermarking with Generative Video Priors
+setting how sharply the penalty grows. The spectral term is
+Lfreq =
+1
+𝑇𝐶|Ω|
+∑︁
+𝑡,𝑐
+∑︁
+𝜔∈Ω
+𝑤(𝜌𝜔) |ˆr𝑡,𝑐(𝜔)|2,
+(7)
+which steers watermark energy toward the low and mid frequencies
+that a codec is built to preserve in any case.
+Adversarial Realism. A frame patch discriminator 𝐷𝑓scores
+single frames and a spatiotemporal discriminator 𝐷𝑣scores the
+whole clip, both taking the clean reconstruction as the real sample.
+The generator minimizes L𝑓
+adv = −1
+𝑇
+Í𝑇
+𝑡=1 𝐷𝑓(x𝑤,𝑡) and L𝑣
+adv =
+−𝐷𝑣(x𝑤), and each discriminator 𝐷∈{𝐷𝑓, 𝐷𝑣} is trained with a
+hinge loss that pushes the score of the clean reconstruction above
+the score of the marked video by a unit margin,
+L𝐷= E[max(0, 1 −𝐷(x𝑐))] + E[max(0, 1 + 𝐷(x𝑤))] .
+(8)
+Overall Objective. The trainable modules minimize a weighted
+sum of the recovery and fidelity terms,
+Ltotal = Lwm + 𝜆mseLmse + 𝜆ssimLssim
++ 𝜆(1)
+tmpL(1)
+tmp + 𝜆(2)
+tmpL(2)
+tmp + 𝜆freqLfreq
++ 𝜆𝑓
+advL𝑓
+adv + 𝜆𝑣
+advL𝑣
+adv,
+(9)
+where each coefficient sets its influence and the implementation
+details list the values. Algorithm 1 in the appendix summarizes
+the procedure, in which the generator and the two discriminators
+alternate while the frozen autoencoder receives no gradients, so its
+generative prior is unchanged from the first iteration of training
+through to the very last one.
+5
+Experiments
+5.1
+Experimental Setup
+Benchmark. We evaluate on 500 videos, each processed by 12
+real codec settings drawn from four codec families. The videos
+are rendered by a text-to-video model from a fixed prompt set
+at 256 × 256 with 16 frames per clip, and the training clips come
+from a disjoint prompt set, so no test video is seen during training.
+We drive each codec through its rate control parameter, namely
+the constant rate factor (CRF) for AV1, H.264, and H.265, and the
+constant quality (CQ) level for VP9. We use CRF values of 45, 55,
+and 63 for AV1, 23, 35, and 45 for H.264, and 26, 40, and 50 for
+H.265, together with CQ values of 35, 45, and 55 for VP9. A larger
+CRF or CQ denotes stronger compression within a family and is
+not comparable across families. Each video and codec pair is tested
+with 100 random payloads, giving 500 × 12 × 100 = 600,000 payload
+trials and 4,800,000 evaluated bits, so the numbers that we report
+for each of the 12 settings rest on 50,000 payload trials and 400,000
+evaluated bits drawn for that setting alone.
+Models. We build COVER on the frozen video autoencoder of
+CogVideoX-2b [37], whose encoder divides the frame count by four
+and each spatial dimension by eight and returns 16 latent channels,
+so a 16-frame clip at 256 × 256 becomes a latent on a 32 × 32 grid.
+On top of this prior we train a small set of watermarking modules.
+The payload encoder maps the payload to a conditioning tensor
+through a learned codebook, the adapter is a small convolutional
+network that reads the concatenation of the latent and that tensor
+and predicts the residual, and the latent decoder is a spatiotemporal
+network pooling the re-encoded latent into payload logits. The
+frame discriminator is a patch network over single frames, and
+the spatiotemporal discriminator is a three-dimensional network
+judging coherence across the clip.
+Baselines. We compare COVER against four recent video water-
+marking systems, namely VideoMark [12], VideoShield [11], Video
+Seal [9], and VideoSignature [13]. VideoMark, VideoShield, and
+VideoSignature place the watermark inside video generation, so
+they can mark only the clips they synthesize, and we let them re-
+generate the benchmark clips from the prompts that produced our
+test videos. Video Seal marks a video that already exists, which is
+also the setting of COVER, so both read the rendered clips directly.
+All four meet the codec protocol described above, so every method
+is stressed in exactly the same way.
+Metrics. We use bit accuracy as the main robustness metric. With
+𝑁videos and 𝑀payloads per video and codec pair, each payload
+of length 𝐿, we define bit accuracy as
+BA =
+1
+𝑁𝑀𝐿
+𝑁
+∑︁
+𝑖=1
+𝑀
+∑︁
+𝑚=1
+𝐿
+∑︁
+𝑗=1
+1
+
+ˆ𝑏𝑖,𝑚,𝑗= 𝑏𝑖,𝑚,𝑗
+
+,
+(10)
+where 1(·) equals one when the predicted bit is correct, and our
+protocol sets 𝑁= 500, 𝑀= 100, and 𝐿= 8. We also report the
+average and the worst bit accuracy over the 12 settings, and we
+measure visual quality with PSNR in dB and SSIM against the
+source video before compression. A verifier turns bit accuracy into
+a decision by comparing the extracted payload with a registered
+one, and under an exact rule that accepts only when all 𝐿bits agree
+an unmarked video passes with probability 2−𝐿, or 0.39% at 𝐿= 8,
+and relaxing it to at least 𝐿−1 agreeing bits raises that probability
+to (𝐿+ 1)2−𝐿, or 3.52%. We also report the proportion of marked
+videos a verifier accepts under this rule as detection accuracy. Bit
+accuracy says how much of the payload survives and detection
+accuracy says how often the whole decision comes out right, so a
+short payload can hold a high bit accuracy and still lose the decision
+that a verifier actually has to take.
+Implementation Details. Following prior work [11, 13], each clip
+contains 16 frames. The payload length is 𝐿= 8 bits and the residual
+strength is 𝛼= 0.10. Optimization uses AdamW at a learning rate
+of 1 × 10−4 with an effective batch size of eight, a fixed seed of
+1234, and 5,000 steps. The recovery weights are 𝜆lat = 1.0 and 𝜆re =
+𝜆cod = 3.0, so the two re-encoding paths outweigh the direct one.
+The fidelity weights are 𝜆mse = 0.0015, 𝜆ssim = 0.015, 𝜆(1)
+tmp = 0.01,
+𝜆(2)
+tmp = 0.005, and 𝜆freq = 0.001, both adversarial weights are 0.0005,
+and the spectral term uses 𝑤high = 1.0, 𝑤low = 0.1, and 𝑝= 2.0. All
+experiments run on NVIDIA RTX PRO Blackwell GPUs.
+5.2
+Main Results
+Table 1 reports bit accuracy under all 12 real codec settings, together
+with the aggregate accuracy and the visual quality. COVER attains
+the highest average bit accuracy of 93.72%, equivalently an average
+bit error rate of 6.28%, and it ranks first on 11 of the 12 settings.
+The only exception is H.264 at CRF 23, where COVER and the
+best method are effectively tied above 99.7%. COVER improves
+the strongest prior method, VideoShield, by 2.68 points in average
+
+
+Cao et al.
+Table 1: Bit accuracy (%) under 12 real codec settings from four codec families. Bold and underline mark the accuracy columns
+only. Training never uses a real codec, so every setting here tests how far the surrogate bank transfers to an unseen encoder.
+Method
+AV1 (CRF)
+H.264 (CRF)
+H.265 (CRF)
+VP9 (CQ)
+Average
+Worst
+PSNR
+SSIM
+45
+55
+63
+23
+35
+45
+26
+40
+50
+35
+45
+55
+VideoMark
+17.40
+8.10
+1.80
+56.90
+10.30
+0.40
+42.30
+3.90
+0.60
+38.30
+19.50
+6.30
+17.15
+0.40
+34.27
+0.866
+VideoShield
+97.80
+92.90
+77.80
+99.80
+96.80
+75.90
+99.40
+91.60
+68.90
+99.40
+98.20
+93.90
+91.03
+68.90
+34.03
+0.860
+Video Seal
+67.50
+60.00
+51.30
+94.20
+62.10
+50.50
+86.40
+55.20
+50.20
+88.70
+77.00
+62.10
+67.10
+50.20
+30.55
+0.812
+VideoSignature
+50.90
+47.20
+44.60
+59.30
+49.70
+44.10
+57.40
+46.80
+45.90
+58.70
+53.10
+49.00
+50.56
+44.10
+25.02
+0.808
+COVER (Ours)
+98.91
+97.24
+83.23
+99.74
+97.99
+85.29
+99.67
+96.41
+73.72
+99.50
+98.35
+94.55
+93.72
+73.72
+28.30
+0.855
+bit accuracy and raises the worst case from 68.90% to 73.72%. Bit
+accuracy decreases as compression strengthens within each family,
+as expected, yet COVER stays above 90% on nine settings and above
+80% on 11 of them. The marked videos keep a PSNR of 28.30 and an
+SSIM of 0.855 before compression, and Figure 4 shows that a marked
+frame stays visually close to its source. Because the source is the
+reference here, the reported PSNR also absorbs the reconstruction
+error of the frozen autoencoder, a fidelity floor that is already in
+place before any payload bit is written at all.
+The margin is consistent rather than driven by a single set-
+ting. Averaged within each family, COVER reaches 93.13% on AV1,
+94.34% on H.264, 89.93% on H.265, and 97.47% on VP9, improving
+VideoShield in every one of them. How large it becomes depends on
+how hard the setting is. At the mild settings both methods sit above
+97% and separate by a few tenths of a point, so the comparison there
+says little, whereas the gap opens to 9.39 points at H.264 CRF 45
+and to 5.43 points at AV1 CRF 63, the regime that decides whether
+a watermark survives once a video is stored and shared.
+AV1 and H.265 at their strongest settings stress the watermark
+most, since aggressive transform quantization removes the fine
+detail a pixel domain watermark would depend on. COVER still
+keeps 83.23% on AV1 CRF 63 and 73.72% on H.265 CRF 50, its
+lowest result, because the payload lives in the latent representation
+the frozen prior reconstructs rather than in the discarded detail.
+VP9 is the easiest family in our range, where COVER stays above
+94% throughout. VideoMark performs worst by a wide margin,
+since its payload is carried by the initial generation noise and read
+back by temporal matching, and neither survives the range we
+test. Its accuracy falls below the 50% a detector should approach
+once the payload is gone, so we report the row as measured and
+read it as a floor on the method rather than a characterization of it.
+Video Seal falls toward 50% wherever compression is strong and
+VideoSignature stays near chance, which shows that robustness to
+real compression across several codecs does not follow from image
+style watermarking on its own.
+Detection accuracy reads differently, and Table 4 in the appendix
+gives it for every setting. COVER reaches 71.13% on average and
+comes second to VideoShield at 96.92%, ahead of Video Seal by
+15.96 points. The gap comes from the payload length rather than
+from how well the mark survives, since a verifier that has to read
+all eight bits fails as soon as one of them is wrong, and the appendix
+works this arithmetic out in detail.
+The strongest setting of each family gives a compact reading of
+the worst realistic case, which is the compression a video meets
+after transcoding for storage or streaming. Averaged over those
+four settings COVER reaches 84.20% bit accuracy against 79.13% for
+VideoShield, and it holds a worst case of 73.72% where the strongest
+prior method drops to 68.90%. A higher floor matters more than a
+higher peak, since a watermark is only as reliable as its weakest
+operating point, and the gap widens exactly where bit accuracy is
+under the most pressure, which is what a provider needs when it
+controls neither the codec nor the quality setting a downstream
+platform applies. No real codec ever enters training, yet the ranking
+holds across all four standards, which indicates that the surrogate
+captures degradation shared by modern compression rather than
+the quirks of one implementation.
+5.3
+Visual Quality
+Figure 4 compares source frames, marked frames, and the residual
+between them for four clips. A marked frame is hard to separate
+from its source at normal viewing, and the residual becomes visible
+only under magnification and a color map. Its amplitude peaks along
+edges and fine detail, such as the leaves and the rim of the planter,
+and drops on smooth bright surfaces, so the watermark sits where a
+viewer is least equipped to notice it, while away from those contours
+it settles into a fine regular texture consistent with a payload written
+on the grid of the latent rather than on pixels. Figure 5 in the
+appendix follows six further clips over eight consecutive frames,
+where the residual keeps its character from frame to frame. The
+faint text across some frames is a stock footage watermark that
+the text-to-video model reproduces from its training data, and it
+appears in the source and the marked frame alike, so it belongs to
+the content rather than to anything COVER writes. The remaining
+gap to the source comes mostly from the frozen autoencoder, which
+already reconstructs a video with a small error of its own before
+any watermark is added to it at all.
+5.4
+Ablation Study
+Each variant changes only the named component, with all other
+settings fixed and the same pretrained initialization.
+Surrogate Components. We disable one codec surrogate group at
+a time and report the result of retraining in Table 2. Every group
+contributes, and the quantization and block group carries the most
+weight by a wide margin, since removing it costs 4.66 points on the
+average and 8.40 points on the worst case. This is what the design
+predicts, since transform quantization is applied first and hardest.
+The low pass and the resampling groups follow at 2.15 and 1.73
+
+
+COVER: Codec-Robust Video Watermarking with Generative Video Priors
+Figure 4: Qualitative comparison for four clips. Each triplet
+shows the source frame, the marked frame, and their residual,
+magnified 20 times and rendered under a color map.
+Table 2: Ablation of the codec surrogate groups, with one
+group disabled per row. Bit accuracy in %, best in bold.
+Surrogate bank
+Average
+Worst
+COVER (full)
+93.72
+73.72
+Without quantization and block
+89.06
+65.32
+Without low pass and blur
+91.57
+70.30
+Without resampling
+91.99
+71.28
+Without chroma
+92.90
+74.66
+points. Chroma is the only group that does not help everywhere,
+since removing it costs 0.82 points on the average yet raises the
+worst case to 74.66%. That setting is H.265 at CRF 50, where the
+damage comes mostly from luma quantization, so a bank that also
+trains against chroma reduction spends part of its capacity on a
+mechanism that this particular setting never stresses.
+Loss Families. We remove one loss family at a time and report
+the effect in Table 3. The spectral term matters most for robustness,
+since dropping it costs 2.57 points on the average and 5.01 points
+on the worst case, which is our strongest evidence that steering the
+payload away from the high frequencies is what carries it through
+a codec. The other three cost between 1.09 and 1.56 points. Fidelity
+behaves differently, as every variant gives up about 3.5 dB of PSNR
+and the four land within 0.05 dB of one another, so the fidelity terms
+act together and no single one accounts for the marked video’s
+quality. The temporal errors separate them far less, since T-E1
+spans 7.36 to 7.91 across all five, and the variant without adversarial
+terms is lowest on both. Those terms push the residual toward
+frame-level realism and let it vary from frame to frame, so dropping
+them leaves a more static residual, smoother in time though its
+PSNR is 3.52 dB worse.
+6
+Discussion
+Why the Design Works. The results support the introduction’s
+intuition. The advantage is largest at the strongest setting of each
+family, where aggressive quantization strips the detail a frequency
+domain watermark relies on, while the latent representation and
+the spectral term hold the payload inside the band compression
+preserves, which the loss ablation confirms, since removing no
+other loss family costs as much robustness as removing that single
+spectral term from the objective.
+Table 3: Ablation of the loss families, one per row. Bit ac-
+curacy in %. T-E1 and T-E2 are the first- and second-order
+differences of the residual in 10−3, where lower is better and
+the best value in each column is in bold.
+Objective
+Average Worst PSNR T-E1
+T-E2
+COVER (full)
+93.72
+73.72
+28.30
+7.83
+11.66
+Without spatial
+92.63
+71.98
+24.80
+7.39
+11.26
+Without temporal
+92.16
+71.23
+24.77
+7.82
+11.59
+Without spectral
+91.15
+68.71
+24.82
+7.91
+11.69
+Without adversarial
+92.60
+71.43
+24.78
+7.36
+11.23
+Surrogate and Real Codecs. The bank never reproduces a codec,
+and the distance between them is where this design could have
+failed. Every surrogate operator acts inside a frame, whereas a
+real encoder also spends its budget across frames through motion
+compensation, so training sees a narrower channel than the test
+one does. That the ranking still holds on four standards suggests
+the payload depends on no single frame, since it is carried by latent
+components the frozen prior reconstructs from surviving structure,
+while the temporal terms hold the marked clip to the motion of the
+clean one, so a predictor coding a frame from its neighbors meets a
+residual field that moves along with the content itself.
+Practical Scope. COVER marks a video that already exists, which
+the strongest baseline cannot do, since VideoShield plants its pay-
+load in the noise a generator starts from and can therefore mark
+only what that generator produces. Embedding costs one encoder
+pass and one decoder pass of the frozen autoencoder, and verifi-
+cation costs one encoder pass followed by the latent decoder, so
+a provider checks a received clip in a single forward sweep. The
+detector is tied to the autoencoder used at embedding, so moving to
+another video prior asks for a short retraining of the watermarking
+modules on whatever latent space that new prior happens to define
+for them to write the payload into.
+Limitations and Future Work. COVER carries eight bits, which is
+shorter than the payload the baselines embed, so Table 1 compares
+robustness at each system’s operating capacity rather than at a
+matched one, and longer payloads would show how gracefully
+accuracy degrades as capacity grows. Its marked videos also sit
+below the two strongest baselines on PSNR, so the comparison
+trades fidelity for robustness, and a matched quality protocol that
+sweeps the residual strength would separate the two axes. We also
+report bit accuracy rather than a decision rate, since eight bits leave
+a per-video verdict too thin to calibrate, and a longer payload is the
+natural route to a deployable detector. The evaluation itself targets
+compression at one resolution and clip length, leaving longer clips,
+higher resolutions, everyday geometric edits, and a determined
+removal adversary all still open.
+7
+Conclusion
+We presented COVER, a video watermark whose design target
+is codec compression. Its payload is written into the latent of a
+frozen generative video autoencoder and recovered by re-encoding
+the received video into that space, under three shared recovery
+paths whose codec branch draws on a surrogate bank. Across four
+
+
+Cao et al.
+codecs at 12 settings COVER reaches 93.72% average bit accuracy,
+ranks first on 11, and improves the strongest prior method by 2.68
+points, while the ablations name the quantization surrogate and
+the spectral term as the two components that matter the most
+here. Two extensions follow directly from this position. A longer
+payload would turn the accuracies reported here into calibrated per-
+video decisions, and a surrogate bank that also models inter-frame
+prediction would close the one dimension in which our training
+channel stays narrower than a real encoder, so that a codec-first
+watermark becomes not merely a robustness result but a provenance
+tool that a real platform can rely on.
+References
+[1] Bang An, Mucong Ding, Tahseen Rabbani, Aakriti Agrawal, Yuancheng Xu,
+Chenghao Deng, Sicheng Zhu, Abdirisak Mohamed, Yuxin Wen, Tom Goldstein,
+et al. 2024. WAVES: Benchmarking the Robustness of Image Watermarks. In
+International Conference on Machine Learning. PMLR, 1456–1492.
+[2] Tu Bui, Shruti Agarwal, and John Collomosse. 2025. Trustmark: Robust wa-
+termarking and watermark removal for arbitrary resolution images. In 2025
+IEEE/CVF International Conference on Computer Vision (ICCV). IEEE, 18629–
+18639.
+[3] Tu Bui, Shruti Agarwal, Ning Yu, and John Collomosse. 2023. Rosteals: Robust
+steganography using autoencoder latent space. In 2023 IEEE/CVF Conference on
+Computer Vision and Pattern Recognition Workshops (CVPRW). IEEE, 933–942.
+[4] Tong Chen, Haojie Liu, Qiu Shen, Tao Yue, Xun Cao, and Zhan Ma. 2017. Deep-
+coder: A deep neural network based video compression. In 2017 IEEE Visual
+Communications and Image Processing (VCIP). IEEE, 1–4.
+[5] Hai Ci, Yiren Song, Pei Yang, Jinheng Xie, and Mike Zheng Shou. 2025.
+WMAdapter: Adding WaterMark Control to Latent Diffusion Models. In In-
+ternational Conference on Machine Learning. PMLR, 10901–10919.
+[6] Tanima Dutta and Hari Prabhat Gupta. 2017. An efficient framework for com-
+pressed domain watermarking in p frames of high-efficiency video coding
+(HEVC)–encoded video. ACM Transactions on Multimedia Computing, Com-
+munications, and Applications (TOMM) 13, 1 (2017), 1–24.
+[7] Han Fang, Yupeng Qiu, Kejiang Chen, Jiyi Zhang, Weiming Zhang, and Ee-
+Chien Chang. 2023. Flow-based robust watermarking with invertible noise
+layer for black-box distortions. In Proceedings of the AAAI conference on artificial
+intelligence, Vol. 37. 5054–5061.
+[8] Pierre Fernandez, Guillaume Couairon, Hervé Jégou, Matthijs Douze, and Teddy
+Furon. 2023. The stable signature: Rooting watermarks in latent diffusion models.
+In 2023 IEEE/CVF International Conference on Computer Vision (ICCV). IEEE,
+22409–22420.
+[9] Pierre Fernandez, Hady Elsahar, I Zeki Yalniz, and Alexandre Mourachko.
+2024.
+Video seal: Open and efficient video watermarking.
+arXiv preprint
+arXiv:2412.09492 (2024).
+[10] Frank Hartung and Bernd Girod. 1998. Watermarking of uncompressed and
+compressed video. Signal processing 66, 3 (1998), 283–301.
+[11] Runyi Hu, Jie Zhang, Yiming Li, Jiwei Li, Qing Guo, Han Qiu, and Tianwei Zhang.
+2025. Videoshield: Regulating diffusion-based video generation models via
+watermarking. In International Conference on Learning Representations, Vol. 2025.
+52395–52425.
+[12] Xuming Hu, Hanqian Li, Jungang Li, Yu Huang, Shuliang Liu, Qi Zheng, Junhao
+Chen, and Aiwei Liu. 2025. Videomark: A distortion-free robust watermarking
+framework for video diffusion models. arXiv preprint arXiv:2504.16359 (2025).
+[13] Yu Huang, Junhao Chen, Shuliang Liu, Hanqian Li, Jungang Li, Qi Zheng, Aiwei
+Liu, Yi R Fung, and Xuming Hu. 2025. Video Signature: Implicit Watermarking
+for Video Diffusion Models. arXiv preprint arXiv:2506.00652 (2025).
+[14] Youngdong Jang, MinHyuk Jang, JaeHyeok Lee, Feng Yang, Gyeongrok Oh,
+Jongheon Jeong, and Sangpil Kim. 2026. Lvmark: Robust watermark for latent
+video diffusion models.
+[15] Zhaoyang Jia, Han Fang, and Weiming Zhang. 2021. Mbrs: Enhancing robustness
+of dnn-based watermarking by mini-batch of real and simulated jpeg compres-
+sion. In Proceedings of the 29th ACM international conference on multimedia.
+41–49.
+[16] Junpeng Jing, Xin Deng, Mai Xu, Jianyi Wang, and Zhenyu Guan. 2021. Hinet:
+Deep image hiding by invertible network. In 2021 IEEE/CVF international confer-
+ence on computer vision (ICCV). IEEE, 4713–4722.
+[17] Kecen Li, Zhicong Huang, Xinwen Hou, and Cheng Hong. 2025. GaussMarker:
+Robust Dual-Domain Watermark for Diffusion Models. In International Confer-
+ence on Machine Learning. PMLR, 34688–34701.
+[18] Guo Lu, Wanli Ouyang, Dong Xu, Xiaoyun Zhang, Chunlei Cai, and Zhiyong
+Gao. 2019. Dvc: An end-to-end deep video compression framework. In 2019
+IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). IEEE,
+10998–11007.
+[19] Shilin Lu, Zihan Zhou, Jiayou Lu, Yuanzhi Zhu, and Adams Kong. 2025. Robust
+watermarking using generative priors against image editing: From benchmarking
+to advances. In International Conference on Learning Representations, Vol. 2025.
+83902–83936.
+[20] Xiyang Luo, Ruohan Zhan, Huiwen Chang, Feng Yang, and Peyman Milanfar.
+2020. Distortion agnostic deep watermarking. In 2020 IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR). IEEE, 13545–13554.
+[21] Siwei Ma, Xinfeng Zhang, Chuanmin Jia, Zhenghui Zhao, Shiqi Wang, and
+Shanshe Wang. 2020. Image and Video Compression With Neural Networks:
+A Review. IEEE Transactions on Circuits and Systems for Video Technology 30, 6
+(2020), 1683–1698.
+[22] Jiale Meng, Runyi Hu, Jie Zhang, Zheming Lu, Ivor Tsang, and Tianwei Zhang.
+2026. Unifying Watermarking via Dimension-Aware Mapping. arXiv preprint
+arXiv:2602.03373 (2026).
+[23] Apoorv Mohit, Bhavya Aggarwal, and Chinmay Gondhalekar. 2026. Provenance
+verification of AI-generated images via a perceptual hash registry anchored on
+blockchain. arXiv preprint arXiv:2602.02412 (2026).
+[24] Maneli Noorkami and Russell M Mersereau. 2007. A framework for robust
+watermarking of H. 264-encoded video with controllable detection performance.
+IEEE Transactions on information forensics and security 2, 1 (2007), 14–23.
+[25] Ahmad Rezaei, Mohammad Akbari, Saeed Ranjbar Alvar, Arezou Fatemi, and
+Yong Zhang. 2024. Lawa: Using latent space for in-generation image watermark-
+ing. In European conference on computer vision. Springer, 118–136.
+[26] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn
+Ommer. 2022. High-resolution image synthesis with latent diffusion models.
+In 2022 IEEE/CVF conference on computer vision and pattern recognition (CVPR).
+IEEE, 10674–10685.
+[27] Tom Sander, Pierre Fernandez, Alain Oliviero Durmus, Teddy Furon, and Matthijs
+Douze. 2025. Watermark anything with localized messages. In International
+Conference on Learning Representations, Vol. 2025. 79569–79599.
+[28] Gary J Sullivan, Jens-Rainer Ohm, Woo-Jin Han, and Thomas Wiegand. 2012.
+Overview of the high efficiency video coding (HEVC) standard. IEEE Transactions
+on circuits and systems for video technology 22, 12 (2012), 1649–1668.
+[29] Matthew Tancik, Ben Mildenhall, and Ren Ng. 2020. Stegastamp: Invisible
+hyperlinks in physical photographs. In 2020 IEEE/CVF Conference on Computer
+Vision and Pattern Recognition (CVPR). IEEE, 2114–2123.
+[30] Yiqi Tew and KokSheik Wong. 2014. An overview of information hiding in H.
+264/AVC compressed video. IEEE transactions on circuits and systems for video
+technology 24, 2 (2014), 305–319.
+[31] Gregory K Wallace. 1992. The JPEG still picture compression standard. IEEE
+transactions on consumer electronics 38, 1 (1992), xviii–xxxiv.
+[32] Bingyang Wen and Sergul Aydore. 2019. Romark: A robust watermarking system
+using adversarial training. arXiv preprint arXiv:1910.01221 (2019).
+[33] Yuxin Wen, John Kirchenbauer, Jonas Geiping, and Tom Goldstein. 2023. Tree-
+rings watermarks: Invisible fingerprints for diffusion images. Advances in Neural
+Information Processing Systems 36 (2023), 58047–58063.
+[34] Xinyu Weng, Yongzhi Li, Lu Chi, and Yadong Mu. 2019. High-capacity convolu-
+tional video steganography with temporal residual modeling. In Proceedings of
+the 2019 on international conference on multimedia retrieval. 87–95.
+[35] Thomas Wiegand, Gary J Sullivan, Gisle Bjontegaard, and Ajay Luthra. 2003.
+Overview of the H. 264/AVC video coding standard. IEEE Transactions on circuits
+and systems for video technology 13, 7 (2003), 560–576.
+[36] Yang Yang, Xinze Zou, Zehua Ma, Han Fang, and Weiming Zhang. 2026. SKeDA:
+A Generative Watermarking Framework for Text-to-video Diffusion Models.
+arXiv preprint arXiv:2603.00194 (2026).
+[37] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng
+Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. 2025.
+Cogvideox: Text-to-video diffusion models with an expert transformer. 83048–
+83077 pages.
+[38] Zijin Yang, Kai Zeng, Kejiang Chen, Han Fang, Weiming Zhang, and Nenghai Yu.
+2024. Gaussian shading: Provable performance-lossless image watermarking for
+diffusion models. In 2024 IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR). IEEE, 12162–12171.
+[39] Kevin Alex Zhang, Lei Xu, Alfredo Cuesta-Infante, and Kalyan Veeramacha-
+neni. 2019. Robust invisible video watermarking with attention. arXiv preprint
+arXiv:1909.01285 (2019).
+[40] Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei. 2018. Hidden: Hiding
+data with deep networks. In European conference on computer vision. Springer,
+682–697.
+[41] Xinjie Zhu, Zijing Zhao, Hui Jin, Qingxiao Guo, Yilong Ma, Yunhao Wang,
+Xiaobing Guo, and Weifeng Zhang. 2026. SIGMark: Scalable In-Generation
+Watermark with Blind Extraction for Video Diffusion. In International Conference
+on Learning Representations, Vol. 2026. 150652–150665.
+
+
+COVER: Codec-Robust Video Watermarking with Generative Video Priors
+A
+Appendix
+A.1
+Training Procedure
+Algorithm 1 states the training loop referenced in the method sec-
+tion. The generator modules and the two discriminators are updated
+in alternation on every iteration, and the frozen autoencoder re-
+ceives no gradients at any point, so the generative prior it supplies
+is identical before and after training.
+Algorithm 1 COVER Training
+Require: Training set D; iterations 𝑁it; payload length 𝐿; frozen
+𝑉enc,𝑉dec; trainable 𝐺𝜃, 𝐸𝑏, 𝐷𝜓; surrogate distribution S; dis-
+criminators 𝐷𝑓, 𝐷𝑣; strength 𝛼
+Ensure: Trained 𝐺𝜃, 𝐸𝑏, 𝐷𝜓
+1: for 𝑖= 1 to 𝑁it do
+2:
+Sample video batch x ∼D and payload b ∼Bernoulli(0.5)𝐿
+3:
+z ←𝑉enc(x),
+z𝑤←z + 𝛼𝐺𝜃(z, 𝐸𝑏(b))
+4:
+x𝑐←𝑉dec(z),
+x𝑤←𝑉dec(z𝑤)
+5:
+ˆz𝑤←𝑉enc(x𝑤)
+6:
+A ∼S, ˜z𝑤←𝑉enc(A(x𝑤))
+7:
+ˆblat, ˆbre, ˆbcod ←𝐷𝜓(z𝑤), 𝐷𝜓(ˆz𝑤), 𝐷𝜓(˜z𝑤)
+8:
+Compute Ltotal from
+b, ˆblat, ˆbre, ˆbcod, x𝑤, x𝑐, 𝐷𝑓, 𝐷𝑣by Eq. 9
+9:
+Update 𝐺𝜃, 𝐸𝑏, 𝐷𝜓by ∇Ltotal
+10:
+Compute L𝐷on detached x𝑐, x𝑤by Eq. 8
+11:
+Update 𝐷𝑓, 𝐷𝑣by ∇L𝐷
+12: end for
+A.2
+Detection Accuracy
+Table 4 reports the proportion of marked videos a verifier accepts,
+over the same 12 settings as Table 1. COVER averages 71.13% and
+is second to VideoShield at 96.92%, while Video Seal reaches 55.17%
+and the two remaining baselines stay near zero. COVER therefore
+leads every method except VideoShield, and it does so while holding
+the higher bit accuracy on 11 of the 12 settings, as Table 1 shows.
+The reason it still loses this column is the payload length, and the
+numbers show it directly. Our verifier accepts only when all eight
+bits are right, so detection accuracy is close to bit accuracy raised to
+the eighth power. On AV1 CRF 45 a bit accuracy of 98.91% predicts
+91.61% and we measure 92.00%, and on H.265 CRF 50 a bit accuracy
+of 73.72% predicts 8.72% and we measure 11.11%. Averaged over the
+12 settings the prediction is 69.48% against 71.13% measured, and
+the small excess in every setting shows that bit errors are mildly
+correlated. Detection therefore collapses where bit accuracy dips,
+which is why this column falls off at the strongest AV1 and H.265
+settings while the bit accuracy column still holds up there.
+VideoShield differs on this one point. It plants a much longer
+payload in the noise its generator starts from, so its verifier can
+decide on the weight of many bits instead of on every bit, and
+a bit accuracy of 91.03% is still a safe decision when it is spread
+over hundreds of them. Eight bits leave no such room. Payload
+length is what separates the two methods here. COVER puts more
+of the payload through the codec intact and still loses the decision,
+because it has fewer bits to lose. VideoShield pays for its length in
+another way, since it marks only the clips it generates and cannot
+mark a video that already exists, which is precisely the setting that
+COVER is built to serve.
+The detection column is where the next work should go. A longer
+payload with an error correcting code would let a verifier accept
+on a majority of bits, and the bit accuracy COVER already holds
+would then be enough to settle the decision at the hard settings too.
+A.3
+Additional Qualitative Results
+Figure 5 extends the qualitative comparison to six further clips and
+follows each one over eight consecutive frames, so the residual can
+be judged over a whole clip instead of a single frame. The residual
+keeps the same fine lattice from one frame to the next instead of
+switching on and off between neighbours, which is the behaviour
+the two temporal terms are meant to produce. Its peaks travel with
+the content, sitting on the feet of the runner in the first clip and
+on the moving hand in the flower clip, while smooth regions such
+as the wall behind the flowers stay low throughout. How much
+residual a clip carries also depends on what it shows, since a frame
+full of texture such as the staircase behind the mesh takes more
+than a frame that is mostly flat, which is where a change would be
+easiest for a viewer to see.
+
+
+Cao et al.
+Table 4: Detection accuracy (%) under 12 real codec settings from four codec families. Best in bold, second best underlined.
+Method
+AV1 (CRF)
+H.264 (CRF)
+H.265 (CRF)
+VP9 (CQ)
+Average
+Worst
+45
+55
+63
+23
+35
+45
+26
+40
+50
+35
+45
+55
+VideoMark
+7.37
+0.00
+0.00
+42.11
+4.21
+0.00
+29.47
+0.00
+0.00
+25.26
+10.53
+0.00
+9.91
+0.00
+VideoShield
+100.00
+99.00
+90.00
+100.00
+100.00
+92.00
+100.00
+100.00
+82.00
+100.00
+100.00
+100.00
+96.92
+82.00
+Video Seal
+67.00
+45.00
+3.00
+100.00
+64.00
+1.00
+99.00
+26.00
+2.00
+99.00
+93.00
+63.00
+55.17
+1.00
+VideoSignature
+0.00
+0.00
+0.00
+2.00
+0.00
+0.00
+2.00
+0.00
+0.00
+5.00
+0.00
+0.00
+0.75
+0.00
+COVER (Ours)
+92.00
+81.53
+27.43
+98.00
+86.01
+32.13
+97.53
+76.24
+11.11
+96.28
+88.10
+67.20
+71.13
+11.11
+Figure 5: More examples of qualitative comparison. Each video clip is shown by eight frames.

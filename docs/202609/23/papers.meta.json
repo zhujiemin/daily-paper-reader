@@ -1,0 +1,69 @@
+{
+  "label": "2026-09-23",
+  "date": "2026-09-23",
+  "generated_at": "2026-09-23T22:03:38",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202609/23/2609.24359v1-dissecting-agentic-forensics-the-role-of-triage-prompting-and-evidence-arbitration-in-open-world-fake-image-detection",
+      "section": "quick",
+      "title_en": "Dissecting Agentic Forensics: The Role of Triage, Prompting, and Evidence Arbitration in Open-World Fake Image Detection",
+      "authors": "Xianlong Li, Pietro Bongini, Niccoló Pancino, Marco Blanchini, Benedetta Tondi, Mauro Barni",
+      "date": "2026-09-21",
+      "pdf": "https://arxiv.org/pdf/2609.24359v1",
+      "score": "7.0",
+      "evidence": "覆盖拼接、替换与局部编辑的开放世界假图像检测",
+      "tldr": "开放世界图像取证需应对全合成、局部编辑、拼接换脸等多种篡改，但多数检测器仅专精单一类型。本文提出免训练智能体框架，核心为专家检测器、逐检测器分诊与冲突感知证据仲裁，并用六种配置和三个多模态大模型骨干剖析。结果显示，朴素融合在真实图像上误报严重；分诊与提示可过滤不可靠证据，但推理质量才是主导因素，更强裁判显著更优，分布偏移下尤甚。操控召回近乎饱和，说明核心挑战不是发现篡改，而是校准对专家工具的信任并仲裁冲突证据。",
+      "tags": "query:image-tamper",
+      "abstract_en": "Image forensics is increasingly an open-world problem: manipulations range from fully synthetic images to localized edits, splicing and swapping, while most forensic detectors remain specialized to a single manipulation family. Agentic AI has recently emerged as a promising solution. In principle, such systems can assess the reliability of individual detectors, identify out-of-scope evidence, and arbitrate conflicting reports. However, it remains unclear which components actually drive performance and whether their benefits persist under distribution shift. To answer these questions, we study a training-free agentic framework built around specialist detectors, per-detector triage, and conflict-aware evidence arbitration. Using six configurations and three multimodal large language model backbones, we dissect the role of triage, prompting, and reasoning quality on both in-distribution and out-of-distribution data. Our results show that naive detector fusion suffers from severe false-positive rates on authentic images. Triage and prompting consistently improve performance by filtering unreliable evidence and exposing detector limitations. However, the dominant factor is represented by reasoning itself: A stronger judge substantially outperforms a weaker one, particularly under distribution shift. Most notably, manipulation recall is nearly saturated across all configurations, indicating that the main challenge of open-world image forensics is not detecting manipulations, but calibrating trust in specialized forensic tools and arbitrating conflicting evidence.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/23/2609.26236v1-cover-codec-robust-video-watermarking-with-generative-video-priors",
+      "section": "quick",
+      "title_en": "COVER: Codec-Robust Video Watermarking with Generative Video Priors",
+      "authors": "Yuxin Cao, Hao Yang, Ziqi Ding, Jie Hao, Wei Song",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.26236v1",
+      "score": "7.0",
+      "evidence": "面向生成媒体版权保护与来源认证的视频水印",
+      "tldr": "视频水印用于生成媒体版权与溯源，但视频几乎都先经编解码压缩，压缩会丢弃水印依赖的感知冗余，真实编解码器又不可微。COVER 在冻结生成视频自编码器潜空间嵌入载荷，用重编码恢复，并以可微编解码代理库模拟压缩，经三条恢复路径和保真约束训练。在4种编解码器12种设置下平均比特准确率93.72%，11/12项第一，较最强基线提升2.68点，最差点从68.90%升至73.72%。该方案是首个以编解码压缩为目标的学习式视频水印，兼顾鲁棒与保真。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Video watermarking underpins copyright protection and provenance for generated media, yet almost every video is compressed by a codec before it is stored or shared. A codec discards precisely the perceptually redundant components that most watermarks rely on, so the payload is often lost even when the marked video looked flawless beforehand. Existing methods leave this path open, since they treat compression as one entry in a generic list of distortions, while a real codec is not differentiable and cannot enter gradient-based training. We present COVER, the first learned video watermark built around codec compression as its design target, which survives that compression by embedding the payload in the latent space of a frozen generative video autoencoder and recovering it by re-encoding the received video into that same latent space. To make codec robustness trainable, we build a differentiable codec surrogate bank that simulates the dominant degradation modes of practical compression, and we train the embedder and the latent decoder through three shared recovery paths under a fidelity objective that constrains the residual in the pixel and frequency domains. Across four codecs at 12 settings, COVER attains 93.72% average bit accuracy, ranks first on 11 of the 12, improves the strongest prior method by 2.68 points, and lifts the worst operating point from 68.90% to 73.72% while each marked video stays visually close to the source clip that produced it.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/23/2609.21858v1-watermarkable-multi-draft-speculative-sampling-via-poisson-processes",
+      "section": "quick",
+      "title_en": "Watermarkable Multi-Draft Speculative Sampling via Poisson Processes",
+      "authors": "Yanxiao Liu, Sicheng Wan, Zhan Gao, Deniz Gündüz",
+      "date": "2026-09-18",
+      "pdf": "https://arxiv.org/pdf/2609.21858v1",
+      "score": "6.0",
+      "evidence": "在生成模型中嵌入无偏水印以实现输出溯源",
+      "tldr": "大语言模型部署需同时提升推理效率与输出溯源，但推测采样与水印的结合此前被认为非常困难甚至不可行。本文提出基于泊松过程的多草稿推测采样算法，借助精确的无通信列表耦合方案获得草稿器不变性。该算法采样效率强，并可嵌入无偏水印而不损害推测接受率，首次在多草稿场景同时维持水印强度与采样效率。实验验证其在这两方面均表现优异。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Large language models (LLMs) have achieved state-of-the-art performance across a wide range of tasks, motivating two important aspects of deployment: inference efficiency and output provenance, which can be tackled by speculative sampling and watermarking, respectively. However, recent works have shown that combining these two goals is highly nontrivial and can be potentially impossible. In this work, we develop a novel multi-draft speculative sampling algorithm based on Poisson processes that improves the frontier of this fundamental trade-off. The proposed algorithm has strong sampling efficiency on its own and, more interestingly, is naturally watermarkable: we can embed an unbiased watermark without degrading speculative acceptance. Moreover, our algorithm is based on an exact list-coupling-without-communication scheme, which yields a drafter invariance property that benefits both sampling and watermarking. It is the first multi-draft, drafter-invariant speculative sampling scheme that maintains both watermark strength and sampling efficiency, and we experimentally verify its strong performance in both aspects.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/23/2609.25972v1-nawe-digital-watermarking-with-neural-assisted-watermark-extraction",
+      "section": "quick",
+      "title_en": "NAWE: Digital Watermarking with Neural-Assisted Watermark Extraction",
+      "authors": "Roman Chaban, Vitaliy Kinakh, Lilian Rouzaire, Slava Voloshynovskiy",
+      "date": "2026-09-22",
+      "pdf": "https://arxiv.org/pdf/2609.25972v1",
+      "score": "6.0",
+      "evidence": "数字水印嵌入与神经辅助提取",
+      "tldr": "数字水印需在几何与光度失真下保持鲁棒，并避免为每种水印训练专用提取器。NAWE 将显式信号处理水印与预训练神经宿主预测器结合，用周期感知掩蔽载体同步、Polar 码冗余，再以冻结去噪器去噪后相减提取水印。实验对比 Wiener、BM3D、DRUNet、GS-DRUNet，并与 TrustMark、SSL Watermarking、PixelSeal、WAM 比较，获得最低几何与光度类别 BER 和较强消息恢复，但滤波与噪声仍受限。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "NAWE (Neural-Assisted Watermark Extraction) combines an explicit signal-processing watermarking construction with a pretrained neural host predictor. A periodic, perceptually masked watermark carrier provides synchronization, Polar coding supplies redundancy, and denoising followed by subtraction extracts the embedded watermark. The denoiser remains frozen, without watermark-specific training. A one-factor-at-a-time study compares Wiener, BM3D, DRUNet, and GS-DRUNet host estimators. Comparisons with TrustMark, SSL Watermarking, PixelSeal, and WAM show NAWE's lowest geometric and photometric class BER and strong message recovery, while filtering and noise remain limitations consistent with the non-adaptive selection of the watermark extractor. The comparison retains the systems' different payloads and coding.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,73 @@
+{
+  "date": "20260923",
+  "date_label": "",
+  "generated_at": "2026-09-23 22:03:37 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.24359v1",
+      "route": "202609/23/2609.24359v1-dissecting-agentic-forensics-the-role-of-triage-prompting-and-evidence-arbitration-in-open-world-fake-image-detection",
+      "title": "Dissecting Agentic Forensics: The Role of Triage, Prompting, and Evidence Arbitration in Open-World Fake Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "覆盖拼接、替换与局部编辑的开放世界假图像检测",
+      "first_seen_at": "2026-09-23 22:03:37 UTC",
+      "updated_at": "2026-09-23 22:03:37 UTC"
+    },
+    {
+      "paper_id": "2609.26236v1",
+      "route": "202609/23/2609.26236v1-cover-codec-robust-video-watermarking-with-generative-video-priors",
+      "title": "COVER: Codec-Robust Video Watermarking with Generative Video Priors",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向生成媒体版权保护与来源认证的视频水印",
+      "first_seen_at": "2026-09-23 22:03:37 UTC",
+      "updated_at": "2026-09-23 22:03:37 UTC"
+    },
+    {
+      "paper_id": "2609.21858v1",
+      "route": "202609/23/2609.21858v1-watermarkable-multi-draft-speculative-sampling-via-poisson-processes",
+      "title": "Watermarkable Multi-Draft Speculative Sampling via Poisson Processes",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "在生成模型中嵌入无偏水印以实现输出溯源",
+      "first_seen_at": "2026-09-23 22:03:37 UTC",
+      "updated_at": "2026-09-23 22:03:37 UTC"
+    },
+    {
+      "paper_id": "2609.25972v1",
+      "route": "202609/23/2609.25972v1-nawe-digital-watermarking-with-neural-assisted-watermark-extraction",
+      "title": "NAWE: Digital Watermarking with Neural-Assisted Watermark Extraction",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "数字水印嵌入与神经辅助提取",
+      "first_seen_at": "2026-09-23 22:03:37 UTC",
+      "updated_at": "2026-09-23 22:03:37 UTC"
+    }
+  ]
+}
