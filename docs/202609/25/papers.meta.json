@@ -1,0 +1,54 @@
+{
+  "label": "2026-09-25",
+  "date": "2026-09-25",
+  "generated_at": "2026-09-25T22:42:12",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202609/25/2609.25719v1-neumark-neural-codec-resynthesis-robust-audio-watermarking-in-the-codec-latent-space",
+      "section": "quick",
+      "title_en": "NeuMark: Neural Codec Resynthesis-Robust Audio Watermarking in the Codec Latent Space",
+      "authors": "Annan Wu, Wen-Chin Huang, Tomoki Toda",
+      "date": "2026-09-22",
+      "pdf": "https://arxiv.org/pdf/2609.25719v1",
+      "score": "6.0",
+      "evidence": "生成语音水印嵌入，抗编解码重合成",
+      "tldr": "音频水印对追踪生成语音日益关键，但神经编解码器会重合成语音，可能抹除未与编解码结构对齐的水印证据。NeuMark 将水印嵌入 SpeechTokenizer 声学 token，并利用交叉注意力在 RVQ 各层注入 16 位消息，使水印分布于编解码对齐的潜结构。实验表明，该方法在神经编解码重合成下显著提升鲁棒性，同时支持水印检测与消息恢复。论文还分析了重建参照透明度与原音参照鲁棒性之间的权衡。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Audio watermarking is increasingly important for tracing generated speech. Several audio watermarking methods have been proposed to embed the watermark in various domains, such as waveform, timbre feature, or latent representations, for making the embedded watermark robust against traditional digital signal processing (DSP) attacks. On the other hand, modern neural codecs introduce a different threat from DSP attacks: they resynthesize speech through quantized acoustic representations and can remove the embedded watermark evi- dence that is not aligned with codec-preserved structure. In this paper, we propose NeuMark, a codec-latent audio watermarking framework that embeds watermark evidence into SpeechTok- enizer acoustic tokens to address this resynthesis threat. NeuMark uses cross-attention to inject a 16-bit message across residual vector quantization (RVQ) layers, distributing the watermark over codec-aligned latent structure. Experimental results show that NeuMark substantially improves robustness under neural- codec resynthesis while supporting both watermark detection and message recovery. We also analyze the trade-off between reconstruction-referenced transparency and original-referenced robustness.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/25/2609.29040v1-the-vulnerability-of-neural-audio-watermarks-under-speech-enhancement",
+      "section": "quick",
+      "title_en": "The Vulnerability of Neural Audio Watermarks under Speech Enhancement",
+      "authors": "Xincong Zhong, Shengyao Wang, Lingfeng Yao, Yihang Bao, Jinze Yu, Miao Pan, Jiang Liu",
+      "date": "2026-09-24",
+      "pdf": "https://arxiv.org/pdf/2609.29040v1",
+      "score": "6.0",
+      "evidence": "通过语音增强对神经音频水印实施黑盒移除攻击",
+      "tldr": "神经音频水印常用于商用语音生成系统以追溯 AI 语音，但其鲁棒性多只在传统信号失真下评估。本文将高斯噪声与语音增强（SE）模型级联，作为黑盒水印移除攻击，覆盖判别式与生成式 SE，并测试六种水印。实验表明，该攻击在移除水印上显著优于现有神经重合成方法，尤其生成式 SE 会重建语音谐波区域，破坏性极强。这揭示 SE 对当前音频水印构成严重威胁，呼吁在水印设计中加入 SE 感知的鲁棒性评估。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Neural audio watermarks are increasingly deployed in commercial speech generation systems to make AI-generated speech traceable, yet their robustness has been studied mainly under conventional signal distortions. Since a watermark can be regarded as imperceptible noise added to the speech signal, a natural question is whether speech enhancement (SE), as a denoising model, can remove it. In this paper, we cascade Gaussian noise with SE models as a black-box watermark removal attack, covering both discriminative and generative SE paradigms, against six neural watermarks: AudioSeal, WavMark, SilentCipher, Timbre, Perth, and AlignMark. Experimental results show that the proposed attack significantly outperforms existing neural re-synthesis methods in watermark removal. In particular, we find that generative SE, which reconstructs the harmonic regions of speech while denoising, is highly destructive to watermarks. These findings show that SE poses a serious threat to current audio watermarking methods, and we call for SE-aware robustness evaluation in watermark design.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/25/2609.29264v1-tp-criv-a-framework-for-third-party-challenge-response-identity-verification-of-ai-models",
+      "section": "quick",
+      "title_en": "TP-CRIV: A Framework for Third-Party Challenge-Response Identity Verification of AI Models",
+      "authors": "Teruki Sano, Minoru Kuribayashi, Masao Sakai, Shuji Isobe, Eisuke Koizumi, Zhang Zhang, Satoru Matsumoto",
+      "date": "2026-09-24",
+      "pdf": "https://arxiv.org/pdf/2609.29264v1",
+      "score": "6.0",
+      "evidence": "超越水印与指纹的AI模型第三方身份验证",
+      "tldr": "AI模型常以远程服务部署，模型盗用难以核查。TP-CRIV提出第三方挑战-应答身份验证框架：验证者无白盒与API权限，仅通过黑盒推理接口交互，在未公开的新要求与网络隔离下获取经验证据。针对CNN图像分类器，用概率控制生成见证，在十个ImageNet预训练TorchVision模型上实现清晰同/跨模型分离，并可用独立校准阈值完成有限挑战验证。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Artificial intelligence (AI) models are increasingly deployed through remote services, making model misappropriation a growing concern. Existing approaches, including watermarking, fingerprinting, and model similarity analysis, primarily rely on predefined evidence or direct behavioral comparison and do not explicitly evaluate whether the claimant currently possesses and can utilize model-dependent information relevant to the claimed model identity.   In this paper, we propose Third-Party Challenge-Response Identity Verification (TP-CRIV) for AI models. TP-CRIV targets a third-party verification setting in which the verifier has neither white-box nor API access to the claimant's model, can interact with the suspicious deployed service only through its ordinary black-box inference interface, and does not require protocol-specific cooperation from the service provider. Under these constraints, the framework enables the verifier to obtain empirical evidence as to whether the claimant locally possesses a model satisfying a predeclared identity relative to the deployed model. Verification is conducted under fresh, previously undisclosed requirements and network isolation, so that the demonstrated capability cannot rely on online external assistance after challenge disclosure. The resulting evidence is interpreted relative to independently specified and calibrated matching and non-matching operating situations and is statistical rather than cryptographic. We instantiate TP-CRIV for CNN image classifiers using probability-control-based witness generation. Experiments on ten ImageNet-pretrained TorchVision models demonstrate clear same/cross-model separation and finite-challenge verification using independently calibrated thresholds.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

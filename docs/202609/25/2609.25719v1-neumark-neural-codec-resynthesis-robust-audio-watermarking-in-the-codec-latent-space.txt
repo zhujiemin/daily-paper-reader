@@ -1,0 +1,294 @@
+Title: NeuMark: Neural Codec Resynthesis-Robust Audio Watermarking in the Codec Latent Space
+
+URL Source: https://arxiv.org/pdf/2609.25719v1
+
+Published Time: Wed, 23 Sep 2026 00:42:29 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+2026 Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC) 
+
+# NeuMark: Neural Codec Resynthesis-Robust Audio Watermarking in the Codec Latent Space 
+
+Annan Wu, Wen-Chin Huang, Tomoki Toda 
+
+Nagoya University, Japan E-mail: wu.annan@g.sp.m.is.nagoya-u.ac.jp E-mail: wen.chinhuang@g.sp.m.is.nagoya-u.ac.jp E-mail: tomoki@icts.nagoya-u.ac.jp 
+
+Abstract —Audio watermarking is increasingly important for tracing generated speech. Several audio watermarking methods have been proposed to embed the watermark in various domains, such as waveform, timbre feature, or latent representations, for making the embedded watermark robust against traditional digital signal processing (DSP) attacks. On the other hand, modern neural codecs introduce a different threat from DSP attacks: they resynthesize speech through quantized acoustic representations and can remove the embedded watermark evi-dence that is not aligned with codec-preserved structure. In this paper, we propose NeuMark, a codec-latent audio watermarking framework that embeds watermark evidence into SpeechTok-enizer acoustic tokens to address this resynthesis threat. NeuMark uses cross-attention to inject a 16-bit message across residual vector quantization (RVQ) layers, distributing the watermark over codec-aligned latent structure. Experimental results show that NeuMark substantially improves robustness under neural-codec resynthesis while supporting both watermark detection and message recovery. We also analyze the trade-off between reconstruction-referenced transparency and original-referenced robustness. 
+
+Index Terms —audio watermarking, speech deepfake detection, neural-codec resynthesis 
+
+I. I NTRODUCTION 
+
+Recent progress in text-to-speech (TTS), voice conversion, and neural audio codec language models, such as VALL-E [1] and AutoVC [2], has made synthetic speech increasingly natural and easy to personalize. This progress also raises practical risks: impersonation, unauthorized voice cloning, and redistribution of generated speech without provenance. Passive speech deepfake detectors can be useful, but they often depend on artifacts of specific generators and can degrade as synthesis models improve [3], [4]. Audio watermarking addresses this provenance problem by embedding traceable evidence into speech: given speech and, optionally, a source- or user-specific message to be embedded, a watermarking system outputs per-ceptually similar watermarked speech. The embedded evidence can later be used to verify the watermark and recover the message, enabling released speech to be traced to its generation pipeline or authorized source. For this tracing to remain useful in practice, the watermark must survive benign and adversarial distortions while remaining inaudible. Previous audio watermarking methods have embedded wa-termark evidence in several domains. Waveform-domain meth-ods such as WavMark [5] and AudioSeal [6] directly modify the generated waveform, while Timbre Watermarking [7] em-beds information in timbre-related representations. Latent-side or generation-aware methods such as TraceableSpeech [8] and VoiceMark [9] inject watermark information before decoding or during synthesis. These methods have shown robustness to many DSP attacks, such as filtering, noise, resampling, and volume changes. However, robustness to DSP attacks does not necessarily imply robustness to neural-codec resynthesis. Modern neural codecs such as EnCodec [10], DAC [11], and WavTokenizer [12], as well as codec-based speech generation systems such as VALL-E [1], CosyVoice [13], and Moshi [14], reconstruct speech through quantized acoustic representations, preserving content and speaker identity while discarding details that are not stable under codec reconstruction. This makes latent-side audio watermarking relevant, because the watermark can be designed around the representations that neural codecs preserve. Nevertheless, watermark evidence placed even in generation-specific latent variables can still be weakened af-ter resynthesis. Studies have shown that the performance of previous watermarking methods degrades under neural codec resynthesis [15]. This motivates audio watermarking methods that are ro-bust to neural-codec resynthesis attacks. As one solution, we propose NeuMark, a codec-latent watermarking framework designed to improve robustness against neural-codec resynthe-sis. We use SpeechTokenizer [16] because its residual vector quantization (RVQ) structure provides multiple codec-aligned acoustic token streams, allowing watermark evidence to be embedded in representations targeted by neural-codec recon-struction. NeuMark embeds a recoverable message directly into codec-aligned latent representations and decodes the mod-ified latent sequence into watermarked speech. During training, NeuMark simulates DSP attacks and neural-codec resynthesis, and is trained to perform both frame-level watermark detection and message recovery. Because latent-space watermarking is bounded by the reconstruction quality of the codec, we also evaluate transparency against both the original waveform and a codec-reconstructed reference. The main contributions of this paper are as follows:  
+
+> •
+
+We propose NeuMark, a codec-latent audio watermark-ing method designed for robustness against neural-codec resynthesis, and compare it with waveform, timbre-arXiv:2609.25719v1 [cs.SD] 22 Sep 2026 TABLE I COMPARISON OF LATENT -SIDE OR GENERATION -AWARE AUDIO WATERMARKING METHODS .            
+
+> Method Embed position Simulated attacks Reference TraceableSpeech After RVQ aggregation DSP and EnCodec Original VoiceMark VQ 2–8 speaker layers DSP and voice-clone simulated augmentation Original NeuMark (ours) Each RVQ layer DSP, masking, and EnCodec Original or codec recon.
+
+feature, and latent/generation-aware baselines under DSP edits and codec-resynthesis attacks.  
+
+> •
+
+We reveal a robustness–transparency trade-off specific to latent codec watermarking through reconstruction-referenced and original-referenced training variants. Our evaluation against DSP edits and neural-codec resyn-thesis shows that codec-aligned embedding substantially improves robustness to resynthesis, while metrics using reconstructed and original references separate watermark distortion from codec reconstruction effects. The code is publicly available at https://github.com/goannan/ NeuMark. II. C OMPARISON WITH LATENT -S IDE METHODS 
+
+TraceableSpeech [8], VoiceMark [9], and NeuMark all em-bed watermark evidence in latent representations, but they differ in where the message is injected, what attacks are sim-ulated during training, and what reference is used for quality optimization, as summarized in Table I. TraceableSpeech in-jects the watermark into the representation after RVQ-layer ag-gregation before decoding. VoiceMark uses SpeechTokenizer, keeps the first VQ layer as content, and embeds into the speaker-specific VQ 2–8 layers for zero-shot voice-cloning transfer. NeuMark instead injects the message into each RVQ layer separately, so the watermark is distributed over all codec layers for codec-resynthesis robustness. For simulated attacks during training, TraceableSpeech uses DSP and EnCodec aug-mentation, VoiceMark uses DSP and voice-clone simulated augmentation, and NeuMark uses DSP, masking, and EnCodec augmentation. III. P ROPOSED METHOD 
+
+A. Overview 
+
+Fig. 1 summarizes the NeuMark training pipeline. Given an input utterance x ∈ RL and a 16-bit message m ∈ { 0, 1}16 ,where L is the waveform length, the frozen SpeechTokenizer encoder E produces e ∈ R1024 ×T . Here, 1024 denotes the SpeechTokenizer latent channel dimension, and T is the num-ber of latent frames. Its eight RVQ streams are q(r) ∈ R1024 ×T
+
+for r = 1 , . . . , 8, with T = L/ 320 (e.g., T = 150 for a 3-second 16 kHz segment). NeuMark modifies these RVQ streams with a trainable Transformer-based watermark encoder and decodes the result into watermarked speech xwm with the frozen SpeechTokenizer decoder G. During training, xwm is passed through a stochastic distortion operator D before a trainable extractor predicts frame-level watermark probabilities and message bits. 
+
+B. Cross-Attention-Based Watermark Encoder 
+
+The 16-bit message m is converted into a sequence of learnable message-memory vectors, which condition each RVQ stream through a Transformer cross-attention block [17]. The cross-attended features are projected back to the SpeechTok-enizer latent dimension and added to each RVQ stream through a residual watermark encoder. The modified RVQ streams are then summed and decoded by the frozen SpeechTokenizer decoder G to obtain xwm . The pretrained tokenizer remains fixed throughout training. 
+
+C. Training Distortion Operator 
+
+Training uses a stochastic distortion operator D applied to xwm . For each mini-batch, D samples one augmentation from the training distortion pool and produces the distorted watermarked speech ˜x = D(xwm ). The training pool and sampling weights are described in Section IV-C; masking is used only as a training augmentation, not as an evaluation attack. 
+
+D. Training Reference Variants 
+
+NeuMark computes a reference reconstruction xrec =
+
+G(E(x)) , where E and G are the frozen SpeechTokenizer encoder and decoder. This reference is important because latent-space watermarking cannot exceed the reconstruction fidelity of the codec itself. We define two NeuMark training variants that differ only in the choice of the reference target 
+
+xref used across all quality losses and discriminator training:  
+
+> •
+
+NeuMark R-R (Reconstruction Reference): Sets xref =
+
+xrec , using the codec-reconstructed audio as the reference target. This isolates watermark-induced distortion from the distortion already introduced by the codec.  
+
+> •
+
+NeuMark R-O (Original Reference): Sets xref = x,using the original source audio as the reference target. This trains the embedder to both embed the watermark and compensate for the codec reconstruction error. 
+
+E. Training Objective 
+
+The training objective of NeuMark combines quality-preserving losses (adversarial loss Ladv , feature matching loss Lfeat , mel-spectral reconstruction loss Lmel , and cosine similarity loss Lcos ) and watermark-extraction losses (message decoding loss Ldec and watermark presence detection loss 
+
+Ldet ). The adversarial loss encourages watermarked speech to match the distribution of natural and codec-reconstructed speech: 
+
+Ladv = E (D(xwm ) − 1) 2 , (1) Fig. 1. The overall architecture of our proposed NeuMark. 
+
+where D(·) is the scalar output of the least-squares adversarial discriminator and E[·] denotes expectation over training sam-ples and sampled augmentations. The discriminator is trained to classify the reference audio xref as real and the watermarked audio xwm as fake: 
+
+LD = E (D(xref ) − 1) 2 + E D(xwm )2 . (2) In these equations, xref denotes the quality reference target, which is either the original speech x or the codec recon-struction xrec = G(E(x)) depending on the training variant described in Section III-D. The feature matching loss is shown as follows: 
+
+Lfeat =
+
+> J
+
+X
+
+> i=1
+
+1
+
+Ni
+
+∥Di(xref ) − Di(xwm )∥1 , (3) where J is the number of discriminator feature layers used for matching, Di(·) is the feature map from the i-th discriminator layer, and Ni is the number of scalar elements in that feature map. The multi-scale mel-spectrogram loss is 
+
+Lmel = X
+
+> s∈S
+
+∥Mel s(xref ) − Mel s(xwm )∥1 . (4) Here, S is the set of mel-spectrogram scales, and Mel s(·)
+
+denotes the mel-spectrogram computed with scale setting s.The latent cosine loss constrains the direction of the content latent before and after embedding: 
+
+Lcos = 1 − z⊤ 
+
+> c
+
+z′
+
+> c
+
+∥zc∥2∥z′
+
+> c
+
+∥2
+
+, (5) where zc and z′ 
+
+> c
+
+denote flattened content-latent representations before and after watermark embedding, respectively. The extractor encodes distorted watermarked speech ˜x with the frozen SpeechTokenizer encoder and predicts a 16-bit message estimate ˆm ∈ [0 , 1] 16 and frame-level watermark probabilities ˆy ∈ [0 , 1] T . The message decoding loss is 
+
+Ldec = CE( m, ˆm), (6) where CE( ·, ·) denotes binary cross entropy over the 16 payload bits. The extractor also outputs logits l ∈ RT with 
+
+ˆyt = σ(lt), where σ(·) is the sigmoid function. The detection loss is frame-level binary cross entropy with a VAD speech mask: 
+
+Ldet = − 1
+
+V + ϵ
+
+> T
+
+X
+
+> t=1
+
+vt [yt log ˆ yt + (1 − yt) log(1 − ˆyt)] . (7) Here, for notational simplicity the batch index is omitted: 
+
+yt ∈ { 0, 1} is the target watermark-presence label at frame t
+
+(1 for watermarked speech and 0 for clean or masked negative regions), vt ∈ { 0, 1} is the VAD label indicating whether frame t contains speech, V = PTt=1 vt is the number of speech frames, and ϵ prevents division by zero. VAD labels are computed on the clean training utterance, aligned to the extractor frame rate, and applied only as a loss mask so that detection errors in silent frames are not emphasized. Positive samples use distorted watermarked speech, while negative samples use clean speech or masked regions. The final objective for the watermark encoder and extractor is the weighted sum 
+
+Ltotal = λadv Ladv + λfeat Lfeat + λmel Lmel 
+
++ λcos Lcos + λdec Ldec + λdet Ldet . (8) The discriminator is optimized separately with LD.IV. E XPERIMENTAL SETUP 
+
+A. Data 
+
+All watermark models were evaluated with the same test set: LibriSpeech test-clean [18], containing 2620 utterances. NeuMark was trained on the LibriTTS train-clean-100, train-clean-360, and train-other-500 subsets at 24 kHz [19]. 
+
+B. Baselines 
+
+Using 16-bit payloads throughout, we compared NeuMark with five baselines: WavMark [5], 1 AudioSeal [6], 2 Timbre Watermarking [7], 3 TraceableSpeech [8], 4 and VoiceMark [9]. 5
+
+TraceableSpeech provided code but no pretrained checkpoint, so we retrained it on LibriTTS with EnCodec resynthesis augmentation. In the quality evaluation (Table III), Wav-Mark, AudioSeal, and Timbre Watermarking were treated as non-reconstruction baselines because they lack paired codec-reconstruction references. 
+
+C. Training Details 
+
+The default weights for the loss terms were λadv = 1 ,
+
+λfeat = 2 , λmel = 2 , λcos = 2 , λdec = 10 , and λdet = 1 .Each NeuMark variant was trained for 150,000 steps with a global batch size of 32 on four NVIDIA GeForce RTX 3090 GPUs, requiring approximately 97 hours. The training distortion pool included an identity path, DSP distortions broadly following the AudioSeal-style DSP edits, EnCodec neural codec resynthesis at 3, 6, and 12 kbps, and masking. The masking augmentation randomly selected 20% of the time samples in each watermarked waveform. The selected samples were directly modified on the waveform time axis: for silence masking, they were set to zero; for original-audio replacement, they were replaced by the temporally aligned samples from the original utterance x, while all unselected samples were left unchanged. The sampling weights were set to 10 for identity, 1 for each DSP distortion, 1 for each neural codec distortion, and 5 for masking. 
+
+D. Evaluation Attacks 
+
+The test-time robustness benchmark included the DSP edits None, Bandpass, Echo, White, Highpass, Lowpass, Pink, Re-sample, Smooth, Fast, Boost, and Duck, following the naming used in AudioSeal. 6 Fast denoted speed perturbation from 0.8 × to 1.2 ×; Boost and Duck denoted volume scaling by 
+
++10% and −10% , respectively. Neural resynthesis attacks included DAC at 16 kHz and 24 kHz, EnCodec at 12, 6, and 3 kbps, and WavTokenizer. We used EnCodec as the seen neural-codec attack because the public pretrained baseline models used in this comparison were generally trained with 
+
+> 1https://github.com/wavmark/wavmark.
+> 2https://github.com/facebookresearch/audioseal.
+> 3https://github.com/TimbreWatermarking/TimbreWatermarking.
+> 4https://github.com/zjzser/TraceableSpeech.
+> 5https://huggingface.co/spaces/haiyunli/VoiceMark.
+> 6https://github.com/facebookresearch/audiocraft.
+
+EnCodec-style codec augmentation, allowing us to evaluate released models without retraining all baselines. DAC and WavTokenizer were therefore treated as unseen attacks to test generalization beyond the codec used during robustness training. 
+
+E. Metrics 
+
+For robustness, we evaluated the watermark detection rate (Det ) and bit recovery rate ( Bit ). Frame-level detection proba-bilities were averaged into utterance-level scores pi. Detection was computed as balanced soft accuracy over paired water-marked and clean utterances: 
+
+Det = 12
+
+1
+
+N
+
+> N
+
+X
+
+> i=1
+
+pi, wm + 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+(1 − pi, clean )
+
+!
+
+. (9) Bit recovery measured the fraction of correctly recovered payload bits: 
+
+Bit = 1
+
+N K 
+
+> N
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+1 [ ˆ mi,k = mi,k ] , (10) where mi,k and ˆmi,k are the target and recovered value of bit 
+
+k for utterance i, respectively. Perceptual quality was measured using PESQ [20], STOI [21], and SI-SNR [22] under the R-O (Original Reference) and R-R (Reconstruction Reference) protocols introduced in Section III-D. R-O metrics compared watermarked speech against the original audio x, while R-R metrics compared it against the reconstructed control xrec . R-R evaluation was not applicable to non-reconstruction baselines. V. R ESULTS AND ANALYSIS 
+
+A. Watermark Extraction Robustness 
+
+As summarized in Table II, NeuMark R-O achieves the highest average robustness, followed closely by NeuMark R-R. Under DSP attacks, waveform-domain methods such as WavMark and AudioSeal remain highly competitive. However, they degrade severely under neural-codec resynthesis, where NeuMark’s alignment with SpeechTokenizer latents preserves higher detection and bit recovery. The neural-codec average highlights this difference, and the unseen DAC and WavTok-enizer results further test generalization beyond the codec used during robustness training. Speed perturbation remains chal-lenging for all methods because it changes temporal alignment, but the NeuMark variants still yield the highest extraction accu-racy. WavTokenizer’s extreme compression strongly degrades watermarking capacity, suggesting that future watermark de-signs need stronger invariance to single-quantizer resynthesis rather than relying only on multi-RVQ residual capacity. 
+
+B. Perceptual Quality 
+
+As shown in Table III, non-reconstruction baselines (e.g., AudioSeal) yield higher fidelity against the original signal because they bypass codec reconstruction. For latent-space methods, R-R evaluation is more informative since it isolates watermark-only distortion. TABLE II ROBUSTNESS UNDER SIGNAL -PROCESSING AND NEURAL -CODEC RESYNTHESIS ATTACKS . E ACH CELL REPORTS DET /B IT .Attack WavMark AudioSeal TimbreWM TraceableSpeech VoiceMark NeuMark R-R NeuMark R-O None 1.00 / 1.00 1.00 / 1.00 0.70 / 1.00 0.78 / 1.00 0.83 / 0.99 0.99 / 1.00 1.00 / 1.00 
+
+Bandpass 1.00 / 1.00 1.00 / 1.00 0.69 / 1.00 0.80 / 1.00 0.84 / 0.99 0.99 / 1.00 1.00 / 1.00 
+
+Echo 0.98 / 0.94 0.82 / 0.81 0.67 / 1.00 0.77 / 1.00 0.71 / 0.98 0.93 / 0.97 0.95 / 0.93 White 0.98 / 0.97 0.98 / 1.00 0.63 / 1.00 0.79 / 1.00 0.77 / 0.96 0.96 / 0.98 0.99 / 1.00 
+
+Highpass 1.00 / 1.00 1.00 / 1.00 0.70 / 1.00 0.79 / 1.00 0.83 / 0.99 0.99 / 0.99 1.00 / 1.00 
+
+Lowpass 1.00 / 1.00 1.00 / 1.00 0.67 / 1.00 0.79 / 0.96 0.78 / 0.95 0.98 / 0.99 1.00 / 1.00 
+
+Pink 1.00 / 1.00 1.00 / 1.00 0.70 / 1.00 0.78 / 1.00 0.81 / 0.99 0.99 / 1.00 1.00 / 1.00 
+
+Resample 1.00 / 1.00 1.00 / 1.00 0.70 / 1.00 0.78 / 1.00 0.83 / 0.97 0.99 / 1.00 1.00 / 1.00 
+
+Smooth 1.00 / 0.99 0.93 / 0.76 0.66 / 1.00 0.77 / 0.96 0.69 / 0.74 0.94 / 0.96 0.98 / 0.99 Fast (0.8 ×–1.2 ×) 0.51 / 0.51 0.51 / 0.52 0.59 / 0.49 0.65 / 0.55 0.75 / 0.62 0.88 / 0.76 0.90 / 0.82 
+
+Boost 1.00 / 1.00 1.00 / 1.00 0.70 / 1.00 0.78 / 1.00 0.84 / 0.99 0.99 / 1.00 1.00 / 1.00 
+
+Duck 1.00 / 1.00 1.00 / 1.00 0.70 / 1.00 0.78 / 1.00 0.82 / 0.99 0.99 / 1.00 1.00 / 1.00 
+
+DSP Avg. 0.95 / 0.95 0.93 / 0.92 0.67 / 0.95 0.77 / 0.95 0.79 / 0.92 0.97 / 0.97 0.98 / 0.98 
+
+EnCodec 12 kbps 0.50 / 0.50 0.84 / 0.88 0.51 / 0.67 0.64 / 0.82 0.77 / 0.96 0.92 / 0.96 0.98 / 0.99 
+
+EnCodec 6 kbps 0.50 / 0.50 0.68 / 0.61 0.50 / 0.57 0.58 / 0.72 0.76 / 0.95 0.88 / 0.93 0.95 / 0.98 
+
+EnCodec 3 kbps 0.50 / 0.50 0.61 / 0.53 0.50 / 0.53 0.54 / 0.61 0.74 / 0.90 0.79 / 0.84 0.89 / 0.92 
+
+DAC 16 kHz* 0.50 / 0.50 0.60 / 0.31 0.52 / 0.83 0.62 / 0.75 0.82 / 0.97 0.95 / 0.98 0.98 / 1.00 
+
+DAC 24 kHz* 0.55 / 0.91 0.98 / 0.85 0.60 / 0.99 0.76 / 0.97 0.82 / 0.98 0.98 / 0.99 1.00 / 1.00 
+
+WavTokenizer* 0.50 / 0.50 0.50 / 0.50 0.50 / 0.50 0.49 / 0.50 0.62 / 0.55 0.51 / 0.53 0.50 / 0.54 Neural Codec Avg. 0.51 / 0.57 0.70 / 0.61 0.52 / 0.68 0.60 / 0.73 0.75 / 0.88 0.84 / 0.87 0.88 / 0.91 
+
+Average 0.81 / 0.82 0.86 / 0.82 0.62 / 0.87 0.72 / 0.88 0.78 / 0.92 0.93 / 0.94 0.95 / 0.95  
+
+> *
+
+Unseen attacks during training. DSP Avg. and Neural Codec Avg. are computed uniformly over their 12 and 6 constituent attacks, respectively; Average is computed uniformly over all 18 attacks. TABLE III PERCEPTUAL QUALITY OF WATERMARKED SPEECH . I N THE METRIC COLUMNS , R-O AND R-R DENOTE THE EVALUATION REFERENCE AUDIO : ORIGINAL AUDIO x AND RECONSTRUCTED CONTROL xrec , RESPECTIVELY . I N THE NEU MARK MODEL NAMES , R-O AND R-R DENOTE THE TRAINING REFERENCE TARGET xref = x OR xref = xrec .Method PESQ R-O STOI R-O SI-SNR R-O PESQ R-R STOI R-R SI-SNR R-R WavMark 4.233 0.997 37.298 – – –AudioSeal 4.429 0.998 26.828 – – –TimbreWM 3.862 0.993 27.949 – – –TraceableSpeech* 2.495 0.927 1.055 4.236 0.989 13.265 VoiceMark* 2.136 0.910 1.176 3.320 0.970 10.366 NeuMark R-R* 2.501 0.920 0.839 4.356 0.989 13.934 
+
+NeuMark R-O* 2.318 0.907 -0.191 3.349 0.956 5.754  
+
+> *
+
+Codec-latent methods. 
+
+Under R-R evaluation, NeuMark R-R achieves the highest PESQ and SI-SNR and matches TraceableSpeech in STOI at the reported precision. NeuMark R-O improves robustness but has lower R-R quality. This trade-off occurs because training against the original audio forces the R-O model to perform both embedding and codec restoration, introducing larger acoustic perturbations. VI. C ONCLUSION 
+
+This paper introduced NeuMark, a latent-space audio wa-termarking framework for robust detection and 16-bit mes-sage recovery under neural-codec resynthesis. NeuMark uses a Transformer cross-attention-based watermark encoder over SpeechTokenizer latents and is trained with a multi-objective loss that jointly preserves speech quality and improves extrac-tion robustness. The proposed evaluation protocol compares audio-domain, feature-/timbre-domain, and latent/generation-aware watermarks under DSP and neural codec attacks, with quality measured against both original and reconstruction references. The current evaluation treats the embedder and extractor as a watermarking module around a pretrained tokenizer. A full TTS integration, where a codec language model directly gen-erates watermarked acoustic tokens, remains future work. The most difficult attack is currently WavTokenizer-style extreme compression, where one quantizer must represent the essential speech signal and leaves little room for watermark evidence. Future work will explore stronger temporal redundancy, water-mark objectives aligned with single-quantizer invariants, and multilingual/noisy-speech evaluation. ACKNOWLEDGMENT 
+
+This work was supported in part by JSPS KAKENHI Grant Number 26H02530, and in part by the BRIDGE Program (R7-H05), implemented by the Cabinet Office, Government of Japan. REFERENCES 
+
+[1] C. Wang et al., “Neural codec language models are zero-shot text to speech synthesizers,” IEEE/ACM Trans-actions on Audio, Speech, and Language Processing ,vol. 33, pp. 705–718, 2025. DOI : 10.1109/TASLPRO. 2025.3530270 [2] K. Qian, Y. Zhang, S. Chang, X. Yang, and M. Hasegawa-Johnson, “AutoVC: Zero-shot voice style transfer with only autoencoder loss,” in Proceedings of the 36th International Conference on Machine Learning ,ser. Proceedings of Machine Learning Research, vol. 97, PMLR, 2019, pp. 5210–5219. [3] J.-w. Jung et al., “AASIST: Audio anti-spoofing using integrated spectro-temporal graph attention networks,” in Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing , IEEE, 2022, pp. 6367–6371. [4] Y. Zhu, S. Koppisetti, T. Tran, and G. Bharaj, “SLIM: Style-linguistics mismatch model for generalized audio deepfake detection,” in Advances in Neural Information Processing Systems , vol. 37, 2024, 18 pages. [5] G. Chen, Y. Wu, S. Liu, T. Liu, X. Du, and F. Wei, “Wavmark: Watermarking for audio generation,” arXiv preprint arXiv:2308.12770 , 16 pages, 2023. DOI : 10 . 48550/arXiv.2308.12770 [6] R. San Roman, P. Fernandez, H. Elsahar, A. D´ efossez, T. Furon, and T. Tran, “Proactive detection of voice cloning with localized watermarking,” in Proceedings of the 41st International Conference on Machine Learn-ing , ser. Proceedings of Machine Learning Research, vol. 235, PMLR, 2024, pp. 43 180–43 196. [Online]. Available: https : / / proceedings . mlr . press / v235 / san -roman24a.html [7] C. Liu, J. Zhang, T. Zhang, X. Yang, W. Zhang, and N. Yu, “Detecting voice cloning attacks via timbre watermarking,” in Proceedings of the Network and Dis-tributed System Security Symposium , Internet Society, 2024, 18 pages. DOI : 10.14722/ndss.2024.24200 [8] J. Zhou et al., “TraceableSpeech: Towards proactively traceable text-to-speech with watermarking,” in Inter-speech 2024 , 2024, pp. 2250–2254. DOI : 10 . 21437 / Interspeech.2024-534 [9] H. Li, Z. Wu, X. Xie, J. Xie, Y. Xu, and H. Peng, “VoiceMark: Zero-shot voice cloning-resistant water-marking approach leveraging speaker-specific latents,” in Interspeech 2025 , 2025, pp. 5108–5112. DOI : 10 . 21437/Interspeech.2025-575 [10] A. D´ efossez, J. Copet, G. Synnaeve, and Y. Adi, “High fidelity neural audio compression,” Transactions on Machine Learning Research , 19 pages, 2023. [Online]. Available: https://openreview.net/forum?id=ivCd8z8zR2 [11] R. Kumar, P. Seetharaman, A. Luebs, I. Kumar, and K. Kumar, “High-fidelity audio compression with improved rvqgan,” in Advances in Neural Information Processing Systems , vol. 36, 2023, pp. 27 980–27 993. [12] S. Ji et al., “WavTokenizer: An efficient acoustic dis-crete codec tokenizer for audio language modeling,” in 
+
+International Conference on Learning Representations ,2025, 18 pages. [Online]. Available: https://openreview. net/forum?id=yBlVlS2Fd9 [13] Z. Du et al., “CosyVoice: A scalable multilingual zero-shot text-to-speech synthesizer based on supervised se-mantic tokens,” arXiv preprint arXiv:2407.05407 , 10 pages, 2024. arXiv: 2407 . 05407. [Online]. Available: https://arxiv.org/abs/2407.05407 [14] A. D´ efossez et al., “Moshi: A speech-text founda-tion model for real-time dialogue,” arXiv preprint arXiv:2410.00037 , 67 pages, 2024. arXiv: 2410.00037. [Online]. Available: https://arxiv.org/abs/2410.00037 [15] C.-H. Wu, W. Ge, X. Wang, J. Yamagishi, Y. Tsao, and H.-M. Wang, “A comparative study on proactive and passive detection of deepfake speech,” in Interspeech 2025 , 2025, pp. 5328–5332. DOI : 10.21437/Interspeech. 2025-1419 [16] X. Zhang, D. Zhang, S. Li, Y. Zhou, and X. Qiu, “SpeechTokenizer: Unified speech tokenizer for speech language models,” in International Conference on Learning Representations , 2024, 21 pages. [Online]. Available: https : / / openreview . net / forum ? id = AF9Q8Vip84 [17] A. Vaswani et al., “Attention is all you need,” in 
+
+Advances in Neural Information Processing Systems ,vol. 30, 2017, pp. 5998–6008. [18] V. Panayotov, G. Chen, D. Povey, and S. Khudanpur, “Librispeech: An asr corpus based on public domain audio books,” in Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing ,IEEE, 2015, pp. 5206–5210. DOI : 10 . 1109 / ICASSP. 2015.7178964 [19] H. Zen et al., “LibriTTS: A corpus derived from Lib-riSpeech for text-to-speech,” in Interspeech 2019 , 2019, pp. 1526–1530. DOI : 10.21437/Interspeech.2019-2441 [20] Perceptual evaluation of speech quality (pesq): An ob-jective method for end-to-end speech quality assessment of narrow-band telephone networks and speech codecs ,ITU-T Recommendation P.862, International Telecom-munication Union, 2001. [21] C. H. Taal, R. C. Hendriks, R. Heusdens, and J. Jensen, “An algorithm for intelligibility prediction of time-frequency weighted noisy speech,” IEEE Transactions on Audio, Speech, and Language Processing , vol. 19, no. 7, pp. 2125–2136, 2011. DOI : 10.1109/TASL.2011. 2114881 [22] J. Le Roux, S. Wisdom, H. Erdogan, and J. R. Hershey, “Sdr: Half-baked or well done?” In Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing , IEEE, 2019, pp. 626–630. DOI :10.1109/ICASSP.2019.8683855

@@ -1,0 +1,57 @@
+{
+  "date": "20260925",
+  "date_label": "",
+  "generated_at": "2026-09-25 22:42:07 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.25719v1",
+      "route": "202609/25/2609.25719v1-neumark-neural-codec-resynthesis-robust-audio-watermarking-in-the-codec-latent-space",
+      "title": "NeuMark: Neural Codec Resynthesis-Robust Audio Watermarking in the Codec Latent Space",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "生成语音水印嵌入，抗编解码重合成",
+      "first_seen_at": "2026-09-25 22:42:07 UTC",
+      "updated_at": "2026-09-25 22:42:07 UTC"
+    },
+    {
+      "paper_id": "2609.29040v1",
+      "route": "202609/25/2609.29040v1-the-vulnerability-of-neural-audio-watermarks-under-speech-enhancement",
+      "title": "The Vulnerability of Neural Audio Watermarks under Speech Enhancement",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "通过语音增强对神经音频水印实施黑盒移除攻击",
+      "first_seen_at": "2026-09-25 22:42:07 UTC",
+      "updated_at": "2026-09-25 22:42:07 UTC"
+    },
+    {
+      "paper_id": "2609.29264v1",
+      "route": "202609/25/2609.29264v1-tp-criv-a-framework-for-third-party-challenge-response-identity-verification-of-ai-models",
+      "title": "TP-CRIV: A Framework for Third-Party Challenge-Response Identity Verification of AI Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "超越水印与指纹的AI模型第三方身份验证",
+      "first_seen_at": "2026-09-25 22:42:07 UTC",
+      "updated_at": "2026-09-25 22:42:07 UTC"
+    }
+  ]
+}
