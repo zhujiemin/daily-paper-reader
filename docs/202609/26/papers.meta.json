@@ -1,0 +1,24 @@
+{
+  "label": "2026-09-26",
+  "date": "2026-09-26",
+  "generated_at": "2026-09-26T21:33:56",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/26/2609.29064v1-eib-net-entropy-guided-information-bottleneck-for-generalizable-ai-generated-image-detection",
+      "section": "quick",
+      "title_en": "EIB-Net: Entropy-Guided Information Bottleneck for Generalizable AI-Generated Image Detection",
+      "authors": "Zhida Zhang, Xinlei Ma, Jie Cao",
+      "date": "2026-09-24",
+      "pdf": "https://arxiv.org/pdf/2609.29064v1",
+      "score": "6.0",
+      "evidence": "通过低纹理伪影检测AI生成图像",
+      "tldr": "AI生成图像日益逼真，但现有检测方法依赖局部伪造痕迹，面对扩散模型等生成式图像泛化性不足。EIB-Net利用生成模型重全局语义、轻局部纹理的特点，提出图像熵指标自动选取最低熵关键图块，并通过变分信息瓶颈学习紧凑且可泛化的特征。在DIFF、DiffusionForensics和GenImage上，仅用2%训练数据即达85.7%准确率，跨生成器平均83.5%，显著优于全图基线。该工作为数据高效、跨模型AI生成图像检测提供了新思路。",
+      "tags": "query:image-tamper",
+      "abstract_en": "The proliferation of photorealistic AI-generated images demands robust detection methods that generalize across diverse generative models. While existing approaches target manipulation-based forgeries with local artifacts, generation-based images (e.g., from diffusion models) lack such traces, posing a fundamental challenge. We observe that generative models prioritize global semantics at the expense of local texture fidelity, making low-texture regions key indicators of synthetic origin. To exploit this, we propose EIB-Net, an Entropy-guided Information Bottleneck Network. EIB-Net introduces a novel Image Entropy (IE) metric to automatically select the most informative (lowest-entropy) patch, then processes it with a Variational Information Bottleneck (VIB) to learn compact, generalizable features. Extensive experiments on DIFF, DiffusionForensics, and GenImage benchmarks demonstrate state-of-the-art performance: EIB-Net achieves 85.7\\% accuracy using only 2\\% of training data, outperforming full-image baselines by over 15\\%, and maintains robust cross-generator generalization (83.5\\% average accuracy on GenImage). Furthermore, our entropy-guided patch selection (EGPL) consistently enhances diverse backbones (CNNs and Transformers), proving its practical value for data-efficient detection.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

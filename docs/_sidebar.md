@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-26 <!--dpr-date:20260926-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/26/2609.29064v1-eib-net-entropy-guided-information-bottleneck-for-generalizable-ai-generated-image-detection" data-sidebar-item="{&quot;title&quot;: &quot;EIB-Net: Entropy-Guided Information Bottleneck for Generalizable AI-Generated Image Detection&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.29064v1-eib-net-entropy-guided-information-bottleneck-for-generalizable-ai-generated-image-detection&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;image-tamper&quot;}], &quot;evidence&quot;: &quot;通过低纹理伪影检测AI生成图像&quot;}">EIB-Net: Entropy-Guided Information Bottleneck for Generalizable AI-Generated Image Detection</a>
   * 2026-09-25 <!--dpr-date:20260925-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/25/2609.25719v1-neumark-neural-codec-resynthesis-robust-audio-watermarking-in-the-codec-latent-space" data-sidebar-item="{&quot;title&quot;: &quot;NeuMark: Neural Codec Resynthesis-Robust Audio Watermarking in the Codec Latent Space&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.25719v1-neumark-neural-codec-resynthesis-robust-audio-watermarking-in-the-codec-latent-space&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffusion-wm&quot;}], &quot;evidence&quot;: &quot;生成语音水印嵌入，抗编解码重合成&quot;}">NeuMark: Neural Codec Resynthesis-Robust Audio Watermarking in the Codec Latent Space</a>
