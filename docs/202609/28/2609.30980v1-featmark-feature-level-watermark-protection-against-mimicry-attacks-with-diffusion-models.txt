@@ -1,0 +1,528 @@
+Title: FeatMark: Feature-level Watermark Protection against Mimicry Attacks with Diffusion Models
+
+URL Source: https://arxiv.org/pdf/2609.30980v1
+
+Published Time: Mon, 28 Sep 2026 00:59:20 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# FeatMark: Feature-level Watermark Protection against Mimicry Attacks with Diffusion Models 
+
+## Haoyang Li 1 Ruoxi Sun 2 Qingqing Ye 1 Benjamin Zi Hao Zhao 3
+
+## Yaxin Xiao 1 Jason Xue 2 Haibo Hu 1,∗
+
+1The Hong Kong Polytechnic University 2CSIRO’s Data61 
+
+3Macquarie University 
+
+> ∗
+
+Corresponding author: haibo.hu@polyu.edu.hk 
+
+## Abstract 
+
+Text-to-image diffusion models enable data-efficient “mimicry” attacks, wherein adversaries fine-tune the model on a handful of public photos to synthesize convincing forgeries of a target individual. A common countermeasure is to embed imperceptible, low-energy watermarks, yet recent studies show these signatures are brittle: modest post-processing or lightweight adversarial perturbations readily suppress detection, exposing a fundamental tension between imperceptibility and robustness. We introduce 
+
+FeatMark , a watermarking framework that shifts from pixel-level, energy-starved perturbations to inconspicuous semantic features : small, scene-consistent micro-features that remain natural to humans while providing a stronger, machine-verifiable provenance signal. FeatMark builds domain-specific feature banks that encode each watermark as a compact concept program, pairing open-vocabulary semantic cues with reliable edit regions and instruction templates. It then automatically selects features that are both feasible and executable and injects them through modular, mask-guided concept editing, yielding highly localized, scene-consistent micro-edits that are difficult to perceive. We conduct extensive experiments across VGGFace2, CelebA-HQ, and WikiArt, evaluating against 10 strong watermark removal/purification attacks (including regeneration-style purification) and several bespoke 
+
+adaptive attacks tailored to FeatMark, to assess perceptual fidelity, watermark detection accuracy, and robustness. We further demonstrate FeatMark’s extensibility to video mimicry attacks. The results show FeatMark remains virtually impervious, withstanding all evaluated attacks with negligible bit-accuracy and fidelity degradation. Private Images Pre-trained Generative Model Fine-tuned Generative Model Fine-tuning Download by the Adversary Generated Fake Images Publish Social Networks on Internet  
+
+> Publish fake images, fake news, or disinformation
+> onto Internet. A strong attacker can further apply
+> pre- or post-pressing techniques
+> to remove watermarks and bypass defenses.
+> Individual User Adversary
+
+Figure 1. An illustration of mimicry attacks. 
+
+## 1. Introduction 
+
+Text-to-image diffusion models such as Stable Diffusion [67] and DALL-E [63] empower creative synthesis but also make mimicry attacks feasible [14, 36, 64], in which an adversary fine-tunes a pre-trained generator on just a handful of a vic-tim’s public photos so the model learns to replicate that per-son’s distinctive appearance [56, 68, 83], as Figure 1 shows. Watermarks offer a direct countermeasure, embedding persis-tent provenance signals into those fake images so that every derivative remains traceable. Recent regulations ( e.g . EU AI Act Art. 50 [16] and US EO 14110 [34]) encourage reliable watermarking, underscoring the need for robust provenance. Regarding these regulations, contemporary methods such as Tree-Ring Watermarks [82] and FT-Shield [12] hide imper-ceptible signatures in attack results by regulating diffusion models or perturbing public images. However, extant watermarking schemes are demonstra-bly brittle under adversarial manipulation. Most state-of-the-art watermarking methods [12, 13, 18, 82, 94] insert low-amplitude noise that is invisible to humans yet statisti-cally detectable by a verifier. Although this preserves visual fidelity, it grants attackers a powerful lever: small, human-invisible adversarial perturbations can overwhelm or erase the signature without perceptual cost [28, 29, 33]. Even 1arXiv:2609.30980v1 [cs.CR] 25 Sep 2026 worse, the adversarial perturbations required for such evasion are computationally and perceptually cheap. For instance, WEvade [33] achieves perfect bypass with imperceptible ℓ∞-bounded noise in only a few PGD iterations. These empirical findings reveal a fundamental trade-off: as watermark energy is reduced to maintain imperceptibility, every incremental gain in stealth tends to reduce the watermark’s energy bud-get for robustness, perpetuating an arm race that defenders cannot win with the current paradigm [22, 46, 89]. Conse-quently, it becomes imperative to develop a fundamentally different watermarking mechanism that does not rely solely on imperceptibility and thus cannot be trivially nullified by lightweight adversarial perturbations. To overcome this impasse, we introduce the concept of 
+
+inconspicuous-feature watermarks. Instead of hiding energy-starved pixel perturbations, we affix semantically coherent micro-features ( e.g . a faint botanical emblem subtly woven into existing foliage) that are perceptible on close inspection yet blend naturally with the generated scene. Their greater signal strength lets them withstand adversarial perturbations while still escaping casual human notice. This principle has clear precedents in security. Patch-based adversarial examples use naturalistic artifacts to mislead detectors [9, 24, 79], and semantic backdoors leverage real objects to control model outputs [2, 74, 80]. These generative-prior features often go unnoticed yet remain effective, motivating our inconspicuous-feature strategy. More importantly, in the scenario of mimicry attack, stealth of inconspicuous feature is aided by an identity-based knowledge gap and diffusion stochasticity [30], which make the features hard to anticipate and easy to ascribe to sampling variance. Building on these insights, we propose FeatMark, a fully automatic framework that injects inconspicuous seman-tic micro-features into images and transfers them through mimicry training via image cloaking. FeatMark first con-structs domain-specific feature banks , where each entry is a compact concept program that bundles open-vocabulary semantic cues (for recognizing concept evidence), a reliable region-of-edit specification, and instruction templates that a generic editor can follow. Given a target identity or artis-tic style, FeatMark automatically scores candidate concepts using open-vocabulary recognition and selects a small set of executable features, then performs mask-guided concept-based local editing to realize localized and scene-consistent micro-edits. Crucially, FeatMark does not publish the edited images directly. Instead, it produces the released images by cloaking the original images toward their edited counter-parts, so that the published set remains visually faithful while behaving like the watermarked set under mimicry training representations. Finally, a private watermark reader is trained to decode a user-specific message from suspicious images, enabling attribution of mimicry outputs without requiring access to the attacker’s model. We evaluate FeatMark across both facial and artistic do-mains, including VGGFace2 [8], CelebA-HQ [35], and WikiArt [70]. Across datasets, FeatMark preserves per-ceptual quality close to the no-defense baseline while pro-viding a verifiable watermark signal with high decoding accuracy on watermarked images and near-random decod-ing on clean images. We further test robustness against a broad suite of strong purification and watermark removal attacks, including IMPRESS [6], Noisy Upscaling [26], WEvade [33], UnMarker [37], regeneration-style removals (diffusion/denoise [59] and VAE [3]), and WatermarkAt-tacker [92]. In settings where pixel-level invisible water-marks collapse, FeatMark’s decoding remains essentially unchanged under most attacks (typically a ≤ 0.02 drop), and even under stronger regeneration-style purification the accu-racy degradation largely coincides with visible fidelity loss, leaving FeatMark still decodable. To probe future, attacker-tailored strategies, we additionally design bespoke adaptive attacks targeted to FeatMark’s pipeline and show that re-moving the watermark without noticeable identity/style drift remains difficult. Finally, we demonstrate that the same feature-anchored design transfers to video mimicry. To summarize, our key contributions are as follows: • To our knowledge, FeatMark is the first watermarking scheme that protects against mimicry attacks by anchor-ing provenance in inconspicuous semantic micro-features rather than energy-starved pixel perturbations. • We introduce a fully automatic watermarking pipeline built on feature-bank concept programs, automatic executable feature selection, and mask-guided concept-based local editing, coupled with a cloaking stage that enables safe publishing while preserving watermark transfer through mimicry training. • We provide comprehensive evaluations over perceptual fidelity, watermark decoding accuracy, and robustness to strong purification, removal, and regeneration attacks, and further assess attacker-tailored adaptive attacks designed for FeatMark. 
+
+## 2. Background 
+
+Mimicry attacks. We study mimicry attacks where an adver-sary exploits a small set of publicly released personal images of a target individual, denoted as X = {x}, to fine-tune a generative model and synthesize high-fidelity impersonating images. Following prior work on unauthorized personaliza-tion and style/identity mimicry [6, 68, 72], we model the attacker as fine-tuning a text-to-image diffusion model Mθ
+
+and sampling fake images xfake conditioned on prompt c.The attacker optimizes: 
+
+θ∗ = arg max  
+
+> θ
+
+Exfake ∼ p(xfake |c, Mθ )
+
+A(xfake , X ), (1) where A is an attacker-chosen similarity/utility metric that encourages the synthesized outputs to match the target iden-2tity or style. 
+
+Attribution via watermarking. Our goal is attribution 
+
+rather than disruption: the defender transforms their re-leased images such that mimicry outputs tend to carry a user-specific signature that can later be verified. Concretely, the defender holds a private message m and a watermark reader R that decodes a bit sequence from a suspicious im-age. We aim for high expected bit agreement between m
+
+and R(·) on attacker-generated samples: 
+
+max Exfake ∼p(xfake |c, Mθ∗ )
+
+Bacc (m, R(xfake )) 
+
+s.t. θ∗ satisfies Eq. 1 . (2) Here, Bacc measures the fraction of correctly recovered bits. 
+
+Adaptive attackers. A defender-facing evaluation must con-sider adaptive attackers who post-process outputs to evade verification while preserving identity/style. We model such post-processing by an attacker-side transformation P, yield-ing the adaptive objective: 
+
+θ∗ = arg max  
+
+> θ
+
+Exfake ∼ p(xfake |c, Mθ )
+
+A(P(xfake ), X ). (3) This motivates designing watermarking mechanisms that are robust to unknown, potentially strong adaptive strategies. 
+
+## 3. Methodology 
+
+This section specifies the threat model, summarizes the end-to-end workflow, and details each module of FeatMark. 
+
+3.1. Threat Model 
+
+We follow threat models in prior work on protecting personal data from malicious personalization [44, 71, 72, 77]. The defender is an individual user who publishes a small set of images and later wishes to attribute whether a suspicious image was generated by a mimicry model trained on those released images. The defender holds a private target message 
+
+m and runs a private watermark reader R locally, which are not exposed to the attacker. The attacker has access to the published images and suffi-cient compute to fine-tune a text-to-image diffusion model 
+
+Mθ to generate impersonating outputs, as in Eq. 1. We assume the attacker knows the defense algorithm (includ-ing the existence of feature-bank-driven watermarking), and may deploy advanced strategies such as purification P or regeneration-based transformations to evade verification, but does not have access to the defender’s private verification parameters. 
+
+3.2. Overview of Our Watermark Workflow 
+
+FeatMark is a fully automatic pipeline that converts a small personal image set into publishable training data that trans-fers a user-specific semantic watermark through mimicry training. Starting from the original set X = {x}, FeatMark queries a Feature Bank F = {fk}Kk=1 whose entries are exe-cutable concept programs . Each concept program bundles textual descriptors for open-vocabulary concept evidence, grounding prompts for localizing an editable region, and in-struction templates for expressing the concept via a generic editor. This design removes the need for manual feature crafting and manual masking. Given X , FeatMark automatically selects a feature that is semantically suitable for the set and operationally ex-ecutable. It then performs localized, instruction-guided concept editing to obtain a privately held watermarked set 
+
+X wm = {xwm }, where each xwm differs subtly from its cor-responding x while reliably expressing the selected concept. Crucially, the images that are actually published are pro-duced by an image cloaking stage. For each original image x,FeatMark computes a released image xpub by adding an im-perceptible perturbation so that xpub remains visually close to x but is optimized to behave like xwm under the repre-sentations used by mimicry training, yielding a released set 
+
+X pub = {xpub }. Only X pub is shared with the public and thus accessible to an attacker for fine-tuning, while X wm is kept private and later used as supervision. This cloaking step follows the perturbation-based protection paradigm in prior work [71, 72] but is integrated here to facilitate semantic watermark transfer rather than merely disrupting generation. After generating the publishable set, the defender trains a private watermark reader R using a small number of clean images from X and their corresponding privately stored watermarked counterparts from X wm . At test time, given a suspicious image, the defender decodes a bit sequence with 
+
+R and verifies agreement with the user’s private message 
+
+m, enabling attribution of mimicry outputs generated from models fine-tuned on X pub .
+
+3.3. Feature Bank Construction 
+
+FeatMark builds on a feature bank, a library of watermark-able concepts that can be consistently recognized from an image and later reproduced by a mimic generator. Each entry fk ∈ B is specified as a compact concept program that defines how the concept is queried and described. Con-cretely, fk provides a small set of textual queries Tk =
+
+{tk, 1, . . . , t k,J } (paraphrases/templates) that all refer to the same concept, and a canonical name name (fk) that will later be used to form an editing instruction. The guiding intuition is to treat a feature as an atomic semantic attribute whose presence leaves a stable trace in representation space, while remaining editable with minimal perceptual disruption. To measure concept evidence, we use an open-vocabulary vision-language model [62] to map an image x and a text query t into a joint embedding space. We define the evidence score of feature fk on image x as 
+
+sk(x) = max 
+
+> t∈T k
+
+cos  ϕI (x), ϕ T (t), (4) 3Feature Bank 
+
+> "eyes", "pupil"
+> "lips", "mouth"
+> "stroke direction"
+> "watercolor
+> bleed"
+> Original Private Image
+> Individual User
+
+Feature Selection   
+
+> VLM/CLIP Scoring
+> "eyes": "lips": "stroke":
+> Execution-Aware Check
+> Key/Seed
+> Chosen Feature: "eyes"
+
+Concept-Based Local Edit 
+
+> Edit Prompt
+> "Close-up photorealistic portrait of the same person, change pupil size to larger for both eyes, keep face identity, expression, hair, lighting unchanged, natural skin texture, keep everything else unchanged."
+> Instruction Synthesis
+> Text Guided Segmentation
+> Instruction Guided Local Edit
+
+Image Cloaking & Publishing 
+
+> Image
+> Cloaking
+> Edited Image with Subtle Alternation on "eyes"
+> Mask for "eyes"
+
+Mimicry Attack  Watermark Detection 
+
+> Social Networks on Internet
+> Pre-trained
+> Generative Model
+> Fine-tuned
+> Generative Model
+> Fine-tuning
+> Cloaked Image Downloaded by the Adversary
+> Adversary
+> Watermark
+> Extractor
+> Message Bits
+> Matching
+> Extracted Message
+> Target Message from User
+> Generate
+> Publish
+> Fake images with watermark will not be allowed to publish
+> Generated Fake Images (with Feature Slightly Altered/Watermarked)
+> Cloaked Image
+
+Figure 2. FeatMark overview. Given a small set of personal images, FeatMark queries a curated Feature Bank of concept programs and automatically selects an executable feature using open-vocabulary VLM/CLIP scoring and execution-aware checks. It then localizes an editable region via text-guided grounding and performs instruction-guided local editing to produce subtly watermarked images. Perturbing the original images with the edited images using image cloak, the cloaked images will then be published to Internet. The attacker can only perform mimicry attacks on the published images and generate fake images. Finally, the watermark extractor will compare the extracted message with the target message that is provided by the user to identify watermarked fake images and stop them being published online. 
+
+where ϕI (·) and ϕT (·) denote the image and text encoders, and cos( ·, ·) is cosine similarity. Taking the maximum over paraphrases follows the standard prompt-ensembling practice for reducing prompt sensitivity in open-vocabulary recognition [62, 93]. Importantly, Eq. (4) only requires a generic VLM interface and does not rely on a specific back-bone. Our bank construction follows two principles with the-oretical support from feature selection and representation learning. First, each feature’s evidence should be stable across natural variations of the same identity or style, which encourages downstream generators to internalize and reuse the cue. This is aligned with the well-documented tendency of modern models to exploit stable, high-signal shortcuts when such cues remain predictive in-distribution [21]. Sec-ond, the bank should be diverse and non-redundant, since near-duplicate concepts waste watermark capacity and make automatic selection brittle. We therefore curate B to cover multiple semantic axes and later enforce redundancy control during selection using classical relevance, redundancy crite-ria from information-theoretic feature selection [5, 23, 60]. These principles keep the bank compact, interpretable, and amenable to fully automatic downstream selection. 
+
+3.4. Automatic Feature Selection from the Bank 
+
+Given a target set of images X = {xi}ni=1 for one identity or style, FeatMark selects a small subset of features K ⊂ {1, . . . , |B|} without any manual screening. The selection aims to identify concepts that are consistently detectable on 
+
+X and also complementary to each other, so that watermark bits are distributed over multiple independent semantic traces rather than concentrated on a single fragile cue. We first compute evidence statistics for each bank feature using Eq. (4). For feature fk, we aggregate scores across the set, 
+
+μk = 1
+
+n
+
+nX
+
+i=1 
+
+sk(xi),σ2
+
+k = 1
+
+n
+
+nX
+
+i=1 
+
+ sk(xi) − μk
+
+2,
+
+(5) and keep candidates with sufficiently high mean evidence and low variance. This filter-style step favors stable cues over spurious ones and follows standard practice in feature selection [23]. To avoid selecting multiple semantically overlapping features, we further apply redundancy-aware pruning. Let ψk denote a textual embedding of name (fk)
+
+(or the centroid of {ϕT (t) : t ∈ T k}). We penalize can-4didates whose textual representations are too similar to al-ready selected ones and greedily grow K by maximizing a relevance–redundancy trade-off, an unsupervised analogue of mRMR-style criteria [5, 60]. Because this procedure depends only on the bank and X ,it enables a fully automatic pipeline while still producing a small set of semantically distinct, high-confidence concepts. In practice, the resulting K reduces downstream editing fail-ures and improves robustness by preventing the watermark from collapsing into a single easily targeted attribute. 
+
+3.5. Concept-Based Image Editing 
+
+Once a feature fk is selected, FeatMark performs concept-based editing to inject or modify the corresponding semantic cue while keeping the output realistic and identity/style-consistent. The concept program provides a grounding phrase ground (fk) that specifies where the concept should be edited (e.g., an attribute-associated region), and an in-struction template inst (fk, ·) that specifies how it should be edited (e.g., add or strengthen the concept). We obtain a region-of-edit mask by applying an open-world grounding module to localize ground (fk) on image 
+
+x, producing a soft mask Mk(x) ∈ [0 , 1] H×W . The instruc-tion is instantiated as uk = inst (fk, name (fk)) . A generic concept-guided editor E then produces an edited image 
+
+xedit  
+
+> k
+
+= E x, u k, M k(x). (6) Our methodology only requires E to support localized, instruction-following edits, and it can be instantiated by a wide range of modern image editing frameworks, including diffusion-based editors [4, 11, 25, 54]. To discourage unnecessary changes outside the edited region, we use a mask-weighted consistency objective during editing (or as a post-selection validation), 
+
+Lout (x, x edit  
+
+> k
+
+) = (1 − Mk(x)) ⊙ (xedit  
+
+> k
+
+− x) 1. (7) This formulation makes the watermark signal semantic: bits correspond to the presence or strength of concepts that are edited in a localized and visually plausible manner, which later yields robustness against perturbation-level removals. 
+
+3.6. Image Cloak with Refined Objective 
+
+In FeatMark, image cloaking is a required stage for produc-ing publishable images. After concept-based editing yields a watermarked set X wm = {xwm }, we further transform each original image x into a released image xpub that remains visually faithful to x while being optimized to transfer the watermark feature through mimicry training. Concretely, only X pub = {xpub } is published and thus accessible to the attacker for fine-tuning, whereas X wm is retained privately and will be used in the subsequent watermark reader training as supervision.                                                                              
+
+> Table 1. Results on perceptual quality for all datasets. For each metric, we calculate the results between fake images affected by the corresponding method and original images. Prec., Rec., Cov., and Dens. denote precision, recall, coverage, and density.
+> Method FID ↓Prec. ↑Rec. ↑Cov. ↑Dens. ↑
+> VGGFace2
+> No-Defense 171.81 0.65 0.28 1.33 0.83 FeatMark 180.98 0.47 0.19 0.83 0.62 MetaCloak 457.10 0.00 0.00 0.00 0.00 Glaze 325.89 0.01 0.00 0.01 0.01 Anti-DreamBooth 449.74 0.00 0.00 0.00 0.00
+> CelebA-HQ
+> No-Defense 128.99 0.54 0.27 1.00 0.68 FeatMark 142.33 0.31 0.18 0.44 0.41 MetaCloak 437.92 0.00 0.00 0.00 0.00 Glaze 279.13 0.01 0.00 0.03 0.01 Anti-DreamBooth 465.37 0.00 0.00 0.00 0.00
+> WikiArt
+> No-Defense 306.02 0.69 0.13 0.68 0.46 FeatMark 321.76 0.62 0.07 0.36 0.29 MetaCloak 458.61 0.00 0.00 0.00 0.00 Glaze 410.93 0.00 0.00 0.00 0.00 Anti-DreamBooth 447.03 0.00 0.00 0.00 0.00
+
+Following perturbation-based cloaking methods that add imperceptible noise to influence downstream generative be-havior [71, 72], we parameterize the released image as 
+
+xpub = x + δ and optimize δ so that xpub stays close to 
+
+x in pixel space yet aligns with the edited target xwm in a representation space. Specifically, we refine the standard cloaking objective with a reconstruction-consistency regu-larizer to reduce overfitting to a single encoder and to avoid degenerate perturbations: 
+
+Lcloak = ∥E(x + δ) − E(xwm )∥22
+
++ λ ∥(x + δ) − D(E(x + δ)) ∥22 ,
+
+s.t. ∥δ∥1 ≤ η, ∀δ ∈ { δ},
+
+(8) where E(·) and D(·) denote the encoder and decoder, respec-tively. The first term encourages the released image to be close to the watermarked target in the encoder space, which promotes watermark feature transfer when the attacker fine-tunes on X pub . The second term regularizes the perturbation to remain stable under an encode–decode cycle, mitigating brittle solutions that can arise from purely feature-space alignment [6, 26]. 5Table 2. Bit accuracy for watermark methods on all datasets with/without watermarks and applied with multiple transforma-tions. The column of WM? denotes whether the evaluated images contain the watermark or not.                                                                                                                                                            
+
+> Method WM? Bit Accuracy
+> None Crop Brigh. Cont. JPEG Comb.
+> VGGFace2
+> Stable Signature Y0.99 0.36 0.98 0.97 0.66 0.80 N0.45 0.40 0.49 0.49 0.46 0.46 HiDDeN Y0.99 0.58 0.97 0.94 0.83 0.62 N0.43 0.47 0.42 0.45 0.41 0.45 StegaStamp Y0.98 0.54 0.98 0.97 0.92 0.85 N0.45 0.46 0.42 0.42 0.42 0.47 FeatMark Y0.98 0.75 0.96 0.96 0.99 0.98 N0.03 0.04 0.04 0.04 0.04 0.05
+> CelebA-HQ
+> Stable Signature Y0.99 0.38 0.98 0.97 0.66 0.82 N0.46 0.42 0.49 0.48 0.49 0.46 HiDDeN Y0.95 0.61 0.90 0.95 0.81 0.67 N0.45 0.46 0.42 0.42 0.42 0.47 StegaStamp Y0.95 0.58 0.91 0.98 0.90 0.90 N0.41 0.50 0.41 0.47 0.38 0.45 FeatMark Y0.92 0.31 0.90 0.89 0.94 0.88 N0.16 0.02 0.28 0.22 0.19 0.22
+> WikiArt
+> Stable Signature Y0.99 0.50 0.80 0.88 0.72 0.76 N0.47 0.56 0.46 0.53 0.48 0.52 HiDDeN Y0.99 0.52 0.96 0.98 0.78 0.62 N0.41 0.50 0.41 0.47 0.38 0.45 StegaStamp Y0.99 0.48 0.97 0.99 0.88 0.85 N0.44 0.45 0.45 0.44 0.41 0.43 FeatMark Y0.99 0.26 0.77 0.96 0.99 0.91 N0.01 0.02 0.01 0.01 0.01 0.02
+
+3.7. Watermark Reading 
+
+The watermark reader R determines whether a suspicious image carries the user’s target message m. Unlike pixel-level invisible watermark decoders [18, 94], our watermark signal is semantic and may vary in its localized realization across images; accordingly, we adopt a feature-based reader that leverages a strong frozen image encoder and trains only a lightweight head. Concretely, we instantiate R as a frozen CLIP image encoder [62] followed by a trainable fully connected layer that outputs a |m|-bit vector. Given a small set of clean images X = {x}, their watermarked counterparts X wm =
+
+{xwm }, and the target message m, we train R with: 
+
+Lread = Ex∼X 
+
+BCE( ¯ m, R(x)) 
+
++ Exwm ∼X wm 
+
+BCE( m, R(xwm )) , (9) where ¯m denotes the bitwise complement of m. During both training and inference, standard augmentations (cropping, rotation, mild noise) and weight decay are applied to im-prove generalization. After training, verification reduces to checking whether the decoded bits from a suspicious image match m above a fixed threshold, enabling attribution of attacker-generated outputs even when the attacker applies post-processing, provided that the semantic watermark evi-dence persists through the mimicry pipeline. 
+
+## 4. Evaluations 
+
+In this section, we conduct the experiments regarding per-ceptual quality evaluation, the watermark detection accu-racy, and the robustness of our watermarking method against removal and purification attacks. Additional adaptive at-tacks, ablations, and generalization results appear in Appen-dices E, H, and G. To ensure clarity, in visualization figures we present four samples per set for each row by default, unless otherwise specified. 
+
+4.1. Experimental Setup 
+
+We evaluate FeatMark on watermark decoding, perceptual quality, and robustness under purification/removal attacks across VGGFace2, CelebA-HQ, and WikiArt. The imple-mentation uses CLIP-based evidence scoring, text-guided open-world segmentation, and masked diffusion editing; mimicry attacks follow a DreamBooth-style protocol, and metrics include bit accuracy, FID, precision/recall, and cov-erage/density. We keep the main evaluation focused on the primary results and provide full dataset, implementation, metric, baseline, and user-study details in Appendix A. 
+
+4.2. Perceptual Quality Evaluation 
+
+Perceptual quality of FeatMark images is measured in terms of the average FID, precision, recall, coverage, and den-sity for all target persons. These are comparative metrics between a source and target data sample, as such for each target identity, the generated fake images impacted by our watermark is contrasted against the original images of that identity. As the name suggests, No-Defense is calculated with fake images that had no defense applied. 
+
+Perceptual results. Table 1 shows that FeatMark preserves substantially higher perceptual quality than disruption-based defenses across all datasets. Compared to the No-Defense setting, FeatMark induces only a modest degradation in distributional fidelity: the FID increases by 9.17 on VG-GFace2 ( 180 .98 vs. 171 .81 ), 13 .34 on CelebA-HQ ( 142 .33 
+
+6Table 3. Bit accuracy change of FeatMark against IMPRESS across all datasets.                         
+
+> Dataset Change of Bit Accuracy
+> None Crop Brigh. Cont. JPEG Comb. VGGFace2 +0.00 +0.01 +0.00 +0.00 +0.00 +0.00 CelebA-HQ −0.00 −0.01 −0.00 −0.01 −0.00 −0.00 WikiArt −0.00 +0.00 +0.00 −0.01 −0.00 −0.00
+
+Table 4. Bit accuracy change of FeatMark against Noisy Upscaling across all datasets.                         
+
+> Dataset Change of Bit Accuracy
+> None Crop Brigh. Cont. JPEG Comb. VGGFace2 −0.20 −0.01 −0.26 −0.24 −0.31 −0.26 CelebA-HQ −0.22 −0.02 −0.24 −0.19 −0.26 −0.30 WikiArt −0.23 −0.01 −0.27 −0.21 −0.29 −0.25
+
+Figure 3. FeatMark on VGGFace2. Three examples with the edit instruction shown on top. The left example annotates the row order, reused for the other two. Rows show target images, edited images, cloaked released images, and attacker outputs trained on original images and on cloaked images. Training on cloaked images makes the injected attribute consistently appear in the attacker generations. 
+
+vs. 128 .99 ), and 15 .74 on WikiArt ( 321 .76 vs. 306 .02 ). Im-portantly, FeatMark maintains non-trivial Precision/Recall as well as Coverage/Density, indicating that the generated samples remain both realistic and diverse under our fully automatic semantic watermark injection. In contrast, existing image cloaking methods severely damage perceptual quality. For examples, FIDs for Anti-Dreambooth and Glaze balloon to 449 .74 –465 .37 on VGGFace2/CelebA-HQ and 410 .93 on WikiArt, while Pre-cision, Recall, Coverage, and Density collapse to zero. This stark gap highlights FeatMark’s key practical advantage: it enables reliable downstream attribution while keeping the at-tacker’s outputs close to the original data distribution, rather than relying on heavy distortions that break visual fidelity. 
+
+Visualization of FeatMarks. Figures 3 and 4 show VG-GFace2 and WikiArt results; CelebA-HQ examples appear in Appendix C. Across VGGFace2, CelebA-HQ, and WikiArt, the visual examples show the same pattern: released cloaked images remain close to the targets, while attackers trained on cloaked images consistently inherit the injected semantic attribute. 
+
+User study results. We compare 100 pairs of attacker-generated images from No-Defense and FeatMark using 49 participants. Each pair uses the same target and prompt, with randomized left–right ordering. Participants judge realism, identity/style match, and agreement with the edit instruction. The study protocol is detailed in Appendix A. Table 7 shows that FeatMark remains close to the No-Defense baseline for realism and identity/style match, with win rates near 50%, while strongly improving instruction match. This supports the intended tradeoff: the generated images remain perceptually comparable to the baseline, but the injected concept is reliably absorbed and reproduced during mimicry fine-tuning. 
+
+4.3. Watermark Accuracy Evaluation 
+
+Table 2 reports bit accuracy under common transforma-tions. FeatMark maintains high decoding reliability on water-marked images and a large verification margin against non-watermarked images: on VGGFace2 it reaches 0.99/0.98 un-der JPEG/combined transformations while keeping WM=N accuracy at 0.04/0.05, and on WikiArt it reaches 0.99/0.91 while keeping WM=N accuracy at 0.01/0.02. Cropping remains the most challenging case because it can remove the edited region, but FeatMark still preserves substantially cleaner separability than pixel-level baselines; additional discussion is provided in Appendix B. 7Table 5. Bit accuracy changes of three watermarking schemes in VGGFace2 against three watermark removal attacks, UnMarker, Diffusion Attack, and VAE Attack. UnMarker Diffusion Attack VAE Attack Stable Signature −0.99 −0.99 −0.99 Tree-Ring −0.39 −0.21 −0.09 FeatMark −0.01 −0.01 −0.00 Table 6. Bit accuracy changes of four watermarking schemes in VG-GFace2 against four watermark removal attacks in Watermark Attacker (WMA). WMA-Diff60 WMA-Cheng3 WMA-BMSHJ3 WMA-JPEG50 DwtDct −0.33 −0.33 −0.30 −0.29 DwtDctSvd −0.45 −0.47 −0.43 −0.20 RivaGAN −0.45 −0.35 −0.39 −0.02 FeatMark −0.02 −0.00 −0.00 −0.01 
+
+Figure 4. FeatMark on WikiArt. Three examples with the edit instruction shown on top. The left example annotates the row order, reused for the other two. Rows show target artworks, edited artworks, cloaked released artworks, and attacker outputs trained on original artworks and on cloaked artworks. Models trained on cloaked artworks inherit the injected local style change. Table 7. User study on attacker-generated images under No-Defense vs FeatMark. Each entry is the FeatMark win rate in a two-alternative forced choice test with randomized left-right or-dering. For realism and identity or style match, results closer to 50% indicate near-random guessing and therefore higher percep-tual indistinguishability. For instruction match, higher win rate indicates stronger and more consistent concept transfer. 
+
+Dataset Realism win rate Identity or style match win rate Instruction match win rate 
+
+VGGFace2 47 .8% ± 2.6 50 .6% ± 2.5 83 .1% ± 1.9
+
+CelebA-HQ 49 .2% ± 2.5 51 .3% ± 2.4 80 .4% ± 2.1
+
+WikiArt 48 .5% ± 2.7 49 .8% ± 2.6 77 .6% ± 2.4
+
+4.4. Watermark Robustness against Adversarial Purification and Watermark Removal 
+
+We stress-test FeatMark against adversarial purifica-tion, white-box perturbation attacks, and black-box re-moval/regeneration attacks. Tables 3–4 summarize the pu-rification results; Tables 5 and 6 report black-box removal re-sults, with the Noisy Upscaling visualization in Appendix C. Attack configurations are described in Appendix A. 
+
+Purification attacks. IMPRESS causes essentially no bit-accuracy change across datasets, while Noisy Upscaling produces a measurable but non-decisive reduction of about 
+
+0.20 –0.31 under most transformations. Even after Noisy Up-scaling, FeatMark remains decodable from its high baseline accuracy, and the reduction largely coincides with visible rewriting artifacts. 
+
+Removal and regeneration attacks. WEvade achieves evasion rates of 1.00 for Stable Signature but only 0.16 for FeatMark in the removal setting, and 1.00 vs. 0.14 in the forgery setting. Black-box removal and regeneration attacks also have little effect on FeatMark: UnMarker, diffusion regeneration, VAE reconstruction, and WatermarkAttacker change FeatMark’s bit accuracy by at most about 0.02 , while substantially degrading pixel- or coefficient-level baselines. 
+
+Video mimicry and adaptive attacks. FeatMark also ex-tends to video mimicry, where the verifier achieves 0.85 
+
+bit accuracy on watermarked videos versus 0.13 on non-watermarked videos. Details are provided in Appendix D. We further evaluate mechanism-aware adaptive attacks in Appendix E. 85. Conclusion 
+
+We presented FeatMark, a feature-level watermarking frame-work for attributing diffusion-based mimicry attacks. Feat-Mark encodes provenance as inconspicuous semantic micro-features selected automatically from a feature bank and trans-ferred through mimicry training via image cloaking. Experi-ments on faces, artworks, and video show near–No-Defense perceptual quality, clear watermarked/non-watermarked sep-aration, and strong robustness to purification, removal, and tailored adaptive attacks. 
+
+## References 
+
+[1] Vishal Asnani, John Collomosse, Tu Bui, Xiaoming Liu, and Shruti Agarwal. Promark: Proactive diffusion watermarking for causal attribution. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition (CVPR) ,pages 10802–10811, 2024. [2] Eugene Bagdasaryan, Andreas Veit, Yiqing Hua, Deborah Estrin, and Vitaly Shmatikov. How to backdoor federated learning. In International conference on artificial intelligence and statistics , pages 2938–2948. PMLR, 2020. [3] Johannes Ballé, David Minnen, Saurabh Singh, Sung Jin Hwang, and Nick Johnston. Variational image compression with a scale hyperprior. arXiv preprint arXiv:1802.01436 ,2018. [4] Tim Brooks, Aleksander Holynski, and Alexei A Efros. In-structpix2pix: Learning to follow image editing instructions. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 18392–18402, 2023. [5] Gavin Brown, Adam Pocock, Ming-Jie Zhao, and Mikel Lu-ján. Conditional likelihood maximisation: A unifying frame-work for information theoretic feature selection. Journal of Machine Learning Research , 13(2):27–66, 2012. [6] Bochuan Cao, Changjiang Li, Ting Wang, Jinyuan Jia, Bo Li, and Jinghui Chen. Impress: Evaluating the resilience of imperceptible perturbations against unauthorized data us-age in diffusion-based generative ai. Advances in Neural Information Processing Systems , 36, 2024. [7] H. Cao, D. G. Cooper, M. K. Keutmann, R. C. Gur, A. Nenkova, and R. Verma. Crema-d: Crowd-sourced emotional multimodal actors dataset. IEEE Transactions on Affective Computing , 2014. [8] Qiong Cao, Li Shen, Weidi Xie, Omkar M Parkhi, and An-drew Zisserman. Vggface2: A dataset for recognising faces across pose and age. In 2018 13th IEEE International Confer-ence on Automatic Face & Gesture Recognition (FG 2018) ,pages 67–74, 2018. [9] Xinquan Chen, Xitong Gao, Juanjuan Zhao, Kejiang Ye, and Cheng-Zhong Xu. Advdiffuser: Natural adversarial exam-ple synthesis with diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 4562–4572, 2023. [10] Coalition for Content Provenance and Authenticity (C2PA). Content credentials: C2pa technical specification, version 2.3. Technical specification, 2025. Version 2.3 (December 2025), Appendix A.7. Accessed 2026-01-14. [11] Guillaume Couairon, Jakob Verbeek, Holger Schwenk, and Matthieu Cord. Diffedit: Diffusion-based seman-tic image editing with mask guidance. arXiv preprint arXiv:2210.11427 , 2022. [12] Yingqian Cui, Jie Ren, Yuping Lin, Han Xu, Pengfei He, Yue Xing, Wenqi Fan, Hui Liu, and Jiliang Tang. Ft-shield: A watermark against unauthorized fine-tuning in text-to-image diffusion models. arXiv preprint arXiv:2310.02401 , 2023. [13] Yingqian Cui, Jie Ren, Han Xu, Pengfei He, Hui Liu, Lichao Sun, Yue Xing, and Jiliang Tang. Diffusionshield: A wa-termark for copyright protection against generative diffusion models, 2024. [14] Prafulla Dhariwal and Alexander Nichol. Diffusion models beat gans on image synthesis. Advances in neural information processing systems , 34:8780–8794, 2021. [15] Ziping Dong, Chao Shuai, Zhongjie Ba, Peng Cheng, Zhan Qin, Qinglong Wang, and Kui Ren. Wmcopier: Forging in-visible image watermarks on arbitrary images. arXiv preprint arXiv:2503.22330 , 2025. [16] European Parliament and Council. Article 50: Trans-parency Obligations for Providers and Deployers of Cer-tain AI Systems (regulation (eu) 2024/1689). https:// artificialintelligenceact.eu/article/50/ ,2024. Official Journal of the European Union, L 2024/1689, 12 July 2024. [17] Weitao Feng, Jiyan He, Jie Zhang, Tianwei Zhang, Wenbo Zhou, Weiming Zhang, and Nenghai Yu. Catch you every-thing everywhere: Guarding textual inversion via concept watermarking, 2023. [18] Pierre Fernandez, Guillaume Couairon, Hervé Jégou, Matthijs Douze, and Teddy Furon. The stable signature: Rooting watermarks in latent diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 22466–22477, 2023. [19] Hanna Foerster, Sasha Behrouzi, Phillip Rieger, Murtuza Jadliwala, and Ahmad-Reza Sadeghi. Lightshed: Defeating perturbation-based image copyright protections. In Proceed-ings of the 34th USENIX Security Symposium (USENIX Se-curity 2025) , Seattle, WA, USA, 2025. USENIX Association. Short Presentation. [20] Rinon Gal, Yuval Alaluf, Yuval Atzmon, Or Patashnik, Amit H Bermano, Gal Chechik, and Daniel Cohen-Or. An image is worth one word: Personalizing text-to-image genera-tion using textual inversion. arXiv preprint arXiv:2208.01618 ,2022. [21] Robert Geirhos, Jörn-Henrik Jacobsen, Claudio Michaelis, Richard Zemel, Wieland Brendel, Matthias Bethge, and Fe-lix A. Wichmann. Shortcut learning in deep neural networks. 
+
+Nature Machine Intelligence , 2(11):665–673, 2020. [22] Moyang Guo, Yuepeng Hu, Zhengyuan Jiang, Zeyu Li, Amir Sadovnik, Arka Daw, and Neil Gong. Ai-generated image detection: Passive or watermark?, 2024. [23] Isabelle Guyon and André Elisseeff. An introduction to vari-able and feature selection. Journal of Machine Learning Research , 3:1157–1182, 2003. [24] Dan Hendrycks, Kevin Zhao, Steven Basart, Jacob Steinhardt, and Dawn Song. Natural adversarial examples. In Proceed-
+
+9ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 15262–15271, 2021. [25] Amir Hertz, Ron Mokady, Jay Tenenbaum, Kfir Aberman, Yael Pritch, and Daniel Cohen-Or. Prompt-to-prompt im-age editing with cross attention control. arXiv preprint arXiv:2208.01626 , 2022. [26] Robert Hönig, Javier Rando, Nicholas Carlini, and Florian Tramèr. Adversarial perturbations cannot reliably protect artists from generative ai. arXiv preprint arXiv:2406.12027 ,2024. [27] Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. Lora: Low-rank adaptation of large language models. arXiv preprint arXiv:2106.09685 , 2021. [28] Yuepeng Hu, Zhengyuan Jiang, Moyang Guo, and Neil Gong. Stable signature is unstable: Removing image watermark from diffusion models. arXiv preprint arXiv:2405.07145 ,2024. [29] Yuepeng Hu, Zhengyuan Jiang, Moyang Guo, and Neil Gong. A transfer attack to image watermarks. arXiv preprint arXiv:2403.15365 , 2024. [30] Lei Huang, Weijiang Yu, Weitao Ma, Weihong Zhong, Zhangyin Feng, Haotian Wang, Qianglong Chen, Weihua Peng, Xiaocheng Feng, Bing Qin, et al. A survey on halluci-nation in large language models: Principles, taxonomy, chal-lenges, and open questions. arXiv preprint arXiv:2311.05232 ,2023. [31] International Telecommunication Union. Recommendation itu-t p.915: Subjective test methodologies for 3d video quality assessment. Technical report, International Telecommunica-tion Union, 2016. Section on two-alternative forced choice pair comparison (2AFC-PC). [32] International Telecommunication Union. Recommendation itu-r bt.500-14: Methodologies for the subjective assessment of the quality of television pictures. Technical report, Interna-tional Telecommunication Union, 2019. Available from the ITU website. [33] Zhengyuan Jiang, Jinghuai Zhang, and Neil Zhenqiang Gong. Evading watermark based detection of ai-generated content. In Proceedings of the 2023 ACM SIGSAC Conference on Computer and Communications Security , pages 1168–1181, 2023. [34] Jr. Joseph R. Biden. Executive Order 14110: Safe, Se-cure, and Trustworthy Development and Use of Artificial In-telligence. https://www.federalregister.gov/ documents / 2023 / 11 / 01 / 2023 - 24283 / safe -secure- and- trustworthy- development- and-use-of-artificial-intelligence , 2023. 88 Fed. Reg. 75191 (Nov. 1, 2023). [35] Tero Karras, Timo Aila, Samuli Laine, and Jaakko Lehtinen. Progressive growing of gans for improved quality, stability, and variation. In International Conference on Learning Rep-resentations , 2018. [36] Tero Karras, Samuli Laine, and Timo Aila. A style-based generator architecture for generative adversarial networks. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 4401–4410, 2019. [37] Andre Kassis and Urs Hengartner. Unmarker: A uni-versal attack on defensive watermarking. arXiv preprint arXiv:2405.08363 , 2024. [38] Erin Kenneally and David Dittrich. The menlo report: Ethical principles guiding information and communication technol-ogy research. U.S. Department of Homeland Security, 2012. [39] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer White-head, Alexander C. Berg, Wan-Yen Lo, Piotr Dollár, and Ross Girshick. Segment anything. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , 2023. [40] Nupur Kumari, Bingliang Zhang, Richard Zhang, Eli Shecht-man, and Jun-Yan Zhu. Multi-concept customization of text-to-image diffusion. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition , pages 1931–1941, 2023. [41] Tuomas Kynkäänniemi, Tero Karras, Samuli Laine, Jaakko Lehtinen, and Timo Aila. Improved precision and recall metric for assessing generative models. Advances in neural information processing systems , 32, 2019. [42] Guanlin Li, Yifei Chen, Jie Zhang, Jiwei Li, Shangwei Guo, and Tianwei Zhang. Warfare:breaking the watermark protec-tion of ai-generated content, 2024. [43] Yanjie Li, Wenxuan Zhang, Xinqi Lyu, Yihao Liu, and Bin Xiao. StyleGuard: Preventing Text-to-Image-model-based style mimicry attacks by style perturbations. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. [44] Chumeng Liang, Xiaoyu Wu, Yang Hua, Jiaru Zhang, Yiming Xue, Tao Song, Zhengui Xue, Ruhui Ma, and Haibing Guan. Adversarial example does good: Preventing painting imita-tion from diffusion models via adversarial examples. arXiv preprint arXiv:2302.04578 , 2023. [45] Junhua Lin and Marc Juarez. A crack in the bark: Leveraging public knowledge to remove tree-ring watermarks. arXiv preprint arXiv:2506.10502 , 2025. [46] Hongbin Liu, Moyang Guo, Zhengyuan Jiang, Lun Wang, and Neil Zhenqiang Gong. Audiomarkbench: Benchmark-ing robustness of audio watermarking. arXiv preprint arXiv:2406.06979 , 2024. [47] Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Qing Jiang, Chunyuan Li, Jianwei Yang, Hang Su, Jun Zhu, and Lei Zhang. Grounding dino: Marrying dino with grounded pre-training for open-set object detection. In European Conference on Computer Vision (ECCV) , 2024. [48] Yixin Liu, Chenrui Fan, Yutong Dai, Xun Chen, Pan Zhou, and Lichao Sun. Metacloak: Preventing unauthorized subject-driven text-to-image diffusion-based synthesis via meta-learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 24219–24228, 2024. [49] Ziwei Liu, Ping Luo, Xiaogang Wang, and Xiaoou Tang. Deep learning face attributes in the wild. In Proceedings of the IEEE international conference on computer vision , pages 3730–3738, 2015. [50] Ilya Loshchilov, Frank Hutter, et al. Fixing weight decay regularization in adam. arXiv preprint arXiv:1711.05101 , 5, 2017. 
+
+10 [51] Nils Lukas, Abdulrahman Diaa, Lucas Fenaux, and Florian Kerschbaum. Leveraging optimization for adaptive attacks on image watermarks. arXiv preprint arXiv:2309.16952 , 2023. [52] Yihan Ma, Zhengyu Zhao, Xinlei He, Zheng Li, Michael Backes, and Yang Zhang. Generative watermarking against unauthorized subject-driven image synthesis, 2023. [53] Rafał K. Mantiuk, Kyung J. Kim, Allan G. Rempel, and Wolfgang Heidrich. Comparison of four subjective methods for image quality assessment. Computer Graphics Forum , 31 (8):2478–2491, 2012. [54] Chenlin Meng, Yutong He, Yang Song, Jiaming Song, Jiajun Wu, Jun-Yan Zhu, and Stefano Ermon. Sdedit: Guided image synthesis and editing with stochastic differential equations. In International Conference on Learning Representations (ICLR) , 2022. [55] Rui Min, Sen Li, Hongyang Chen, and Minhao Cheng. A watermark-conditioned diffusion model for ip protection, 2024. [56] Taehong Moon, Moonseok Choi, Gayoung Lee, Jung-Woo Ha, and Juho Lee. Fine-tuning diffusion models with limited data. In NeurIPS 2022 Workshop on Score-Based Methods ,2022. [57] Aamir Mustafa, Salman H Khan, Munawar Hayat, Jianbing Shen, and Ling Shao. Image super-resolution as a defense against adversarial attacks. IEEE Transactions on Image Processing , 29:1711–1724, 2019. [58] Muhammad Ferjad Naeem, Seong Joon Oh, Youngjung Uh, Yunjey Choi, and Jaejun Yoo. Reliable fidelity and diversity metrics for generative models. In International Conference on Machine Learning , pages 7176–7185. PMLR, 2020. [59] Weili Nie, Brandon Guo, Yujia Huang, Chaowei Xiao, Arash Vahdat, and Anima Anandkumar. Diffusion models for adver-sarial purification. arXiv preprint arXiv:2205.07460 , 2022. [60] Hanchuan Peng, Fuhui Long, and Chris Ding. Feature selec-tion based on mutual information criteria of max-dependency, max-relevance, and min-redundancy. IEEE Transactions on Pattern Analysis and Machine Intelligence , 27(8):1226–1238, 2005. [61] Prolific. Prolific | quickly find research participants you can trust, 2024. [62] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervi-sion. In International conference on machine learning , pages 8748–8763. PMLR, 2021. [63] Aditya Ramesh, Mikhail Pavlov, Gabriel Goh, Scott Gray, Chelsea Voss, Alec Radford, Mark Chen, and Ilya Sutskever. Zero-shot text-to-image generation. In International confer-ence on machine learning , pages 8821–8831. Pmlr, 2021. [64] Md Shohel Rana, Mohammad Nur Nobi, Beddhu Murali, and Andrew H Sung. Deepfake detection: A systematic literature review. IEEE access , 10:25494–25513, 2022. [65] Nikhila Ravi et al. Sam 2: Segment anything in images and videos. arXiv preprint arXiv:2408.00714 , 2024. [66] Tianhe Ren, Shilong Liu, Ailing Zeng, Jing Lin, Kunchang Li, He Cao, Jiayu Chen, Xinyu Huang, Yukang Chen, Feng Yan, Zhaoyang Zeng, Hao Zhang, Feng Li, Jie Yang, Hongyang Li, Qing Jiang, and Lei Zhang. Grounded sam: Assembling open-world models for diverse visual tasks. arXiv preprint arXiv:2401.14159 , 2024. [67] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10684–10695, 2022. [68] Nataniel Ruiz, Yuanzhen Li, Varun Jampani, Yael Pritch, Michael Rubinstein, and Kfir Aberman. Dreambooth: Fine tuning text-to-image diffusion models for subject-driven gen-eration. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pages 22500–22510, 2023. [69] Vinu Sankar Sadasivan, Aounon Kumar, Sriram Balasubra-manian, Wenxiao Wang, and Soheil Feizi. Can ai-generated text be reliably detected? arXiv preprint arXiv:2303.11156 ,2023. [70] Babak Saleh and Ahmed Elgammal. Large-scale classification of fine-art paintings: Learning the right metric on the right feature. arXiv preprint arXiv:1505.00855 , 2015. [71] Hadi Salman, Alaa Khaddaj, Guillaume Leclerc, Andrew Ilyas, and Aleksander Madry. Raising the cost of malicious ai-powered image editing. arXiv preprint arXiv:2302.06588 ,2023. [72] Shawn Shan, Jenna Cryan, Emily Wenger, Haitao Zheng, Rana Hanocka, and Ben Y Zhao. Glaze: Protecting artists from style mimicry by {Text-to-Image } models. In 32nd USENIX Security Symposium (USENIX Security 23) , pages 2187–2204, 2023. [73] Shawn Shan, Wenxin Ding, Josephine Passananti, Stanley Wu, Haitao Zheng, and Ben Y Zhao. Nightshade: Prompt-specific poisoning attacks on text-to-image generative models. In 2024 IEEE Symposium on Security and Privacy (SP) , pages 212–212. IEEE Computer Society, 2024. [74] Bing Sun, Jun Sun, Wayne Koh, and Jie Shi. Neural network semantic backdoor detection and mitigation: A {Causality-Based } approach. In 33rd USENIX Security Symposium (USENIX Security 24) , pages 2883–2900, 2024. [75] Matthew Tancik, Ben Mildenhall, and Ren Ng. Stegastamp: Invisible hyperlinks in physical photographs. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 2117–2126, 2020. [76] Qiuyu Tang, Joshua Krinsky, and Aparna Bharati. StylePro-tect: Safeguarding artistic identity in fine-tuned diffusion models. arXiv preprint arXiv:2509.13711 , 2025. [77] Thanh Van Le, Hao Phung, Thuan Hoang Nguyen, Quan Dao, Ngoc N Tran, and Anh Tran. Anti-dreambooth: Protecting users from personalized text-to-image synthesis. In Proceed-ings of the IEEE/CVF International Conference on Computer Vision , pages 2116–2127, 2023. [78] Bolun Wang, Yuanshun Yao, Shawn Shan, Huiying Li, Bimal Viswanath, Haitao Zheng, and Ben Y. Zhao. Neural Cleanse: Identifying and mitigating backdoor attacks in neural net-works. In 2019 IEEE Symposium on Security and Privacy (SP) , pages 707–723. IEEE, 2019. 
+
+11 [79] Jiakai Wang, Xianglong Liu, Jin Hu, Donghua Wang, Siyang Wu, Tingsong Jiang, Yuanfang Guo, Aishan Liu, and Jiantao Zhou. Adversarial examples in the physical world: A survey. 
+
+arXiv preprint arXiv:2311.01473 , 2023. [80] Ruotong Wang, Hongrui Chen, Zihao Zhu, Li Liu, and Baoyuan Wu. Versatile backdoor attack with visible, seman-tic, sample-specific, and compatible triggers. arXiv preprint arXiv:2306.00816 , 2023. [81] Zhenting Wang, Chen Chen, Lingjuan Lyu, Dimitris N Metaxas, and Shiqing Ma. Diagnosis: Detecting unauthorized data usages in text-to-image diffusion models. In The Twelfth International Conference on Learning Representations , 2023. [82] Yuxin Wen, John Kirchenbauer, Jonas Geiping, and Tom Goldstein. Tree-ring watermarks: Fingerprints for diffu-sion images that are invisible and robust. arXiv preprint arXiv:2305.20030 , 2023. [83] Enze Xie, Lewei Yao, Han Shi, Zhili Liu, Daquan Zhou, Zhaoqiang Liu, Jiawei Li, and Zhenguo Li. Difffit: Unlocking transferability of large diffusion models via simple parameter-efficient fine-tuning. In Proceedings of the IEEE/CVF Inter-national Conference on Computer Vision , pages 4230–4239, 2023. [84] Haotian Xue, Chumeng Liang, Xiaoyu Wu, and Yongxin Chen. Toward effective protection against diffusion-based mimicry through score distillation. In The Twelfth Interna-tional Conference on Learning Representations , 2023. [85] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, Da Yin, Xiaotao Gu, Yuxuan Zhang, Weihan Wang, Yean Cheng, Ting Liu, Bin Xu, Yuxiao Dong, and Jie Tang. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072 ,2024. [86] Zijin Yang, Kai Zeng, Kejiang Chen, Han Fang, Weim-ing Zhang, and Nenghai Yu. Gaussian shading: Provable performance-lossless image watermarking for diffusion mod-els. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR) , pages 12162– 12171, 2024. [87] Hu Ye, Jun Zhang, Sibo Liu, Xiao Han, and Wei Yang. IP-Adapter: Text compatible image prompt adapter for text-to-image diffusion models. arXiv preprint arXiv:2308.06721 ,2023. [88] Yu Yu, Weibin Zhang, and Yun Deng. Frechet inception distance (fid) for evaluating gans. China University of Mining Technology Beijing Graduate School , 3, 2021. [89] Hanlin Zhang, Benjamin L Edelman, Danilo Francati, Daniele Venturi, Giuseppe Ateniese, and Boaz Barak. Watermarks in the sand: Impossibility of strong watermarking for language models. In Forty-first International Conference on Machine Learning , 2024. [90] Lijun Zhang, Xiao Liu, Antoni Viros Martin, Cindy Xiong Bearfield, Yuriy Brun, and Hui Guan. Robust image water-marking using stable diffusion, 2024. [91] Xuanyu Zhang, Runyi Li, Jiwen Yu, Youmin Xu, Weiqi Li, and Jian Zhang. Editguard: Versatile image watermarking for tamper localization and copyright protection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 11964–11974, 2024. [92] Xuandong Zhao, Kexun Zhang, Zihao Su, Saastha Vasan, Ilya Grishchenko, Christopher Kruegel, Giovanni Vigna, Yu-Xiang Wang, and Lei Li. Invisible image watermarks are provably removable using generative ai. Advances in neural information processing systems , 37:8643–8672, 2024. [93] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Conditional prompt learning for vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 16816–16825, 2022. [94] Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei. Hidden: Hiding data with deep networks. In Proceedings of the European conference on computer vision (ECCV) , pages 657–672, 2018. [95] Peifei Zhu, Tsubasa Takahashi, and Hirokatsu Kataoka. Watermark-embedded adversarial examples for copyright protection against diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 24420–24430, 2024. 
+
+12 Appendix A. Full Experimental Setup 
+
+We evaluate FeatMark from three perspectives: (1) wa-termark detection accuracy on attacker-generated images, (2) perceptual quality of the generated outputs, and (3) ro-bustness of watermark verification under purification and watermark-removal attacks. In every experiment, the at-tacker receives one of three training sets, original im-ages (No-Defense), images protected by a baseline water-mark/defense, or FeatMark-protected released images, and performs mimicry fine-tuning to generate fake images. We then evaluate those fakes using the metrics below. 
+
+Datasets. We follow the dataset protocols used in prior cloaking and purification evaluations [6, 72, 77]. We consider two face datasets (VGGFace2 [8] and CelebA-HQ [35, 49]) and one artwork dataset (WikiArt [70]). We use the standard partitions and mimicry settings from DreamBooth-style evaluations [6, 68, 77]. Since VGGFace2 has higher identity/attribute diversity, we additionally use it for adaptive-attack robustness and ablations [8, 77]. 
+
+Implementations. We instantiate the open-vocabulary evi-dence scorer with CLIP [62]. For region grounding Mk(x)
+
+we use a text-guided open-world segmentation pipeline (LangSAM) built upon GroundingDINO [47] and Segment Anything [39] via Grounded-SAM [66]. For the concept-guided editor E in Eq. (6), we use a diffusion-based image-to-image inpainting pipeline conditioned on the edit instruction and mask; other instruction-following masked editors can be substituted without changing the methodology. 
+
+Training configuration. We optimize each image cloak for 500 iterations with step size 1.0/255 , λ = 10 2 in Eq. (8), and default perturbation budget 0.10 (ablations in Appendix H). Mimicry attacks use DreamBooth [68] for 1000 steps on a Stable Diffusion v2.1 base [67] (additional diffusion versions and personalization backends are evalu-ated in Appendices G.1 and G.2). The watermark extrac-tor is trained for 100 iterations with AdamW ( lr = 10 −2,
+
+weight _decay = 10 −2); we use 48-bit messages and fol-low HiDDeN [94] to train the output layer with AdamW (lr = 0 .01 , weight _decay = 0 .01 ) [50]. Unless otherwise stated, attribution is evaluated by bit accuracy and a fixed decision threshold chosen on a held-out calibration split; all WM=Y/WM=N tables report the resulting separation rather than a formal proof of verification. 
+
+Compute resources. All experiments were conducted on NVIDIA A100X GPUs with 80GB memory, using NVIDIA driver 550.54.14 and CUDA 12.4. A DreamBooth mimicry run with 1,000 fine-tuning steps took about 10 minutes on one A100X GPU. LoRA and Textual Inversion runs were lighter and took approximately 3–6 minutes per target. The remaining stages, including concept selection, localized edit-ing, image cloaking, reader training, watermark extraction, purification/removal attacks, and adaptive attack evaluation, were run on the same GPU type. The complete experimental suite consumed approximately 150–250 A100X GPU-hours in total. 
+
+Evaluation metrics. Watermark accuracy is measured by bit accuracy (fraction of correctly decoded bits). Un-less stated otherwise, we report robustness under common transformations [18]: strong crop (retain 90%), brightness 
+
+×2.0, contrast ×2.0, JPEG quality 50, and a combined trans-form (Crop+Brigh.+JPEG). Perceptual quality is evaluated on the attacker-generated images using FID [88], preci-sion/recall [41], and coverage/density [58] between gener-ated fakes and the original images. 
+
+Removal and purification attacks. To stress-test robust-ness, we evaluate purification attacks applied before mimicry training (IMPRESS [6] and Noisy Upscaling [26, 57]), a white-box watermark remover with extractor access (WE-vade [33]), and black-box removal/regeneration attacks in-cluding UnMarker [37], diffusion-based regeneration [59], VAE reconstruction [3], and the WatermarkAttacker frame-work with multiple configurations [92]. 
+
+Baselines. We compare against representative invisible watermark baselines for diffusion models (Stable Signa-ture [18] and Tree-Ring [82]). We additionally include learned message watermarking baselines HiDDeN [94] and StegaStamp [75]. Since prior image cloaks are not designed for verification, we also include Anti-DreamBooth [77], and for WikiArt we include Glaze [72], to contextualize perceptual quality. We further add MetaCloak [48], a meta-learning-based poisoning defense designed to impede subject-driven diffusion fine-tuning. For removal-attack com-parisons, we additionally report classic frequency-/learning-based schemes (DwtDct, DwtDctSvd, RivaGAN) as used by WatermarkAttacker [92]. 
+
+User study. We conduct a pairwise study comparing attacker-generated images from No-Defense versus Feat-Mark, using the same target and prompt per pair. Order is randomized and balanced. Participants answer which image is more realistic, which better matches the target iden-tity/style, and which better matches the edit instruction, fol-lowing standard pair-comparison guidance [31, 32, 53]. We recruit 49 participants on Prolific [61] to label 100 image pairs (18+, no special face-recognition expertise), with a 30-minute limit and £3.00 compensation. 
+
+## B. Additional Watermark Accuracy Discussion 
+
+A key advantage of FeatMark is the verification margin be-tween WM=Y and WM=N, which directly translates into lower false positives and more reliable attribution. For VG-GFace2 and WikiArt, FeatMark drives WM=N accuracy close to zero across all transformations (e.g., 0.03 to 0.05 on VGGFace2 and 0.01 to 0.02 on WikiArt), while keep-ing WM=Y accuracy high. Even under cropping, FeatMark 13 preserves strong separability, with 0.75 vs. 0.04 on VG-GFace2 and 0.26 vs. 0.02 on WikiArt. In contrast, Stable Signature exhibits WM=N accuracies near random guessing around 0.45–0.56, and most critically its separability col-lapses under cropping where WM=Y becomes comparable to WM=N (e.g., 0.36 vs. 0.40 on VGGFace2, 0.38 vs. 0.42 on CelebA-HQ, and 0.50 vs. 0.56 on WikiArt). While all these methods can decode well in benign conditions, Feat-Mark more consistently maintains a usable decision margin when the attacker applies realistic removal attack. Cropping is inherently the most challenging transformation for local-ized semantic watermarks, since it can remove the edited region entirely. Nevertheless, FeatMark’s design still yields a practical attribution signal whenever part of the marked re-gion remains, and its strong suppression of WM=N decoding provides a cleaner and more reliable verification behavior than baselines across datasets and perturbations. 
+
+## C. Additional Qualitative Results 
+
+The CelebA-HQ examples complement the VGGFace2 and WikiArt visualizations in the main paper. We also provide the Noisy Upscaling visualization for the purification results discussed in Section 4.4. 
+
+## D. Video Mimicry Extension 
+
+D.1. Extensibility to Video Mimicry 
+
+We extend FeatMark from images to the video mimicry setting by replacing the image editor with a masked video-to-video editor. Concretely, for each target video we first select one subtle feature from our feature bank, then localize it on the first frame via text-guided segmentation and propagate the mask across the entire clip using a promptable video seg-mentation tracker (SAM 2) [65]. Given the propagated mask sequence, we apply a single concept instruction consistently to all frames via a masked video editing backbone, yielding an edited video whose watermark evidence is temporally co-herent.We then adapt our cloaking stage from a single image to a video by distributing the cloaking perturbation across frames. Specifically, we add bounded, per-frame noise after editing so that the published video remains visually faithful while still steering the downstream mimicry process toward reproducing the injected feature evidence throughout the clip. On the attacker side, we instantiate video mimicry using CogVideoX [85] and perform LoRA-based [27] fine-tuning on the target character videos from CREMA-D [7]. Eval-uating the resulting fake videos, our verifier achieves a bit accuracy of 0.13 on non-watermarked samples and 0.85 on watermarked samples, indicating a clear separation between clean and FeatMark-protected content in the video domain.                               
+
+> Table 8. Bit accuracy change of FeatMark against tailored adaptive attacks on VGGFace2.
+> Attack Change of Bit Accuracy
+> None Crop Brigh. Cont. JPEG Comb. TCN −0.02 −0.00 −0.07 −0.01 −0.02 −0.09 AFT −0.01 −0.00 −0.03 −0.01 −0.02 −0.01 DRA-G −0.20 −0.02 −0.22 −0.26 −0.20 −0.23 DRA-G −0.22 −0.07 −0.25 −0.27 −0.24 −0.32
+
+## E. Adaptive Attack Details 
+
+The main paper summarizes the adaptive attacks and keeps the full quantitative table and qualitative visualization here. 
+
+E.1. Attack Methodology 
+
+We evaluate three adaptive attackers with increasing capabil-ity, and refer to them by short names in later results. 
+
+TCN (Targeted Concept Neutralization). FeatMark’s watermark is realized as a localized concept, so a natural adaptive strategy is to infer the concept and undo it. TCN ranks candidate bank features using open-vocabulary con-cept evidence, localizes the predicted feature region with text-guided grounding, and applies a counterfactual edit that neutralizes the attribute while preserving identity and global semantics. We instantiate grounding with open-world detection and segmentation tools commonly assembled as Grounded-SAM [39, 47, 66]. This attack is practical be-cause it uses off-the-shelf grounding and editing modules and is directly aligned with the same “detect–ground–edit” abstraction as our concept programs, making it a targeted stress test for feature-anchored watermarks. 
+
+AFT (Adversarial Fine-Tuning). A stronger attacker can push watermark evasion into training, so that the genera-tor learns to avoid verifiable outputs by construction. Assum-ing white-box access to the reader R and message m, the attacker fine-tunes mimicry model parameters θ to suppress decoded bits while preserving identity or style relative to a reference checkpoint θ0. Using a deterministic sampling routine xθ (z, c ) from the mimicry model for noise seed z
+
+and condition c, a representative objective is 
+
+min  
+
+> θ
+
+Ez,c 
+
+h
+
+BCE  m, R(xθ (z, c )) i
+
+s.t. Sim  xθ (z, c ), x θ0 (z, c ) ≥ γ. 
+
+(10) As such, AFT provides a meaningful upper bound because it directly optimizes against the exact verification mechanism under an explicit fidelity constraint. 
+
+DRA (Diffusion Regeneration Attack). DRA mod-els a practical “regenerate-to-remove” threat where an at-tacker applies diffusion-based image-to-image regeneration to rewrite details while keeping global content largely intact, as in SDEdit-style editing and diffusion purification [54]. 14 Figure 5. FeatMark on CelebA-HQ. Three examples with the edit instruction shown on top. The left example annotates the row order, reused for the other two. Rows show target images, edited images, cloaked released images, and attacker outputs trained on original images and on cloaked images. The injected facial concept transfers to the attacker generations when trained on cloaked images. 
+
+> Figure 6. Visualization of FeatMark against Noisy Upscaling for one target person in VGGFace2 dataset.
+
+We evaluate two variants. DRA-UG (unguided) simply re-generates each image with a tunable strength (e.g., noise level or diffusion steps) and selects the strongest setting that stays within a perceptual similarity budget. DRA-G 
+
+(guided) additionally uses the watermark reader as feed-back, choosing regeneration settings—and optionally adding reader-guidance during regeneration—to directly minimize verification, e.g., by reducing Bacc (m, R(˜ x)) (or an equiv-alent differentiable surrogate such as BCE( m, R(˜ x)) ). To-gether, DRA-UG and DRA-G capture both an off-the-shelf post-processing attacker and a stronger mechanism-aware variant that explicitly targets the decoded bits. 
+
+## F. Related Work 
+
+We position FeatMark against four lines of work: personal-ization attacks, watermark-based attribution, anti-mimicry cloaks, and watermark/cloak removal attacks. This organiza-tion is important because many defenses that look superfi-cially comparable optimize for a different security goal. 
+
+Personalization and mimicry attacks. Modern mimicry pipelines personalize text-to-image generators from a small reference set. DreamBooth binds a rare token to a sub-ject or style through fine-tuning [68], Textual Inversion learns a new textual embedding while keeping the gener-ator mostly fixed [20], and parameter-efficient variants such as LoRA update low-rank adapters rather than all model weights [27]. Other personalization interfaces, such as Cus-tom Diffusion [40] and IP-Adapter [87], further broaden the attacker design space by changing how image identity/style is injected. FeatMark is not tied to a single personalization implementation: its signal is placed in localized semantic evidence that a successful mimicry model must reproduce to imitate the target. Appendix G.2 therefore evaluates LoRA and Textual Inversion in addition to the DreamBooth proto-col used in the main experiments. 
+
+Watermarks and provenance. Generation-time water-marks integrate provenance into the synthesis process. Stable Signature [18], Tree-Ring [82], Gaussian Shading [86], Zo-Diac [90], WaDiff [55], EditGuard [91], and WMCopier [15] embed or propagate low-level signals that can be decoded later; earlier image watermarking systems such as HiD-DeN [94] and StegaStamp [75] provide learned message decoders for natural images. Source-side residue methods place an imperceptible mark on the public training images before release, including ProMark [1], GenWatermark [52], 15 Figure 7. Visualization of FeatMark against three adaptive attacks for one target person in VGGFace2 dataset. 
+
+DIAGNOSIS [81], FT-Shield [12], and related concept-watermarking schemes for textual inversion [17]. Metadata standards such as C2PA [10] are complementary but do not survive the training process once an adversary extracts raw pixels. FeatMark differs in mechanism and threat model: it makes the provenance signal part of the visual/semantic data distribution that the mimicry model learns, rather than relying on a low-energy pixel signature or a file-container credential. 
+
+Anti-mimicry cloaks and style-protection de-fenses. Cloaking defenses add adversarial perturbations to public images so that personalization learns the wrong identity/style. Representative methods include AdvDM [44], PhotoGuard [71], Anti-DreamBooth [77], Glaze [72], MetaCloak [48], Nightshade [73], LightShed [19], and related image-cloak analyses [26, 84]. Recent style-specific defenses such as StyleGuard [43] and StyleProtect [76] strengthen perturbation-based style protection by targeting style-related features or selected diffusion components. These works are important baselines for disruption : they try to make the attacker fail to reproduce the original identity/style. FeatMark instead targets attribution : it intentionally preserves usable mimicry quality while causing successful mimicry outputs to carry a decodable semantic trace. This distinction explains why disruption metrics alone are insufficient for evaluating FeatMark and why our main tables report WM=Y/WM=N separability, bit accuracy, and perceptual quality rather than only attack failure rates. 
+
+Removal, purification, and adaptive trigger-inference attacks. Pixel-level watermarks and cloaks can be at-tacked through adversarial perturbation, regeneration, or spectral manipulation. WEvade [22, 33], surrogate-key op-timization [51], watermark forgery [42], unstable diffusion-component fine-tuning [28], transfer attacks [29], Un-Marker [37], WatermarkAttacker [92], and latent VAE at-tacks [45] demonstrate that invisible or coefficient-level sig-nals are often fragile. Reviewers may also ask whether trigger-recovery methods such as Neural Cleanse [78], origi-nally designed for backdoor triggers, can reverse-engineer FeatMark. We address this in Appendix G.5: FeatMark is not a single universal patch or fixed trigger. The selected cue, localization, edit direction/strength, and cloaking ob-jective are sample-conditioned and defender-side, so trigger inversion can at best infer a coarse semantic hypothesis; re-moving the transferred evidence generally requires visible identity/style edits rather than benign denoising. 
+
+## Declaration of LLM Usage 
+
+A generative AI assistant was used only for grammar and light style polishing. It was not used as an original, non-standard, or decision-making component of the research method, experiments, figures, or analysis. 
+
+## Ethical Considerations 
+
+This work aims to mitigate harms from diffusion-based mimicry attacks, which can violate personal autonomy, pri-vacy, and reputation by enabling convincing forgeries of an individual’s identity or an artist’s style. FeatMark is designed as a defensive, post-hoc attribution mechanism. Rather than improving synthesis quality or facilitating impersonation, it enables reliable verification of whether suspicious content is likely produced by a mimicry-trained model. We follow the Menlo Report principles for ICT re-search [38]. Our primary stakeholders include affected indi-16 viduals and artists whose publicly shared images can be mis-used for impersonation, researchers and practitioners who build or audit generative systems, and companies/platforms that host or deploy personalization tools. The anticipated benefits are improved provenance and accountability for misuse. Potential risks include that parts of our evaluation pipeline (e.g., mimicry fine-tuning scripts) could be repur-posed to lower the barrier for abuse. The implementation and attack configurations are not publicly released. We also do not release any additional identity-specific data beyond what is already publicly available in the referenced datasets, and our verifier parameters remain private by design. All experiments are conducted offline on publicly avail-able datasets (VGGFace2, CelebA-HQ, WikiArt) following prior protocols, and no live systems, services, or user ac-counts are targeted or affected. Our user-perception study was reviewed by the authors’ institutional Human Research Ethics Committee (IRB) and determined to be exempt (min-imal risk). Participants provided informed consent, were told the study purpose at a high level, and no personally identifying information was collected; responses were used solely for academic research. Overall, we believe the societal benefit of enabling attri-bution and accountability for mimicry-generated forgeries outweighs the residual misuse risk, and we explicitly incorpo-rate mitigations through stakeholder analysis and restrictions on artifact distribution. 
+
+## G. Additional Generalization and Deployment Evidence 
+
+G.1. Generalization across Diffusion Models 
+
+Table 9 evaluates transfer when the attacker uses a differ-ent diffusion backbone from the defender. We keep the watermarking model at Stable Diffusion v2.1 and vary the mimicry model across v2.0, v1.5, and v1.4. Without transfor-mations, the corresponding WM=Y/WM=N bit accuracies are 0.97 /0.07 , 0.96 /0.05 , and 0.98 /0.04 , respectively, com-pared with 0.98 /0.03 for the default v2.1. These results preserve a large verification margin across the tested back-bones, supporting attribution without requiring the attacker to use the defender’s model version. 
+
+G.2. Transfer beyond DreamBooth 
+
+To test transfer beyond the main DreamBooth protocol, we evaluate LoRA-based fine-tuning [27] and Textual Inver-sion [20] on VGGFace2. Table 10 reports WM=Y/WM=N bit accuracies of 0.99 /0.06 for LoRA and 0.96 /0.06 for Textual Inversion; LoRA yields FID 185 .90 . Both back-ends preserve a clear verification margin, suggesting that the semantic trace can transfer across personalization methods rather than depending solely on DreamBooth fine-tuning.                                                                               
+
+> Table 9. Bit accuracy of FeatMark when mimicry attacks are conducted with different versions of diffusion model. v2.1 is the default setting for our watermarks and mimicry attacks (*).
+> Model version WM? Bit Accuracy
+> None Crop Brigh. Cont. JPEG Comb. v2.1* Y0.98 0.75 0.96 0.96 0.99 0.98 N0.03 0.04 0.04 0.04 0.04 0.05 v2.0 Y0.97 0.72 0.94 0.97 0.98 0.99 N0.07 0.03 0.09 0.13 0.11 0.15 v1.5 Y0.96 0.70 0.96 0.96 0.97 0.97 N0.05 0.02 0.07 0.07 0.08 0.07 v1.4 Y0.98 0.67 0.96 0.98 0.98 0.98 N0.04 0.02 0.06 0.07 0.08 0.07 Table 10. Watermark transfer under different personalization back-ends on VGGFace2. DreamBooth is the main-paper default.
+> Mimicry backend WM=Y bit acc. WM=N bit acc. FID ↓
+> DreamBooth [68] 0.98 0.03 180.98 LoRA [27] 0.99 0.06 185.90 Textual Inversion [20] 0.96 0.06 –Table 11. Multi-round generate-and-filter attack on VGGFace2. The attacker performs three rounds, samples four candidates per round, and keeps the lowest-reader-score candidate under an identity-similarity budget of 0.92.
+> Setting WM=Y bit acc. WM=N bit acc. FID ↓
+> Default FeatMark 0.98 0.03 171.81 Generate-and-filter attacker 0.72 0.03 192.13
+
+G.3. Multi-round adaptive generation and cherry-picking 
+
+A stronger attacker may repeatedly generate candidates and publish only samples that minimize the watermark reader score while staying visually close to the target. We evaluate a multi-round generate-and-filter attacker: in each round, the attacker generates four candidates, retains the one with the lowest reader score under an identity-similarity budget of 
+
+0.92 (with the current image also retained as a candidate), and repeats this process for three rounds. Table 11 shows that FeatMark remains separable after this attack: WM=Y bit accuracy drops from 0.98 to 0.72 , while WM=N remains 
+
+0.03 . The fidelity cost is also measurable, with FID increas-ing from 171 .81 to 192 .13 , indicating that suppressing the semantic trace is not a free post-processing operation. 
+
+G.4. Incremental real-world publishing 
+
+In real deployments, a user may not have all future images available when first configuring a watermark. We therefore evaluate an incremental setting: FeatMark selects the mes-17 Table 12. Incremental publishing on VGGFace2. The seed-only setting selects the watermark program from two initial images and applies it to later releases.       
+
+> Setting WM=Y bit acc. WM=N bit acc.
+> All images available at setup 0.98 0.03 Two-image seed set, later releases added 0.98 0.04
+
+sage and feature program from an initial seed set of only two images and then applies the same program to later released images without re-selecting the feature. Table 12 shows that this realistic variant remains close to the all-images-known setting, with WM=Y/WM=N bit accuracy of 0.98 /0.04 com-pared with 0.98 /0.03 by default. This suggests that feature selection does not require seeing every future release, pro-vided that the selected semantic cue remains editable and identity/style-consistent for later images. 
+
+G.5. Trigger-inversion, feature leakage, and for-ward security 
+
+FeatMark should not be interpreted as a classic backdoor with a single universal trigger. Backdoor-recovery tools such as Neural Cleanse [78] assume that a compact, class-consistent trigger can be reverse-engineered by optimizing for a target behavior. In contrast, FeatMark’s evidence is localized, identity/style-conditioned, and realized differently across samples. An attacker may infer a coarse candidate concept from the released image set, but does not observe the full defender-side program: the selected feature among semantically overlapping alternatives, the spatial grounding, the edit direction and strength, the private message-to-reader mapping, or the cloaking objective that transfers the cue through mimicry training. Consequently, concept neutraliza-tion can weaken some visible evidence but does not reliably erase the transferred semantic bias without rewriting iden-tity/style details. We also explicitly acknowledge the forward-security lim-itation. If an attacker learns the exact feature program and is willing to apply visible edits or discard many otherwise good generations, future attribution can be weakened. Feat-Mark is designed to raise the cost of such evasion and to expose a fidelity/identity tradeoff, not to provide perpetual cryptographic security after full feature leakage. This is why our evaluation includes targeted concept neutralization, diffusion regeneration, multi-round candidate filtering, and uncontrolled clean-image leakage. 
+
+## H. Ablation Study 
+
+In this section, we evaluate image cloaking perturbation strength and an uncontrolled setting where the mimicry ad-versary obtains non-watermarked images. Generalization across diffusion model versions is reported in Appendix G.1. 
+
+Robustness under uncontrolled settings. Our prior set-tings are rigorously controlled to demonstrate the perfor-mance of FeatMark. We now consider a setting where the attacker not only has access to the cloaked images, but also additional clean images from the target prior to watermark-ing efforts. Table 13 is the result for our metrics of bit accuracy and perceptual quality with number of clean target samples ( Nclean ) varied from 0 (default) to 8. When increas-ing Nclean , the bit accuracy gap is reduced, with perceptual quality remaining higher, but FeatMark continue to effec-tively mitigate the mimic adversary. When, Nclean =2 where 
+
+Nclean is half of the number of cloaked images, FeatMark achieves bit accuracy with no transformation of 0.98-0.38. In the extreme case of Nclean =6 and Nclean =8 where Nclean 
+
+is 1.5 or 2 times more populous than cloaked images, the accuracy gaps are too small to distinguish the watermark. 
+
+Watermarking with different perturbation budgets. We present in Table 14 an ablation study when the perturbation budget, η in Equation 8 is varied from 0.01 to 0.20 with 0.10 as the default setting in our prior experiments. Larger η pro-duces larger perturbations in the cloaked images. With each 
+
+η we record the corresponding bit accuracy and perceptual quality. From the results, a reduction in perturbation budget nar-rows the bit accuracy gap between watermarked and non-watermarked fake images, but improves the perceptual simi-larity between these images, making watermarks more diffi-cult to be noticed. For example, when η is 0.05, FeatMark preserves the bit accuracy with no transformation to 0.85-0.03, which is still large enough to distinguish watermarked and non-watermarked images, and achieve smaller FID of 178.46. In an extreme case where η is 0.01, the perturba-tion has nearly no effect, so that bit accuracy gap drops to 0.25-0.03, which is not common and not recommended. 
+
+## I. Detection of Future Attacks 
+
+In this sub-section, we discuss potential threats in the future and argue how FeatMark remains effective against them. 
+
+Stronger mimicry adversaries. FeatMark’s success re-lies on the mimicry capabilities of the adversary, a weak adversary generating poor fake representations of the target identity is unlikely to faithfully recreate inconspicuous fea-ture watermarks. However, this setting is not a concern, as poorly crafted fakes are indicative of imitation. On the other hand, stronger mimics will have a greater capacity to learn and replicate characteristics from the target’s source data, in which FeatMark’s visible features will also be present and transferred. 
+
+Visible watermarks raise the cost of attackers. We have recently observed, claims of impossibly strong LLM water-marks [69, 89] that are hard to remove provided adversaries are computationally bounded. Such a development may also occur in the text-to-image domain. Recent pixel based wa-18 Table 13. Bit accuracy and perceptual quality of FeatMark in an uncontrolled setting with additional clean images used in mimicry attacks on VGGFace2. Nclean of 0 is the default setting (*) where the attacker can only access the cloaked images to perform mimicry attacks. The number of cloaked images provided to the attacker is 4 for all the results. 
+
+Nclean WM? Bit Accuracy FID ↓ Precision ↑ Recall ↑ Coverage ↑ Density ↑
+
+None Crop Brigh. Cont. JPEG Comb. 0* Y 0.98 0.75 0.96 0.96 0.99 0.98 180.98 0.47 0.19 0.83 0.62 N 0.03 0.04 0.04 0.04 0.04 0.05 1 Y 0.97 0.73 0.96 0.96 0.97 0.96 180.12 0.53 0.24 1.03 0.75 N 0.18 0.12 0.19 0.21 0.22 0.21 2 Y 0.98 0.68 0.95 0.96 0.98 0.97 177.95 0.53 0.32 1.06 0.79 N 0.38 0.18 0.38 0.42 0.44 0.41 3 Y 0.99 0.69 0.97 0.98 0.99 0.97 176.34 0.57 0.30 1.15 0.81 N 0.52 0.28 0.52 0.53 0.57 0.54 4 Y 0.98 0.64 0.95 0.96 0.97 0.95 174.89 0.59 0.38 1.15 0.83 N 0.58 0.29 0.56 0.58 0.63 0.61 6 Y 0.98 0.63 0.94 0.96 0.97 0.95 173.50 0.64 0.31 1.41 0.87 N 0.73 0.36 0.71 0.73 0.76 0.73 8 Y 0.99 0.68 0.97 0.98 0.99 0.99 172.10 0.59 0.39 1.26 0.87 N 0.79 0.43 0.75 0.77 0.82 0.81 Table 14. Bit accuracy and perceptual quality of FeatMark with different perturbation budget η, where η = 0 .10 is the default setting (*). 
+
+η WM? Bit Accuracy FID ↓ Precision ↑ Recall ↑ Coverage ↑ Density ↑
+
+None Crop Brigh. Cont. JPEG Comb. clean N 0.03 0.04 0.04 0.04 0.04 0.05 171.81 0.65 0.28 1.33 0.83 0.01 Y 0.25 0.15 0.27 0.26 0.25 0.23 173.92 0.60 0.32 1.19 0.80 0.05 Y 0.85 0.59 0.83 0.88 0.81 0.80 178.46 0.43 0.27 0.75 0.61 0.10* Y 0.98 0.75 0.96 0.96 0.99 0.98 180.98 0.47 0.19 0.83 0.62 0.15 Y 0.99 0.81 0.99 0.99 0.99 0.98 183.57 0.43 0.18 0.80 0.59 0.20 Y 0.99 0.84 0.99 0.99 0.99 0.99 185.21 0.43 0.18 0.73 0.56 
+
+termarks [1, 12, 13, 18, 52, 86, 90] have been bypassed by simple perturbations [33, 37]. As we have shown, these simple perturbations cannot evade our watermark detection due to the clear presence of feature-level watermark in the image. Unlike visible text watermarks [44, 95], FeatMark is naturally integrated into the image, alleviating the problem of image quality degradation. Already, FeatMark shows that watermarked features vary their location and specific forms across multiple fake images. With no clear position or form, the cost of removal is expected to increase beyond the cost of existing attacks against pixel-level watermarks. 19
