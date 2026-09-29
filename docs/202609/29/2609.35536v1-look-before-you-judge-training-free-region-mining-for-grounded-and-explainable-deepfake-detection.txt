@@ -1,0 +1,627 @@
+Title: Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection
+
+URL Source: https://arxiv.org/pdf/2609.35536v1
+
+Published Time: Tue, 29 Sep 2026 04:41:34 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection 
+
+# Chia-Ling Chen 1∗, Yu-Ting Ta 1∗, Jian-Yu Jiang-Lin 1, Tai-Ming Huang 1, Ling Lo 2, Po-Ching Chen 1, Yan-Tsung Wang 1, Pei-Heng Li 1, Ling Zou 1, Hong-Han Shuai 3, Wen-Huang Cheng 1†
+
+> 1
+
+National Taiwan University 
+
+> 2
+
+National Tsing Hua University 
+
+> 3
+
+National Yang Ming Chiao Tung University wenhuang@csie.ntu.edu.tw 
+
+Abstract 
+
+Multimodal large language models (MLLMs) can explain deepfake verdicts in natural language, but such explanations are not necessarily visually grounded in the visual evidence underlying the prediction. A model may describe plausible artifacts inferred from language priors rather than from image evidence. Existing grounding methods improve visual reliance through decoding or attention interventions, but they generally strengthen grounding over the entire image, making them ill-suited for forensic artifacts that are subtle, spatially localized, and image-dependent. We propose Look Before You Judge, a training-free framework that formulates explainable deepfake detection as a sequential evidence acquisition process. Instead of directly predicting image authenticity from holistic visual reasoning, our framework first identifies image-specific candi-date evidence regions by contrasting the MLLM’s decoder-to-visual attention between an original image and its Gaussian-blurred counterpart. The identified regions are then inspected individually, and the resulting local evidence is integrated with the global image context before reaching a final verdict. The framework operates without manipulation masks, exter-nal forensic models, or parameter updates, making it directly applicable to off-the-shelf MLLMs. Across five open-source MLLMs on TriDF and MMTD-Set, our framework improves detection accuracy by up to 12.8%, reduces CHAIR by up to 33.4% and hallucination rate by up to 21.3%, and outperforms representative training-free decoding and attention methods. 
+
+# Introduction 
+
+Deep generative models have rapidly improved the realism of synthetic imagery, raising growing concerns about media integrity, identity verification, and digital forensics. Conven-tional deepfake detectors formulate deepfake detection as an image-level binary classification task, predicting whether an input is real or manipulated (Chen et al. 2022; Dong et al. 2023; Haliassos et al. 2022; Han et al. 2025; Sun et al. 2026). However, a reliable forensic analysis requires more than a binary verdict. To support trustworthy decision making, a detector should provide concrete visual evidence that justi-fies its prediction. Motivated by this need, recent multimodal large language model (MLLM)-based forensic methods aug-ment image-level prediction with natural-language explana-tions (Jia et al. 2024; Zou et al. 2025; Shi et al. 2025). Despite 
+
+> ∗
+
+These authors contributed equally. 
+
+> †
+
+Corresponding author. 
+
+Figure 1: Look Before You Judge. A general MLLM pro-duces an ungrounded explanation and an incorrect authentic verdict. Our framework instead inspects localized candidate regions and aggregates the resulting evidence to reach the correct manipulated verdict. their impressive fluency, the explanations often fail to faith-fully reflect the visual evidence underlying the prediction. As illustrated in Figure 1, a state-of-the-art MLLM may generate a plausible forensic explanation while overlooking annotated manipulation artifacts, ultimately producing an incorrect ver-dict. The key challenge of trustworthy deepfake detection is not generating explanations after prediction, but explicitly acquiring image-specific forensic evidence before making a forensic judgment. Acquiring forensic evidence, however, is fundamentally more challenging than reasoning over semantic content. Un-like high-level semantic concepts, forensic evidence is typi-cally weak, spatially localized, and expressed through subtle visual inconsistencies. Depending on the manipulation, the arXiv:2609.35536v1 [cs.CV] 28 Sep 2026 diagnostically useful cues may occur around facial struc-tures in DeepFakes or around edited objects and regenerated regions in broader AIGC images. Under holistic image rea-soning, these subtle forensic signals are easily overwhelmed by semantically dominant image content. Current MLLM-based forensic systems nevertheless attempt to localize ev-idence, perform reasoning, generate explanations, and pre-dict authenticity within a unified inference process (Xu et al. 2025; Huang et al. 2025; Kang et al. 2025), making evi-dence acquisition an implicit of reasoning rather than an explicit objective. Although recent grounding methods im-prove visual reliance through decoding or attention interven-tions (An et al. 2025; Yin, Si, and Wang 2025; Tang et al. 2025; Zhuang et al. 2025; Kim et al. 2025), they generally strengthen grounding over the entire image or assume infor-mative regions are already available (Wu et al. 2024). Con-sequently, existing approaches do not enable an off-the-shelf MLLM to autonomously identify image-specific forensic ev-idence before making a forensic judgment. In this work, we formulate explainable deepfake detec-tion as a sequential, spatially grounded evidence acquisition problem rather than a single-pass explanation task. Instead of directly predicting image authenticity from holistic visual reasoning, we advocate a look-before-you-judge paradigm in which the model first identifies image-specific regions that are likely to contain diagnostically useful evidence, inspects these regions to collect manipulation-related observations, and finally integrates the resulting local evidence with the global image context before reaching a verdict. This formu-lation explicitly separates evidence acquisition from decision making, making local evidence inspection a prerequisite for reliable forensic reasoning rather than a by-product of expla-nation generation. Following the formulation, we propose a training-free ev-idence acquisition framework for off-the-shelf MLLMs. Our key insight is that image regions containing forensic evidence exhibit distinctive attention responses to fine-grained visual perturbations. We exploit this property by contrasting the MLLM’s decoder-to-visual attention between the original and blurred images, enabling the model to identify candidate evidence regions without additional supervision. The identi-fied regions are subsequently inspected individually, and the resulting local observations are integrated with the global image context for final prediction. Since the entire pipeline relies solely on the deployed MLLM’s test-time attention re-sponses, our framework is self-contained and requires neither manipulation masks, predefined facial priors, external foren-sic encoders, learned localization modules, nor task-specific training. Our contributions are summarized as follows: 
+
+• We introduce a look-before-you-judge formulation for explainable deepfake detection, which explicitly sepa-rates region discovery, local evidence inspection, and fi-nal image-level judgment. This formulation addresses the missing pre-decision inspection stage in existing MLLM-based forensic reasoning. 
+
+• Based on this formulation, we develop a fully training-free test-time evidence acquisition framework that identifies detail-sensitive forensic regions through blur-contrastive attention analysis and guides the MLLM to inspect them without manipulation masks, task-specific training, or learned localization modules. 
+
+• Extensive experiments across five open-source MLLM backbones and two benchmarks covering diverse deep-fake manipulations and AIGC editing demonstrate con-sistent improvements in both detection accuracy and ex-planation grounding, validating the effectiveness and gen-eralizability of the proposed framework. 
+
+# Related Work 
+
+From Detection to Local Evidence Inspection 
+
+Early deepfake detectors formulate forgery detection as image-level binary classification, typically trained on large-scale datasets such as FaceForensics++ (Rossler et al. 2019) and DFDC (Dolhansky et al. 2020). Although effective in controlled settings, these models often rely on dataset-specific artifacts and may generalize poorly to unseen gen-erators (Rossler et al. 2019; Dolhansky et al. 2020). Later methods incorporate forgery-aware priors to improve robust-ness (Liu et al. 2024; Yang et al. 2025), but still mainly provide image-level predictions without exposing local ev-idence. Recent MLLM-based image forensic systems, such as FakeShield (Xu et al. 2025), SIDA (Huang et al. 2025), and LEGION (Kang et al. 2025), extend detection toward interpretable forgery analysis by producing textual explana-tions and, in some cases, localization outputs. However, their localization and explanation are typically obtained through supervised training on annotated masks, artifact labels, or curated explanation data, and are generated jointly with the final decision. Our work neither learns localization from an-notated data nor directly asks the MLLM for a global ex-planation. Instead, it first mines candidate forensic regions from the model’s own test-time attention responses, enabling a look-before-you-judge inspection of local evidence prior to the final judgment. 
+
+Visual Grounding and Forensic Localization 
+
+Recent studies have linked MLLM hallucination to insuffi-cient visual grounding and an excessive reliance on language priors, motivating a growing body of training-free methods that intervene in attention or decoding at inference time (Lu et al. 2026; Basile et al. 2026; Tu et al. 2026; Huang et al. 2024; Leng et al. 2024). While these approaches generally improve the model’s reliance on visual information, they predominantly operate at the whole-image level. Such global interventions may be suboptimal for forensic analysis, where discriminative artifacts are often sparse and confined to small regions of the image. ControlMLLM (Wu et al. 2024) enables attention steering toward designated image regions, but as-sumes that the regions of interest are specified in advance. In parallel, existing forensic approaches extract localized evidence using frequency-domain priors (Qian et al. 2020), gradient-based saliency (Selvaraju et al. 2017), or dedicated localization networks (Li et al. 2020; Xu et al. 2025; Kang et al. 2025). LAA-Net (Nguyen et al. 2024) further reduces the dependence on explicit manipulation masks by learning Figure 2: Overview of Look Before You Judge . Stage 1 derives a blur-sensitive visual prior by contrasting output-to-visual attention between the input image and its blurred counterpart. Stage 2 constructs candidate forensic regions from high-response tokens. Stage 3 performs region-wise inspection with attention steering and aggregates the filtered evidence to produce the final prediction and explanation. The entire framework is training-free and requires only frozen MLLMs. attention over artifact-prone regions. Nevertheless, its local-ization behavior remains governed by task-specific training objectives and the artifact distributions represented in the training data. These two lines of research therefore address complemen-tary, yet incomplete, aspects of explainable forensic reason-ing. Training-free grounding methods strengthen visual re-liance without explicitly identifying where forensic evidence is located, whereas forensic localization methods typically depend on task-specific supervision or dedicated localization components. Our method bridges this gap by automatically deriving image-specific forensic regions from an MLLM’s inference-time attention responses. This enables region-wise evidence inspection without localization supervision, auxil-iary localization modules, or parameter updates. 
+
+# Method 
+
+We introduce a training-free framework that uses an MLLM’s output-to-visual attention to determine where to inspect be-fore making an image-level judgment. As shown in Figure 2, it discovers and inspects detail-sensitive regions and verifies the evidence retained under an undirected global view. The mined visual prior is authenticity-agnostic : it serves only as a proposal signal for subsequent forensic inspec-tion. Because all candidate regions and steering distributions are derived from test-time attention, the framework requires no manipulation masks, predefined facial regions, auxiliary modules, or parameter updates. 
+
+Stage 1: Blur-Sensitive Visual Prior Mining 
+
+Stage 1 mines a token-level blur-sensitive prior that high-lights visual tokens whose attention responses depend on fine-grained image detail. Because Gaussian blur suppresses such detail while largely preserving coarse image structure, reduced output-to-visual attention under blur provides a use-ful signal for forensic region mining. We analyze decoder self-attention from generated re-sponse tokens to visual tokens, rather than the vision en-coder’s internal patch attention, as it reflects the visual evi-dence consulted while producing the forensic response. Given a raw image I, we construct a Gaussian-blurred counterpart Iblur . To avoid confounding visual changes with different textual continuations, we generate a response from 
+
+I and reuse its token sequence as a fixed, teacher-forced continuation for both inputs. Let l = 1 , . . . , L and h = 1 , . . . , H index decoder lay-ers and attention heads. For condition c ∈ { raw , blur }, let 
+
+αc, (l,h ) 
+
+> t,v
+
+denote the post-softmax attention from response-token position t to visual token v.We average the output-to-visual attention over generated response positions: 
+
+¯Ac, abs  
+
+> l,h
+
+(v) = 1
+
+|T out |
+
+X
+
+> t∈T out
+
+αc, (l,h ) 
+
+> t,v
+
+, v = 1 , . . . , N v , (1) where Nv denotes the number of visual tokens and Tout the generated response-token positions. The superscript abs de-notes the original post-softmax attention mass before renor-malization over visual tokens. From the aligned raw and blurred attention maps, we com-pute the positive raw–blur delta 
+
+∆+
+
+> l,h
+
+(v) = ReLU 
+
+ ¯Araw ,abs  
+
+> l,h
+
+(v) − ¯Ablur ,abs  
+
+> l,h
+
+(v)
+
+
+
+, (2) The reverse delta ∆− 
+
+> l,h
+
+is defined analogously by exchang-ing the raw and blurred terms. ∆+ 
+
+> l,h
+
+provides the token-level signal used to construct the visual prior, while ∆− 
+
+> l,h
+
+is used only to assess the directionality of each head’s attention shift. 
+
+Head scoring. Not every head provides a reliable blur-sensitive response. We therefore score heads by directional change, spatial redistribution, and spatial reliability. We first measure the fraction of directional change occur-ring in the desired raw > blur direction: 
+
+Gl,h =
+
+PNv 
+
+> v=1
+
+∆+
+
+> l,h
+
+(v)
+
+PNv 
+
+> v=1
+
+∆+
+
+> l,h
+
+(v) + PNv 
+
+> v=1
+
+∆−
+
+> l,h
+
+(v) + ϵ , (3) where ϵ > 0 ensures numerical stability. Let Min denote a valid-region mask excluding border tokens. For each head, Rin  
+
+> l,h
+
+denotes the fraction of positive-delta mass within the valid region, while Rpk  
+
+> l,h
+
+denotes the fraction concentrated on its highest-response token. To measure spatial redistribution, we normalize each at-tention map over visual tokens: 
+
+Acl,h (v) = ¯Ac, abs  
+
+> l,h
+
+(v)
+
+PNv 
+
+> u=1
+
+¯Ac, abs  
+
+> l,h
+
+(u) + ϵ . (4) We combine these factors into the head score 
+
+Sl,h = DJS 
+
+ Araw  
+
+> l,h
+
+, A blur 
+
+> l,h
+
+ · Gl,h · Rin  
+
+> l,h
+
+·
+
+
+
+1 − Rpk 
+
+> l,h
+
+
+
+, (5) where DJS denotes Jensen–Shannon divergence. This score favors heads with predominantly raw-over-blur change, meaningful spatial redistribution, and responses that are nei-ther border-dominated nor concentrated on a single token. We discard heads that fail fixed nondegeneracy checks and retain up to KH high-scoring heads under fixed diversity constraints, yielding the image-specific set H.We normalize each selected positive-delta map to unit mass and average the resulting maps: 
+
+¯P (v) = 1
+
+|H| 
+
+X
+
+> (l,h )∈H
+
+˜∆+
+
+> l,h
+
+, ˜∆+
+
+> l,h
+
+(v) = ∆+
+
+> l,h
+
+(v)
+
+PNv 
+
+> u=1
+
+∆+
+
+> l,h
+
+(u) + ϵ .
+
+(6) Per-head normalization prevents attention-scale differences from dominating the pooled prior. After applying the valid-region mask, we renormalize ¯P to obtain the Stage 1 prior 
+
+P ∈ RNv .
+
+Stage 2: Local Forensic Region Construction 
+
+Stage 1 produces a token-level blur-sensitive prior P , whose high-response tokens may occupy multiple spatially sepa-rated locations. Stage 2 groups these responses into a small set of spatially coherent regions for independent inspection. For each input, we map the one-dimensional prior onto a unified two-dimensional visual-token grid using the spatial layout provided by the corresponding backbone: 
+
+P → Pgrid ∈ RHv ×Wv , Nv = Hv Wv , (7) where Hv and Wv are the input-specific grid dimensions. This backbone-aware mapping preserves the spatial ordering of the visual tokens for subsequent region construction. We retain the top-p fraction of tokens, group spatially adja-cent responses using connected-component analysis, discard degenerate components, and slightly expand the survivors for local context, yielding the candidate components { ˜Cj }.For each candidate component, we compute its total prior mass and the corresponding steering distribution: 
+
+Mj = X 
+
+> v∈˜Cj
+
+P (v), Pj (v) =
+
+
+
+P (v)
+
+Mj
+
+, v ∈ ˜Cj ,
+
+0, v / ∈ ˜Cj .
+
+(8) Here Mj measures the component’s contribution to the image-level blur-sensitive prior and is used for region rank-ing, while Pj preserves its relative prior weights and satisfies P 
+
+> v
+
+Pj (v) = 1 for Stage 3 steering. We rank the candidate components by Mj and retain up to K regions: 
+
+C = Top -Kj (Mj ) = {C1, C 2, . . . , C K′ }, K′ ≤ K, (9) where K′ < K when fewer than K valid components re-main. After ranking, the retained components and their steer-ing distributions are reindexed as {(Ci, P i)}K′ 
+
+> i=1
+
+for region-wise inspection in Stage 3. 
+
+Stage 3: Region-Wise Evidence Inspection and Global Aggregation 
+
+Stage 3 converts the retained regions into structured forensic evidence and aggregates the filtered evidence into an image-level verdict. It comprises region-wise inspection (Stage 3.a), then evidence filtering and global aggregation (Stage 3.b). 
+
+Stage 3.a: Region-Wise Evidence Inspection For each candidate region Ci ∈ C , we steer generation using its distri-bution Pi from Stage 2. Following AttnReal (Tu et al. 2026), we recycle attention from generated-response positions, but redistribute it according to Pi rather than uniformly over all visual tokens. Let H⋆ denote all attention heads within a model-specific decoder-layer range L⋆. This intervention set is distinct from the mined set H, used only to construct the Stage 1 prior. Following the sink-selection rule of AttnReal, let S(l,h )
+
+> t
+
+denote positions selected from the generated-response his-tory. With retention coefficient ρ ∈ [0 , 1) , the recycled mass is 
+
+m(l,h ) 
+
+> t
+
+= (1 − ρ) X
+
+> k∈S (l,h )
+> t
+
+α(l,h ) 
+
+> t,k
+
+. (10) Let V denote the visual-token key positions, with Pi(k)
+
+denoting the weight of the visual token at position k ∈ V .Method TriDF MMTD-Set                                                                                                                                         
+
+> ACC ↑Cover ↑CHAIR ↓Hal ↓F0.5↑DeepFake AIGC-Editing ACC ↑F1 ↑ACC ↑F1 ↑
+> Open-source models
+> InternVL-3.5-8B 0.4176 0.0270 0.9745 1.0000 0.0296 0.5235 0.4936 0.5200 0.4419 InternVL-3.5-8B + Ours 0.5458 0.2239 0.6407 0.7875 0.2564 0.5591 0.6278 0.5260 0.5917
+> InternVL-3.5-14B 0.4213 0.0395 0.9763 0.9980 0.0217 0.5300 0.5488 0.5105 0.4872 InternVL-3.5-14B + Ours 0.5324 0.2045 0.7963 0.9449 0.1587 0.5776 0.5496 0.5525 0.6193
+> MiMo-VL-7B 0.5650 0.2280 0.6539 0.8739 0.2914 0.6046 0.5423 0.5935 0.4389 MiMo-VL-7B + Ours 0.6086 0.1110 0.6536 0.7271 0.2144 0.6326 0.6011 0.5655 0.4749
+> Qwen3-VL-8B-Instruct 0.6207 0.2557 0.8073 0.9993 0.2022 0.6141 0.5952 0.4940 0.4960 Qwen3-VL-8B-Instruct + Ours 0.6408 0.1875 0.7566 0.9349 0.2020 0.6181 0.6294 0.5725 0.5479
+> Qwen3.5-9B 0.6969 0.0700 0.9381 0.9889 0.0552 0.5195 0.6524 0.4885 0.6207 Qwen3.5-9B + Ours 0.6972 0.1088 0.8722 0.9564 0.1108 0.6066 0.6851 0.6130 0.6387
+> Commercial models
+> GPT-5 0.6573 0.2714 0.6982 0.9651 0.2919 0.7727 0.7471 0.5786 0.2936 Gemini 2.5-Pro 0.7311 0.4208 0.5571 0.9332 0.4258 0.5998 0.6664 0.7063 0.7302 Claude Sonnet 4.5 0.6240 0.3988 0.7235 0.9980 0.2908 0.5509 0.6513 0.5804 0.5508
+
+Table 1: Overall Quantitative Comparison. Results across five open-source MLLMs on TriDF and MMTD-Set, with com-mercial MLLMs reported as performance references. For (l, h ) ∈ H ⋆, we update 
+
+˜α(l,h ) 
+
+> t,k
+
+=
+
+
+
+ρ α (l,h ) 
+
+> t,k
+
+, k ∈ S (l,h ) 
+
+> t
+
+,α(l,h ) 
+
+> t,k
+
++ m(l,h ) 
+
+> t
+
+Pi(k), k ∈ V ,α(l,h ) 
+
+> t,k
+
+, otherwise .
+
+(11) Because the sink and visual positions are disjoint and P 
+
+> v
+
+Pi(v) = 1 , the removed and added masses are equal, preserving the attention-row sum while redistributing atten-tion toward Ci.The same region-agnostic prompt qloc is used for every region. It asks the model to report a local irregularity and assess its evidential strength without issuing an image-level verdict. The structured response is 
+
+Ei = ( oi, e i, γ i, a i, n i), (12) consisting of a localized observation, manipulation-evidence label, confidence, artifact category, and optional natural ex-planation. The responses form Eraw = {Ei}K′
+
+> i=1
+
+.
+
+Stage 3.b: Evidence Filtering and Global Aggregation Evidence Filtering. Region-wise inspection may produce unreliable or redundant observations. We process Eraw in descending region-prior order, filtering such responses and retaining the higher-priority observation when duplicates oc-cur. The remaining observations form Ecand , with their con-tribution calibrated according to evidential strength before global aggregation. 
+
+Final Aggregation. We construct an aggregation prompt 
+
+qagg (Ecand ) from the authenticity instruction and filtered ob-servations, presenting them as tentative cues to be verified against the full image. The final prediction is 
+
+ˆy = g I, q agg (Ecand ), (13) where g denotes standard inference with the same model but without attention steering, thereby restoring the global context needed to verify and integrate the local observations. 
+
+# Experiments 
+
+Experimental Setup 
+
+Datasets and Evaluation Metrics. We evaluate our frame-work on TriDF Type-B <OEQ> (Jiang-Lin et al. 2026) and MMTD-Set (Xu et al. 2025). TriDF provides artifact-level annotations, enabling joint evaluation of authenticity predic-tion and explanation grounding. We report accuracy (ACC), artifact coverage (Cover), CHAIR, hallucination rate (Hal), and F 0.5 on TriDF. Cover measures the recall of annotated artifacts, whereas CHAIR and Hal quantify unsupported ar-tifact claims. The F 0.5 score summarizes the trade-off be-tween artifact precision and coverage, with greater emphasis on precision. On MMTD-Set, we report ACC and F1 on the DeepFake and AIGC-Editing subsets. 
+
+Backbone Models. We evaluate five off-the-shelf MLLMs: InternVL-3.5-8B, InternVL-3.5-14B (Wang et al. 2025), Qwen3-VL-8B-Instruct (Bai et al. 2025), Qwen3.5-9B (Qwen Team 2026), and MiMo-VL-7B (Xiaomi 2025). For each backbone, we compare vanilla inference with the proposed test-time evidence acquisition framework. 
+
+Implementation Details. All experiments are conducted in a fully training-free setting. The same three-stage inference procedure is applied across all MLLM backbones. Additional implementation details and hyperparameter settings are pro-vided in the supplementary material. Method TriDF                          
+
+> ACC ↑Cover ↑CHAIR ↓Hal ↓F0.5↑
+> Vanilla 0.4176 0.0270 0.9745 1.0000 0.0296 + VCD 0.4241 0.0372 0.9777 1.0000 0.0212 + AttnReal 0.4206 0.0719 0.9750 0.9993 0.0246 + Ours 0.5458 0.2239 0.6407 0.7875 0.2564
+
+Table 2: Comparison with Training-Free Grounding. Re-sults on TriDF using InternVL-3.5-8B. 
+
+Overall Quantitative Comparison 
+
+We first evaluate the generalizability of the proposed training-free evidence acquisition framework across different MLLM backbones, benchmark datasets, and model scales. Table 1 summarizes the overall quantitative results. 
+
+Generalization across MLLM Backbones. Our framework consistently improves image-level accuracy while substan-tially reducing CHAIR and hallucination rates across all five evaluated open-source MLLM backbones, demonstrating ro-bust generalization across diverse architectures. For example, InternVL-3.5-8B improves accuracy from 0.418 to 0.546 while reducing CHAIR from 0.975 to 0.641. Although ar-tifact coverage decreases for some models, these reductions are consistently accompanied by lower CHAIR and hallu-cination rates, indicating a shift toward more selective and better-supported artifact descriptions rather than exhaustive but potentially unsupported enumeration. 
+
+Generalization across Benchmarks. We further evaluate our framework on MMTD-Set. Our framework improves both ACC and F1 across nearly all model–subset combina-tions on the DeepFake and AIGC-Editing subsets. Together with the results on TriDF, which also covers diverse ma-nipulation types, these consistent gains demonstrate that the framework generalizes across benchmark datasets and het-erogeneous manipulation scenarios. 
+
+Comparison with Commercial MLLMs. For reference, we also compare our framework against several commercial MLLMs evaluated under vanilla inference. While these pro-prietary models generally outperform open-source MLLMs under vanilla inference, applying our framework substan-tially narrows the gap. In several cases, the enhanced open-source models achieve comparable or even superior explana-tion grounding despite requiring neither additional training nor proprietary components. These results suggest that effec-tive test-time evidence acquisition can be as critical as model scaling for explainable forensic reasoning. 
+
+Comparison with Training-Free Visual Grounding 
+
+We further compare our framework with VCD (Leng et al. 2024) and AttnReal (Tu et al. 2026), two representative training-free visual grounding methods that improve visual reliance during inference without additional training. As shown in Table 2, all methods are evaluated using the same InternVL-3.5-8B backbone and TriDF setting. VCD and At-tnReal yield only marginal gains over vanilla inference: im-provements in ACC and Cover are limited, CHAIR and Hal remain nearly unchanged, and F 0.5 decreases. In contrast,                               
+
+> Method TriDF
+> ACC ↑Cover ↑CHAIR ↓Hal ↓F0.5↑
+> Vanilla 0.4176 0.0270 0.9745 1.0000 0.0296 Prompt-only 0.5113 0.1369 0.8545 0.9927 0.1340 w/o blur contrast 0.4867 0.1920 0.8600 0.9568 0.1132 w/o component steering 0.4884 0.1890 0.8574 0.9548 0.1182 Ours 0.5458 0.2239 0.6407 0.7875 0.2564
+
+Table 3: Ablation Study. Effects of evidence-before-judgment prompting, blur-contrastive region mining, and component-wise steering on TriDF. 
+
+Figure 3: Qualitative Spatial Grounding. Candidate re-gions discovered by Stages 1 and 2 align with annotated tampered areas without localization supervision. our framework improves all five metrics, reducing CHAIR from 0.9745 to 0.6407 together with a marked decrease in Hal. These results indicate that globally strengthening vi-sual reliance is insufficient for deepfake forensics; effective grounding instead requires spatially selective region discov-ery and inspection before the final judgment. 
+
+Ablation Study 
+
+We conduct an ablation study on TriDF using InternVL-3.5-8B to evaluate the look-before-you-judge procedure, blur-contrastive region mining, and connected-component steer-ing. Table 3 compares Vanilla , Prompt-only , w/o blur con-trast , w/o component steering , and the full framework. 
+
+Prompted evidence is not necessarily grounded. The prompt-only variant improves detection and artifact cover-age over Vanilla , but leaves hallucination metrics largely unchanged. This shows that eliciting more evidence does not ensure that the reported observations are visually supported. 
+
+Region discovery matters. Using raw attention instead of the blur-contrastive prior underperforms even the prompt-only variant, suggesting that globally salient responses do not reliably expose subtle forensic cues. Effective inspection therefore depends on first discovering informative, detail-sensitive regions. 
+
+Separate inspection improves grounding. Without Figure 4: From Global Error to Local Evidence. Top: Vanilla inference overlooks the annotated blending and texture artifacts and incorrectly predicts the image as authentic. Bottom: Our framework discovers three candidate regions, inspects them independently, and aggregates the retained local evidence under a global view to produce the correct manipulated verdict. component-level steering, a single global prior mixes spa-tially distinct cues and weakens focused inspection. In con-trast, the full framework achieves the best overall per-formance, validating the complete look-before-you-judge 
+
+pipeline of region discovery, separate inspection, and evi-dence aggregation. 
+
+Qualitative Spatial Grounding 
+
+We qualitatively examine whether regions discovered be-fore judgment correspond to actual manipulation areas. Fig-ure 3 visualizes the top candidate regions produced by blur-contrastive region mining and connected-component group-ing on fake images from the DeepFake subset of MMTD-Set. Although the framework is not trained for localization and does not access ground-truth masks during inference, the dis-covered regions frequently cover manipulated facial bound-aries and locally edited structures. These examples suggest that the proposed procedure produces meaningful inspection targets for acquiring local evidence before final judgment. 
+
+Qualitative Analysis 
+
+Figure 4 shows how the proposed look-before-you-judge pro-cedure corrects an erroneous global judgment. Vanilla in-ference predicts the manipulated image as authentic based on broad claims of consistent skin tone and seamless facial integration. In contrast, our framework identifies candidate regions around the eyes, facial boundary, and jawline, where region-wise inspection reveals blending artifacts, abnormal smoothness, and texture inconsistencies. Aggregating these locally grounded observations under the global view leads to the correct manipulated verdict. Additional examples and failure cases are provided in the supplementary material. 
+
+# Conclusion 
+
+We introduce Look Before You Judge , a formulation that casts explainable deepfake detection as a sequential evidence ac-quisition problem rather than a single-pass prediction task. Based on this formulation, we develop a fully training-free test-time evidence acquisition framework that identifies detail-sensitive candidate regions from blur-contrastive at-tention responses, inspects them individually, and integrates the resulting local evidence into a final image-level judg-ment. The framework operates entirely at inference time on frozen MLLMs, requiring neither localization supervision, auxiliary modules, nor parameter updates. Experiments across five open-source MLLMs and two benchmarks demonstrate consistent improvements in detec-tion accuracy and explanation grounding. Together with the ablation and qualitative analyses, these results support the central premise of Look Before You Judge : trustworthy foren-sic reasoning should first identify where potential evidence resides, then examine it locally, and only afterward reach a global conclusion. We hope this work motivates future research on evidence-centric DeepFake detection, where ex-plicit evidence acquisition becomes a fundamental compo-nent of trustworthy and interpretable decision making beyond deepfake detection. References 
+
+An, W.; Tian, F.; Leng, S.; Nie, J.; Lin, H.; Wang, Q.; Chen, P.; Zhang, X.; and Lu, S. 2025. Mitigating object hallucinations in large vision-language models with assembly of global and local attention. In Proceedings of the Computer Vision and Pattern Recognition Conference , 29915–29926. Bai, S.; Cai, Y.; Chen, R.; Chen, K.; Chen, X.; et al. 2025. Qwen3-VL Technical Report. arXiv preprint arXiv:2511.21631 .Basile, L.; Maiorca, V.; Doimo, D.; Locatello, F.; and Caz-zaniga, A. 2026. Head pursuit: Probing attention specializa-tion in multimodal transformers. Advances in Neural Infor-mation Processing Systems , 38: 112351–112383. Chaubey, A.; Guan, X.; and Soleymani, M. 2026. Face-LLaVA: Facial expression and attribute understanding through instruction tuning. In 2026 IEEE/CVF Winter Con-ference on Applications of Computer Vision (WACV) , 2648– 2660. IEEE. Chen, L.; Zhang, Y.; Song, Y.; Liu, L.; and Wang, J. 2022. Self-supervised learning of adversarial example: Towards good generalizations for deepfake detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 18710–18719. Dolhansky, B.; Bitton, J.; Pflaum, B.; Lu, J.; Howes, R.; Wang, M.; and Ferrer, C. C. 2020. The deepfake detection challenge (dfdc) dataset. arXiv preprint arXiv:2006.07397 .Dong, S.; Wang, J.; Ji, R.; Liang, J.; Fan, H.; and Ge, Z. 2023. Implicit identity leakage: The stumbling block to im-proving deepfake detection generalization. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 3994–4004. Haliassos, A.; Mira, R.; Petridis, S.; and Pantic, M. 2022. Leveraging real talking faces via self-supervision for robust forgery detection. In Proceedings of the IEEE/CVF confer-ence on computer vision and pattern recognition , 14950– 14962. Han, Y.-H.; Huang, T.-M.; Hua, K.-L.; and Chen, J.-C. 2025. Towards more general video-based deepfake detec-tion through facial component guided adaptation for founda-tion model. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 22995–23005. Huang, Q.; Dong, X.; Zhang, P.; Wang, B.; He, C.; Wang, J.; Lin, D.; Zhang, W.; and Yu, N. 2024. Opera: Alleviating hallucination in multi-modal large language models via over-trust penalty and retrospection-allocation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 13418–13427. Huang, Z.; Hu, J.; Li, X.; He, Y.; Zhao, X.; Peng, B.; Wu, B.; Huang, X.; and Cheng, G. 2025. Sida: Social media image deepfake detection, localization and explanation with large multimodal model. In Proceedings of the Computer Vision and Pattern Recognition Conference , 28831–28841. Jia, S.; Lyu, R.; Zhao, K.; Chen, Y.; Yan, Z.; Ju, Y.; Hu, C.; Li, X.; Wu, B.; and Lyu, S. 2024. Can ChatGPT Detect DeepFakes? A Study of Using Multimodal Large Language Models for Media Forensics. arXiv:2403.14077. Jiang-Lin, J.-Y.; Huang, K.-Y.; Zou, L.; Lo, L.; Yang, S.-P.; Tseng, Y.-W.; Lin, K.-H.; Chen, C.-L.; Ta, Y.-T.; Wang, Y.-T.; et al. 2026. TriDF: Evaluating Perception, Detection, and Hallucination for Interpretable DeepFake Detection. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 17087–17098. Kang, H.; Wen, S.; Wen, Z.; Ye, J.; Li, W.; Feng, P.; Zhou, B.; Wang, B.; Lin, D.; Zhang, L.; et al. 2025. Legion: Learn-ing to ground and explain for synthetic image detection. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 18937–18947. Kaul, P.; Li, Z.; Yang, H.; Dukler, Y.; Swaminathan, A.; Tay-lor, C.; and Soatto, S. 2024. Throne: An object-based hal-lucination benchmark for the free-form generations of large vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,27228–27238. Kim, J.; Kim, J.; Kim, Y.; and Cho, S.-B. 2025. Fuzzy Contrastive Decoding to Alleviate Object Hallucination in Large Vision-Language Models. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,20572–20581. Leng, S.; Zhang, H.; Chen, G.; Li, X.; Lu, S.; Miao, C.; and Bing, L. 2024. Mitigating object hallucinations in large vision-language models through visual contrastive decoding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 13872–13882. Li, L.; Bao, J.; Zhang, T.; Yang, H.; Chen, D.; Wen, F.; and Guo, B. 2020. Face x-ray for more general face forgery detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 5001–5010. Liu, H.; Tan, Z.; Tan, C.; Wei, Y.; Wang, J.; and Zhao, Y. 2024. Forgery-aware Adaptive Transformer for Gen-eralizable Synthetic Image Detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Lu, H.; Chu, B.; Fu, W.; Nan, G.; Liu, J.; Pan, M.; Li, Q.; Yu, Y.; Wang, H.; and Wang, K. 2026. Reallocating Attention Across Layers to Reduce Multimodal Hallucination. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 4157–4167. Nguyen, D.; Mejri, N.; Singh, I. P.; Kuleshova, P.; Astrid, M.; Kacem, A.; Ghorbel, E.; and Aouada, D. 2024. Laa-net: Localized artifact attention network for quality-agnostic and generalizable deepfake detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 17395–17405. Qian, Y.; Yin, G.; Sheng, L.; Chen, Z.; and Shao, J. 2020. Thinking in frequency: Face forgery detection by mining frequency-aware clues. In European conference on computer vision , 86–103. Springer. Qwen Team. 2026. Qwen3.5: Towards Native Multimodal Agents. Rohrbach, A.; Hendricks, L. A.; Burns, K.; Darrell, T.; and Saenko, K. 2018. Object hallucination in image caption-ing. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing , 4035–4045. Rossler, A.; Cozzolino, D.; Verdoliva, L.; Riess, C.; Thies, J.; and Nießner, M. 2019. Faceforensics++: Learning to detect manipulated facial images. In Proceedings of the IEEE/CVF international conference on computer vision , 1–11. Selvaraju, R. R.; Cogswell, M.; Das, A.; Vedantam, R.; Parikh, D.; and Batra, D. 2017. Grad-cam: Visual expla-nations from deep networks via gradient-based localization. In Proceedings of the IEEE international conference on com-puter vision , 618–626. Shi, Y.; Gao, Y.; Lai, Y.; Wang, H.; Feng, J.; He, L.; Wan, J.; Chen, C.; Yu, Z.; and Cao, X. 2025. SHIELD: an evalua-tion benchmark for face spoofing and forgery detection with multimodal large language models. Visual Intelligence .Sun, J.; Yan, Z.; Zhang, K.-Y.; Yao, T.; and Ding, S. 2026. DFD-HR: Generalizable Deepfake Detection via Hierarchi-cal Routing Learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,13984–13995. Tang, F.; Liu, C.; Xu, Z.; Hu, M.; Huang, Z.; Xue, H.; Chen, Z.; Peng, Z.; Yang, Z.; Zhou, S.; et al. 2025. Seeing far and clearly: Mitigating hallucinations in mllms with attention causal decoding. In Proceedings of the Computer Vision and Pattern Recognition Conference , 26147–26159. Tu, C.; Ye, P.; Zhou, D.; Bai, L.; Yu, G.; Chen, T.; and Ouyang, W. 2026. Attention reallocation: Towards zero-cost and controllable hallucination mitigation of mllms. Interna-tional Journal of Computer Vision , 134(1): 22. Wang, W.; Gao, Z.; Gu, L.; Pu, H.; Cui, L.; Wei, X.; Liu, Z.; Jing, L.; Ye, S.; Shao, J.; et al. 2025. InternVL3. 5: Advancing Open-Source Multimodal Models in Versatility, Reasoning, and Efficiency. arXiv preprint arXiv:2508.18265 .Wu, M.; Cai, X.; Ji, J.; Li, J.; Huang, O.; Fei, H.; Jiang, G.; Sun, X.; and Ji, R. 2024. Controlmllm: Training-free visual prompt learning for multimodal large language mod-els. Advances in Neural Information Processing Systems , 37: 45206–45234. Xiaomi, L.-C.-T. 2025. MiMo-VL Technical Report. arXiv:2506.03569. Xu, Z.; Zhang, X.; Li, R.; Tang, Z.; Huang, Q.; and Zhang, J. 2025. Fakeshield: Explainable image forgery detection and localization via multi-modal large language models. In 
+
+International Conference on Learning Representations , vol-ume 2025, 31186–31216. Yang, Y.; Qian, Z.; Zhu, Y.; Russakovsky, O.; and Wu, Y. 2025. D3: Scaling Up Deepfake Detection by Learning from Discrepancy. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition .Yin, H.; Si, G.; and Wang, Z. 2025. Clearsight: Visual signal enhancement for object hallucination mitigation in multi-modal large language models. In Proceedings of the Com-puter Vision and Pattern Recognition Conference , 14625– 14634. Zhuang, X.; Zhu, Z.; Xie, Y.; Liang, L.; and Zou, Y. 2025. Vasparse: Towards efficient visual hallucination mitigation via visual-aware token sparsification. In Proceedings of the Computer Vision and Pattern Recognition Conference ,4189–4199. Zou, Y.; Li, P.; Li, Z.; Huang, H.; Cui, X.; Liu, X.; Zhang, C.; and He, R. 2025. Survey on AI-Generated Media Detection: From Non-MLLM to MLLM. ArXiv .Supplementary Material 
+
+This supplementary material is organized as follows: A. Discussion and Limitations explores the boundary of our approach. B. Evaluation Metrics defines how each reported number is computed, covering the artifact-level Cover, CHAIR, Hal, and F 0.5 protocol used in TriDF and the ACC/F1 protocol used in MMTD-Set. C. Self-Proposed Regions experiments with language-level guidance in regional examination instead of the blur-contrastive attention mining in Look Before You Judge .D. Alternative Region Source replaces the mined regions with fixed landmark-defined facial components corre-sponding to the eyes, nose, and mouth, while leaving Stage 3 unchanged. E. Qualitative Results shows additional side-by-side com-parisons between vanilla inference and our framework. F. Implementation Details specifies the model configura-tion, attention-extraction procedure, per-stage hyperpa-rameters, and evaluation hardware used across all evalu-ated backbones. G. Computational Cost & Runtime quantifies the over-head our framework introduces, measured over 100 im-ages by the average number of model invocations, peak GPU memory, and end-to-end inference time per image. H. Prompt Templates lists the Stage-3 region-inspection and aggregation prompts. 
+
+# A. Discussion and Limitations 
+
+The blur-contrastive attention prior in our framework should be interpreted as a proposal mechanism for acquiring evidence rather than as a causal attribution of the model’s decision. Our framework does not imply that the selected regions are the sole causes of the final prediction. Instead, they serve as probes for identifying the MLLM’s evidence-sensitive attention head, which are subsequently leveraged to recognize candidate forensic evidence. On the other hand, our framework inherits several limita-tions from its training-free design. First, because candidate evidence regions are proposed through blur-contrastive at-tention responses, the framework naturally emphasizes ar-tifacts that are sensitive to local high-frequency perturba-tions, potentially making it less effective for manipulations characterized by more subtle low-frequency inconsistencies. Future work could explore richer perturbation strategies or adaptive mechanisms to improve coverage across diverse manipulation types. Second, the framework requires white-box access to decoder attention, limiting its applicability to open-weight MLLMs. Extending evidence acquisition to black-box models remains an important direction for future research. Finally, the quality of the acquired evidence de-pends on the preservation of fine-grained visual details, and performance may degrade under severe compression, down-sampling, or coarse visual-token representations. Incorpo-rating multi-scale visual representations or resolution-aware evidence acquisition may further improve robustness in such scenarios. Despite these limitations, we believe the proposed evi-dence acquisition formulation, look-before-you-judge , pro-vides a flexible foundation that can accommodate more ad-vanced proposal mechanisms, perturbation strategies, and visual representations as future MLLMs continue to evolve. 
+
+# B. Evaluation Metrics 
+
+We adopt the evaluation protocol of TriDF (Jiang-Lin et al. 2026) without modification, and report standard binary clas-sification metrics on MMTD-Set (Xu et al. 2025). Because the artifact-level metrics are central to our claims about ex-planation grounding, we restate their definitions here so that our numbers can be interpreted and reproduced without ref-erence to the original paper. 
+
+Artifact-Level Metrics on TriDF 
+
+Artifact mapping. All artifact-level metrics operate on ar-tifact lists rather than on raw text. Given a model’s free-form response RDF to a Type-B <OEQ> query, an external LLM 
+
+θ maps the response onto TriDF’s predefined artifact taxon-omy Art = {art 1, . . . , art n}, producing a mapped artifact list 
+
+RDF art = θ RDF  , (S1) where each entry records whether the response asserts the presence of the corresponding artifact. The reference list 
+
+Y DF art records the artifacts actually annotated for that sam-ple. This mapping step is what makes the metrics robust to surface wording: two responses describing the same artifact with different phrasing map to the same taxonomy entry. It also means that any claim the mapper cannot align with the taxonomy is discarded before scoring. 
+
+Cover measures the recall of annotated artifacts, i.e. how much of the ground-truth evidence the explanation recovers: 
+
+Cover (R) = RDF art ∩ Y DF art 
+
+Y DF art 
+
+. (S2) 
+
+CHAIR (Rohrbach et al. 2018) measures the proportion of asserted artifacts that are not supported by the annotation, and is therefore one minus the precision of the artifact claims: 
+
+CHAIR (R) = 1 − RDF art ∩ Y DF art 
+
+RDF art 
+
+. (S3) 
+
+Hal converts CHAIR into a per-sample indicator, so that its average over a dataset is the percentage of responses contain-ing at least one unsupported artifact claim: 
+
+Hal (R) = 
+
+1 if CHAIR (R)̸ = 0 ,
+
+0 otherwise. (S4) Hal is thus considerably coarser than CHAIR: a response with a single unsupported claim and a response that is entirely fabricated both receive Hal = 1 . Values close to 1 should accordingly be read as “almost every response contains some unsupported claim” rather than as a severity measure. 
+
+F β -score combines the two directions into a single indi-cator. Following THRONE (Kaul et al. 2024), TriDF treats precision as twice as important as recall, since false pos-itives in forensic explanations are typically hallucination-driven and more damaging than incomplete coverage. Writ-ing Prec (R) = 1 − CHAIR (R) for the precision of the artifact claims, 
+
+F β (R) = (1 + β2) Prec (R) Cover (R)
+
+β2 Prec (R) + Cover (R) , (S5) where β = 0 .5.
+
+Penalty conventions. Two cases receive the maximal penalty 
+
+CHAIR = 1 , and consequently Hal = 1 and F 0.5 = 0 : an empty mapped artifact list, |RDF art | = 0 , and a manipulated sample classified as authentic. Since the artifact-level metrics require annotated artifacts, they are defined on manipulated samples, whereas accuracy (ACC) is computed over the full real–fake set. 
+
+Detection Metrics on MMTD-Set 
+
+On MMTD-Set, we report accuracy (ACC) and F1 on the DeepFake and AIGC-Editing subsets, treating “manip-ulated” as the positive class. We report both metrics be-cause ACC summarizes overall classification performance, whereas F1 focuses on the detection of manipulated samples and better exposes models that are biased toward predicting “authentic.” 
+
+Reporting precision. Scores for FakeShield (Xu et al. 2025) are reported to two decimal places in the original publica-tion. We zero-pad them to three decimal places for column alignment with our own measurements and introduce no ad-ditional precision. 
+
+# C. Self-Proposed Regions 
+
+We further examine whether the gains of our framework can be explained merely by multi-stage prompting or textual region decomposition. In this baseline, the MLLM first pro-poses up to three small localized regions for close inspection. The same region-level inspection and final verification pro-cedure is then applied, but without blur-contrastive region mining or attention reallocation. As shown in Table S1, Self-Proposed Region Inspection improves over vanilla inference, indicating that explicitly de-composing the task into local inspection and final aggrega-tion can provide a useful reasoning structure. However, it does not outperform Prompt-only on ACC, Cover, CHAIR, or F 0.5, and remains substantially behind our full framework. This suggests that asking the model to propose and inspect its own regions does not reliably identify manipulation-relevant evidence; the selected regions may still be driven by seman-tic saliency or language priors rather than image-specific forensic cues. In contrast, our full framework achieves the strongest over-all performance across detection, artifact grounding, and hal-lucination reduction. These results show that effective look-before-you-judge reasoning requires more than textual re-gion decomposition: the model must first discover detail-sensitive, image-specific regions and inspect them under region-specific attention steering.                           
+
+> Method TriDF
+> ACC ↑Cover ↑CHAIR ↓Hal ↓F0.5↑
+> Vanilla 0.4176 0.0270 0.9745 1.0000 0.0296 Prompt-only 0.5113 0.1369 0.8545 0.9927 0.1340 Self-Proposed Region Inspection 0.5076 0.0919 0.8870 0.9495 0.0836 Ours 0.5458 0.2239 0.6407 0.7875 0.2564
+
+Table S1: Comparison with Self-Proposed Region Inspec-tion. Results on TriDF using InternVL-3.5-8B. 
+
+# D. Alternative Region Source 
+
+We further examine whether the gains of our framework can be reproduced by steering the model toward prede-fined facial components. Such anatomical priors are a well-established source of localized supervision in face forensics: DFD-FCG (Han et al. 2025) adapts a foundation model for video-based deepfake detection through facial-component guidance, and Face-LLaVA (Chaubey, Guan, and Soleymani 2026) injects face-region priors into an MLLM through face-region guided cross-attention. Both indicate that directing a model’s capacity toward facial parts is beneficial, which makes a facial-component prior the natural non-learned alter-native to our mined regions. We therefore construct a facial-region variant that replaces Stages 1–2 with landmark-based eye, nose, and mouth regions, and distributes the recycled at-tention uniformly within each region. All remaining settings, including the region-inspection prompt, intervention layers, evidence filtering, and final aggregation, are kept identical to the full method. The facial-region variant substantially improves over vanilla inference across both detection and explanation-grounding metrics. This result shows that decomposing the image into local inspection regions and reallocating atten-tion during region-wise evidence acquisition is itself effec-tive, even when the candidate regions are defined by a simple face-centric prior. In other words, part of the improvement comes from explicitly directing the model to inspect local-ized visual evidence before making the final judgment. Nevertheless, the full method consistently performs best across all metrics. Since the downstream inspection and ag-gregation procedures are unchanged, this remaining gap indi-cates that the effectiveness of regional attention reallocation depends not only on applying the intervention, but also on where the redistributed attention is directed. Predefined facial components provide useful inspection targets for face-related artifacts, but they may spend the limited region budget on less informative facial areas or fail to cover manipulations located elsewhere in the image. In contrast, our blur-contrastive prior derives image-specific regions from the input itself, allowing the inspection targets to adapt across facial manipulations, edited objects, and regenerated image regions. This adapt-ability is particularly important for settings such as image editing, where the face may occupy only a small portion of the image and the diagnostically useful evidence may instead appear in non-facial content. Method TriDF                      
+
+> ACC ↑Cover ↑CHAIR ↓Hal ↓F0.5↑
+> Vanilla 0.4176 0.0270 0.9745 1.0000 0.0296 + Facial Regions 0.5176 0.2096 0.6727 0.8014 0.2343 + Ours 0.5458 0.2239 0.6407 0.7875 0.2564
+
+Table S2: Comparison with Alternative Region Selection Method. Results on TriDF using InternVL-3.5-8B. 
+
+# E. Qualitative Results 
+
+We provide three additional examples of successful cases and one representative failure case. These examples show how region mining and region-wise inspection can correct erroneous global judgments, improve explanation grounding, and calibrate ambiguous local evidence. 
+
+Correcting erroneous global judgments. Figures S1 and S2 show complementary cases in which our frame-work corrects vanilla inference. In the manipulated image generation example, vanilla relies on broad claims of natural appearance and overlooks localized blur and texture inconsistencies. Our framework inspects the discovered re-gions and integrates the resulting evidence into the correct manipulated verdict. In the authentic-face example, vanilla instead hallucinates manipulation cues around the hair, skin, and eyes. Although our framework also selects locally ambiguous regions, it describes them with low evidential strength and retains a negative observation. Global aggregation rejects the unsup-ported cues and produces the correct authentic prediction. Together, these examples show that the method calibrates local evidence rather than simply increasing sensitivity to manipulation. 
+
+Improving explanation grounding. Figure S3 shows that a correct verdict does not necessarily imply a grounded ex-planation. Vanilla correctly predicts manipulation but de-scribes generic hair and background anomalies. Our frame-work instead links its findings to inspected regions around the hairline and forehead, where the observed blending and texture irregularities more closely match the annotated arti-facts. The final explanation is therefore more localized and visually traceable. 
+
+Failure case. Figure S4 presents a manipulated image that both methods classify as authentic. Vanilla supports its deci-sion using broad claims about natural scene appearance. Our framework provides a more localized observation by identi-fying blur in the railway background, but this cue remains ambiguous because it may also result from natural focus variation. Moreover, the selected regions do not reveal suf-ficiently strong complementary evidence of blending, color inconsistency, or object-integrity flaws. This example suggests that the current framework may be less effective when manipulation evidence is spatially diffuse, background-dominated, or naturally explainable in isolation. Nevertheless, its intermediate reasoning remains better cali-brated than vanilla inference, as it identifies a relevant local cue without treating it as conclusive evidence. 
+
+# F. Implementation Details 
+
+We instantiate the three-stage framework identically across all evaluated backbones, changing only the quantities that are inherently architecture-dependent: the decoder layer/head counts L, H , the visual-token grid Hv × Wv , and the steer-ing layer range L⋆. All other hyperparameters are shared, apart from two adjustments required by the hybrid attention design of Qwen3.5-9B, which we state explicitly below. This section gives the concrete instantiation for InternVL-3.5-8B, the backbone used for the ablation studies, and describes how the remaining backbones differ. 
+
+Model and inference environment. InternVL-3.5-8B pairs a 448 × 448 InternViT vision encoder (patch size 14, 
+
+0.5× pixel-shuffle downsampling) with a 36-layer, 32-head Qwen3 decoder (8 key–value heads under grouped-query at-tention). We disable dynamic image tiling ( max_num=1 ), so every image is encoded as a single tile of Hv ×
+
+Wv = 16 × 16 = 256 visual tokens. All backbones run in bfloat16 on a single GPU. Because Stage 1 and Stage 3 both require materialized per-head attention weights, we load the model with FlashAttention2 disabled and re-quest output_attentions=True ; region-wise steering (Stage 3.a) is implemented as a forward-pass patch over the decoder’s self-attention module rather than a modification to the generation config. All generation calls – the Stage 1 fixed continuation, Stage 3.a region inspection, and Stage 3.b final aggregation – use greedy decoding ( do_sample=False ,one beam), so outputs are deterministic given fixed weights and inputs. 
+
+Per-stage hyperparameters. We instantiate Stage 1 with 
+
+L × H = 36 × 32 decoder layers and heads, a Gaussian blur radius of 3.0px defining Iblur , and a fixed continuation capped at 64 generated tokens. Head selection retains up to 
+
+KH = 20 heads under fixed diversity constraints (at most 4 heads per layer, minimum grid-distance 2 between selected peaks) and fixed nondegeneracy checks (bounds on border mass, peak mass, effective tokens, and ∆+ mass); heads failing any check are excluded from H regardless of score. Stage 2 operates on the Hv ×Wv = 16 ×16 visual-token grid, retains the top-p fraction of grid cells with p = 0 .15 , groups them with 8-connectivity, discards components smaller than 2 grid cells, dilates survivors by one grid step, and keeps up to K = 3 ranked regions. Stage 3 uses retention coefficient 
+
+ρ = 0 .5 with sink threshold 1.0, steers all heads within de-coder layers L⋆ = [12 , 31] , and caps region inspection and final aggregation at 96 and 384 generated tokens, respec-tively. During evidence filtering (Stage 3.b), an observation is admitted only at medium confidence or higher, and it is dropped as a near-duplicate of an already-kept observation when it shares the same evidence label and artifact type and its normalized text similarity exceeds 0.82. Observations la-beled uncertain are, by default, retained as weak cues rather than discarded outright, provided they name a concrete arti-fact type and meet the confidence floor. 
+
+Adapting to other backbones. The steering layer range L⋆
+
+and the visual-token grid Hv × Wv are the two hyperpa-rameters above that are inherently architecture-dependent (Section A); we identify each once per backbone family by Figure S1: Qualitative result on a manipulated image generation example. Vanilla inference overlooks the localized artifacts and predicts the image as authentic. Our framework identifies blur and texture/color inconsistencies in the selected regions and produces the correct manipulated verdict. 
+
+Figure S2: Qualitative result on an authentic face. Vanilla inference hallucinates facial artifacts and produces a false positive. Our framework assigns only weak, uncertain, or negative evidence to the inspected regions and recovers the correct authentic verdict. Figure S3: Qualitative comparison when both methods correctly predict manipulation. Vanilla inference provides generic and weakly supported claims, whereas our framework grounds its explanation in blending and texture irregularities around the hairline and forehead. 
+
+Figure S4: Representative failure case on a manipulated outdoor scene. Our framework identifies a relevant background-blur cue, but the cue is also compatible with natural focus variation and lacks sufficient complementary evidence. Both methods therefore predict the image as authentic. Method Inference Efficiency 
+
+Avg. Invoc. ↓
+
+Time (s/img) ↓
+
+Rel. Latency ↓
+
+Peak GPU Mem. (GB) ↓
+
+Vanilla 1.000 13.480 1.000 × 16.129 Ours 6.970 19.951 1.480 × 16.624 
+
+Table S3: Inference efficiency comparison. inference effi-ciency on a balanced 100-image subset of TriDF. Both meth-ods use the same InternVL-3.5-8B backbone under identical single-GPU settings. A model invocation denotes either an autoregressive generation or an explicit attention forward evaluation. inspecting its transformers implementation and hold it fixed across all of that backbone’s evaluations, rather than tuning it per sample. We use L⋆ = [12 , 31] (of L = 36 layers, 
+
+H = 32 ) for InternVL-3.5-8B, L⋆ = [19 , 39] (of L = 40 
+
+layers, H = 40 ) for InternVL-3.5-14B, L⋆ = [18 , 35] (of 
+
+L = 36 , H = 32 ) for Qwen3-VL-8B-Instruct, and the full decoder depth for MiMo-VL-7B. All remaining hyperparam-eters above are reused unchanged across backbones, with the single exception noted below for Qwen3.5-9B. 
+
+Hybrid-attention backbones: Qwen3.5-9B. Qwen3.5-9B is architecturally hybrid, and is the one backbone that re-quired an adjustment beyond L⋆ and the grid. Of its L = 32 
+
+decoder layers, only eight use full self-attention – layers 
+
+{3, 7, 11 , 15 , 19 , 23 , 27 , 31 }, with H = 16 heads each – while the remaining 24 use linear (GatedDeltaNet) atten-tion and are therefore not steerable under our formulation. We accordingly set L⋆ to this fixed eight-layer subset and steer all 16 heads of any layer it selects. This leaves only 128 candidate layer–head cells, an order of magnitude fewer than the other backbones, so the shared minimum-peak-distance gate (default 2 grid cells) admits only about 9 of the intended 
+
+KH = 20 heads on this backbone; we therefore lower it to 1 for Qwen3.5-9B alone, which restores selection to 15–17 heads at a modest cost in spatial diversity among the selected heads. Its visual-token grid Hv × Wv is likewise smaller than the other backbones’ and varies slightly across images because preprocessing preserves the input aspect ratio. Fi-nally, because its responses are longer, we raise its Stage 3 region-inspection and final-aggregation budgets to 256 and 512 generated tokens (versus 96 and 384 elsewhere) to avoid truncation. All remaining hyperparameters are unchanged. 
+
+Hardware. All models are evaluated on a single GPU with-out model or tensor parallelism. InternVL-3.5-8B, Qwen3-VL-8B-Instruct, Qwen3.5-9B, and MiMo-VL-7B use an NVIDIA RTX 4090 (24 GB), while InternVL-3.5-14B uses an NVIDIA RTX PRO 6000 Blackwell (96 GB) to support its larger eager-attention memory footprint. Section G compares vanilla inference and our framework on the same device. 
+
+# G. Computational Cost & Runtime 
+
+We evaluate inference efficiency on a balanced 100-image subset of TriDF, covering five image manipulation tasks with 10 of each real and fake samples per task. Vanilla inference and our method use the same InternVL-3.5-8B backbone, BF16 precision, 448 × 448 inputs, and single-GPU execu-tion. Model loading, warm-up, and result serialization are excluded, while the same per-sample memory cleanup pro-cedure is retained for both methods. We report the average number of high-level model invocations, inference time per image, relative latency, and peak allocated GPU memory. An invocation denotes either an autoregressive generation or an explicit attention forward evaluation, rather than an individual decoding step. As shown in Table S3, vanilla inference requires one invo-cation and takes 13 .480 seconds per image, with 16 .129 GB peak memory. Our method averages 6.970 invocations and takes 19 .951 seconds per image, corresponding to 1.480 ×
+
+relative latency. Peak memory increases by only 0.495 GB, from 16 .129 GB to 16 .624 GB, or approximately 3.1% . The invocation count is slightly below seven because the number of candidate regions is input-dependent. Stage 1 uses three fixed invocations, Stage 2 introduces no model invocation, and Stage 3 uses one inspection call per retained region fol-lowed by final aggregation. The total is therefore 4 + K,where K ≤ 3; the observed average corresponds to 2.970 
+
+regions per image. The increase in invocation count does not produce a pro-portional increase in runtime because the additional calls are substantially cheaper than a full vanilla generation. Our method distributes a comparable overall generation bud-get across short intermediate outputs and final aggregation, rather than repeating a full-length response at every stage. In addition, Stage 1 generates the continuation only once and reuses it for the raw and blurred attention evaluations, avoid-ing an additional autoregressive generation. Stage 2 consists only of lightweight thresholding and connected-component processing, while the regional inspections produce short, structured observations. The limited memory increase also follows from the se-quential design. All stages reuse the same backbone, and the additional attention maps and steering states are transient rather than maintained as parallel model branches. Over-all, the proposed framework introduces a moderate 48 .0% 
+
+latency overhead and approximately 3.1% additional peak GPU memory despite requiring nearly seven high-level in-vocations. This indicates that its computational cost grows substantially more slowly than invocation count while sup-porting multi-stage region mining and evidence aggregation. 
+
+# H. Prompt Templates 
+
+All evaluated backbones use the same Stage 3 prompting protocol: they inspect only the attention-guided local region, compare it with nearby visual context, and produce structured observations instead of image-level decisions. The retained observations are then verified under a full-image view before generating the final prediction and explanation. To accommodate differences in instruction following, output-format compliance, and confidence calibration across MLLM backbones, we apply only minor wording adjust-ments to the shared prompts. These changes do not affect the region proposals, attention steering, evidence schema, filtering rules, or evidence-before-judgment workflow. 
+
+Prompt S1: Region-Wise Evidence Inspection. 
+
+You are a forensic media authenticity inspector performing a local region-level inspection. Inspect only the attention-guided local re-gion. Do not make the final image-level authentic/manipulated de-cision at this stage. Examine the strongest visible property within the guided region and compare the local structure with its near-est relevant visual context, such as an adjacent boundary, surface, body part, object, shadow, reflection, or repeated pattern. Focus on concrete and observable visual evidence rather than speculation. Classify the local observation as: 
+
+• yes : a specific localized contradiction consistent with editing or synthesis is clearly visible; 
+
+• uncertain : a visible irregularity exists, but a plausible natural explanation remains; 
+
+• no : the local structure appears visually coherent. Generic blur, smoothness, compression, focus variation, lighting variation, or image quality alone is not sufficient manipulation evidence. The artifact type should describe the concrete visible cue being evaluated rather than an inferred manipulation process. Return exactly: 
+
+• Observation: <one concise sentence describing the local com-parison and visible result >
+
+• Manipulation Evidence: yes / no / uncertain 
+
+• Confidence: high / medium / low 
+
+• Artifact Type: <short visual artifact or none >
+
+• Natural Explanation: <brief explanation for no or uncertain; otherwise none >
+
+Prompt S2: Global Evidence Aggregation. 
+
+You are a forensic media authenticity inspector. Determine whether the provided image is authentic or manipulated. The region-level observations below are tentative candidate cues rather than verified findings. First verify whether each retained cue is visibly supported by the full image and consistent with its surrounding visual context. Give greater weight to specific localized contradictions in boundary, texture, geometry, lighting, shadow, reflection, object structure, occlusion, or physical contact than to generic image properties. Weak or ambiguous observations should be treated as lower-confidence cues when a plausible natural explanation remains. Repeated observations describing the same underlying visual ef-fect should be consolidated rather than counted as independent evidence. A mostly natural-looking image does not invalidate a concrete local contradiction, but normal global context may weaken generic or unsupported cues. Retained region-level observations: 
+
+Filtered Region Observations 
+
+Base the final decision on the specificity, visual support, consis-tency, and overall strength of the verified evidence. Return exactly: 
+
+Forensic Analysis: 
+
+<In one or two sentences, summarize which local cues remain vi-sually supported after the full-image verification and how strongly they support the manipulation hypothesis. >
+
+Final Decision: Likely Authentic or Likely Manipulated. 
+
+Artifact Findings: - Title of artifact: <short visual artifact or none >
+
+- Reason: <brief technical rationale grounded in visible evidence >

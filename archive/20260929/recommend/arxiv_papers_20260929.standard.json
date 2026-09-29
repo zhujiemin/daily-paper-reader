@@ -1,0 +1,355 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-29T23:11:45.525841+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 4,
+    "deep_cap": 7,
+    "deep_selected": 4,
+    "quick_candidates": 4,
+    "quick_skim_target": 12,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2609.31722v1",
+      "source": "arxiv",
+      "title": "Where Does the Watermark Hide? Push-Pull Disentanglement for Invisible Watermark Removal",
+      "abstract": "Fixed image distortions do not cover an attacker that learns from paired clean and watermarked images. We study this paired-training threat with single-image inference: deployment uses neither the clean reference nor the watermark key, payload, or decoder. An encoder maps each image to a structural latent $g$ and an auxiliary residual latent $u$. Push supervision reconstructs the watermarked image from $D(g_w,u_w)$. Pull supervision trains the zero-auxiliary output $D(A_g(g_w;k),0)$ toward the paired clean image. At $k=1.10,u=0$, the four-method sweep gives an average BER of $0.3958$, PSNR of $31.07$ dB, and SSIM of $0.9554$. Restoring $u$ from $0$ to $0.15$ moves average BER from $0.3893$ to $0.3357$, while PSNR falls from $30.99$ to $28.23$ dB. The intervention supports decoder dependence on the auxiliary input in the evaluated setting. The accompanying theory is a conditional, post-hoc account of this behavior rather than an experimentally verified information-relocation result.",
+      "authors": [
+        "Jidong Yang",
+        "Huaike Yu",
+        "Qi Li",
+        "Chunpeng Wang",
+        "Yuantian Miao",
+        "Suo Gao",
+        "Xiao Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-22T00:54:36+00:00",
+      "link": "https://arxiv.org/pdf/2609.31722v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "invisible watermark removal via push-pull disentanglement under paired-training threat",
+      "llm_evidence_cn": "成对训练威胁下的推拉解耦隐形水印去除",
+      "llm_evidence": "成对训练威胁下的推拉解耦隐形水印去除",
+      "canonical_evidence": "成对训练威胁下的推拉解耦隐形水印去除",
+      "llm_tldr_en": "Fixed distortions fail against attackers trained on paired clean and watermarked images. A push-pull disentanglement framework splits structural and residual latents to strip invisible watermarks, achieving about 0.396 BER at high fidelity.",
+      "llm_tldr_cn": "现有水印去除方法多依赖固定图像失真，难以应对能从成对干净与水印图像中学习的攻击者。本文研究单图推理下的成对训练威胁，提出推拉解耦框架：编码器把图像分解为结构隐变量与残差隐变量，推监督由二者重建水印图像，拉监督令零残差输出逼近平净图像。实验显示平均BER约0.396、PSNR约31.07dB、SSIM约0.955，说明隐形水印可被有效去除，凸显水印鲁棒性与防御研究的紧迫性。",
+      "llm_tldr": "现有水印去除方法多依赖固定图像失真，难以应对能从成对干净与水印图像中学习的攻击者。本文研究单图推理下的成对训练威胁，提出推拉解耦框架：编码器把图像分解为结构隐变量与残差隐变量，推监督由二者重建水印图像，拉监督令零残差输出逼近平净图像。实验显示平均BER约0.396、PSNR约31.07dB、SSIM约0.955，说明隐形水印可被有效去除，凸显水印鲁棒性与防御研究的紧迫性。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.32241v1",
+      "source": "arxiv",
+      "title": "Residual Transferability in Neural Image Watermarking",
+      "abstract": "Neural image watermarks can be forged by extracting watermark-bearing residuals from released images and transferring them to unrelated content. While prior work has demonstrated this vulnerability, what makes these residuals transferable remains poorly understood. We formalize this vulnerability with \\textbf{residual transferability (RT)}, a metric that quantifies how well watermark evidence remains decodable after transfer across unrelated images. Through comparative analyses and controlled interventions, we find that common training-side variations do not account for the large RT differences across watermarking systems; instead, architectural design plays a central role. By contrasting high- and low-RT systems and validating their architectural differences through controlled interventions, we identify two mechanisms that strengthen the dependence of watermark evidence on the cover image, thereby suppressing the residual transferability. These findings provide concrete design guidance for developing more forgery-resistant watermarking architectures. Complementarily, for existing watermarking systems where architectural redesign is impractical, we introduce \\textbf{CoverLock}, a plug-and-play strategy for existing watermarking systems that strengthens such image dependence without architectural redesign. Across representative watermarking systems exhibiting high residual transferability, CoverLock achieves a more favorable security--robustness trade-off than both traditional handcrafted defenses and learned classifier-based defenses.",
+      "authors": [
+        "Ziping Dong",
+        "Qi Li",
+        "Xinchao Wang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CV"
+      ],
+      "published": "2026-09-26T04:59:33+00:00",
+      "link": "https://arxiv.org/pdf/2609.32241v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "forging neural image watermarks by transferring residuals",
+      "llm_evidence_cn": "迁移残差伪造神经图像水印",
+      "llm_evidence": "迁移残差伪造神经图像水印",
+      "canonical_evidence": "迁移残差伪造神经图像水印",
+      "llm_tldr_en": "Neural image watermarks can be forged by transferring watermark-bearing residuals to unrelated images. This work formalizes residual transferability and finds architectural design, not training variation, drives the vulnerability.",
+      "llm_tldr_cn": "神经图像水印可被攻击者从已发布图像中提取含水印残差并迁移到无关内容上伪造，但其可迁移机理此前并不清楚。本文形式化残差可迁移性RT指标，通过对比分析与受控干预发现训练端差异无法解释RT差异，架构设计起关键作用。研究揭示了水印伪造脆弱性的来源，为设计更抗伪造的水印系统提供指导。",
+      "llm_tldr": "神经图像水印可被攻击者从已发布图像中提取含水印残差并迁移到无关内容上伪造，但其可迁移机理此前并不清楚。本文形式化残差可迁移性RT指标，通过对比分析与受控干预发现训练端差异无法解释RT差异，架构设计起关键作用。研究揭示了水印伪造脆弱性的来源，为设计更抗伪造的水印系统提供指导。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.30934v1",
+      "source": "arxiv",
+      "title": "ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos",
+      "abstract": "Rapid advances in AI-generated video (AIGV) have increased the risks posed by deceptive video manipulation. Unlike fully synthetic videos, manipulated videos retain most source content and alter only localized regions, making forensic analysis particularly challenging. Existing video forgery research faces two limitations in both data and methodology: (1) High-quality datasets and benchmarks tailored for manipulated videos remain scarce. (2) Multimodal large language models (MLLMs) extend forgery analysis beyond binary classification but struggle to use low-level forensic cues and provide precise pixel-level grounding. Specifically, we introduce ManiVid, a unified forensic analysis task covering forgery detection, artifact grounding, and anomaly explanation for manipulated videos. We construct ManiVid-38K, the first dataset to combine paired, open-vocabulary localized manipulations of general videos with authenticity labels, forgery masks, and anomaly explanations. It comprises about 19K manually verified real-fake video pairs, mostly at 1080P resolution, generated under 2 paradigms with 15 powerful generation models. We sample 1K pairs for ManiVidBench, balanced across six manipulation types and generation models for fair evaluation. We further propose ManiVidLens, a unified framework for explainable video forgery analysis. Its Forensic Evidence Router supplies shared low-level forensic evidence for multimodal reasoning and video segmentation. Its Prompt Distill Module converts grounding states into semantic and geometric prompts and distills spatial priors for mask decoding and full-video propagation. ManiVidLens achieves relative gains over the strongest comparison methods in artifact grounding (+21.1% mIoU; +21.3% J&F) and anomaly explanation (+131.3% ROUGE-L; +9.9% CSS). Its forgery detection remains comparable to dedicated classifiers (0.914 Acc; 0.913 F1).",
+      "authors": [
+        "Hengrui Kang",
+        "Zhonghao Yan",
+        "Yuxuan Yang",
+        "Ruoyan Jing",
+        "Yuncheng Guo",
+        "Hao Chen",
+        "Kongming Liang",
+        "Zhanyu Ma",
+        "Conghui He",
+        "Weijia Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-25T07:51:50+00:00",
+      "link": "https://arxiv.org/pdf/2609.30934v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "forgery detection and pixel-level artifact grounding in manipulated media",
+      "llm_evidence_cn": "篡改媒体中的伪造检测与像素级痕迹定位",
+      "llm_evidence": "篡改媒体中的伪造检测与像素级痕迹定位",
+      "canonical_evidence": "篡改媒体中的伪造检测与像素级痕迹定位",
+      "llm_tldr_en": "ManiVid introduces a unified, explainable forensic task for manipulated videos covering forgery detection, artifact grounding and anomaly explanation, addressing the lack of pixel-level grounding in prior work.",
+      "llm_tldr_cn": "该文针对AI生成视频带来的欺骗性篡改风险，指出篡改视频仅改动局部区域使取证困难，且现有研究缺乏高质量数据基准，多模态大模型也难以利用低层取证线索并给出精确像素级定位。为此提出ManiVid统一取证分析任务，涵盖伪造检测、痕迹定位与异常解释，并构建相应数据集与方法。实验表明其在检测与像素级grounding上均有提升。其贡献在于把篡改检测与像素级定位统一到可解释框架，与图像篡改定位主题紧密相关。",
+      "llm_tldr": "该文针对AI生成视频带来的欺骗性篡改风险，指出篡改视频仅改动局部区域使取证困难，且现有研究缺乏高质量数据基准，多模态大模型也难以利用低层取证线索并给出精确像素级定位。为此提出ManiVid统一取证分析任务，涵盖伪造检测、痕迹定位与异常解释，并构建相应数据集与方法。实验表明其在检测与像素级grounding上均有提升。其贡献在于把篡改检测与像素级定位统一到可解释框架，与图像篡改定位主题紧密相关。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.34744v1",
+      "source": "arxiv",
+      "title": "Optimizing and Securing the Modern Watermarking Channel for Images",
+      "abstract": "To comply with recent regulations requiring traceable generated content, modern watermarking has adopted multi-bit post-hoc watermarking schemes. These modern designs rest on an encoder-decoder pair implemented as deep neural networks. These models are usually treated as pure black-boxes trained end-to-end, with the noise of the watermarking channel modeled through a fixed set of geometric and valuemetric transforms applied to watermarked images. We argue that this purely empirical approach leads to unquestioned design flaws and a lack of theoretical performance guarantees. This work proposes a general theoretical model of modern post-hoc watermarking schemes grounded in a statistical analysis of the outputs of the encoder/decoder pair. We show that these deep neural networks implicitly define a watermarking channel modeled as parallel AWGN channels, with messages transmitted using BPSK modulation. This imposes a binary alphabet, greatly limiting the capacity of these watermarking systems. Another fatal flaw is their lack of a secret key, making them intrinsically insecure. We make this notion of watermarking security precise for post-hoc schemes by linking it to the possibility of estimating the secret key under a given statistical model of the decoder's output. By putting together the results from this theoretical analysis, we introduce SNW: a novel post-hoc watermarking system that significantly outperforms existing state-of-the-art baselines in terms of capacity while also providing strong security guarantees. Notably, it does not depend on a fixed codebook or binary alphabet, allowing it to reach a rate close to Shannon capacity through the use of capacity-achieving error-correcting codes.",
+      "authors": [
+        "Enoal Gesny",
+        "Eva Giboulot"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CV"
+      ],
+      "published": "2026-09-28T09:37:19+00:00",
+      "link": "https://arxiv.org/pdf/2609.34744v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "theoretical modeling and securing of modern post-hoc image watermarking channel",
+      "llm_evidence_cn": "现代后验图像水印信道的理论建模与安全加固",
+      "llm_evidence": "现代后验图像水印信道的理论建模与安全加固",
+      "canonical_evidence": "现代后验图像水印信道的理论建模与安全加固",
+      "llm_tldr_en": "The paper argues that modern multi-bit post-hoc image watermarking, trained end-to-end as black boxes with fixed transform noise, has design flaws and no performance guarantees. It proposes a general theoretical model based on statistical analysis of encoder-decoder outputs to expose flaws and guide secure design.",
+      "llm_tldr_cn": "为满足可追溯生成内容的监管要求，现代多比特后验图像水印普遍采用深度编解码器并端到端黑盒训练，信道噪声仅用固定几何与数值变换建模，作者指出这种纯经验做法存在设计缺陷且缺乏性能保证。本文基于对编解码器输出的统计分析提出通用理论模型，刻画水印信道特性并揭示现有方案的问题，为更安全、可追溯的图像水印设计提供理论依据与改进方向。",
+      "llm_tldr": "为满足可追溯生成内容的监管要求，现代多比特后验图像水印普遍采用深度编解码器并端到端黑盒训练，信道噪声仅用固定几何与数值变换建模，作者指出这种纯经验做法存在设计缺陷且缺乏性能保证。本文基于对编解码器输出的统计分析提出通用理论模型，刻画水印信道特性并揭示现有方案的问题，为更安全、可追溯的图像水印设计提供理论依据与改进方向。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "embedding and detecting invisible watermarks in generated images",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.34720v1",
+      "source": "arxiv",
+      "title": "DBCF: Dual-Branch Complementary Fusion of Foundation Models for Generalized Deepfake Detection",
+      "abstract": "As image generation and editing technologies have progressed substantially, facial forgeries pose significant challenges to privacy and public safety. Due to limited ability to capture forgery cues, existing small-scale forgery detection models often struggle to generalize across various domains and unseen manipulations. To address this limitation, researchers have turned to large-scale foundation models, which can provide richer representations and better generalization. Nevertheless, relying on a single foundation model alone remains insufficient for effective forgery detection. While models like CLIP offer robust global semantic cues, they lack the capacity to capture detailed local facial features. In contrast, DINO excels at capturing local structural features of faces, but provides weaker global semantic context. To fully utilize the synergies among multiple foundation models, we propose a hierarchical multi-granular framework that integrates complementary pretrained representations. Specifically, a Global Context Branch (GCB) based on CLIP captures holistic semantic cues, while a Fine-grained Cue Branch (FCB) built on DINOv3 captures localized structural irregularities. In addition, we design a feature fusion module that enables parameter-efficient adaptation of the frozen foundation backbones by adaptively extracting and integrating complementary features from the two models. By jointly leveraging global context and fine-grained cues, our method learns more comprehensive forgery representations and achieves strong cross-manipulation performance. Extensive experiments on multiple benchmarks demonstrate the benefit of the proposed design, particularly under cross-dataset and cross-manipulation settings.",
+      "authors": [
+        "Fengming Gu",
+        "Mingjie He",
+        "Zonghui Guo",
+        "Jie Zhangb",
+        "Shiguang Shan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-28T09:26:55+00:00",
+      "link": "https://arxiv.org/pdf/2609.34720v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generalized deepfake detection fusing CLIP global and DINO local features",
+      "llm_evidence_cn": "融合CLIP全局与DINO局部特征的通用深度伪造检测",
+      "llm_evidence": "融合CLIP全局与DINO局部特征的通用深度伪造检测",
+      "canonical_evidence": "融合CLIP全局与DINO局部特征的通用深度伪造检测",
+      "llm_tldr_en": "Proposes DBCF, a dual-branch fusion of CLIP global semantics and DINO local features to improve generalization of deepfake and forgery detection across domains and unseen manipulations.",
+      "llm_tldr_cn": "随着图像生成与编辑技术发展，人脸伪造对隐私与公共安全构成严重挑战，而小规模伪造检测模型因难以捕捉伪造线索，泛化能力不足。作者提出双分支互补融合框架，结合CLIP的全局语义线索与DINO的局部细节特征，以提升对跨域与未见篡改的检测能力。实验表明融合基础模型可显著改善深度伪造检测的泛化性能。该工作说明互补利用多种基础模型表征对通用伪造检测的重要性。",
+      "llm_tldr": "随着图像生成与编辑技术发展，人脸伪造对隐私与公共安全构成严重挑战，而小规模伪造检测模型因难以捕捉伪造线索，泛化能力不足。作者提出双分支互补融合框架，结合CLIP的全局语义线索与DINO的局部细节特征，以提升对跨域与未见篡改的检测能力。实验表明融合基础模型可显著改善深度伪造检测的泛化性能。该工作说明互补利用多种基础模型表征对通用伪造检测的重要性。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.34807v1",
+      "source": "arxiv",
+      "title": "ControlTrace: Recovering Control Fields for Hidden-Content Recognition",
+      "abstract": "Spatially conditioned diffusion models can embed words and contours in natural-looking images, but vision-language models (VLMs) may fail to recognize the hidden content. Transformation-based recovery depends on parameter and view selection. To evaluate hidden-content recovery and recognition, we construct FreqBlind, a 6,000-image benchmark spanning contours, real words and non-words across three conditioning strengths. The evaluated transformation-based methods show limited recognition of contour patterns and weakly conditioned hidden content. To address this limitation, we propose ControlTrace to recover the grayscale control field used during generation. An 8.4M-parameter U-Net predicts this field from the carrier image, and a VLM then identifies its content. With Qwen2.5-VL-7B-Instruct, ControlTrace achieves 60.2% open-ended contour recognition accuracy across the three conditioning strengths, exceeding the best of the three evaluated prior methods by 26.9 percentage points. On an A100 GPU, the complete pipeline adds only 7.4 ms (5.3%) to direct VLM inference. Recovered fields have lower pixel errors and higher structural similarity than the evaluated transformation views. Across four evaluated VLMs, ControlTrace retains its overall contour recognition advantage. Recognition remains stable under the tested JPEG compression, Gaussian noise and downsampling. These results support control-field recovery for hidden-content recognition in the evaluated setting.",
+      "authors": [
+        "Zijian Liu",
+        "Yaoguang Chen",
+        "Liwei Liu",
+        "Weixi Wu",
+        "Hanming Zhang",
+        "Jiashui Wang",
+        "Na Ruan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-28T10:10:41+00:00",
+      "link": "https://arxiv.org/pdf/2609.34807v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "recovering hidden content embedded in diffusion-generated images",
+      "llm_evidence_cn": "恢复扩散生成图像中隐藏内容",
+      "llm_evidence": "恢复扩散生成图像中隐藏内容",
+      "canonical_evidence": "恢复扩散生成图像中隐藏内容",
+      "llm_tldr_en": "Spatially conditioned diffusion models can hide words and contours in images, but VLMs fail to recognize them. ControlTrace predicts the grayscale control field from the carrier image so a VLM can identify hidden content.",
+      "llm_tldr_cn": "空间条件扩散模型能在自然图像中隐藏文字与轮廓，但视觉语言模型往往无法识别这些隐藏内容。本文构建FreqBlind基准，并提出ControlTrace，用8.4M参数U-Net从载体图像恢复生成时使用的灰度控制场，再由VLM识别。实验表明其优于变换类恢复方法，为扩散生成图像中隐藏内容与类水印信息的检测提供新思路。",
+      "llm_tldr": "空间条件扩散模型能在自然图像中隐藏文字与轮廓，但视觉语言模型往往无法识别这些隐藏内容。本文构建FreqBlind基准，并提出ControlTrace，用8.4M参数U-Net从载体图像恢复生成时使用的灰度控制场，再由VLM识别。实验表明其优于变换类恢复方法，为扩散生成图像中隐藏内容与类水印信息的检测提供新思路。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "embedding and detecting invisible watermarks in generated images",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.35224v1",
+      "source": "arxiv",
+      "title": "TANGO: Watermarking Masked Diffusion Language Models in Token Pairs",
+      "abstract": "Masked-diffusion language models fill in masked positions in parallel and in no fixed order. Most practical text watermarks assume left-to-right generation. They key each token to the tokens before it, and in a diffusion model those tokens may still be masked. A fixed green list needs no such context, but it favors the same tokens at every position, so these tokens appear more often in watermarked text. An attacker who compares token frequencies in watermarked and unwatermarked text can recover the list and forge text that the provider's own detector accepts. We present TANGO, a watermark for masked-diffusion language models that keys each new token to a nearby token that is already unmasked. A secret key splits the vocabulary into color classes, and TANGO biases the new token toward a color determined by the key and the nearby token's color. The watermark is therefore embedded in pairs of tokens. Because the favored color changes from position to position, token frequencies stay much closer to those of unwatermarked text than under a fixed green list. Detection needs only the text and the key, and it does not assume any unmasking order. On two masked-diffusion models, TANGO detects nearly all unedited watermarked texts and most edited ones, and frequency attacks that forge the fixed green list fail against it.",
+      "authors": [
+        "Kasra Arabi",
+        "Nir Weinberger",
+        "Micah Goldblum",
+        "Niv Cohen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL",
+        "cs.CR"
+      ],
+      "published": "2026-09-28T14:08:33+00:00",
+      "link": "https://arxiv.org/pdf/2609.35224v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermarking masked diffusion language models by keying tokens to unmasked neighbors",
+      "llm_evidence_cn": "面向掩码扩散语言模型的token对水印",
+      "llm_evidence": "面向掩码扩散语言模型的token对水印",
+      "canonical_evidence": "面向掩码扩散语言模型的token对水印",
+      "llm_tldr_en": "Text watermarks assuming left-to-right generation fail for masked-diffusion LMs; TANGO keys each new token to an already-unmasked neighbor using a secret color-class split, resisting frequency-based forgery.",
+      "llm_tldr_cn": "掩码扩散语言模型并行且无序地填补掩码位置，而多数文本水印假设从左到右生成并以前文token为密钥，在扩散模型中这些前文可能仍被掩码。固定绿名单虽无需上下文，却在各位置偏好相同token，攻击者可通过比较频率恢复名单并伪造被检测器接受的水印文本。本文提出TANGO，将每个新token关联到一个已解掩的邻近token，用密钥划分词表颜色类。该方法为扩散式生成模型的水印嵌入与抗伪造提供了新方案，但面向文本模态。",
+      "llm_tldr": "掩码扩散语言模型并行且无序地填补掩码位置，而多数文本水印假设从左到右生成并以前文token为密钥，在扩散模型中这些前文可能仍被掩码。固定绿名单虽无需上下文，却在各位置偏好相同token，攻击者可通过比较频率恢复名单并伪造被检测器接受的水印文本。本文提出TANGO，将每个新token关联到一个已解掩的邻近token，用密钥划分词表颜色类。该方法为扩散式生成模型的水印嵌入与抗伪造提供了新方案，但面向文本模态。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.35536v1",
+      "source": "arxiv",
+      "title": "Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection",
+      "abstract": "Multimodal large language models (MLLMs) can explain deepfake verdicts in natural language, but such explanations are not necessarily visually grounded in the visual evidence underlying the prediction. A model may describe plausible artifacts inferred from language priors rather than from image evidence. Existing grounding methods improve visual reliance through decoding or attention interventions, but they generally strengthen grounding over the entire image, making them ill-suited for forensic artifacts that are subtle, spatially localized, and image-dependent. We propose Look Before You Judge, a training-free framework that formulates explainable deepfake detection as a sequential evidence acquisition process. Instead of directly predicting image authenticity from holistic visual reasoning, our framework first identifies image-specific candidate evidence regions by contrasting the MLLM's decoder-to-visual attention between an original image and its Gaussian-blurred counterpart. The identified regions are then inspected individually, and the resulting local evidence is integrated with the global image context before reaching a final verdict. The framework operates without manipulation masks, external forensic models, or parameter updates, making it directly applicable to off-the-shelf MLLMs. Across five open-source MLLMs on TriDF and MMTD-Set, our framework improves detection accuracy by up to 12.8%, reduces CHAIR by up to 33.4% and hallucination rate by up to 21.3%, and outperforms representative training-free decoding and attention methods.",
+      "authors": [
+        "Chia-Ling Chen",
+        "Yu-Ting Ta",
+        "Jian-Yu Jiang-Lin",
+        "Tai-Ming Huang",
+        "Ling Lo",
+        "Po-Ching Chen",
+        "Yan-Tsung Wang",
+        "Pei-Heng Li",
+        "Ling Zou",
+        "Hong-Han Shuai",
+        "Wen-Huang Cheng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-28T16:19:22+00:00",
+      "link": "https://arxiv.org/pdf/2609.35536v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "training-free region mining for spatially grounded explainable deepfake detection",
+      "llm_evidence_cn": "免训练区域挖掘实现空间定位的可解释深伪检测",
+      "llm_evidence": "免训练区域挖掘实现空间定位的可解释深伪检测",
+      "canonical_evidence": "免训练区域挖掘实现空间定位的可解释深伪检测",
+      "llm_tldr_en": "The paper observes that multimodal LLM explanations of deepfake verdicts are not always visually grounded, and whole-image grounding methods suit subtle localized forensic artifacts poorly. It proposes a training-free framework casting explainable deepfake detection as sequential evidence acquisition to mine localized regions.",
+      "llm_tldr_cn": "针对多模态大模型对深伪判定给出的解释未必真正基于视觉证据、且现有整图增强定位方法难以适配细微且空间局部化的伪造痕迹这一问题，本文提出免训练框架Look Before You Judge，将可解释深伪检测建模为顺序证据获取过程，逐步挖掘有依据的局部区域。该方法在提升判定视觉依据的同时给出区域定位，使深伪检测结果更可信、可解释。",
+      "llm_tldr": "针对多模态大模型对深伪判定给出的解释未必真正基于视觉证据、且现有整图增强定位方法难以适配细微且空间局部化的伪造痕迹这一问题，本文提出免训练框架Look Before You Judge，将可解释深伪检测建模为顺序证据获取过程，逐步挖掘有依据的局部区域。该方法在提升判定视觉依据的同时给出区域定位，使深伪检测结果更可信、可解释。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

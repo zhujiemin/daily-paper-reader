@@ -1,0 +1,897 @@
+Title: Residual Transferability in Neural Image Watermarking
+
+URL Source: https://arxiv.org/pdf/2609.32241v1
+
+Published Time: Tue, 29 Sep 2026 00:38:41 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# RESIDUAL TRANSFERABILITY IN NEURAL IMAGE 
+
+# WATERMARKING 
+
+Ziping Dong 1 Qi Li 1 Xinchao Wang 1,∗
+
+> 1
+
+National University of Singapore 
+
+zipingdong@.u.nus.edu liqi@u.nus.edu xinchao@nus.edu.sg 
+
+> ∗
+
+Corresponding author 
+
+ABSTRACT 
+
+Neural image watermarks can be forged by extracting watermark-bearing residu-als from released images and transferring them to unrelated content. While prior work has demonstrated this vulnerability, what makes these residuals transferable remains poorly understood. We formalize this vulnerability with residual trans-ferability (RT) , a metric that quantifies how well watermark evidence remains decodable after transfer across unrelated images. Through comparative analyses and controlled interventions, we find that common training-side variations do not account for the large RT differences across watermarking systems; instead, ar-chitectural design plays a central role. By contrasting high- and low-RT systems and validating their architectural differences through controlled interventions, we identify two mechanisms that strengthen the dependence of watermark evidence on the cover image, thereby suppressing the residual transferability. These find-ings provide concrete design guidance for developing more forgery-resistant wa-termarking architectures. Complementarily, for existing watermarking systems where architectural redesign is impractical, we introduce CoverLock , a plug-and-play strategy for existing watermarking systems that strengthens such image dependence without architectural redesign. Across representative watermarking systems exhibiting high residual transferability, CoverLock achieves a more fa-vorable security–robustness trade-off than both traditional handcrafted defenses and learned classifier-based defenses. 
+
+1 INTRODUCTION 
+
+The growing prevalence of AI-generated images has made invisible watermarking (Zhu et al., 2018; Zhang et al., 2019; Fernandez et al., 2023; Lu et al., 2025; Souˇ cek et al., 2025) increasingly im-portant for content provenance and attribution. By embedding imperceptible message-carrying per-turbations, watermarking systems enable ownership verification and source attribution through sub-sequent decoding. Major technology companies, including Google (SynthID) (Deepmind, 2023), Meta (Meta, 2026), OpenAI (OpenAI), and Amazon (Amazon, 2024), have already integrated wa-termarking solutions into their generative AI ecosystems to improve transparency, trace harmful or misleading AI-generated content, and support content accountability. However, recent studies have shown that current image watermarking systems remain vulnerable to security threats. Among these threats, residual-based forgery attack (M¨ uller et al., 2024; Dong et al., 2025; Souˇ cek et al., 2026) has drawn increasing attention, as attackers can transfer a water-mark from legitimate images to unauthorized content and induce false attribution. Recent studies further show that such attacks may require only one or a few watermarked images (Yang et al., 2024a; Souˇ cek et al., 2026), substantially reducing the barrier to forgery and challenging the reli-ability of watermark-based attribution. Such attacks recover watermark-bearing residuals through different estimation procedures, averaging a collection of watermarked images with natural-image references (Yang et al., 2024a) or using an auxiliary reference model (Souˇ cek et al., 2026). Despite their demonstrated effectiveness and low attack cost, these studies primarily focus on con-structing increasingly effective forgery attacks, while the intrinsic property that enables such cross-image transfer remains poorly understood. Elucidating the mechanisms underpinning the success of 1arXiv:2609.32241v1 [cs.CR] 26 Sep 2026 Table 1: Comparison of representative watermarking methods in terms of training configurations, architectural designs, and residual transferability. Lower RT indicates a lower risk of residual-based watermark forgery. The computation of RT@100 is detailed in Sec. 3.1.                                            
+
+> Method Loss Disc. Noise Arch. Dataset Resolution Message Len. RT CIN (Ma et al., 2022) MSE+MSE ✗✓INN COCO 128 30 1.00 VINE (Lu et al., 2025) BCE+MSE+LPIPS ✓✓CNN OpenImages 512 100 0.99 MBRS (Jia et al., 2021) MSE+MSE ✓✓CNN ImageNet 128 256 0.98 HiDDeN (Zhu et al., 2018) MSE+MSE ✓✓CNN COCO 128 30 0.28
+> RivaGAN (Zhang et al., 2019) BCE+Feature ✓✓CNN Hollywood2 256 32 0.08
+
+such attacks is essential for both developing principled defenses and informing the design of more secure watermarking systems. To this end, we first formalize residual transferability (RT) as an inherent property of watermark-ing systems: watermark residuals may remain decodable after being transferred across unrelated cover images. We then quantify this property using the RT metric, which measures a system’s sus-ceptibility to residual-based forgery independently of any specific residual estimation procedure. As summarized in Table 1, we select five representative watermarking schemes spanning different training configurations and architectural designs, and observe strikingly different levels of RT. Even methods trained with similar objectives and robustness-oriented augmentations can exhibit substan-tially different transferability. These observations motivate the following question: 
+
+What makes watermark residuals transferable across unrelated images? 
+
+To answer this question, we first conduct a comparative behavioral analysis across all evaluated watermarking systems, examining how watermark information is encoded and represented by their encoders and decoders. This helps us narrow down the plausible explanations for RT. RT reveals a clear distinction in the relationship between watermark information and image content: systems with high RT encode and decode watermark signals with limited reliance on the host image, whereas systems with low RT retain a strong coupling between watermark evidence and image content. This observation points to a possible shortcut mechanism: the model learns to encode watermark infor-mation through a largely cover-independent pathway , which in turn makes the residual transferable across unrelated images. This interpretation naturally narrows the search space for understanding why some systems exhibit low RT. Through controlled interventions on low-RT systems, we identify two architectural mech-anisms that strengthen the dependence between watermark information and image content, thereby substantially reducing residual transferability. These findings reveal concrete architectural principles for suppressing cover-independent watermark pathways and improving resistance to residual-based forgery. Architectural redesign, however, can be method-specific and costly for existing watermarking sys-tems. As a complementary option, we introduce CoverLock , a lightweight image-binding wrapper that incorporates image-dependent visual information into the decoding process without redesign-ing the core watermark architecture. Across three high-RT systems and both existing residual-based forgery attacks, CoverLock achieves a more favorable security–robustness trade-off than prior de-fenses. Our main contributions are summarized as follows. • We introduce residual transferability (RT), a system-level property that measures the cross-image decodability of watermark residuals and characterizes susceptibility to residual-based forgery independent of the specific residual estimation method. • Through controlled studies of training and architectural factors, we identify model archi-tecture as a major factor governing RT. We further isolate two architectural design choices that substantially reduce residual transferability. • As a complementary option for existing systems, we introduce CoverLock , an image-binding wrapper that mitigates RT without redesigning the watermark architecture. Across 2three high-RT systems, CoverLock achieves a more favorable security–robustness trade-off than prior defenses, reducing average forgery success to below 0.25% under both existing residual-based forgery attacks while attaining higher robustness. 
+
+2 BACKGROUND AND PROBLEM FORMULATION 
+
+2.1 IMAGE WATERMARKING 
+
+Given an image x ∈ RH×W ×3 of height H and width W , and a L-bit binary message m ∈ { 0, 1}L,a watermark encoder E embeds m into x, while a decoder D recovers the message from the resulting watermarked image: 
+
+xw = E(x, m ), m′ = D xw. (1) Here, xw denotes the watermarked image, m′ is the recovered message. During training, the encoder and decoder are typically optimized jointly using 
+
+L = λwm ℓwm 
+
+ D(τ (xw)) , m  + λimg ℓimg (xw, x ), (2) where ℓwm and ℓimg denote the message-recovery and image-fidelity losses, respectively, λwm and 
+
+λimg are their corresponding weights, and τ ∼ T denotes a sampled transformation used for robust-ness training (Zhu et al., 2018; Satheesh et al., 2026). 2.2 RESIDUAL -BASED WATERMARK FORGERY 
+
+Residual-based watermark forgery (Yang et al., 2024a; Souˇ cek et al., 2026) aims to make an un-related image appear to carry the watermark of released watermarked images. Given s reference watermarked images {xwr,i }si=1 carrying the same message m, the attacker recovers approximate clean counterparts {ˆxr,i }si=1 and aggregates the estimated watermark residuals: 
+
+ˆ¯rs = 1
+
+s
+
+> s
+
+X
+
+> i=1
+
+ xwr,i − ˆxr,i 
+
+ . (3) The aggregated residual is then transferred to an unrelated target image xt to construct a forged image: 
+
+xf = clip [0 ,1] 
+
+ xt + ˆ ¯rs
+
+ , (4) where clip [0 ,1] (·) clips pixel values to the valid image intensity range. During verification, the decoder may recognize xf as carrying the same watermark as the reference images, leading to false ownership or provenance attribution. Existing residual-based forgery attacks mainly differ in how they reconstruct the clean counterparts or directly estimate the watermark residuals. 2.3 THREAT MODEL 
+
+Adversarial goal. The adversary seeks to make an unrelated target image be verified as carrying the same watermark message as one or more released watermarked reference images. The forged image should preserve the semantic content and visual quality of the target image, while being falsely attributed to the source represented by the target watermark. 
+
+Adversary capabilities. Our primary threat model follows practical residual-based forgery at-tacks (Souˇ cek et al., 2026). The adversary has access to one or a few released watermarked images carrying the same target message and may use external datasets or pretrained models to estimate transferable watermark evidence. The adversary does not know the deployed watermarking method or any protection mechanism, has no access to the parameters of the watermark encoder or decoder, and cannot query the encoder to generate additional watermarked images. 
+
+3 UNDERSTANDING RESIDUAL TRANSFERABILITY 
+
+In this section, we systematically study residual transferability in neural image watermarking sys-tems. First, we introduce an oracle transfer protocol that measures this property while removing 3the confounding effect of attack-specific residual estimation. Second, we conduct a comparative behavioral analysis across watermarking systems exhibiting different levels of residual transferabil-ity, from both the encoder and decoder perspectives. Guided by these observations, we then turn to systems with low residual transferability and perform targeted architectural interventions to identify the design choices underlying their low-transferability behavior. 3.1 MEASURING RESIDUAL TRANSFERABILITY 
+
+To measure watermark residual transferability without confounding from a particular residual-estimation attack, we use ground-truth (GT) residuals. For each message mk from a set of M
+
+messages, we construct an oracle residual from s source images: 
+
+¯r(k) 
+
+> s
+
+= 1
+
+s
+
+> s
+
+X
+
+> i=1
+
+
+
+xw, (k) 
+
+> r,i
+
+− x(k)
+
+> r,i
+
+
+
+, (5) where xw, (k) 
+
+> r,i
+
+is obtained by embedding message mk into the clean source image x(k) 
+
+> r,i
+
+.We then transfer each residual ¯r(k) 
+
+> s
+
+to a disjoint set of T target images {xt,j }Tj=1 and compute the average transfer accuracy over both messages and target images: 
+
+¯as = 1
+
+M T 
+
+> M
+
+X
+
+> k=1
+> T
+
+X
+
+> j=1
+
+BitAcc 
+
+
+
+D
+
+
+
+clip [0 ,1] 
+
+
+
+xt,j + ¯ r(k)
+
+> s
+
+ 
+
+, m k
+
+
+
+. (6) Accordingly, we define residual transferability as 
+
+RT@ s = max (2¯ as − 1, 0) . (7) where RT@ s provides a normalized measure of residual transferability in [0 , 1] , with 0 correspond-ing to random guessing and larger values indicating stronger cross-image transfer. Using GT resid-uals removes the dependence on any particular residual-estimation procedure, allowing RT@ s to more directly characterize transferability inherent to the watermarking system itself. Unless other-wise specified, we use s = 100 source images, T = 100 target images, and M = 5 messages in the following analysis. We additionally examine the effect of different source counts s in Appendix D. 3.2 BEHAVIORAL SIGNATURES OF HIGH RESIDUAL TRANSFERABILITY 
+
+Before examining the underlying design factors, we first characterize how high- and low-RT water-marking systems differ in their learned behavior from two complementary perspectives: watermark embedding and watermark decoding, as summarized in Figure 1. Figure 1(a) visualizes residuals averaged over groups of five cover images. Averaging suppresses cover-dependent residual components and makes structures that persist across different covers easier to observe. High-RT methods exhibit substantially more consistent residual patterns across different image groups. This behavior is consistent with the presence of a stronger cover-agnostic compo-nent in the embedded watermark signal, whereas low-RT methods exhibit residuals that vary more strongly with the underlying cover. We next examine the representations formed during decoding. Figure 1(b) compares the relative feature variation induced by the cover image and the embedded message at the decoder’s final feature-extraction layer. Specifically, we measure cover-induced variation by fixing the message and varying the cover image, and message-induced variation by fixing the cover image and varying the message. The corresponding feature variances are then normalized to sum to 100% . High-RT decoders exhibit a substantially smaller relative contribution from cover variation, whereas low-RT systems retain a much larger cover-induced component. This contrast is consistent with a stronger dependence on the cover image during decoding in low-RT systems. 3.3 WHAT PREVENTS RESIDUAL TRANSFERABILITY ?The behavioral analysis above reveals a common signature of high RT, but does not explain which design choices prevent cover-agnostic watermark pathways from emerging. We therefore turn to 4High residual transferability Low residual transferability              
+
+> CIN VINE MBRS HiDDeN RivaGAN
+> Cover set A Cover set B
+> Residual patterns are highly consistent across different covers Residual patterns vary significantly with different covers
+> Message-induced variation
+> 020 40 60 80 100
+> CIN
+> 4.6%
+> 95.4%
+> VINE
+> 5.5%
+> 94.5%
+> MBRS
+> 1.0%
+> 99.0%
+> HiDDeN 57.2% 42.8%
+> RivaGAN 74.1% 25.9%
+> Variance contribution (%)
+> Cover-induced variation
+> Relative feature variation at decoder’s final layer
+
+Figure 1: Behavioral signatures of high- and low-RT watermarking methods. Left: Average residual patterns computed from two different cover sets, each containing five images. Right: Relative feature variation induced by the cover image and the embedded message at the decoder’s final layer. two low-RT systems as positive cases and ask what keeps their watermark evidence dependent on the cover image. By comparing the architectural differences across watermarking systems and ruling out common training-side factors as sufficient explanations for the RT gap (see Appendix E), we identify a distinc-tive design in HiDDeN that maintains spatial image–message interactions throughout the pipeline. During embedding of HiDDeN, the message is spatially broadcast and fused with local image fea-tures, while the decoder preserves spatial representations until a late global average pooling stage. We refer to this co-design as Broadcast–GAP (BG) . As shown in the left panel of Figure 2, removing BG from HiDDeN sharply increases RT, whereas introducing this design into high-RT watermarks substantially reduces RT. 1 These interventions identify BG as a design that promotes stronger de-pendence between watermark evidence and image content. HiDDeN MBRS CIN RivaGAN 0.0 0.2 0.4 0.6 0.8 1.0   
+
+> RT@100
+> 0.980.99 1.00 0.08 0.21 0.10 0.09 0.94
+> w/o BG w/ BG Attention Fixed Attention
+> 10 210 410 6
+> Training images seen
+> 0.6 0.8 1.0
+> Training BitAcc
+> HiDDeN MBRS CIN RivaGAN w/o BG w/ BG
+
+Figure 2: Left: RT under controlled architec-tural interventions with Broadcast–GAP (BG) and content-adaptive attention. Right: Training dynamics of high- and low-RT configurations. RivaGAN achieves low RT through a differ-ent mechanism. Its encoder contains content-adaptive attention that modulates the embedding pattern according to the input image. Replacing this adaptive mechanism with a fixed embedding pattern causes a large increase in RT, as shown in the left panel of Figure 2. This intervention identifies content adaptivity as another mecha-nism that binds the watermark signal to the cover image. The complete numerical results for the ar-chitectural interventions shown in the left panel are reported in Appendix Table 5. The right panel of Figure 2 provides complemen-tary evidence from training dynamics. High-RT configurations reach high training decoding accu-racy after seeing relatively few images, consistent with learning an easier cover-independent shortcut for message recovery. In contrast, configurations containing the identified low-RT mechanisms re-quire substantially more image observations before converging. This behavior is consistent with a harder learning regime in which message recovery depends more strongly on image-conditioned representations and therefore requires exposure to a broader range of image statistics. 
+
+> 1
+
+We also attempted to directly introduce BG into VINE (Lu et al., 2025), but the modified model did not converge reliably given VINE’s already challenging optimization. 
+
+54 COVER LOCK 
+
+Our analysis suggests that reducing residual transferability (RT) requires binding the embedded payload to the content of covers. Directly introducing such a dependency into an existing watermark scheme, however, typically requires model-specific redesign and retraining. We therefore propose 
+
+CoverLock , a watermark-agnostic plug-in that wraps the message with a stable, image-conditioned binary code. CoverLock is trained independently of the underlying watermarking system and can be attached to an existing system without modifying its architecture or parameters. Frozen Trainable 
+
+Training  
+
+> DINO Backbone
+
+𝒉 𝜽 
+
+𝝁 𝝈 
+
+𝑒 
+
+𝑹 𝑳 𝟎 
+
+> Orthogonal Projection
+
+Image batch 𝒙 𝒊 𝒊#𝟏 𝑵  
+
+> Distorted batch 𝒙 𝒊 𝒊"𝟏 𝑵
+
+× 𝜶 𝜽 
+
+> Patch Tokens Distorted Patch Tokens
+
+𝑒 " logits 
+
+𝒛 𝒛 #
+
+𝒕𝒂𝒏𝒉 
+
+𝒄 𝒄 #
+
+Soft codes Code Regularization 𝑳 𝒄𝒐𝒅𝒆 
+
+> Code Stability
+
+𝓛 𝒔𝒕𝒂𝒃 
+
+Total Loss        
+
+> 𝓛 𝒄𝒐𝒏 ++𝒆 𝒊 PULL
+> Align c and c ̃
+> Contrastive Loss ℒ%&'
+> 𝒆 𝝅(𝒊) 𝒆 𝒋 𝒆 𝒌
+> Binary Confidence Loss ℒ-.'
+
+𝒛 𝒄 𝒄 +
+
+> Watermark Encoder
+
+Inference 
+
+Cover Image 𝒙  
+
+> DINO Backbone
+
+𝒉 𝜽 𝝁; 𝝈 × 𝜶 𝜽 
+
+> Orthogonal Projection
+
+CoverLock Binarization   
+
+> 𝝁; 𝝈 × 𝜶 𝜽 ≥ 𝟎 ? 𝑧
+
+CoverLock Binarization  
+
+> Watermark Decoder
+> 110011001100
+> Message 𝒎
+> 101010101010
+> 𝒑 = 𝒎 ⊕ 𝒃 𝒃
+> 011001100110
+
+Watermarked Image 𝑥 /
+
+> 𝒑’
+> 101010101010 𝒃’ 𝒎’ = 𝒑’ ⊕ 𝒃’
+
+Normalized   
+
+> Identical Images
+> PUSH
+> Different Images Push z and z ̃away from 0 +1 0-1
+> Bit Balance
+
+𝓛 𝒃𝒂𝒍   
+
+> −10+1
+> Bit Variance
+
+𝓛 𝒗𝒂𝒓 
+
+> Independence
+
+𝓛 𝒊𝒏𝒅 
+
+> Decorrelation
+
+𝓛 𝒅𝒆𝒄            
+
+> Bit Std cross Images ≥0.5 Batch of CStandardize
+> C
+> ↓Bit Correlation
+> 𝑐 𝑐̃ ↓Cross-Image inner Products
+> Gram Correlation
+> Bit Mean Across Images ≈0
+> Contrastive Loss Binary Confidence Loss
+> 𝝀 𝒃𝒊𝒏 𝓛 𝒃𝒊𝒏
+> Code Regularization
+> 𝝀 𝒄𝒐𝒅𝒆 𝓛 𝒄𝒐𝒅𝒆
+> 𝑹 𝑳 𝟎 𝒆
+> DINO Backbone
+
+𝒉 𝜽  
+
+> Orthogonal Projection
+> 𝑹 𝑳 𝟎 𝒆
+> ≥ 𝟎 ? 𝑧
+> 110011001100
+> Message 𝒎
+
+Figure 3: Overview of CoverLock. CoverLock derives a distortion-stable, image-conditioned bi-nary code from frozen DINOv2 features and uses it to wrap and unwrap the watermark payload. 
+
+Plug-in image-conditioned wrapping. Let x denote a carrier image and m ∈ { 0, 1}L an L-bit message. CoverLock derives an image-conditioned binary code bθ (x) ∈ { 0, 1}L and uses it to wrap the message before watermark embedding: 
+
+p = m ⊕ bθ (x), xw = E(x, p ), (8) where E denotes the original watermark encoder and ⊕ is bitwise XOR. At detection time, the origi-nal decoder first recovers the wrapped payload, while CoverLock recomputes the image-conditioned code from the received image: 
+
+bm = D(τ (xw)) ⊕ bθ (τ (xw)) , τ ∼ T . (9) Thus, the same user message is mapped to different embedded payloads depending on the carrier image, while the original watermark encoder and decoder remain unchanged. 
+
+Image-conditioned CoverLock hash. To generate a carrier-specific yet distortion-stable code, we extract dense patch features {qp}Pp=1 from the final layer of a frozen DINOv2 (Oquab et al., 2023) backbone. We summarize the patch features using their channel-wise mean and standard deviation, which capture complementary information about the global feature response and its spatial variation across image regions: 
+
+s(x) = [Mean p(qp); Std p(qp)] . (10) The resulting statistics are mapped by a lightweight trainable projector hθ and ℓ2-normalized to obtain the image embedding 
+
+eθ (x) = norm 2
+
+ hθ (s(x)) . (11) We then map the embedding to the hash space using a fixed orthogonal projection. Let RL0 ∈
+
+RD×L0 denote the base projection matrix, where L0 = 256 and R⊤
+
+L0 RL0 = I. For a watermark system with payload length L ≤ L0, we use a fixed subset of L projection directions, RL ∈ RD×L.The projected logits and corresponding soft codes are computed as 
+
+zθ (x) = αθ R⊤
+
+L0 eθ (x), cθ (x) = tanh  zθ (x), (12) 6where αθ controls the scale of the projected logits. The binary code used for message wrapping is obtained by thresholding the logits: 
+
+bθ (x) = 1[zθ (x) ≥ 0] . (13) The fixed orthogonal projection provides distinct decision directions for different bits without intro-ducing trainable bit-specific predictors. 
+
+Watermark-agnostic contrastive training. CoverLock is trained solely from natural images in MSCOCO (Lin et al., 2014) and their transformed views, without involving the watermark encoder 
+
+E, decoder D, or any forgery samples. For each training image xi, we sample τi ∼ T and construct a transformed view exi = τi(xi). The clean and transformed views of the same image form a positive pair, while views from different images act as negatives. Let {ej }2Nj=1 denote the normalized embeddings of the N clean images and their distorted counterparts, and let π(j) denote the paired view of ej . We optimize the symmetric contrastive objective 
+
+Lcon = − 12N
+
+> 2N
+
+X
+
+> j=1
+
+log exp( e⊤ 
+
+> j
+
+eπ(j)/τ c)
+
+P  
+
+> k̸=j
+
+exp( e⊤ 
+
+> j
+
+ek/τ c) , (14) where τc is the contrastive temperature. To further obtain stable and informative binary codes, we introduce a binary-confidence loss Lbin and a code regularizer Lcode . The overall objective is 
+
+L = Lcon + λbin Lbin + λcode Lcode . (15) The transformation, individual code regularizers, and training details are provided in Appendix B. 
+
+5 EXPERIMENTS 
+
+5.1 SETUP 
+
+We evaluate CIN (Ma et al., 2022), VINE (Lu et al., 2025), and MBRS (Jia et al., 2021) as represen-tative high-RT schemes identified as vulnerable in prior residual-based forgery studies (Souˇ cek et al., 2026). We consider two defense baselines. For classifier-based filtering, we train a ConvNeXt (Liu et al., 2022) binary classifier for each watermark family using genuine watermarked images and GT-residual forgeries. We select ConvNeXt because it achieves the strongest detection performance among the classification backbones we evaluated (see Appendix G). The second baseline follows MHDW (Lu et al., 2006), which, similar in spirit to our approach, binds watermark verification to image content through a robust media hash. In contrast, CoverLock constructs its image-dependent code through objectives jointly optimized for security and robustness. 
+
+Datasets. We evaluate all methods on three image datasets: DIV2K (Timofte et al., 2017), Ima-geNet (Russakovsky et al., 2015), and MS-COCO (Lin et al., 2014). These datasets have diverse image distributions and resolutions, allowing us to evaluate residual-based forgery across different visual domains. For each dataset, images used for residual estimation and those used as forgery targets are randomly sampled from two disjoint subsets. 
+
+Residual-based Forgery Attacks. We evaluate security against residual-based forgery attacks, where an attacker estimates the watermark residual from one or more released watermarked images and transfers it to an unrelated target image. We consider both single- and multi-reference settings: GT@1 uses one ground-truth residual, Yang et al. (2024a) uses 100 watermarked references, and WMForger (Souˇ cek et al., 2026) uses a single watermarked reference, following their original con-figurations unless otherwise specified. 
+
+Metrics. We report True Positive Rate (TPR) and Attack Success Rate (ASR) at the sample level, and Bit Accuracy (BitAcc) and Bit Error Rate (BER) at the bit level. TPR measures the fraction of legitimate watermarked images that are accepted, while ASR corresponds to the false-positive rate on forged images. BitAcc and BER measure the fractions of correctly and incorrectly decoded watermark bits, respectively. Verification thresholds are calibrated under the Bernoulli null model to FPR < 10 −6 for all watermark schemes. Higher TPR and BitAcc, and lower ASR and BER, are better. 7Table 2: Forgery attack success rate (ASR, %) across evaluation datasets. Results are reported as mean ± std over three random seeds. 
+
+GT@1 ↓ Yang et al. (2024a) ↓ WmForger (Souˇ cek et al., 2026) ↓
+
+Watermark Dataset ConvNeXt MHDW CoverLock ConvNeXt MHDW CoverLock ConvNeXt MHDW CoverLock CIN COCO 24.12 ±3.7 0.01 ±0.0 0.00 ±0.0 36.16 ±2.6 2.17 ±0.6 0.00 ±0.0 86.09 ±2.0 0.00 ±0.0 0.00 ±0.0 
+
+ImageNet 29.36 ±3.9 0.00 ±0.0 0.03 ±0.0 36.37 ±1.7 3.19 ±0.9 0.00 ±0.0 86.93 ±1.7 0.00 ±0.0 0.00 ±0.0 
+
+DIV2K 18.72 ±4.6 0.00 ±0.0 0.00 ±0.0 29.94 ±1.9 4.72 ±0.6 0.11 ±0.2 78.56 ±2.1 0.00 ±0.0 0.00 ±0.0 
+
+MBRS COCO 2.41 ±1.4 11.37 ±4.4 0.11 ±0.0 2.37 ±0.1 46.14 ±2.4 0.00 ±0.0 96.28 ±0.1 4.76 ±1.7 0.06 ±0.0 
+
+ImageNet 1.01 ±0.6 10.81 ±5.0 0.82 ±0.2 2.96 ±0.6 49.57 ±0.8 0.00 ±0.0 91.78 ±1.3 3.68 ±1.6 0.17 ±0.1 
+
+DIV2K 0.83 ±0.7 17.33 ±9.7 0.83 ±0.1 2.44 ±0.2 55.11 ±0.9 0.00 ±0.0 87.17 ±2.3 5.44 ±4.2 0.28 ±0.2 
+
+VINE COCO 14.44 ±4.7 1.16 ±0.4 0.00 ±0.0 4.39 ±0.4 28.02 ±1.6 0.00 ±0.0 22.34 ±4.1 0.06 ±0.1 0.00 ±0.0 
+
+ImageNet 14.52 ±4.2 0.49 ±0.3 0.11 ±0.1 9.32 ±0.9 29.22 ±1.0 0.02 ±0.0 25.66 ±2.7 0.06 ±0.1 0.01 ±0.0 
+
+DIV2K 4.61 ±1.2 1.56 ±1.0 0.28 ±0.1 4.00 ±0.4 23.06 ±4.4 0.00 ±0.0 13.61 ±2.8 0.06 ±0.1 0.00 ±0.0 
+
+Average 12.226 4.747 0.243 14.216 26.800 0.015 65.379 1.560 0.059 
+
+5.2 MAIN RESULTS OF COVER LOCK 
+
+We first evaluate whether CoverLock can prevent residual-based watermark forgery across different watermarking systems, image domains, and attack methods. Table 2 reports the ASR under GT@1, Yang et al. (2024a), and WmForger (Souˇ cek et al., 2026). CoverLock consistently achieves low ASR across all watermarking systems, datasets, and attacks, with even its highest average ASR remaining below 0.25%. In contrast, the classifier-based base-line generalizes poorly across attacks, as the residual artifacts learned from GT-based forgeries can change substantially under different estimation procedures. This dependence on known at-tack patterns may lead to an iterative attacker–defender cycle (Li et al., 2026; Li & Wang, 2026). MHDW (Lu et al., 2006) also exhibits attack-dependent protection and becomes less effective when the attacker obtains cleaner residuals through stronger averaging or more accurate estimation. By making watermark verification explicitly dependent on image content, CoverLock avoids relying on attack-specific forgery signatures and provides more consistent protection across attack methods. 5.3 ANALYSIS OF COVER LOCK ’S SECURITY AND ROBUSTNESS 
+
+We further analyze the behavior of different forgery defenses and the security–robustness trade-off of CoverLock. GT@1 GT@100 Yang et al. WmForger 
+
+(a) Residual Patterns across Attacks MHDW CoverLock-G (Ours)    
+
+> 0.0 2.5 5.0 7.5 10.0 12.5 15.0 17.5 20.0
+> Mean BER (%)
+> 7.4 7.4 14.6 4.2 18.6 10.6
+> Payload Hash Final
+
+(b) BER Decomposition 0.1 0.5 1 10 100  
+
+> GT@1 ASR (%)
+> 60 70 80 90 100
+> Robustness TPR (\%)
+> MHDW ASR = 11.367% TPR = 86.38% CoverLock-S ASR = 0.489% TPR = 91.52% CoverLock-B ASR = 0.233% TPR = 91.77% CoverLock-L ASR = 0.189% TPR = 91.82% CoverLock-G ASR = 0.111% TPR = 92.50%
+> Vanilla ConvNeXt MHDW CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+(c) Security–Robustness 
+
+Figure 4: Attacks and CoverLock analysis. Figure 4(a) visualizes the residuals pro-duced by different forgery procedures. Even for the same watermarking system, the residual patterns vary substantially with the estimation procedure and the number of source images. In particular, GT@1 and GT@100 exhibit different es-timation quality, while Yang et al. (2024a) and WmForger (Souˇ cek et al., 2026) pro-duce visually distinct residual structures. This diversity helps explain the limited cross-attack generalization of classifier-based defenses in Table 2, which rely on artifacts observed from known forgery pat-terns. Figure 4(b) decomposes the mean BER under distortions into payload and image-dependent hash components, while Table 3 reports the corresponding bit ac-curacy under each individual distortion. MHDW and CoverLock-G have the same 8Table 3: Bit accuracy (BitAcc, %) on COCO under Gaussian noise ( σ = 0 .05 ), brightness ( ×1.2), Gaussian blur ( σ = 1 .0), JPEG compression ( Q = 70 ), contrast ( ×1.2), and center crop (80% area). Average is over the six distortions and bold indicates the best binding defense, excluding Vanilla.                                                                           
+
+> Watermark Method Noise Brightness Blur JPEG Contrast Crop Average
+> CIN Vanilla 99.98 99.92 100.00 96.28 100.00 100.00 99.36 MHDW 76.49 91.08 79.83 82.19 91.74 83.20 84.09 CoverLock 93.35 97.13 95.58 91.52 97.45 92.55 94.60
+> MBRS Vanilla 69.16 98.52 94.13 100.00 99.06 94.41 92.55 MHDW 59.92 88.57 83.81 90.30 89.43 76.32 81.39 CoverLock 66.43 96.16 91.62 96.65 96.75 88.82 89.40
+> VINE Vanilla 99.72 99.85 99.94 99.91 99.96 50.27 91.61 MHDW 82.27 93.11 88.04 91.62 93.50 50.20 83.12 CoverLock 94.08 95.90 95.39 94.89 95.98 50.25 87.75
+
+payload BER of 7.4% , whereas CoverLock-G reduces the hash BER from 14 .6% to 4.2% , result-ing in a substantially lower final BER. This suggests that CoverLock’s robustness advantage mainly comes from more reliable recovery of the image-dependent component rather than improved payload decoding. Figure 4(c) compares the resulting security–robustness trade-off for MBRS on COCO. For the classifier baseline, reducing ASR requires a substantial loss in TPR, while operating points with high TPR remain considerably more vulnerable to forgery. MHDW similarly provides a less favorable trade-off. In contrast, CoverLock variants remain concentrated in the low-ASR, high-TPR region. Increasing the DINOv2 backbone size from Small to Giant further reduces ASR while maintaining TPR at approximately 92% , with CoverLock-G lying on the favorable Pareto frontier. 
+
+6 RELATED WORK 
+
+Image Watermarking Existing image watermarking methods can be broadly categorized into 
+
+post-processing and in-generation approaches. Post-processing methods embed watermarks into already generated images. Early approaches based on handcrafted embedding (e.g., LSB (Chopra et al., 2012), DWT-DCT (Al-Haj, 2007; Navas et al., 2008)) demonstrate feasibility but are vulner-able to common image transformations. Recent neural approaches improve robustness via learned encoder–decoder architectures with adversarial objectives (Zhu et al., 2018; Jia et al., 2021; Tancik et al., 2020; Zhang et al., 2019; Ma et al., 2022; Fang et al., 2022; Lu et al., 2025; Sander et al., 2025; Souˇ cek et al., 2025). These methods are compatible with existing generative systems without architectural modifications. In contrast, in-generation watermarking incorporates watermark signals directly during image synthesis rather than embedding them into already generated images (Yang et al., 2024b; Wen et al., 2023; Fernandez et al., 2023; Arabi et al., 2025; Wang et al., 2025; Chen et al., 2025; Lee & Cho, 2025; Liu et al., 2025). In this work, we focus on post-processing methods due to their model-agnostic and deployment-friendly properties. 
+
+Forgery Attack and Defense. Watermark forgery attacks estimate transferable watermark evi-dence from one or a few watermarked images and apply it to unrelated covers (Kutter et al., 2000; Yang et al., 2024a; Souˇ cek et al., 2026). Dong et al. (2025) instead assumes access to a large col-lection of watermarked images with the same message, which is outside our few-shot threat model. Prior defenses either bind watermarks to image content (Lu et al., 2006) or improve forgery re-sistance for in-generation watermarking by intervening in the diffusion process, e.g., conditioning latent watermarks on image semantics, modifying the denoising trajectory, or constraining inter-mediate latents (Zhang et al., 2026; Liu et al., 2026; Lai et al., 2026). In contrast, we focus on strengthening cover dependence for post-processing neural watermarking systems. 
+
+7 CONCLUSION 
+
+In this work, we study watermark forgery through residual transferability (RT), revealing that many deep watermarking systems can develop cover-agnostic watermark pathways whose signals transfer across unrelated images. By analyzing low-RT systems, we further identify coupled spatial inter-9action and content-adaptive embedding as two architectural mechanisms associated with stronger cover dependence. We also introduce CoverLock, a complementary solution for existing systems without redesigning or retraining the underlying watermark model. Across different watermarking systems, datasets, and attacks, CoverLock achieves a more favorable balance between forgery resis-tance and robustness than prior media-hash-based defenses, further highlighting cover dependence as an important design principle for secure deep image watermarking. 
+
+AI U SE STATEMENT 
+
+LLM tools were used to assist with manuscript writing and editing, as well as with minor modifica-tions to Python utility scripts, such as plotting and visualization scripts. All generated content and code modifications were reviewed and verified by the authors, who take full responsibility for the final content of this work. 
+
+ETHICS STATEMENT 
+
+This work analyzes watermark forgery attacks introduced in prior work, with the goal of understand-ing their underlying mechanisms and developing effective defenses. Our study focuses on security analysis and on deriving design insights for more forgery-resistant image watermarking systems. 
+
+REPRODUCIBILITY STATEMENT 
+
+We provide detailed experimental settings, model configurations, training procedures, evaluation protocols, and additional ablation results in the appendices. The datasets and pretrained watermark-ing models used in our evaluation are publicly available. We will release the implementation of our CoverLock to facilitate reproduction of the reported results. 
+
+REFERENCES 
+
+Ali Al-Haj. Combined dwt-dct digital image watermarking. Journal of computer science , 3(9): 740–746, 2007. Amazon. Watermark detection for amazon titan image generator now available in ama-zon bedrock. https://aws.amazon.com/cn/about-aws/whats-new/2024/04/ watermark-detection-amazon-titan-image-generator-bedrock/ , 2024. Kasra Arabi, R. Teal Witter, Chinmay Hegde, and Niv Cohen. SEAL: Semantic aware image water-marking. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) ,pp. 16196–16205, 2025. Yuzhuo Chen, Zehua Ma, Han Fang, Weiming Zhang, and Nenghai Yu. TAG-WM: Tamper-aware generative image watermarking via diffusion inversion sensitivity. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pp. 16723–16732, 2025. Deepshikha Chopra, Preeti Gupta, Gaur Sanjay, and Anil Gupta. Lsb based digital image water-marking for gray scale image. IOSR Journal of Computer Engineering , 6(1):36–41, 2012. Google Deepmind. Synthid: Identifying ai-generated content with synthid. https:// deepmind.google/technologies/synthid/ , 2023. Ziping Dong, Chao Shuai, Zhongjie Ba, Peng Cheng, Zhan Qin, Qinglong Wang, and Kui Ren. Wmcopier: Forging invisible image watermarks on arbitrary images. arXiv preprint arXiv:2503.22330 , 2025. Han Fang, Zhaoyang Jia, Zehua Ma, Ee-Chien Chang, and Weiming Zhang. PIMoG: An Effective Screen-shooting Noise-Layer Simulation for Deep-Learning-Based Watermarking Network. In 
+
+Proceedings of the 30th ACM International Conference on Multimedia , pp. 2267–2275, Lisboa Portugal, October 2022. ACM. 10 Pierre Fernandez, Guillaume Couairon, Herv´ e J´ egou, Matthijs Douze, and Teddy Furon. The sta-ble signature: Rooting watermarks in latent diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pp. 22466–22477, 2023. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recog-nition, 2015. URL https://arxiv.org/abs/1512.03385 .Zhaoyang Jia, Han Fang, and Weiming Zhang. Mbrs: Enhancing robustness of dnn-based water-marking by mini-batch of real and simulated jpeg compression. In Proceedings of the 29th ACM international conference on multimedia , pp. 41–49, 2021. Martin Kutter, Sviatoslav V Voloshynovskiy, and Alexander Herrigel. Watermark copy attack. In 
+
+Security and Watermarking of Multimedia Contents II , volume 3971, pp. 371–380. SPIE, 2000. Jiewei Lai, Lan Zhang, Chen Tang, Pengcheng Sun, Zhaopeng Zhang, Yunhao Wang, and Hui Jin. Csguard: Toward forgery-resistant watermarking in diffusion models via compressed sensing constraint. arXiv preprint arXiv:2605.01479 , 2026. Sung Ju Lee and Nam Ik Cho. Semantic watermarking reinvented: Enhancing robustness and gen-eration quality with fourier integrity. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pp. 18759–18769, 2025. Qi Li and Xinchao Wang. Sponge tool attack: Stealthy denial-of-efficiency against tool-augmented agentic reasoning, 2026. URL https://arxiv.org/abs/2601.17566 .Qi Li, Xingyi Yang, and Xinchao Wang. Badwam: When world-action models dream right but act wrong, 2026. URL https://arxiv.org/abs/2607.15207 .Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Doll´ ar, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In Computer Vision–ECCV 2014: 13th European Conference, Zurich, Switzerland, September 6-12, 2014, Proceedings, Part V 13 , pp. 740–755. Springer, 2014. Qingyu Liu, Yitao Zhang, Zhongjie Ba, Chao Shuai, Peng Cheng, Tianhang Zheng, and Zhibo Wang. Attack-resistant watermarking for aigc image forensics via diffusion-based semantic de-flection. In International Conference on Learning Representations , 2026. Zhenguang Liu, Chao Shuai, Shaojing Fan, Ziping Dong, Jinwu Hu, Zhongjie Ba, and Kui Ren. Harnessing frequency spectrum insights for image copyright protection against diffusion models, 2025. URL https://arxiv.org/abs/2503.11071 .Zhuang Liu, Hanzi Mao, Chao-Yuan Wu, Christoph Feichtenhofer, Trevor Darrell, and Saining Xie. A convnet for the 2020s, 2022. URL https://arxiv.org/abs/2201.03545 .Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In International Confer-ence on Learning Representations (ICLR) , 2019. Chun-Shien Lu, Shih-Wei Sun, Chao-Yong Hsu, and Pao-Chi Chang. Media hash-dependent im-age watermarking resilient against both geometric attacks and estimation attacks based on false positive-oriented detection. IEEE Transactions on Multimedia , 8(4):668–685, August 2006. doi: 10.1109/TMM.2006.876300. Shilin Lu, Zihan Zhou, Jiayou Lu, Yuanzhi Zhu, and Adams Kong. Robust watermarking using generative priors against image editing: From benchmarking to advances. In International Con-ference on Learning Representations , volume 2025, pp. 83902–83936, 2025. Rui Ma, Mengxi Guo, Yi Hou, Fan Yang, Yuan Li, Huizhu Jia, and Xiaodong Xie. Towards Blind Watermarking: Combining Invertible and Non-invertible Mechanisms. In Proceedings of the 30th ACM International Conference on Multimedia , pp. 1532–1542, Lisboa Portugal, October 2022. ACM. doi: 10.1145/3503161.3547950. Meta. Content seal: State-of-the-art invisible watermarking. https://facebookresearch. github.io/content-seal/ , 2026. Accessed: 2026-07-30. 11 Andreas M¨ uller, Denis Lukovnikov, Jonas Thietke, Asja Fischer, and Erwin Quiring. Black-box forgery attacks on semantic watermarks for diffusion models. arXiv preprint arXiv:2412.03283 ,2024. K. A. Navas, Mathews Cheriyan Ajay, M. Lekshmi, Tampy S. Archana, and M. Sasikumar. DWT-DCT-SVD based watermarking. In 2008 3rd International Conference on Communication Sys-tems Software and Middleware and Workshops (COMSWARE ’08) , pp. 271–274. IEEE, January 2008. OpenAI. Advancing content provenance for a safer, more transparent ai ecosystem. URL https: //openai.com/index/advancing-content-provenance/ .Maxime Oquab, Timoth´ ee Darcet, Th´ eo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Russell Russell, Armand Joulin, Piotr Bojanowski, and Mathilde Caron. Dinov2: Learning robust visual features without supervision. Transactions on Machine Learning Research , 2023. Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, Alexander C. Berg, and Li Fei-Fei. ImageNet Large Scale Visual Recognition Challenge. International Journal of Computer Vision (IJCV) , 115(3):211–252, 2015. doi: 10.1007/s11263-015-0816-y. Tom Sander, Pierre Fernandez, Alain Oliviero Durmus, Teddy Furon, and Matthijs Douze. Water-mark anything with localized messages. In International Conference on Learning Representa-tions , 2025. Anirudh Satheesh, Michael-Andrei Panaitescu-Liess, Andrew Xu, Georgios Milis, Heng Huang, Zikui Cai, and Furong Huang. Compositional adversarial training for robust visual watermarking, 2026. URL https://arxiv.org/abs/2605.16720 .Chao Shuai, Jieming Zhong, Shuang Wu, Feng Lin, Zhibo Wang, Zhongjie Ba, Zhenguang Liu, Lorenzo Cavallaro, and Kui Ren. Locate and verify: A two-stream network for improved deepfake detection, 2023. URL https://arxiv.org/abs/2309.11131 .Tom´ aˇ s Souˇ cek, Sylvestre-Alvise Rebuffi, Pierre Fernandez, Nikola Jovanovi´ c, Hady Elsahar, Valeriu Lacatusu, Tuan Tran, and Alexandre Mourachko. Transferable black-box one-shot forging of watermarks via image preference models. Advances in Neural Information Processing Systems ,38:50251–50274, 2026. Tom´ aˇ s Souˇ cek, Pierre Fernandez, Hady Elsahar, Sylvestre-Alvise Rebuffi, Valeriu Lacatusu, Tuan Tran, Tom Sander, and Alexandre Mourachko. Pixel seal: Adversarial-only training for invisible image and video watermarking. arXiv preprint arXiv:2512.16874 , 2025. Matthew Tancik, Ben Mildenhall, and Ren Ng. Stegastamp: Invisible hyperlinks in physical pho-tographs. In Proceedings of the IEEE/CVF conference on computer vision and pattern recogni-tion , pp. 2117–2126, 2020. Radu Timofte, Eirikur Agustsson, Luc Van Gool, Ming-Hsuan Yang, Lei Zhang, , et al. NTIRE 2017 Challenge on Single Image Super-Resolution: Dataset and Study. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops , pp. 114–122, July 2017. Haoyu Wang, Yiming Qin, Zhongjie Ba, Ziping Dong, Jishen Zeng, Peng Cheng, and Kui Ren. Ghosts beneath textures: Texture-relation cues for cross-paradigm ai-generated image detection, 2026. URL https://arxiv.org/abs/2607.03862 .Zilan Wang, Junfeng Guo, Jiacheng Zhu, Yiming Li, Heng Huang, Muhao Chen, and Zhengzhong Tu. Sleepermark: Towards robust watermark against fine-tuning text-to-image diffusion mod-els. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 8213–8224, 2025. Yuxin Wen, John Kirchenbauer, Jonas Geiping, and Tom Goldstein. Tree-ring watermarks: Fin-gerprints for diffusion images that are invisible and robust. arXiv preprint arXiv:2305.20030 ,2023. 12 Pei Yang, Hai Ci, Yiren Song, and Mike Zheng Shou. Can simple averaging defeat modern water-marks? Advances in Neural Information Processing Systems , 37:56644–56673, 2024a. Zijin Yang, Kai Zeng, Kejiang Chen, Han Fang, Weiming Zhang, and Nenghai Yu. Gaussian Shad-ing: Provable Performance-Lossless Image Watermarking for Diffusion Models, May 2024b. Comment: 17 pages, 11 figures, accepted by CVPR 2024. Kevin Alex Zhang, Lei Xu, Alfredo Cuesta-Infante, and Kalyan Veeramachaneni. Robust invisible video watermarking with attention. arXiv preprint arXiv:1909.01285 , 2019. Xin Zhang, Zijin Yang, Kejiang Chen, Linfeng Ma, Weiming Zhang, and Nenghai Yu. Sembind: Binding diffusion watermarks to semantics against black-box forgery attacks. In Proceedings of the 43rd International Conference on Machine Learning , 2026. Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei. Hidden: Hiding data with deep networks. In Proceedings of the European conference on computer vision (ECCV) , pp. 657–672, 2018. 
+
+A LIMITATION 
+
+Although CoverLock achieves low forgery success and a favorable balance between forgery resis-tance and robustness under the distortions considered in our evaluation, this balance may change under more severe or unseen image transformations. Its behavior under broader distribution shifts and adaptive attacks specifically targeting the image-binding mechanism also remains to be stud-ied. CoverLock provides a lightweight way to augment existing watermarking systems without redesigning their core architectures, but introduces an additional image-binding module and asso-ciated training and deployment overhead. Finally, while our analysis covers several representative neural watermarking architectures and identifies two mechanisms associated with low RT, other architectures may achieve cover dependence through different design principles. 
+
+B COVER LOCK IMPLEMENTATION AND TRAINING DETAILS 
+
+B.1 ARCHITECTURE AND ORTHOGONAL HASHING 
+
+Frozen feature extractor. CoverLock uses a frozen DINOv2 ViT (Oquab et al., 2023) as the im-age feature extractor. Unless otherwise specified, we use ViT-g/14; the CoverLock-S/B/L/g variants replace it with the corresponding DINOv2 Small, Base, Large, and Giant backbones while leaving the remaining architecture unchanged. All images are resized to 224 × 224 , and patch tokens are extracted from the final transformer layer. This yields a 16 × 16 grid of P = 256 patch features, 
+
+Q(x) = {qp}Pp=1 , qp ∈ Rd, (16) where d depends on the selected backbone ( d = 1536 for ViT-g/14). We summarize the patch features using their channel-wise mean and standard deviation across spa-tial tokens 
+
+μ(x) = 1
+
+P
+
+> P
+
+X
+
+> p=1
+
+qp, σ(x) = Std p[qp], (17) and concatenate them to form 
+
+s(x) = [ μ(x); σ(x)] ∈ R2d. (18) 
+
+Projection head. The pooled representation is mapped to a D-dimensional image embedding us-ing a lightweight trainable projection head, 
+
+hθ (s(x)) = W2 GELU ( W1 LN( s(x)) + b1) + b2, (19) followed by ℓ2 normalization, 
+
+eθ (x) = hθ (s(x)) 
+
+∥hθ (s(x)) ∥2
+
+. (20) We use a hidden dimension of 512 and an output embedding dimension D = 512 .13 Fixed orthogonal projection. CoverLock maintains a native code length of L0 = 256 . We first sample a Gaussian matrix 
+
+G ∈ RD×L0 (21) using a fixed seed and orthogonalize its columns once using QR decomposition. This produces a fixed projection matrix 
+
+RL0 ∈ RD×L0 , R⊤ 
+
+> L0
+
+RL0 = I, (22) which is stored as a non-trainable buffer. For a watermarking system with payload length L ≤ L0, a seed-determined fixed permutation selects L columns from RL0 ,
+
+RL = [ rπ(1) , . . . , r π(L)] ∈ RD×L. (23) The resulting hash logits are 
+
+z(L0) 
+
+> θ
+
+(x) = αθ R⊤ 
+
+> L
+
+eθ (x), (24) where αθ > 0 is a learned logit scale that controls the magnitude of the projected responses. Since the image embedding and projection directions are normalized, this scale allows the model to adapt the confidence of the continuous hash logits without changing their signs, facilitating the subsequent soft-code regularization and binary-margin objective. The corresponding binary image-dependent code is obtained by thresholding the logits, 
+
+b(L) 
+
+> θ
+
+(x) = 1
+
+h
+
+z(L) 
+
+> θ
+
+(x) ≥ 0
+
+i
+
+. (25) B.2 CODE REGULARIZATION AND BINARY CONFIDENCE 
+
+The contrastive objective introduced in the main paper structures the continuous image embedding 
+
+eθ (x) by bringing different views of the same carrier together while separating different carriers. In addition, we regularize the projected codes to encourage distortion stability, balanced and diverse bit usage, cross-carrier independence, and low inter-bit correlation. A separate binary-confidence objective further encourages the projected logits to remain away from the binarization threshold. For a minibatch of N clean images {xi}Ni=1 , we independently sample τi ∼ T and construct dis-torted views 
+
+exi = τi(xi). (26) During CoverLock training, the code-level objectives are applied to the native L0-dimensional pro-jection. We therefore define 
+
+zi = z(L0) 
+
+> θ
+
+(xi), ezi = z(L0) 
+
+> θ
+
+(exi), (27) with the corresponding soft codes 
+
+ci = tanh( zi), eci = tanh( ezi). (28) 
+
+Code stability. Different views of the same carrier should produce consistent codes. We therefore minimize 
+
+Lstab = 1
+
+N L 0
+
+> N
+
+X
+
+> i=1
+
+∥ci − eci∥22 . (29) 
+
+Bit balance. To prevent individual bits from being biased toward one binary value over the training distribution, we encourage each bit to have zero mean across carriers: 
+
+Lbal = 1
+
+L0
+
+1
+
+N
+
+> N
+
+X
+
+> i=1
+
+ci
+
+> 22
+
+. (30) 
+
+Bit variance. Bit balance alone does not prevent a bit from remaining close to zero for all carriers. We therefore encourage each bit to maintain sufficient variation across images: 
+
+Lvar = 12L0
+
+> L0
+
+X
+
+> b=1
+
+[max (0 , ν − Std i[cib ]) + max (0 , ν − Std i[ecib ])] , (31) where ν = 0 .5.14 Cross-carrier independence. Codes from different carriers should remain dissimilar. Let 
+
+C = [ c⊤ 
+
+> 1
+
+; . . . ; c⊤ 
+
+> N
+
+] ∈ RN ×L0 . (32) We penalize pairwise similarities between different carriers: 
+
+Lind = mean 
+
+"
+
+offdiag 
+
+ CC ⊤
+
+L0
+
+2#
+
+. (33) 
+
+Bit decorrelation. Orthogonal projection directions do not necessarily guarantee uncorrelated out-puts over the image distribution. We therefore standardize each bit over the minibatch, 
+
+cib = cib − μb
+
+σb + ϵ , (34) where μb and σb are the batch mean and standard deviation of bit b, and ϵ = 10 −4 is used for numerical stability. Let C ∈ RN ×L0 denote the resulting standardized code matrix. We minimize its off-diagonal bit correlations: 
+
+Ldec = mean 
+
+offdiag C⊤CN
+
+!2 . (35) The complete code regularization objective is 
+
+Lcode = λstab Lstab + λbal Lbal + λvar Lvar 
+
++ λind Lind + λdec Ldec . (36) 
+
+Binary confidence. Since the final image-dependent code is obtained by thresholding the pro-jected logits at zero, logits close to the decision boundary are particularly susceptible to bit flips under image distortions. We therefore encourage both clean and distorted logits to remain away from zero: 
+
+Lbin = 12N L 0
+
+> N
+
+X
+
+> i=1
+> L0
+
+X
+
+> b=1
+
+[softplus ( ρ − | zib |) + softplus ( ρ − | ezib |)] , (37) where ρ = 1 denotes the binary margin. We use 
+
+λstab = 2 , λbal = 5 , λvar = 5 ,λind = 1 , λdec = 0 .05 , λbin = 0 .0125 ,λcode = 0 .25 .
+
+(38) Together with the contrastive objective defined in the main paper, the complete CoverLock training objective is 
+
+L = Lcon + λbin Lbin + λcode Lcode . (39) B.3 TRAINING CONFIGURATION 
+
+CoverLock is trained solely from natural images and their distorted versions. For each image xi, the second view exi is generated by sampling a transformation from the training distortion distribution 
+
+T , including JPEG compression (quality 45–90), Gaussian blur ( σ = 0 .3–2.0), Gaussian noise ( σ =0.005 –0.02 ), Crop that retains 70%–95% of the image area, and brightness or contrast adjustment with factors in [0 .7, 1.3] . We optimize only the lightweight projection head and the learnable logit scale using AdamW (Loshchilov & Hutter, 2019) with a learning rate of 3 × 10 −5. The DINOv2 backbone and orthogonal projection matrix remain fixed. We use a batch size of 256, contrastive temperature τc = 0 .1, and train the models reported in the main paper for 200k optimization steps. All CoverLock variants are trained on COCO train2017, which contains 118,287 images. We use 94,629 images (80%) for training and reserve the remaining 23,658 images for validation. 15 B.4 TRAINING DYNAMICS OF COVER LOCK 
+
+Figure 5 shows the optimization trajectories of the overall CoverLock objective and its individual components. The total, contrastive, and code-regularization losses decrease rapidly early in training and then improve more gradually, while the stability and balance objectives also decrease steadily. The independence and decorrelation losses exhibit a backbone-dependent late-stage rebound after their initial reduction; this rebound becomes less pronounced as the backbone size increases and is largely absent for CoverLock-G, suggesting that higher-capacity features may better accommo-date these statistical code constraints during joint optimization. The variance and binary-confidence terms follow distinct non-monotonic trajectories as the projected codes evolve during training. De-spite these different dynamics, all four variants remain well-behaved throughout optimization. 0 50k 100k 150k 200k 
+
+Training step 
+
+0.05 0.1 0.2 0.5 1
+
+> Loss
+
+Total loss 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+0.05 0.1 0.2 0.5 1
+
+> Loss
+
+Contrastive loss con 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+0.02 0.05 0.1 0.2 0.5 1
+
+> Loss
+
+Code regularization loss code 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+0.005 0.01 0.02 
+
+> Loss
+
+Code stability loss stab     
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G 050k 100k 150k 200k
+> Training step
+> 0.0005 0.001 0.002 0.005 0.01 0.02
+> Loss
+
+Cross-carrier independence loss ind 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+0.001 0.002 0.005 0.01 0.02 0.05 0.1 
+
+> Loss
+
+Bit balance loss bal 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+1e-09 1e-07 1e-05 0.001 0.1 
+
+> Loss
+
+Bit variance loss var 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+0.005 0.01 0.02 
+
+> Loss
+
+Bit decorrelation loss dec 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+0 50k 100k 150k 200k 
+
+Training step 
+
+0.88 0.9 0.93 0.95 
+
+> Loss
+
+Binary confidence loss bin 
+
+> CoverLock-S CoverLock-B CoverLock-L CoverLock-G
+
+Figure 5: Training dynamics of CoverLock. Training curves of the overall objective and its in-dividual loss components across four CoverLock variants. While the components exhibit different optimization trajectories, they eventually reach stable regimes under joint optimization. 
+
+C APPARENT SIGNS OF IMAGE DEPENDENCE CAN BE MISLEADING 
+
+As shown in Section 3.3, explicitly combining image and message features does not necessarily pre-vent a cover-agnostic watermark pathway from emerging. Similarly, an image-dependent-looking residual does not necessarily indicate true image dependence. A single residual can retain visible structures of the host image simply due to image-specific reconstruction errors introduced by the encoder, rather than watermark evidence used for decoding. 16 Figure 6: Comparison of single-image and averaged watermark residuals. From top to bottom, we show the watermarked image, the residual from a single image, and the residual averaged over five images carrying the same message for different watermarking methods. Table 4: Sensitivity of residual transferability to the number of source images. RT@ s is computed using the averaged residual from s source images.                                           
+
+> Model BitAcc ↑PSNR (dB) ↑RT@1 ↓RT@10 ↓RT@100 ↓RT@1000 ↓
+> HiDDeN 0.924 ±0.05 33.85 ±1.87 0.374 ±0.20 0.301 ±0.16 0.275 ±0.16 0.275 ±0.16 CIN 1.000 ±0.00 41.55 ±0.90 1.000 ±0.00 1.000 ±0.00 1.000 ±0.00 1.000 ±0.00 MBRS 1.000 ±0.00 41.61 ±1.69 0.940 ±0.08 0.955 ±0.07 0.982 ±0.04 0.982 ±0.04 RivaGAN 0.919 ±0.08 42.05 ±0.16 0.081 ±0.11 0.088 ±0.11 0.082 ±0.11 0.085 ±0.11 VINE 1.000 ±0.00 35.47 ±2.83 0.964 ±0.05 0.981 ±0.04 0.986 ±0.03 0.985 ±0.04
+
+This motivates the residual averaging used in the main paper. Averaging residuals from images car-rying the same message suppresses image-specific reconstruction errors while retaining watermark components shared across covers. As shown in Figure 6, averaging only five residuals substan-tially removes the apparent image content and more clearly reveals the shared structure of high-RT methods, providing a more reliable visualization of cover-agnostic watermark signals. 
+
+D SENSITIVITY TO THE NUMBER OF SOURCE IMAGES 
+
+As shown in Table 4, the overall RT patterns remain consistent across different source-set sizes. High-RT methods remain highly transferable, while HiDDeN and RivaGAN consistently exhibit substantially lower RT, indicating that the observed differences are not specific to a particular source-set size. Considering both evaluation cost and the need to adequately reflect forgery risk, we use 100 source images as the default setting in our main analysis. 17 E DETAILED ARCHITECTURAL ANALYSIS 
+
+E.1 COMMON TRAINING -SIDE CHOICES 
+
+We test whether common training-side choices can explain the RT gap between HiDDeN (Zhu et al., 2018) and MBRS (Jia et al., 2021). We vary the training dataset, message length, loss weights and robustness-oriented noise simulation while keeping the remaining settings fixed. As shown in Fig-ure 7, these changes shift the exact RT values but do not alter the qualitative behavior: HiDDeN consistently remains in the low-RT regime, whereas MBRS remains highly transferable. This per-sistence across training settings suggests that the large RT gap is unlikely to be explained by these factors alone, motivating our investigation of architectural differences. DIV2K ImageNet COCO          
+
+> Training Dataset
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> RT@100
+> Dataset Ablation
+> HiDDeN MBRS 30 64 100
+> Message Length
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> RT@100
+> Message Length Ablation
+> HiDDeN MBRS Image Message Adversarial 0.0 0.2 0.4 0.6 0.8 1.0
+> RT@100
+> LLLLLLMMMMMMHHHHHH
+> Loss Weight Sensitivity
+> HiDDeN MBRS Identity Noise simulation
+> Training Noise
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> RT@100
+> Noise Ablation
+> HiDDeN MBRS
+
+Figure 7: Residual transferability (RT@100) under different training settings. We vary the training dataset, message length, loss weight, and robustness-oriented noise simulation while keep-ing the remaining settings fixed. Results report the mean RT score over three independently trained models with different random seeds, with error bars indicating one standard deviation. E.2 BROADCAST AND GAP AS A COUPLED DESIGN 
+
+To clarify why we treat broadcast and global average pooling (GAP) as a unified Broadcast–GAP (BG) design rather than two independent architectural choices, we conduct a 2 × 2 ablation on HiDDeN. Specifically, we independently remove spatial message broadcast from the encoder and GAP from the decoder, while keeping all other components and training settings unchanged. Since the preceding analysis shows that robustness-oriented distortion training does not account for the qualitative RT gap, we omit simulated distortions in the following architectural intervention experi-ments to reduce optimization difficulty and enable cleaner controlled comparisons. All original and modified models in these experiments are retrained under the same distortion-free setting. As shown in Figure 8, the original HiDDeN with both broadcast and GAP achieves an RT@100 of 
+
+0.214 . Removing broadcast alone results in a nearly unchanged RT@100 of 0.228 , while removing GAP alone increases it moderately to 0.313 . In contrast, simultaneously removing both components causes RT@100 to rise sharply to 0.985 . This pronounced interaction shows that the low-RT be-havior cannot be attributed to either broadcast or GAP independently. Instead, the two components function as a coupled architectural design: broadcast spatially couples the message with local image features during embedding, while GAP requires the decoder to aggregate spatially distributed evi-dence for message recovery. We therefore refer to their combination as the Broadcast–GAP (BG) 
+
+design throughout the paper. 
+
+F VERIFICATION CALIBRATION UNDER COVER LOCK 
+
+Watermark verification commonly sets its decision threshold using an independent Bernoulli null model. Since CoverLock introduces an additional image-dependent binary code into the verification representation, we examine whether it alters the null distribution and therefore requires threshold recalibration. Figure 9 compares this theoretical distribution with empirical match counts from 50,000 held-out ImageNet images. Both vanilla MBRS and MBRS with CoverLock-G produce zero false accepts and remain well aligned with the binomial model, with CoverLock-G showing particularly close agreement. This behavior is consistent with CoverLock’s statistical objectives in Section B.2. In the idealized case where the image-dependent hash b is uniform over {0, 1}L and independent of the original 18 HiDDeN - Broadcast HiDDeN    
+
+> Encoder Design
+> HiDDeN - GAP HiDDeN
+> Decoder Design  0.985 0.313 0.228 0.214
+> Architecture Ablation
+> 0.0 0.2 0.4 0.6 0.8 1.0 RT@100  ↓
+
+Figure 8: Coupling between broadcast and GAP. Removing both components sharply increases RT. Table 5: Identifying architectural sources of low residual transferability. RT results are reported as mean ± stan-dard deviation over three random seeds. Lower RT indicates stronger cover dependence.                                                                      
+
+> Method Variant Watermark Quality Residual Transferability BitAcc ↑PSNR ↑RT@1 ↓RT@10 ↓RT@100 ↓
+> HiDDeN Original 0.998 28.23 0.249 ±0.180 0.261 ±0.135 0.214 ±0.135
+> −Broadcast–GAP 1.000 41.47 0.909 ±0.084 0.977 ±0.057 0.985 ±0.049
+> MBRS Original 1.000 42.32 0.987 ±0.029 0.993 ±0.023 0.995 ±0.020
+> +Broadcast–GAP 0.964 27.07 0.210 ±0.115 0.124 ±0.109 0.098 ±0.102
+> CIN Original 1.000 41.55 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000
+> +Broadcast–GAP 0.934 21.71 0.158 ±0.157 0.103 ±0.126 0.091 ±0.117
+> VINE Original 1.000 35.47 0.964 ±0.052 0.981 ±0.040 0.986 ±0.034
+> +Broadcast–GAP 0.600 6.97 Training failure
+> RivaGAN Original 0.977 42.12 0.071 ±0.100 0.073 ±0.103 0.077 ±0.109 Fixed Attention 0.982 42.11 0.922 ±0.107 0.946 ±0.094 0.944 ±0.096
+
+decoded bits ˆp, the decoded message m′ = ˆ p ⊕ b is also uniform, yielding a Binomial( L, 0.5) 
+
+match-count distribution. These objectives encourage the learned binary code to satisfy the statis-tical conditions underlying the Bernoulli null model, consistent with the close empirical agreement observed in Figure 9. Accordingly, the original verification threshold can be retained without addi-tional recalibration after introducing CoverLock. 80 100 120 140 160 
+
+> Matching bits on clean images
+> 0.00 0.02 0.04 0.06
+> Probability
+
+Vanilla MBRS     
+
+> 80 100 120 140 160
+> Matching bits on clean images
+
+CoverLock 
+
+> Binomial(256, 0.5) Verification threshold Empirical
+
+Figure 9: Verification calibration on clean images. 
+
+Table 6: Validation ROC-AUC (%) for classifier backbones. 
+
+Backbone ROC-AUC ↑
+
+DINOv2-G + MLP 72.43 ResNet-50 97.72 ConvNeXt-Tiny 99.71 
+
+G CLASSIFIER BACKBONE SELECTION 
+
+Inspired by passive detection methods (Wang et al., 2026; Shuai et al., 2023) for AIGC-generated images, which identify manipulated or synthetic content through discriminative classifiers, we in-troduce a classifier-based defense as a baseline for detecting residual-transfer forgeries. To select the backbone for the classifier-based defense used in the main experiments, we compare DINOv2-G (Oquab et al., 2023) with an MLP head, ResNet-50 (He et al., 2015), and ConvNeXt-Tiny Liu et al. (2022) on MBRS and MSCOCO val2017. We evaluate each classifier on 500 genuine water-marked images and 500 GT@1 residual-transfer forgeries under both clean and distorted settings. An image is accepted only when it passes both the standard watermark verification and the classifier. As shown in Table 6, ConvNeXt-Tiny provides the strongest overall trade-off between genuine ac-ceptance and forgery rejection among the evaluated backbones, particularly under distortions. We therefore adopt ConvNeXt-Tiny as the classifier backbone in the main experiments. 19

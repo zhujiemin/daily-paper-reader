@@ -1,0 +1,137 @@
+{
+  "date": "20260929",
+  "date_label": "",
+  "generated_at": "2026-09-29 23:14:21 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.31722v1",
+      "route": "202609/29/2609.31722v1-where-does-the-watermark-hide-push-pull-disentanglement-for-invisible-watermark-removal",
+      "title": "Where Does the Watermark Hide? Push-Pull Disentanglement for Invisible Watermark Removal",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "成对训练威胁下的推拉解耦隐形水印去除",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.30934v1",
+      "route": "202609/29/2609.30934v1-manivid-unified-and-explainable-forensic-analysis-of-manipulated-videos",
+      "title": "ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "篡改媒体中的伪造检测与像素级痕迹定位",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.32241v1",
+      "route": "202609/29/2609.32241v1-residual-transferability-in-neural-image-watermarking",
+      "title": "Residual Transferability in Neural Image Watermarking",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "迁移残差伪造神经图像水印",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.34744v1",
+      "route": "202609/29/2609.34744v1-optimizing-and-securing-the-modern-watermarking-channel-for-images",
+      "title": "Optimizing and Securing the Modern Watermarking Channel for Images",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "现代后验图像水印信道的理论建模与安全加固",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.34720v1",
+      "route": "202609/29/2609.34720v1-dbcf-dual-branch-complementary-fusion-of-foundation-models-for-generalized-deepfake-detection",
+      "title": "DBCF: Dual-Branch Complementary Fusion of Foundation Models for Generalized Deepfake Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "融合CLIP全局与DINO局部特征的通用深度伪造检测",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.34807v1",
+      "route": "202609/29/2609.34807v1-controltrace-recovering-control-fields-for-hidden-content-recognition",
+      "title": "ControlTrace: Recovering Control Fields for Hidden-Content Recognition",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "恢复扩散生成图像中隐藏内容",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.35224v1",
+      "route": "202609/29/2609.35224v1-tango-watermarking-masked-diffusion-language-models-in-token-pairs",
+      "title": "TANGO: Watermarking Masked Diffusion Language Models in Token Pairs",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向掩码扩散语言模型的token对水印",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    },
+    {
+      "paper_id": "2609.35536v1",
+      "route": "202609/29/2609.35536v1-look-before-you-judge-training-free-region-mining-for-grounded-and-explainable-deepfake-detection",
+      "title": "Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "免训练区域挖掘实现空间定位的可解释深伪检测",
+      "first_seen_at": "2026-09-29 23:14:21 UTC",
+      "updated_at": "2026-09-29 23:14:21 UTC"
+    }
+  ]
+}

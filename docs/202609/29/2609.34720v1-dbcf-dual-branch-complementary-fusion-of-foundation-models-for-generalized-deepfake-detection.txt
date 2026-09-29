@@ -1,0 +1,324 @@
+Title: DBCF: Dual-Branch Complementary Fusion of Foundation Models for Generalized Deepfake Detection
+
+URL Source: https://arxiv.org/pdf/2609.34720v1
+
+Published Time: Tue, 29 Sep 2026 03:58:19 GMT
+
+Number of Pages: 30
+
+Markdown Content:
+# DBCF: Dual-Branch Complementary Fusion of Foundation Models for Generalized Deepfake Detection 
+
+Fengming Gu a,b , Mingjie He b,c , Zonghui Guo d, Jie Zhang b,c, ∗, Shiguang Shan b,c 
+
+> a
+
+School of Advanced Interdisciplinary Sciences, University of Chinese Academy of Sciences, Beijing, 100049, China 
+
+> b
+
+State Key Laboratory of AI Safety, Institute of Computing Technology, Chinese Academy of Sciences, Beijing, 100190, China 
+
+> c
+
+University of Chinese Academy of Sciences, Beijing, 100049, China 
+
+> d
+
+Faculty of Information Science and Engineering, Ocean University of China, Qingdao, 266404, China 
+
+Abstract 
+
+As image generation and editing technologies have progressed substantially, facial forgeries pose significant challenges to privacy and public safety. Due to limited abil-ity to capture forgery cues, existing small-scale forgery detection models often struggle to generalize across various domains and unseen manipulations. To address this lim-itation, researchers have turned to large-scale foundation models, which can provide richer representations and better generalization. Nevertheless, relying on a single foun-dation model alone remains insu ffi cient for e ff ective forgery detection. While models like CLIP o ff er robust global semantic cues, they lack the capacity to capture detailed local facial features. In contrast, DINO excels at capturing local structural features of faces, but provides weaker global semantic context. To fully utilize the synergies among multiple foundation models, we propose a hierarchical multi-granular frame-work that integrates complementary pretrained representations. Specifically, a Global Context Branch (GCB) based on CLIP captures holistic semantic cues, while a Fine-grained Cue Branch (FCB) built on DINOv3 captures localized structural irregulari-ties. In addition, we design a feature fusion module that enables parameter-e ffi cient adaptation of the frozen foundation backbones by adaptively extracting and integrating complementary features from the two models. By jointly leveraging global context 
+
+> ∗
+
+Corresponding author. 
+
+Email addresses: gufengming18@mails.ucas.ac.cn (F. Gu), hemingjie@ict.ac.cn (M. He), 
+
+guozonghui@ouc.edu.cn (Z. Guo), zhangjie@ict.ac.cn (J. Zhang), sgshan@ict.ac.cn (S. Shan) arXiv:2609.34720v1 [cs.CV] 28 Sep 2026 and fine-grained cues, our method learns more comprehensive forgery representations and achieves strong cross-manipulation performance. Extensive experiments on mul-tiple benchmarks demonstrate the benefit of the proposed design, particularly under cross-dataset and cross-manipulation settings. 
+
+Keywords: Deepfake Detection, Pretrained Models, Domain Generalization 
+
+1. Introduction 
+
+The rapid advancement of artificial image generation technologies, particularly face manipulation and synthesis methods based on generative adversarial networks (GANs) and di ff usion models, has profoundly reshaped the landscape of digital media creation. While these techniques have enabled numerous beneficial applications, they have also drastically lowered the barrier for producing highly realistic facial forgeries. Such forgeries pose severe threats to personal privacy, social trust, and even public security, as they can be exploited for identity fraud, political misinformation, and malicious impersonation. Consequently, facial deepfake detection has emerged as an essential research task aimed at safeguarding the integrity and authenticity of visual content. However, building robust and generalizable deepfake detectors remains highly chal-lenging. The core di ffi culty lies in the diversity and rapid evolution of forgery tech-niques, which continuously introduce novel manipulation patterns. In response to such challenges, several prior methods[1, 2, 3] generate diverse manipulated samples that approximate potential unseen forgery patterns. Besides, some other methods[4, 5] em-ploy disentangled representation learning which can suppress irrelevant factors such as identity, illumination, or background that may act as shortcuts rather than genuine forgery cues. To some extent, these methods can prevent the models from learning only limited, dataset-specific cues from known manipulations. However, their performance is still largely constrained by the scale of the training data and the distribution of the manipulation samples. Recently, a promising complementary direction has emerged by leveraging large-scale pretrained vision models for forgery detection. These foundation models encode rich visual priors from massive and diverse datasets. Among them, CLIP has attracted 2considerable attention because its contrastive image-text pretraining provides robust global semantic representations. Recent studies [6] demonstrate that using CLIP as the backbone for deepfake detection can enhance generalization across unseen manipula-tions by exploiting holistic global context. Despite their strong generalization ability, directly applying pretrained vision mod-els such as CLIP to facial forgery detection remains nontrivial. Owing to their represen-tation characteristics, CLIP-based detectors often exhibit limited sensitivity to subtle, low-level forgery cues. This limitation primarily stems from the contrastive pretraining objective, which emphasizes global semantic alignment over localized visual inconsis-tencies. As noted in prior work [6], this strong global context bias, while beneficial for generalization, can be ine ff ective for manipulations that introduce only minor lo-cal artifacts (e.g., NeuralTexture [7]) without altering overall semantics, resulting in suboptimal detection of fine-grained local cues. To overcome this limitation, we seek to integrate complementary pretrained repre-sentations in a principled manner, thereby balancing holistic semantic understanding with sensitivity to subtle manipulation cues. We find that the self-supervised backbone DINOv3 [8] is particularly well suited for modeling local structural patterns and fine-grained visual details. It has potential to complement CLIP, which primarily encodes global semantic context. To this end, we propose a dual-branch multi-granular feature fusion framework de-signed to integrate two pretrained vision models, CLIP and DINOv3, while preserving their pretrained representations and enabling complementary feature fusion. Crucially, these two models are pretrained under fundamentally di ff erent learning paradigms, and their feature spaces are therefore not inherently aligned. In the absence of explicit alignment or regulation, naively fusing these representations or jointly finetuning them can erode the structured feature patterns induced by pretraining and compromise the eff ective use of pretrained priors. Specifically, DBCF keeps the pretrained backbones frozen and learns complementary interactions at the representation level, which helps preserve pretrained priors while reducing the risk of overfitting to dataset-specific ar-tifacts. This design allows the model to exploit both global semantic consistency and fine-grained manipulation traces without directly collapsing the heterogeneous feature 3spaces of CLIP and DINOv3. Extensive experiments conducted on several widely used deepfake detection bench-marks demonstrate the e ff ectiveness of our approach. In particular, it achieves strong performance in both cross-dataset and cross-manipulation evaluations when compared with prior approaches that use only frozen or fully fine-tuned pretrained backbones These results support our hypothesis that combining complementary pretrained back-bones provides a principled and robust pathway toward generalizable deepfake detec-tion. In summary, the main contributions of this work are threefold: 1. We introduce a dual-branch, multi-granular framework that leverages the com-plementary strengths of CLIP and DINOv3. It incorporates a spatially aligned fusion mechanism to integrate global and local representations while preserving pretrained priors. 2. We provide an in-depth analysis of the inherent limitations in directly adapting pretrained visual models for deepfake detection, revealing a fundamental tension be-tween preserving robust global semantic representations and enhancing sensitivity to fine-grained manipulation cues. 3. We conduct extensive evaluations on multiple datasets and forgery types, demon-strating that our approach achieves superior robustness and generalization performance compared with existing state-of-the-art methods. 
+
+2. Related Works Face Forgery Generation. Deepfake refers to AI-generated forgeries produced by deep generative models, capable of synthesizing, modifying, or replacing human-centric visual or auditory content. Existing deepfake generation methods can be broadly categorized into three main types: face swapping, face reenactment, and entire face synthesis. Among them, face swapping [9] techniques are widely used to transfer the source identity onto a target individual’s appearance, motion, and scene context [10], producing videos where the target person convincingly appears as the source. In con-trast, face reenactment focuses on transferring facial motion while preserving the target 4identity, allowing the target face to mimic expression, pose, or lip movements driven by various modalities such as images [11] and audio [12]. These approaches typi-cally disentangle and manipulate identity-related and motion-related representations. Beyond manipulation-based pipelines, entire face synthesis methods generate photore-alistic facial images from learned generative distributions. Representative GAN-based models, such as the StyleGAN family [13, 14], enable high-fidelity and controllable face generation, while transformer-assisted models like VQGAN [15] synthesize high-resolution images via discrete tokens. Di ff usion-based methods, benefiting from ad-vanced di ff usion architectures, further provide more realistic and controllable synthe-sis, as exemplified by Stable Di ff usion [16]. For clarity, entire face synthesis aligns more closely with generic image synthesis detection and thus falls outside the scope of the manipulation-based face forgery task addressed in this work. 
+
+Face Forgery Detection. Due to the rapid emergence of numerous forgery tech-niques, a large body of research has focused on improving the generalization capability of deepfake detectors against unseen forgery methods. Methods based on data augmen-tation enhance generalization by synthesizing diverse and transferable forgery patterns. Face X-ray [1] and SBI [2] augment samples at the image level, while LSDA [3] en-riches forgery variations in the feature space. These techniques have been shown to be eff ective by exposing detectors to a broader distribution of manipulation artifacts. An-other line of work improves domain generalization through feature disentanglement and real-face modeling. Disentanglement [4] eliminates the influence of irrelevant features, while real-face representation learning [17] enhances cross-manipulation ro-bustness. Additionally, methods like facial landmarks [18] and mask-guided supervi-sion [19] guide the model to focus on relevant features, while multi-definition cross-domain training [20] enhances robustness to low-quality or previously unseen deep-fakes. Complementary feature modeling has also been investigated in recent hybrid frame-works. For example, LGDF-Net [21] introduces local and global branches to capture localized artifacts and global facial texture /context through multi-scale and multi-level fusion, while Ding et al. [22] jointly exploit RGB and noise-map representations across multiple scales. These methods demonstrate the e ff ectiveness of incorporating comple-5mentary cues through task-oriented architectural designs. Beyond architectural special-ization for complementary cue extraction, the integration of complementary transfer-able representations from pretrained models represents another promising direction for generalized deepfake detection. More recently, researchers have begun to explore the potential of large pretrained models for generalizable deepfake detection. For instance, CLIPping [23] and UniFD [24] demonstrate that it is feasible to equip CLIP with universal deepfake detection capabil-ities through tailored fine-tuning strategies. In addition, methods such as Ffaa [25] and 
+
+X2-DFD [26] further investigate the e ff ectiveness of vision–language models (VLMs) in this task. Overall, these studies demonstrate the strong transferability of large-scale pretrained representations for generalized deepfake detection, providing a foundation for exploring more e ff ective ways to exploit pretrained visual priors in this task. 
+
+Vision Foundation models. Vision Foundation models (VFMs) have become a cornerstone of modern computer vision. After training on large-scale and diverse datasets, VFMs have acquired rich and transferable visual knowledge, yielding strong performance across a wide range of downstream tasks. Benefiting from the global contextual attention mechanism, Vision Transformer (ViT) [27] is adopted as the base architecture of most VFMs. The success of ViT-based VFMs can be attributed to two large-scale pretraining paradigms, i.e. Cross-Modal Supervised Learning and Visual Self-Supervised Learning. These two paradigms focus on distinct types of feature extraction. The first paradigm utilizes cross-modal (vision-text) contrastive learning for supervision. This approach, exemplified by the CLIP [28] family e ff ectively ex-tends the definition of supervised learning beyond hard classification labels. This cross-modal alignment grants these models strong global semantic consistency and impressive zero-shot transferability. Another critical paradigm focuses on Visual Self-Supervised Learning (SSL), where models generate their own supervisory signals ex-clusively from image data through pretext tasks. These methods can be broadly cate-gorized into: those based on instance discrimination via contrastive techniques (e.g., MoCo [29]), those utilizing masked image modeling (e.g., MAE [30]), and those using non-contrastive clustering or distillation techniques (e.g., DINO [31]). These VFMs are trained to understand the image’s intrinsic structure without relying on external 6Preprocess & 
+
+> Partition
+> Preprocess &
+> partition
+> … …
+> Patch embedding  Patch embedding
+> Global Context Branch(GCB)
+> Fine -grained Cue Branch(FCB)
+> Adaptive Feature Learner (AFL)
+> N* ViT blocks
+> N* ViT blocks
+
+…
+
+> N* ViT blocks
+> N* ViT blocks
+> N* ViT blocks
+
+…
+
+> N* ViT blocks
+
+…
+
+> Multi -scale Decoder
+
+Real 
+
+or 
+
+Fake     
+
+> CFI block CFI block CFI block
+> 𝐺 1𝐺 2𝐺 𝑛
+
+… …    
+
+> 𝐹 1𝐹 2𝐹 𝑛
+> 𝐶 int 0𝐶 int 1𝐶 int 𝑛
+
+Figure 1: Overview of the proposed framework. A Global Context Branch (GCB) and a Fine-grained Cue Branch (FCB) operate in parallel and are connected via adaptive cross-feature interaction modules, enabling eff ective collaboration between global context and fine-grained forgery cues. 
+
+labels. Thanks to the novel Gram-Anchoring regularization, the latest DINOv3 [8] ex-hibits exceptional fidelity in modeling local structural patterns and fine-grained visual cues. This strong emphasis on internal structural consistency enables SSL-based visual models to adapt e ff ectively to tasks such as object detection and semantic segmentation. While cross-modal supervised and self-supervised VFMs excel in di ff erent aspects of visual understanding, their complementary characteristics motivate a dual-branch ap-proach that integrates global semantics and fine-grained local cues for improved gen-eralization in forgery detection. 
+
+3. Method 
+
+3.1. Overview 
+
+As illustrated in Fig.1, we propose a dual-branch framework for deepfake detection that explicitly models the complementarity between global context and fine-grained forgery cues. The framework consists of a Global Context Branch (GCB), a Fine-grained Cue Branch (FCB), and a set of adaptive cross-feature interaction modules that 7(a) Adaptive Feature Learner  (b) Cross-Feature Interaction  (c) Multi-scale Decoder 
+
+> Figure 2: Detailed structures of the core components in the proposed framework. (a) The Adaptive Feature Learner (AFL) extracts multi-scale spatial priors. (b) The Cross-Feature Interaction (CFI) block progres-sively exchanges complementary information between global context and fine-grained forgery cues. (c) The multi-scale decoder aggregates hierarchical interaction features for the final real /fake prediction.
+
+enable progressive and controlled information exchange across di ff erent representa-tion levels. Fig.2 further presents the detailed structures of the three key components, including the Adaptive Feature Learner (AFL), the Cross-Feature Interaction (CFI) blocks, and the multi-scale decoder. To bridge the representational gap between the two branches, the AFL first extracts task-adaptive multi-scale spatial priors, and the CFI blocks then progressively refine these features by interacting with aligned global and fine-grained representations. Finally, the multi-scale decoder aggregates hierarchical features from both branches and produces the final real /fake prediction. Di ff erent from conventional hybrid frameworks that mainly fuse task-specific local /global features or texture /noise cues, DBCF performs spatially aligned hierarchical fusion of comple-mentary foundation-model representations. By aligning and progressively interacting CLIP-based global semantic features with DINOv3-based fine-grained structural fea-tures, the proposed framework enables e ff ective collaboration between heterogeneous pretrained feature spaces. 
+
+3.2. Global Context Branch 
+
+A key challenge in deepfake detection is to achieve robust generalization across identities and manipulation methods while avoiding overfitting to localized, method-specific artifacts. To address this issue, the Global Context Branch (GCB) is intro-duced to extract stable, high-level semantic representations associated with identity, pose, and expression. These cues serve as global semantic priors for forgery detec-tion. Since fine-grained artifact cues are often fragile under distribution shifts, whereas 8global semantics are more invariant, we adopt a frozen CLIP visual backbone as the core of the GCB. CLIP is pretrained with a large-scale multimodal contrastive objec-tive, which naturally encodes strong semantic alignment and invariance. Freezing the backbone preserves these pretrained inductive biases and mitigates semantic collapse during training. Specifically, following common adapter designs in pretrained ViT frameworks [8, 32], given an input image x, the ViT backbone of CLIP produces a sequence of inter-mediate token representations {H(l) 
+
+> g
+
+}Ll=1, where H(l) 
+
+> g
+
+∈ RN1×d1 denotes the output of the 
+
+l-th transformer layer, with N1 being the number of tokens and d1 being the token em-bedding dimension of the GCB. To construct multi-granular global context, we select a subset of layers indexed by Lg ⊆ { 1, . . . , L} and define the global context features as 
+
+G = { H(l) 
+
+> g
+
+| l ∈ L g }. (1) Following prior empirical studies on utilizing intermediate transformer representa-tions for hierarchical feature construction [8], we select four representative layers from the CLIP visual encoder at di ff erent depths, i.e., Lg = {5, 12 , 18 , 24 }. The resulting multi-granular global features are subsequently paired with the FCB representations in the Cross-Feature Interaction module. 
+
+3.3. Fine-grained Cue Branch 
+
+While global semantic representations provide robustness, many deepfake artifacts manifest as localized and fine-grained inconsistencies, such as subtle texture distortions or boundary artifacts. To explicitly capture such cues, the Fine-grained Cue Branch (FCB) is designed to extract artifact-sensitive local representations that complement the global context. Specifically, fine-grained forgery cues refer to localized manipulation traces that are often weak in global semantics but evident in local visual patterns. Typical examples include blending boundaries, texture /color /illumination mismatches, local blurring or detail degradation, and subtle structural distortions in facial components. Since these cues are spatially localized and closely related to patch-level structure and appearance, we employ DINOv3 to construct the FCB. Benefiting from its self-supervised visual 9pretraining, DINOv3 preserves rich local structural representations and has demon-strated strong performance on dense prediction tasks such as semantic segmentation, indicating its capability to model spatially detailed visual information. This property makes it well suited for complementing the CLIP branch, which mainly captures global semantic and contextual information. Moreover, DINOv3 supports variable input res-olutions, enabling flexible spatial alignment with the Global Context Branch (GCB). To facilitate token-wise interaction between the two branches, we adopt a resolution-adaptive preprocessing strategy that ensures spatial alignment. Specifically, we resize the input image x to a square resolution S × S with 
+
+S = pN1 · PFCB , (2) where PFCB denotes the patch size of the FCB backbone. With this choice, the token number produced by the FCB satisfies N2 = (S /PFCB )2 = N1. The resized image is then fed into the FCB, producing a sequence of intermediate token representations {H(l) 
+
+> f
+
+}Ll=1,where H(l) 
+
+> f
+
+∈ RN2×d2 and d2 denotes the feature dimension of the FCB. The fine-grained features extracted by the FCB are formulated as: 
+
+F = { H(l) 
+
+> f
+
+| l ∈ L f }, L f = {5, 12 , 18 , 24 }. (3) These fine-grained features provide localized and artifact-sensitive cues that com-plement the global context for forgery detection. 
+
+3.4. Adaptive Feature Learner 
+
+While the Global Context Branch (GCB) and Fine-grained Cue Branch (FCB) pro-vide complementary representations, the frozen features limit adaptability to dataset-specific manipulation patterns. To enhance adaptability to downstream tasks, follow-ing common practice in recent forgery detection frameworks [6, 8], we incorporate a parameter-e ffi cient Adaptive Feature Learner (AFL) as an auxiliary component to provide task-adaptive cues. As shown in Fig.2(a), the AFL is implemented as a trainable four-stage convolu-tional spatial prior module. It consists of a convolutional stem followed by three stride-2 convolutional stages, which progressively extract feature maps at 1 /4, 1 /8, 1 /16, and 10 1/32 of the input resolution. Given an input image x, the AFL produces a hierarchy of multi-scale feature maps C(k) ∈ RHk ×Wk ×Ck , where the spatial resolution decreases and the semantic abstraction increases with k. These multi-scale features provide comple-mentary spatial cues and serve as auxiliary representations for subsequent cross-feature interaction. To enable unified processing with transformer-based features, each feature map is first projected by a 1 × 1 convolution into a shared embedding space of dimension 
+
+dc = d1 + d2. The three lower-resolution feature maps used for cross-feature interaction are augmented with a learnable level embedding e(k) and flattened into sequences of tokens: ˜C(k) = Flatten Proj k(C(k)) + e(k) ∈ RNk ×dc , Nk = HkWk, k = 2, 3, 4. (4) For cross-feature interaction with the GCB and FCB, the sequences from scales 
+
+k = 2, 3, 4 are concatenated along the token dimension to form 
+
+C(0) int = [ ˜ C(2) ; ˜ C(3) ; ˜ C(4) ] ∈ RNint ×dc , Nint =
+
+> 4
+
+X
+
+> k=2
+
+Nk. (5) The highest-resolution feature C(1) preserves its spatial structure and is reserved for the subsequent multi-scale decoding stage. 
+
+3.5. Cross-Feature Interaction 
+
+To integrate the multi-scale AFL features with spatially aligned global and lo-cal features, the Cross-Feature Interaction (CFI) module updates the interaction fea-tures via a cross-attention mechanism, as shown in Fig.2(b). Let Gs ∈ RNs×d1 and 
+
+Fs ∈ RNs×d2 denote the global and local token representations at the s-th selected rep-resentation level, respectively, where s = 1, . . . , 4 corresponds to the selected trans-former layers {5, 12 , 18 , 24 }. Since the input resolutions and patch sizes are chosen to yield spatially aligned token grids in the two branches, Gs and Fs are concatenated along the channel dimension. Starting from the multi-scale AFL interaction features C(0) int , each CFI module pro-gressively updates them using the paired GCB–FCB features at the corresponding rep-resentation level: 11 C(s)int = C(s−1) int + MSDeformAttn LayerNorm( C(s−1) int ),
+
+LayerNorm([ Gs | Fs]) , s = 1, . . . , 4.
+
+(6) Here, C(0) int consists of the AFL features at 1 /8, 1 /16, and 1 /32 input resolutions. The deformable attention operation allows these AFL features with di ff erent token lengths to interact with the spatially aligned global and local representations. In this way, the CFI modules progressively incorporate complementary global and local cues into the task-adaptive multi-scale features. 
+
+3.6. Multi-Scale Decoder and Training Objective 
+
+As shown in Fig.2(c), the multi-scale decoder aggregates the refined hierarchical features through a top-down fusion strategy. Given the AFL and CFI outputs, we split the final CFI output token sequence Cint into three groups and reshape them into spatial feature maps C2, C3, and C4 at progressively lower resolutions. The highest-resolution feature map C1 is directly taken from the shallow AFL feature. When CFI features are used, the interaction outputs from GCB and FCB are partitioned and resized to match the corresponding AFL feature maps and added to them. After normalization, the preceding fusion process produces four spatial feature maps {Ci}4 
+
+> i=1
+
+at 1 /4, 1 /8, 1/16, and 1 /32 input resolutions, respectively. The decoder progressively fuses these features to generate the final prediction. Each feature map is first projected to a unified channel dimension do through a 1 ×1convolution: 
+
+Pi = Conv 1×1(Ci), i = 1, . . . , 4,
+
+where P1 and P4 denote the highest and lowest resolution decoder features, respec-tively. The decoder follows a top-down fusion strategy, where higher-level features are progressively upsampled and merged with lower-level ones. Specifically, the lowest-resolution projected feature is retained as ˜ P4 = P4, and the remaining levels are pro-gressively fused as: ˜P4 = P4, ˜Pi = Pi + Up( ˜ Pi+1), i = 3, 2, 1.
+
+12 Each fused representation is then transformed into a scale-specific global descriptor: 
+
+gi = GAP( ˜ Pi), i = 1, 2, 3, 4,
+
+with Up( ·) denoting bilinear interpolation and GAP( ·) global average pooling. The final image-level representation is obtained by concatenating all scale-specific descriptors and feeding it into a linear classifier to predict the two-class logits: 
+
+z = FC [g1; g2; g3; g4] ∈ R2,
+
+Finally, the model is optimized using the cross-entropy loss: 
+
+Lcls = − log exp( zy)
+
+P1 
+
+> c=0
+
+exp( zc) ,
+
+where y ∈ { 0, 1} denotes the ground-truth label. 
+
+4. Experiments 
+
+4.1. Settings 4.1.1. Datasets 
+
+To comprehensively assess the e ff ectiveness and generalization capability of the proposed method, we conduct experiments under both cross-dataset and cross-manipulation evaluation protocols. For cross-dataset evaluation, we follow the widely adopted set-ting in which the model is trained on one dataset and tested on several unseen datasets. Specifically, we use the c23 compressed version of FaceForensics ++ (FF ++ ) [33] for training, which consists of 1,000 pristine videos and 4,000 manipulated videos gen-erated by four manipulation techniques. Following the o ffi cial split of FF ++ , only its training subset, consisting of 720 pristine videos and 2,880 manipulated videos, is used for training. No cross-validation or test-time adaptation is involved in the cross-dataset evaluation. The trained model is then evaluated on three challenging benchmarks: Celeb-DF v2 [34], DFDC [35], DFDCP [36], covering diverse real-world conditions and distribution shifts. Following the commonly adopted evaluation protocol for fair cross-dataset comparison, we evaluate our method on the o ffi cial test split of each target benchmark. To further investigate robustness against unseen forgery types, we adopt 13 DF40 [37], a comprehensive dataset containing 40 manipulation techniques spanning a broad range of facial forgery categories, including face swapping, facial reenactment, and full-face synthesis. 
+
+4.1.2. Evaluation Metrics 
+
+We report both frame-level and video-level Area Under the ROC Curve (AUC) to accommodate di ff erent evaluation granularities. Following standard practice, video-level AUC is computed by averaging the predicted probabilities over all sampled frames within each video. For extensive face anti-spoofing (FAS) experiment, we additionally employ the Half Total Error Rate (HTER) to further measure cross-domain generaliza-tion performance. 
+
+4.1.3. Implementation Details 
+
+We adopt CLIP-ViT-L /14-336 as the backbone for global feature extraction and DINOv3-ViT-L /16 to provide complementary fine-grained representations. AFL uses 64 base convolutional channels and projects the multi-scale features to a shared dimen-sion of 2048. The decoder projection dimension is set to 512. During training, we sample 8 frames from each video. For the cross-dataset comparisons in Tables 1 and 2, we sample 32 frames from each test video to match the evaluation setting adopted by the reported baseline results. All frames are aligned using RetinaFace and resized to 224 ×224. Consistent with the spatial-alignment procedure described in Section 3, the preprocessed frames are subsequently resized to 336 ×336 for the CLIP-based GCB and 384 ×384 for the DINOv3-based FCB before being fed into the respective backbones. We use only image (patch) tokens for cross-branch alignment, excluding the CLS to-ken. With patch sizes of 14 and 16, respectively, both branches produce a 24 × 24 grid containing 576 image tokens. Following other existing works, several image augmen-tations are introduced during training, including random Brightness Contrast, Image Compression, and the SBI-based augmentation strategy [2]. No additional data aug-mentation is applied during testing. All experiments are implemented within PyTorch framework and conducted on a single NVIDIA A100 GPU. All models are trained for 10 epochs. We use the Adam optimizer with a fixed learning rate of 2 × 10 −4 for all 14 Table 1: Cross-dataset comparison using frame-level AUC. The results reported in the table are taken from [38, 39], or directly obtained from the corresponding original papers. 
+
+Method Venue CDF DFDC DFDCP 
+
+Xception [33] ICCV’19 73.65 70.77 73.74 FaceX-ray [1] CVPR’20 67.86 63.26 69.42 RECCE [40] CVPR’22 73.19 71.33 74.19 SBI [2] CVPR’22 81.30 71.96 79.90 UIA-ViT [5] ECCV’22 82.41 – 75.80 UCF [4] ICCV’23 75.27 71.91 75.94 ProDet [41] NIPS’24 84.48 72.40 81.16 LSDA[3] CVPR’24 83.00 73.60 81.50 DeepFake-Adapter [6] IJCV’25 71.74 72.66 –FIA-USA [39] NIPS’25 86.70 – 81.80 CRDA [42] AAAI’26 85.36 74.29 79.73 DBCF (Ours) – 83.71 ±0.62 78.02 ±0.22 85.90 ±0.86 DBCF (Ours) + SBI – 83.25 ±0.57 80.08 ±0.30 88.66 ±0.16 
+
+trainable parameters. The batch size is set to 32 across all experiments to ensure fair comparison. For repeated-run experiments, we perform three independent runs using di ff erent fixed random seeds and report the mean AUC and the corresponding standard deviation across these runs. 
+
+4.2. Main Results 4.2.1. Cross-dataset evaluation 
+
+We first evaluate the generalization ability of our method by comparing frame-level Area Under the ROC Curve (AUC) across several unseen datasets, including Celeb-DF v2, DFDC, and DFDCP, which are completely excluded during training. Table 1 presents the cross-dataset results of our method alongside several representative base-lines. Overall, our approach demonstrates strong generalization across all benchmarks. While some methods achieve slightly higher performance on CDF, DBCF attains the highest performance on DFDC and DFDCP, demonstrating strong overall generaliza-tion across the evaluated target datasets. The variation across target datasets can be 15 Table 2: Comparison with SOTA methods using the video-level AUC. Results marked with * are obtained by using the authors’ released models or code, while the remaining results are directly taken from [38] or corresponding original papers. 
+
+Method Venue CDF DFDC DFDCP 
+
+FaceX-ray [1] CVPR’20 – – 71.1 FTCN [43] ICCV’21 86.9 67.6 74.0 SBI [2] CVPR’22 92.8 71.9 85.5 UIA-ViT* [5] ECCV’22 82.4 75.0 75.8 CFM* [44] TIFS’23 85.3 75.0 80.2 AltFreezing* [45] CVPR’23 85.1 71.7 79.3 LSDA [3] CVPR’24 91.1 77.0 81.2 NACO [46] AJSE’25 89.5 76.7 –SDR [47] ICASSP’25 88.5 76.2 –M2F2-Det* [48] CVPR’25 83.2 76.4 71.2 FIA-USA [39] NIPS’25 94.1 73.2 86.6 DBCF (Ours) – 88.6 ±0.4 80.9 ±0.3 87.7 ±0.6 DBCF (Ours) + SBI – 89.2 ±0.2 82.9 ±0.2 92.5 ±0.1 
+
+attributed to their di ff erent degrees of distribution shift and manipulation diversity. Al-though CDF contains high-quality and visually realistic forged videos, its manipula-tion distribution is relatively concentrated, and thus transferable forgery patterns may remain comparatively consistent. In contrast, DFDC contains more diverse identities, backgrounds, acquisition conditions, and manipulation algorithms. Such real-world variations may obscure subtle local forgery traces, making DFDC more challenging, as reflected by the lower frame-level AUC of 78.02 compared with other datasets. We further investigate its compatibility with data-centric enhancement strategies. The re-sults demonstrate that DBCF can be seamlessly combined with existing data augmen-tation methods, such as SBI [2], leading to performance improvements across multiple datasets. These findings suggest that DBCF o ff ers a solid foundation for cross-dataset deepfake detection and shows potential for further improvement when combined with complementary data augmentation techniques during training. We also report video-level AUC in Table 2. The video-level results exhibit trends 16 Table 3: Cross-manipulation comparison on five representative face swapping forgery types in DF40 [37] using frame-level AUC (%)                                                                                
+
+> Method Venue uniface facedancer fsgan inswap simswap Avg.
+> RECCE [40] CVPR’22 84.2 78.3 88.4 79.5 73.0 80.7 SBI [2] CVPR’22 64.4 44.7 87.9 63.3 56.8 63.4 IID [49] CVPR’23 79.5 79.0 86.4 74.4 64.0 76.7 UCF [4] ICCV’23 78.7 80.0 88.1 76.8 64.9 77.7 LSDA [3] CVPR’24 85.4 75.9 83.2 81.0 72.7 79.6 CDFA [50] ECCV’24 76.5 75.4 84.8 72.0 76.1 77.0 ProDet [41] NeurIPS’24 84.5 73.6 86.5 78.8 77.8 80.2 FIA-USA [39] NIPS’25 91.8 83.0 86.3 87.4 91.0 87.8 DBCF (Ours) –97.7 ±0.3 90.0 ±0.3 95.4 ±0.2 92.3 ±0.8 93.4 ±1.3 93.8 ±0.4 DBCF (Ours) +SBI –97.9 ±0.5 91.1 ±0.5 95.3 ±0.4 93.1 ±1.9 94.8 ±0.4 94.4 ±0.4
+
+consistent with the frame-level evaluation, while showing improved stability across datasets. This indicates that the proposed method produces temporally consistent pre-dictions across frames, and that video-level aggregation helps mitigate the impact of noisy frame-level predictions, particularly on challenging datasets such as DFDC. 
+
+4.2.2. Cross-manipulation evaluation 
+
+To further examine the robustness of our method against unseen manipulation types, we conduct a cross-manipulation evaluation on the DF40 benchmark [37], which con-tains five distinct generation pipelines: uniface, facedancer, fsgan, inswap, and sim-swap. As reported in Table 3, our method obtains higher AUC than the listed baselines on the five evaluated manipulation pipelines and achieves the highest average AUC in this comparison. Nevertheless, noticeable performance di ff erences can be observed across manipulation methods. In particular, facedancer and simswap are relatively more challenging than uniface and fsgan. This may be because modern high-fidelity face-swapping pipelines are designed to better preserve facial attributes and reduce visible blending inconsistencies, leaving weaker and more localized forgery traces for detection. In contrast, manipulation methods that leave more visible and straightfor-ward forgery artifacts are comparatively easier to identify. A comparative examination of Tables 1–3 reveals that many existing deepfake de-17 tection methods may achieve strong performance on certain datasets, but their e ff ective-ness often fails to generalize to more diverse and complex forgery patterns in the DF40 cross-manipulation setting. This indicates that prior approaches might exploit dataset-specific or manipulation-dependent cues rather than capturing intrinsic forgery charac-teristics. In contrast, our method consistently achieves strong performance across all unseen types. Moreover, its improvements are particularly evident on relatively chal-lenging manipulation methods, indicating improved robustness to high-fidelity forg-eries with less conspicuous artifacts. We attribute this robustness to the use of more comprehensive and complementary representations, which allow the model to focus on fundamental forgery traits that remain stable despite significant shifts in manipulation strategies and generation mechanisms. 
+
+4.2.3. Ablation Study 
+
+Table 4 presents a comprehensive ablation study evaluating the individual and joint contributions of the Global Context Branch (GCB), the Fine-grained Cue Branch (FCB), and the Multi-granular feature aggregation module (MG). Using either GCB or FCB alone yields reasonable performance, indicating that both global semantic con-sistency and fine-grained artifacts are informative for forgery detection. However, di-rectly concatenating the outputs of GCB and FCB (without MG) does not consistently improve performance and even degrades results on some datasets. This suggests that simple concatenation of heterogeneous features is insu ffi cient for e ff ective integration. The performance drop may stem from directly merging features with di ff erent distri-butions, which can lead to collapsed or suboptimal feature patterns. Introducing MG consistently improves performance by leveraging hierarchical representations instead of relying solely on final-layer tokens. When combined with both branches, our Adap-tive Feature Learner and Cross-Feature Interaction mechanism further enhance perfor-mance, demonstrating that spatially aligned and interaction-aware fusion is critical for eff ectively integrating global and local cues. Enabling all components achieves the best results across datasets, validating the e ff ectiveness of our multi-granular and structured fusion design for generalizable deepfake detection. To further assess the e ff ectiveness-e ffi ciency trade-o ff of the proposed dual-branch 18 Table 4: Ablation study of di ff erent components on frame-level AUC across multiple datasets. GCB denotes the Global Context Branch for modeling global semantic consistency, FCB denotes the Fine-grained Cue Branch for capturing local manipulation artifacts, and MG denotes the multi-granular feature aggregation module for hierarchical feature fusion. 
+
+Component Settings Frame-level AUC 
+
+GCB MG FCB FF ++ Celeb-DF DFDC facedancer inswap 
+
+✓ 82.6 ±0.1 75.6 ±1.0 72.6 ±0.6 77.4 ±0.6 76.2 ±0.9 
+
+✓ 92.5 ±0.3 82.8 ±0.3 73.2 ±0.2 75.0 ±0.3 76.1 ±0.6 
+
+✓ ✓ 88.8 ±0.2 75.7 ±0.7 73.2 ±0.5 78.0 ±0.5 79.4 ±1.1 
+
+✓ ✓ 96.0 ±0.1 80.7 ±0.4 76.8 ±0.9 88.1 ±0.4 92.2 ±1.4 
+
+✓ ✓ 95.9 ±0.2 81.7 ±0.9 75.3 ±0.5 83.9 ±0.6 92.3 ±1.2 
+
+✓ ✓ ✓ 96.3 ±0.1 83.7 ±0.6 78.0 ±0.2 90.0 ±0.3 92.3 ±0.8 
+
+framework, we compare four representative variants in Table 5. The average frame-level AUC is computed over the five evaluation settings reported in Table 4. Consistent with the component-wise observations above, DBCF achieves the best average perfor-mance among all evaluated variants, confirming that the gain provided by the dual-branch framework is substantial rather than marginal. In terms of e ffi ciency, DBCF requires 56 ms per frame, corresponding to approximately 17.9 FPS, with 678M pa-rameters and 544 GFLOPs. Although incorporating complementary foundation models introduces additional computational overhead, the resulting inference speed remains acceptable under frame-sampled deepfake detection. Therefore, the improved gener-alization capability represents a reasonable trade-o ff against the increased latency and computational cost. More specifically, compared with naive concatenation, DBCF im-proves the average frame-level AUC from 79.03% to 88.06%, while increasing infer-ence latency from 33 ms to 56 ms per frame and computational cost from 367 to 544 GFLOPs. These results explicitly quantify the additional computational cost associated with the performance improvement of DBCF. 19 Table 5: E ff ectiveness-e ffi ciency comparison of representative model variants. Latency and computational metrics are measured under the same inference setting and reported on a per-frame basis. 
+
+Variant Avg. frame-level AUC ↑
+
+Latency (per frame) Params GFLOPs 
+
+GCB only 76.83 30 ms 330M 248 FCB only 79.92 31 ms 330M 249 GCB + FCB (Naive concat) 79.03 33 ms 607M 367 DBCF (Ours) 88.06 56 ms 678M 544 Image     
+
+> Deepfakes
+> GCB FCB
+> Face2Face FaceSwap NeuralTextures CDF DFD C
+
+Figure 3: Qualitative visualization of attention maps from the GCB and FCB branches on di ff erent forgery datasets. 
+
+4.2.4. Visualization 
+
+To qualitatively examine the complementary behavior of GCB and FCB, we visu-alize the branch-wise averaged attention maps in Fig.3. The GCB maps show relatively dispersed responses over the face and nearby regions, while the FCB maps exhibit more spatially coherent and locally concentrated responses within facial regions. This dif-ference suggests that GCB tends to capture broader semantic /contextual cues, whereas FCB is more sensitive to localized appearance patterns, which is consistent with their complementary roles in deepfake detection. 20 Figure 4: Frame-level AUC reduction ratio under di ff erent degradation levels and perturbation types. "Aver-age" score represents the mean across all levels for each type of perturbation. 
+
+4.2.5. Robustness Analysis 
+
+Following AltFreezing [45], we evaluate the robustness of di ff erent methods under common image perturbations in real-world scenarios, including image compression, RGB shift, and contrast variation. We report the frame-level AUC reduction ratio, de-fined as (AUC raw − AUC) /AUC raw , where AUC raw denotes the performance on clean (non-degraded) samples. A smaller value indicates stronger robustness. As shown in Fig. 4, our method consistently exhibits the lowest AUC reduction across most per-turbations, highlighting its robustness. While image compression causes a moderate drop due to the loss of subtle texture cues, performance under RGB shift and contrast variation remains largely una ff ected. 
+
+4.3. Extensive Experiments on Face Anti-Spoofing (FAS) 
+
+We further evaluate the e ff ectiveness of our framework on the face anti-spoofing task under cross-dataset settings. Experiments are conducted on four widely used benchmarks, and each source-target combination follows the standard Leave-One-Out protocol. As shown in Table 6, we compare our method with several state-of-the-art approaches, including NAS-FAS [52], SSAN-R [53], PatchNet [54], SA-FAS [55], and the more recent AG-FAS [51]. Our proposed DBCF achieves consistently strong per-formance across all transfer scenarios in terms of both HTER and AUC. Specifically, the dual-branch model (Ours dual) maintains HTERs below 5 for all domain-shift set-tings, with AUC up to 99.66, outperforming the compared methods in average metrics (Mean HTER = 3.71, Mean AUC = 99.36). 21 Table 6: Performance comparison of di ff erent face anti-spoofing methods under cross-dataset evaluation. All results for the compared methods are taken from [51]. The metrics reported include HTER and AUC for each source-target dataset combination, as well as the mean performance across all settings.                                                                                                                  
+
+> Method O&C&I →MHTER ↓/AUC ↑
+> O&M&I →CHTER ↓/AUC ↑
+> O&C&M →IHTER ↓/AUC ↑
+> C&I&M →OHTER ↓/AUC ↑
+> Avg HTER ↓
+> Avg AUC ↑
+> NAS-FAS 19.53 /88.63 16.54 /90.18 14.51 /93.84 13.80 /93.43 16.10 91.52 SSAN-R 6.67 /98.75 10.00 /96.67 8.88 /96.79 13.72 /93.63 9.82 96.46 PatchNet 7.10 /98.46 11.33 /94.58 13.40 /95.67 11.82 /95.07 10.91 95.95 SA-FAS 5.95 /96.55 8.78 /95.37 6.58 /97.54 10.00 /96.23 7.83 96.42 AG-FAS 5.71 /98.03 5.44 /98.55 6.71 /98.23 9.43 /96.62 6.82 97.86 Ours (GCB) 5.95 /98.50 2.67 /99.54 17.14 /91.24 10.14 /96.31 8.98 96.40 Ours (FCB) 4.52 /98.54 1.22 /99.96 3.71 /99.59 5.99 /98.68 3.86 99.19 Ours (Dual) 5.71 /98.64 1.33 /99.85 4.86 /99.29 2.92 /99.66 3.71 99.36
+
+We also conduct ablation studies to investigate the contributions of the global and local feature branches. Using only the GCB branch achieves low HTER in certain settings (e.g., 2.67% on O&M&I → C) but su ff ers in others (17.14 on O&C&M →
+
+I), while the FCB branch alone improves overall HTER stability. The dual-branch design e ff ectively combines the strengths of both branches, achieving robust perfor-mance across all cross-dataset scenarios. Together, these results support the utility of combining global and local representations for the evaluated face forgery and spoofing detection tasks. 
+
+5. Conclusion 
+
+In this work, we proposed a dual-branch framework, namely DBCF, for detecting facial forgeries and spoofing attempts. It captures both global and local manipulation cues from manipulated images, enabling the model to learn more comprehensive and discriminative representations for forgery detection. Motivated by the complementary strengths of pretrained visual models, DBCF leverages CLIP’s strong semantic-level generalization while incorporating DINO’s fine-grained local features, allowing the framework to benefit from both high-level transferable semantic knowledge and subtle local artifact perception. This combination is particularly important for facial forgery 22 and spoofing detection, where both overall semantic consistency and fine-grained ma-nipulation traces contribute to reliable prediction. To e ff ectively fuse these comple-mentary cues without disrupting the pretrained feature patterns, we introduce a multi-scale spatial alignment mechanism that enables comprehensive learning of manipula-tion representations. By promoting more e ff ective interaction and alignment across heterogeneous features at di ff erent spatial levels, the proposed mechanism improves the integration of global and local information while preserving the intrinsic strengths of each branch. Extensive experiments under cross-dataset and cross-manipulation set-tings show that our method achieves the best performance on most of the evaluated unseen datasets and manipulation types, demonstrating its generalization capability and robustness under distribution shifts. These results verify the e ff ectiveness of the proposed design and suggest that combining heterogeneous pretrained representations is a promising direction for open-domain forgery detection. Overall, our framework provides a flexible foundation for open-domain detection tasks and o ff ers potential for future extensions to video-level and multi-modal detection scenarios. 
+
+6. Limitations 
+
+Despite its strong generalization performance, DBCF has several practical limi-tations. Its complementary representation relies on two large pretrained backbones, CLIP-ViT-L and DINOv3-ViT-L. Although both backbones are frozen during train-ing, jointly running them increases model size, computational cost, inference latency, and GPU memory demand compared with single-backbone alternatives. Specifically, DBCF requires 56 ms for single-frame inference, corresponding to approximately 17.9 FPS, with a peak GPU memory consumption of approximately 6.1 GB under the same inference setting. While these costs are accompanied by the performance gains reported in our evaluations, they may still restrict deployment in strict real-time or resource-constrained scenarios. Moreover, the interpretability of DBCF remains lim-ited because real-world forgery patterns can be highly complex and may not be cleanly attributed to either localized manipulation traces or global semantic inconsistencies. Consequently, although the two branches are designed to model complementary repre-23 sentations, the current framework does not explicitly identify how di ff erent cues inter-act in each detection decision. Future work will investigate e ffi cient backbone replace-ment, model compression or distillation, and cue visualization or forgery localization mechanisms to improve deployment e ffi ciency and provide more explicit evidence for detection decisions. 
+
+CRediT authorship contribution statement Fengming Gu: Formal analysis, Investigation, Methodology, Project adminis-tration, Software, Validation, Writing – original draft Writing, – review & editing. 
+
+Mingjie He: Funding acquisition, Supervision, Validation, Writing – review & edit-ing. Zonghui Guo: Funding acquisition, Supervision, Writing – review & editing. Jie Zhang: Funding acquisition, Project administration, Writing – original draft, Writing – review & editing. Shiguang Shan: Supervision, Writing – review & editing. 
+
+Acknowledgments 
+
+This work is partially supported by the Strategic Priority Research Program of the Chinese Academy of Sciences (No. XDB0680202), the Beijing Nova Program (No. 20230484368), the National Natural Science Foundation of China (No. 62276249), the National Natural Science Foundation of China (No. 62306298), the TaiShan Scholars Youth Expert Program of Shandong Province (No. tsqn202507108), and the Youth Innovation Promotion Association of the Chinese Academy of Sciences. 
+
+References 
+
+[1] L. Li, J. Bao, T. Zhang, H. Yang, D. Chen, F. Wen, B. Guo, Face x-ray for more general face forgery detection, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2020, pp. 5001–5010. [2] K. Shiohara, T. Yamasaki, Detecting deepfakes with self-blended images, in: Pro-ceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recog-nition, 2022, pp. 18720–18729. 24 [3] Z. Yan, Y. Luo, S. Lyu, Q. Liu, B. Wu, Transcending forgery specificity with latent space augmentation for generalizable deepfake detection, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2024, pp. 8984–8994. [4] Z. Yan, Y. Zhang, Y. Fan, B. Wu, Ucf: Uncovering common features for gener-alizable deepfake detection, in: Proceedings of the IEEE /CVF International Con-ference on Computer vision, 2023, pp. 22412–22423. [5] W. Zhuang, Q. Chu, Z. Tan, Q. Liu, H. Yuan, C. Miao, Z. Luo, N. Yu, Uia-vit: Unsupervised inconsistency-aware method based on vision transformer for face forgery detection, in: European Conference on Computer Vision, Springer, 2022, pp. 391–407. [6] R. Shao, T. Wu, L. Nie, Z. Liu, Deepfake-adapter: Dual-level adapter for deepfake detection, International Journal of Computer Vision 133 (6) (2025) 3613–3628. [7] J. Thies, M. Zollhöfer, M. Nießner, Deferred neural rendering: Image synthesis using neural textures, Acm Transactions on Graphics (TOG) 38 (4) (2019) 1–12. [8] O. Siméoni, H. V. Vo, M. Seitzer, F. Baldassarre, M. Oquab, C. Jose, V. Khali-dov, M. Szafraniec, S. Yi, M. Ramamonjisoa, et al., Dinov3, arXiv preprint arXiv:2508.10104 (2025). [9] R. Chen, X. Chen, B. Ni, Y. Ge, Simswap: An e ffi cient framework for high fi-delity face swapping, in: Proceedings of the 28th ACM International Conference on Multimedia, 2020, pp. 2003–2011. [10] K. Liu, I. Perov, D. Gao, N. Chervoniy, W. Zhou, W. Zhang, Deepfacelab: In-tegrated, flexible and extensible face-swapping framework, Pattern Recognition 141 (2023) 109628. [11] A. Siarohin, S. Lathuilière, S. Tulyakov, E. Ricci, N. Sebe, First order motion model for image animation, Advances in Neural Information Processing Systems 32 (2019). 25 [12] K. Prajwal, R. Mukhopadhyay, V. P. Namboodiri, C. Jawahar, A lip sync expert is all you need for speech to lip generation in the wild, in: Proceedings of the 28th ACM International Conference on Multimedia, 2020, pp. 484–492. [13] T. Karras, S. Laine, M. Aittala, J. Hellsten, J. Lehtinen, T. Aila, Analyzing and improving the image quality of stylegan, in: Proceedings of the IEEE /CVF Con-ference on Computer Vision and Pattern Recognition, 2020, pp. 8110–8119. [14] T. Karras, M. Aittala, S. Laine, E. Härkönen, J. Hellsten, J. Lehtinen, T. Aila, Alias-free generative adversarial networks, Advances in Neural Information Pro-cessing Systems 34 (2021) 852–863. [15] P. Esser, R. Rombach, B. Ommer, Taming transformers for high-resolution image synthesis, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2021, pp. 12873–12883. [16] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, B. Ommer, High-resolution im-age synthesis with latent di ff usion models, in: Proceedings of the IEEE /CVF Con-ference on Computer Vision and Pattern Recognition, 2022, pp. 10684–10695. [17] L. Shi, J. Zhang, Z. Ji, J. Bai, S. Shan, Real face foundation representation learn-ing for generalized deepfake detection, Pattern Recognition 161 (2025) 111299. [18] Q. Gao, B. Zhang, J. Wu, W. Luo, Z. Teng, J. Fan, Leveraging facial landmarks improves generalization ability for deepfake detection, Pattern Recognition 164 (2025) 111528. [19] J. Li, Y. Hu, B. Liu, H. She, C.-T. Li, Deepfake detection with domain general-ization and mask-guided supervision, Pattern Recognition 165 (2025) 111622. [20] C. Zhao, C. Wang, Z. Song, G. Hu, L. Wang, D. Miao, Multi-definition deepfake detection via semantics reduction and cross-domain training, Pattern Recognition 163 (2025) 111469. [21] M. Long, Z. Liu, L.-B. Zhang, F. Peng, Lgdf-net: Local and global feature-based dual-branch fusion networks for deepfake detection, IEEE Transactions on Cir-cuits and Systems for Video Technology 35 (6) (2025) 5489–5500. 26 [22] Y. Ding, H. Zhai, Q. Ma, L. Zhang, L. Shao, F. Bu, Face forgery detection via multi-scale dual-modality mutual enhancement network, Computers, Materials & Continua 85 (1) (2025). [23] S. A. Khan, D.-T. Dang-Nguyen, Clipping the deception: Adapting vision-language models for universal deepfake detection, in: Proceedings of the 2024 International Conference on Multimedia Retrieval, 2024, pp. 1006–1015. [24] U. Ojha, Y. Li, Y. J. Lee, Towards universal fake image detectors that general-ize across generative models, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2023, pp. 24480–24489. [25] Z. Huang, B. Xia, Z. Lin, Z. Mou, W. Yang, J. Jia, Ffaa: Multimodal large lan-guage model based explainable open-world face forgery analysis assistant, arXiv preprint arXiv:2408.10072 (2024). [26] Y. Chen, Z. Yan, G. Cheng, K. Zhao, S. Lyu, B. Wu, X2-DFD: A framework for explainable and extendable deepfake detection, in: The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. [27] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, et al., An image is worth 16x16 words: Transformers for image recognition at scale, in: International Conference on Learning Representations, 2021. [28] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, et al., Learning transferable visual models from natural language supervision, in: International Conference on Machine Learning, PmLR, 2021, pp. 8748–8763. [29] K. He, H. Fan, Y. Wu, S. Xie, R. Girshick, Momentum contrast for unsupervised visual representation learning, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2020, pp. 9729–9738. 27 [30] K. He, X. Chen, S. Xie, Y. Li, P. Dollár, R. Girshick, Masked autoencoders are scalable vision learners, in: Proceedings of the IEEE /CVF Conference on Com-puter Vision and Pattern Recognition, 2022, pp. 16000–16009. [31] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khalidov, P. Fer-nandez, D. Haziza, F. Massa, A. El-Nouby, et al., Dinov2: Learning robust visual features without supervision, Transactions on Machine Learning Research Jour-nal (2024). [32] Z. Chen, Y. Duan, W. Wang, J. He, T. Lu, J. Dai, Y. Qiao, Vision transformer adapter for dense predictions, in: The Eleventh International Conference on Learning Representations, 2023. [33] A. Rossler, D. Cozzolino, L. Verdoliva, C. Riess, J. Thies, M. Nießner, Face-forensics ++ : Learning to detect manipulated facial images, in: Proceedings of the IEEE /CVF International Conference on Computer Vision, 2019, pp. 1–11. [34] Y. Li, X. Yang, P. Sun, H. Qi, S. Lyu, Celeb-df: A large-scale challenging dataset for deepfake forensics, in: Proceedings of the IEEE /CVF Conference on Com-puter Vision and Pattern Recognition, 2020, pp. 3207–3216. [35] B. Dolhansky, J. Bitton, B. Pflaum, J. Lu, R. Howes, M. Wang, C. C. Ferrer, The deepfake detection challenge (dfdc) dataset, arXiv preprint arXiv:2006.07397 (2020). [36] B. Dolhansky, R. Howes, B. Pflaum, N. Baram, C. C. Ferrer, The deepfake detec-tion challenge (dfdc) preview dataset, arXiv preprint arXiv:1910.08854 (2019). [37] Z. Yan, T. Yao, S. Chen, Y. Zhao, X. Fu, J. Zhu, D. Luo, C. Wang, S. Ding, Y. Wu, et al., Df40: Toward next-generation deepfake detection, Advances in Neural Information Processing Systems 37 (2024) 29387–29434. [38] Z. Yan, Y. Zhang, X. Yuan, S. Lyu, B. Wu, Deepfakebench: A comprehensive benchmark of deepfake detection, Advances in Neural Information Processing Systems 36 (2023) 4534–4565. 28 [39] L. Ma, Z. Yan, J. Xu, Y. Chen, Q. Guo, Z. Bi, Y. Liao, et al., From specificity to generality: Revisiting generalizable artifacts in detecting face deepfakes, Ad-vances in Neural Information Processing Systems 38 (2026) 69306–69344. [40] J. Cao, C. Ma, T. Yao, S. Chen, S. Ding, X. Yang, End-to-end reconstruction-classification learning for face forgery detection, in: Proceedings of the IEEE /CVF conference on Computer Vision and Pattern Recognition, 2022, pp. 4113–4122. [41] J. Cheng, Z. Yan, Y. Zhang, Y. Luo, Z. Wang, C. Li, Can we leave deepfake data behind in training deepfake detector?, Advances in Neural Information Process-ing Systems 37 (2024) 21979–21998. [42] Y. Chou, T. Yu, W. Huang, T. Dai, S.-T. Xia, et al., Improving deepfake detection with reinforcement learning-based adaptive data augmentation, in: Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 40, 2026, pp. 3381–3389. [43] Y. Zheng, J. Bao, D. Chen, M. Zeng, F. Wen, Exploring temporal coherence for more general video face forgery detection, in: Proceedings of the IEEE /CVF International Conference on Computer Vision, 2021, pp. 15044–15054. [44] A. Luo, C. Kong, J. Huang, Y. Hu, X. Kang, A. C. Kot, Beyond the prior forgery knowledge: Mining critical clues for general face forgery detection, IEEE Trans-actions on Information Forensics and Security 19 (2023) 1168–1182. [45] Z. Wang, J. Bao, W. Zhou, W. Wang, H. Li, Altfreezing for more general video face forgery detection, in: Proceedings of the IEEE /CVF Conference on Com-puter Vision and Pattern Recognition, 2023, pp. 4129–4138. [46] M. Alshehri, Deep fake video face recognition using supervised contrastive learn-ing for scalability and interpretability, Arabian Journal for Science and Engineer-ing 50 (15) (2025) 11779–11802. [47] B. Chu, X. Xu, Y. Zhang, W. You, L. Zhou, Reduced spatial dependency for more general video-level deepfake detection, in: IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2025, pp. 1–5. 29 [48] X. Guo, X. Song, Y. Zhang, X. Liu, X. Liu, Rethinking vision-language model in face forensics: Multi-modal interpretable forged face detector, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2025, pp. 105–116. [49] B. Huang, Z. Wang, J. Yang, J. Ai, Q. Zou, Q. Wang, D. Ye, Implicit identity driven deepfake face swapping detection, in: Proceedings of the IEEE /CVF Con-ference on Computer Vision and Pattern Recognition, 2023, pp. 4490–4499. [50] Y. Lin, W. Song, B. Li, Y. Li, J. Ni, H. Chen, Q. Li, Fake it till you make it: Curricular dynamic forgery augmentations towards general deepfake detection, in: European Conference on Computer Vision, Springer, 2024, pp. 104–122. [51] X. Long, J. Zhang, S. Shan, Generalized face liveness detection via de-fake face generator, IEEE Transactions on Pattern Analysis and Machine Intelligence (2024). [52] Z. Yu, J. Wan, Y. Qin, X. Li, S. Z. Li, G. Zhao, Nas-fas: Static-dynamic central di ff erence network search for face anti-spoofing, IEEE Transactions on Pattern Analysis and Machine Intelligence 43 (9) (2020) 3005–3023. [53] Z. Wang, Z. Wang, Z. Yu, W. Deng, J. Li, T. Gao, Z. Wang, Domain general-ization via shu ffl ed style assembly for face anti-spoofing, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2022, pp. 4123–4133. [54] C.-Y. Wang, Y.-D. Lu, S.-T. Yang, S.-H. Lai, Patchnet: A simple face anti-spoofing framework via fine-grained patch recognition, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2022, pp. 20281–20290. [55] Y. Sun, Y. Liu, X. Liu, Y. Li, W.-S. Chu, Rethinking domain generalization for face anti-spoofing: Separability and alignment, in: Proceedings of the IEEE /CVF Conference on Computer Vision and Pattern Recognition, 2023, pp. 24563– 24574. 30

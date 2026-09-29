@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-28</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-29</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 4 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 8 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>3</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-28 23:54:18 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-29 23:14:21 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,10 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共生成 4 篇推荐（精读 1 篇，速读 3 篇）</p>
-<p>精读：《FeatMark: Feature-level Watermark Protection against Mimicry Attacks with Diffusion Models》（9.0/10）</p>
-<p>速读：《ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos》（7.0/10）, 《FARE: Forensic Acceptance Region Estimation for Catching Bait-and-Switch Image Generators》（6.0/10）, 《Can Pixels Alone Reveal Image Origin? Minimax Limits and Learnable Interfaces for Passive Provenance》（6.0/10）</p>
-<p>这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。</p>
+<p>今天完成 8 篇论文筛选，精读 4 篇、速读 4 篇，聚焦不可见水印去除与视频篡改取证。</p>
+<p>最值得看的是 9.0 分的《Where Does the Watermark Hide?》提出的 push-pull 解耦水印去除思路，以及 8.0 分《ManiVid》面向篡改视频的统一可解释取证分析。</p>
+<p>普通读者可先读这两篇精读，再按需浏览 DBCF、ControlTrace、TANGO 等速读工作，了解水印与深伪检测的不同技术路线。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -81,12 +80,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="FeatMark: Feature-level Watermark Protection against Mimicry Attacks with Diffusion Models">FeatMark: Feature-level Watermark Protection against Mimicry Attacks with Diffusion Models</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Where Does the Watermark Hide? Push-Pull Disentanglement for Invisible Watermark Removal">Where Does the Watermark Hide? Push-Pull Disentanglement for Invisible Watermark Removal</span></li><li><span class="dpr-home-dashboard-paper-title" title="ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos">ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos</span></li><li><span class="dpr-home-dashboard-paper-title" title="Residual Transferability in Neural Image Watermarking">Residual Transferability in Neural Image Watermarking</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>3</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -94,12 +93,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">3 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos">ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos</span></li><li><span class="dpr-home-dashboard-paper-title" title="FARE: Forensic Acceptance Region Estimation for Catching Bait-and-Switch Image Generators">FARE: Forensic Acceptance Region Estimation for Catching Bait-and-Switch Image Generators</span></li><li><span class="dpr-home-dashboard-paper-title" title="Can Pixels Alone Reveal Image Origin? Minimax Limits and Learnable Interfaces for Passive Provenance">Can Pixels Alone Reveal Image Origin? Minimax Limits and Learnable Interfaces for Passive Provenance</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="DBCF: Dual-Branch Complementary Fusion of Foundation Models for Generalized Deepfake Detection">DBCF: Dual-Branch Complementary Fusion of Foundation Models for Generalized Deepfake Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="ControlTrace: Recovering Control Fields for Hidden-Content Recognition">ControlTrace: Recovering Control Fields for Hidden-Content Recognition</span></li><li><span class="dpr-home-dashboard-paper-title" title="TANGO: Watermarking Masked Diffusion Language Models in Token Pairs">TANGO: Watermarking Masked Diffusion Language Models in Token Pairs</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>2</strong></span></div>
 </section>
 </div>
 

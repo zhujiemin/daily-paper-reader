@@ -1,0 +1,2065 @@
+WHERE DOES THE WATERMARK HIDE? PUSH–PULL
+DISENTANGLEMENT FOR INVISIBLE WATERMARK REMOVAL
+Jidong Yang1, Huaike Yu1, Qi Li1,*, Chunpeng Wang1,
+Yuantian Miao2, Suo Gao3, and Xiao Chen4
+1 Jidong Yang, Huaike Yu, Qi Li, and Chunpeng Wang are with the Key Laboratory of Computing Power Network and
+Information Security, Ministry of Education, Shandong Computer Science Center, and Shandong Provincial Key Laboratory of
+Industrial Network and Information System Security, Shandong Fundamental Research Center for Computer Science, Qilu
+University of Technology (Shandong Academy of Sciences), Jinan 250353, China (e-mail: jidong_yang_paper@163.com,
+huaikeyu@gmail.com, qluliqi@163.com, mpeng1122@163.com).
+2 Yuantian Miao is with the Department of Computer Science, City University of Hong Kong (Dongguan), Dongguan,
+Guangdong 518057, China (e-mail: yuantian.miao@cityu-dg.edu.cn).
+3 Suo Gao is with the School of Information Science and Engineering, Dalian Polytechnic University, Dalian 116034, China
+(e-mail: gaosuodlpu@163.com).
+4 Xiao Chen is with the School of Computer and Information Sciences, College of Engineering, Science and Environment, The
+University of Newcastle, Callaghan, NSW 2308, Australia (e-mail: xiao.chen@newcastle.edu.au).
+* Corresponding author: Qi Li (e-mail: qluliqi@163.com).
+ABSTRACT
+Fixed image distortions do not cover an attacker that learns from paired clean and watermarked
+images. We study this paired-training threat with single-image inference: deployment uses neither
+the clean reference nor the watermark key, payload, or decoder. An encoder maps each image to a
+structural latent g and an auxiliary residual latent u. Push supervision reconstructs the watermarked
+image from D(gw, uw). Pull supervision trains the zero-auxiliary output D(Ag(gw; k), 0) toward the
+paired clean image. At k = 1.10, u = 0, the four-method sweep gives an average BER of 0.3958,
+PSNR of 31.07 dB, and SSIM of 0.9554. Restoring u from 0 to 0.15 moves average BER from
+0.3893 to 0.3357, while PSNR falls from 30.99 to 28.23 dB. The intervention supports decoder
+dependence on the auxiliary input in the evaluated setting. The accompanying theory is a conditional,
+post-hoc account of this behavior rather than an experimentally verified information-relocation result.
+Keywords Watermark attack · watermark removal · digital image watermarking · invisible watermarking · paired
+supervision
+1
+Introduction
+Invisible image watermarks support provenance and ownership claims only when they remain recoverable after plausible
+attacks. Current evaluations cover compression, filtering, geometric edits, and generative reconstruction [3], [19], [20].
+They do not fully characterize an attacker that learns from aligned clean and watermarked images. Such pairs reveal the
+image-specific change introduced by a watermarking pipeline and can supervise a removal model that later processes
+one image at a time.
+Paired supervision is already a documented attack resource. The First-Place Solution to the NeurIPS 2024 Invisible
+Watermark Removal Challenge created 1,000 paired StegaStamp examples and fine-tuned a VAE for single-image
+removal [4]. We therefore make no claim that paired training or single-image removal is new. The open question
+addressed here is narrower: can paired supervision train two decoder inputs with opposing reconstruction targets, then
+use a zero-auxiliary intervention to obtain a high-fidelity removal path? This formulation exposes an internal control
+variable that ordinary restoration and regeneration attacks do not provide.
+Our model encodes an image as a one-channel structural latent g and a 16-channel auxiliary latent u. The push path
+D(gw, uw) reconstructs the watermarked input. The pull path is defined by zeroing the auxiliary input, first conceptually
+arXiv:2609.31722v1  [cs.CV]  22 Sep 2026
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+2
+as D(gw, 0) and in the deployed attack as D(Ag(gw; k), 0). Paired clean targets supervise this path, while Ag applies a
+bandwise frequency perturbation to gw. Training uses pairs; inference uses only the watermarked image. The clean
+reference, key, payload, and watermark decoder or detector are absent at deployment.
+The residual scale supplies a direct intervention on the proposed mechanism. If decoder-relevant watermark evidence
+depends on u, restoring αuw while holding Ag(gw; k) fixed should move bit recovery away from random guessing.
+The experiment follows this pattern. Average BER moves from 0.3893 at u = 0 to 0.3357 at u = 0.15, while PSNR
+decreases from 30.99 to 28.23 dB. At the selected point k = 1.10, u = 0, the four-method sweep gives BER 0.3958,
+PSNR 31.07 dB, and SSIM 0.9554. These results motivate a branch-dependence account without asserting that u
+exclusively contains watermark information.
+The paper makes three contributions:
+• We specify a paired-training, single-image-inference threat model. The training data contain four seen
+watermark families, while three excluded families test cross-family transfer. Evaluator outputs are used only
+for offline reporting and operating-point selection.
+• We introduce a G/U push–pull attack whose full path reconstructs xw and whose zero-auxiliary path is
+supervised toward xc. A latent-frequency operator acts on the remaining structural input at inference.
+• We evaluate the attack on seven watermarking methods. The selected setting reaches average BER 0.3958 at
+31.07 dB PSNR on the four-method sweep, and the u intervention provides preliminary mechanism evidence.
+Full scans, per-method results, theory, and implementation details appear in the supplementary material.
+2
+Related Work
+2.1
+Watermarking and robustness evaluation
+Transform-domain methods embed signals in DCT, DWT, or hybrid components [13], [14]. Neural methods learn
+the embedding and recovery functions; RivaGAN and StegaStamp are representative examples [16], [17]. Generative
+approaches place structured signals in diffusion sampling or latent decoders, as in Tree-Ring and Stable Signature [7],
+[8]. These families expose different recovery interfaces. Multi-bit systems return a payload, whereas detector systems
+return a score or decision. A removal evaluation must preserve this distinction and report image fidelity beside attack
+success [3].
+2.2
+Learned watermark removal
+Fixed distortions test sensitivity to JPEG, blur, noise, or geometry. Regeneration attacks instead damage watermark-
+bearing components and reconstruct the image with a denoiser or generative prior [19]. CtrlRegen adds controllable
+reconstruction to this process [20], and SADRE uses saliency-aware reconstruction [45]. Model-side fine-tuning
+can also weaken decoder-rooted diffusion watermarks [21]. The ICLR 2025 workshop First-Place Solution is the
+closest paired-supervised precedent because it trains on 1,000 StegaStamp pairs and removes the watermark from
+a single test image [4]. Our difference is the explicit G/U intervention: the same decoder is trained to preserve the
+watermarked image with uw and approach the paired clean target when u is zero. The latent-frequency path then
+perturbs the remaining structural input. This is a mechanism and representation distinction, not a priority claim about
+paired supervision.
+3
+Threat Model
+The attacker receives a training set of paired images and learns a single-image mapping:
+Dtrain = {(x(i)
+c , x(i)
+w )}N
+i=1,
+xatk = Aθ(xw).
+(1)
+The clean image xc is a training target, not a test-time input. Deployment does not use the key, payload, random seed,
+or watermark decoder/detector. Offline evaluation does use the relevant decoder or detector to measure removal and
+select the reported (k, u) point. We describe the deployed mapping as query-free, not the full experimental selection
+procedure as decoder-free.
+The paired training set includes DwtDctSvd, RivaGAN, StegaStamp, and Tree-Ring. These are the seen families.
+DwtDct, SSL Watermarking, and Stable Signature are excluded from paired training and are the unseen families.
+“Unseen” refers only to family exclusion. It does not imply new image distributions, payload lengths, keys, resolutions,
+or implementations.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+3
+Table 1: Attacker capability by phase. Evaluator access is separated from the deployment inputs.
+Resource
+Training and offline selection
+Deployment on one image
+Image input
+Paired (xc, xw) examples
+One watermarked image xw
+Watermark families
+Four represented families
+The trained mapping can be applied to any input;
+results distinguish seen from excluded families
+Clean reference
+Used as the supervised target
+Unavailable
+Key, payload, or seed
+Not required by the attack training loss
+Unavailable
+Decoder or detector
+Used after training to report metrics and se-
+lect (k, u)
+Not queried or supplied to Aθ
+Objective
+Learn the paired clean target while retaining
+reconstruction fidelity
+Produce one attacked image under the fixed se-
+lected setting
+For a bit decoder, removal is stronger when BER approaches 0.5. We use
+RR = 1 −2|BER −0.5|,
+(2)
+so a deterministic bit inversion at BER one is not counted as evidence destruction. Tree-Ring is evaluated separately:
+lower TPR at the nominal 1%-FPR calibration point is better, and Acc Removal is 1 −TPR. PSNR and SSIM are
+measured against xw. The attack objective is high removal subject to visible fidelity, rather than decoder failure at any
+image distortion. Appendix A gives the formal risk definition.
+4
+Paired Push–Pull Attack
+Figure 1: Paired push–pull training and single-image inference. Push reconstructs the watermarked input from
+(gw, uw). Pull supervises the attacked zero-auxiliary output toward the paired clean target. Deployment follows
+xw →E →(gw, uw) →(Ag(gw; k), 0) →xatk and does not use the clean reference or watermark verifier.
+4.1
+Latent representation and inference path
+The shared encoder and decoder map an image to two full-resolution inputs:
+(g, u) = E(x),
+ˆx = D(g, u),
+(3)
+where g ∈[−1, 1]1×H×W is a grayscale structural latent and u ∈[−1, 1]16×H×W is an auxiliary residual latent. For a
+pair, (gc, uc) = E(xc) and (gw, uw) = E(xw). The channel asymmetry is an inductive bias, not a capacity proof: a
+full-resolution real-valued g can still encode watermark-relevant information.
+The encoder concatenates RGB with a grayscale high-frequency residual, then uses a residual U-Net topology to
+produce shared full-resolution features [38], [39]. Two heads map those features to g and u. The decoder concatenates
+g, u, and a high-frequency residual of g before eight residual blocks and an RGB projection. Both outputs are bounded
+by tanh. Appendix F lists every layer.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+4
+Figure 2: Pair-level supervision. The shared encoder maps aligned clean and watermarked images to two decoder inputs.
+The full watermarked path is pushed toward xw; the attacked zero-auxiliary path is pulled toward xc.
+At inference, the decoder receives
+xatk(k, α) = D(Ag(gw; k), αuw).
+(4)
+The reported attack sets α = 0. The point D(gw, 0) isolates auxiliary suppression, and D(Ag(gw; k), 0) adds the
+deployed structural perturbation. The sweep restores αuw only to test how this decoder input changes recovery and
+fidelity.
+4.2
+Push and pull supervision
+The two paths receive opposing paired targets:
+Lpush = ∥D(gw, uw) −xw∥1,
+(5)
+Lpull = ∥Ag(gw; k) −gc∥1 + λ0∥D(Ag(gw; k), 0) −xc∥1.
+(6)
+Push requires the joint code to preserve the watermarked image. Pull requires the attacked structural latent and its
+zero-auxiliary decoding to approach clean targets. Their combination makes uw an available route for the residual
+needed by the full reconstruction, while the deployed path is trained without that route. Additional terms preserve the
+clean reconstruction, discourage unnecessary uc, and constrain perceptual, edge, high-frequency, quantization, and
+spectral errors. Appendix G reports every code-level term and weight.
+Paired supervision matters because the pull target preserves the scene, pose, color layout, and texture content of the
+corresponding watermarked input. The model is not asked to infer a generic clean-image distribution from an unrelated
+reference. For each pair, it learns which output should be retained by the full path and which output should be approached
+after the auxiliary intervention. The attack loss never uses decoded bits or detector scores. Its watermark-specific signal
+is the aligned difference between xw and xc, together with the two reconstruction targets.
+The word “push” refers to preservation of the watermarked reconstruction, not to increasing watermark strength. The
+word “pull” refers to clean-target supervision on the zero-auxiliary path. In the unperturbed diagnostic, this path
+is D(gw, 0). The implemented training and deployment path uses D(Ag(gw; k), 0) so that residual suppression and
+structural attenuation act together. This terminology is kept fixed throughout the experiments.
+The core objective alone admits degenerate solutions. A decoder could ignore u, or the attacked path could approach xc
+by blurring details. Clean reconstruction, perceptual features, multiscale high-frequency residuals, and Sobel edges
+limit these behaviors. The auxiliary floor term prevents early collapse of uw. These terms do not certify a factorization,
+but they make the zero-auxiliary output an evaluable high-fidelity path rather than an arbitrary branch.
+The model is trained for 140 epochs. Stage 1 learns clean and full-path reconstruction. Stage 2 introduces Ag and
+the zero-auxiliary pull target. Stage 3 activates the complete fidelity and spectral objective. This order prevents the
+zero-auxiliary output from starting as an unconstrained destructive filter. Architecture blocks and the exact schedule are
+given in Appendices F and H.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+5
+Table 2: Functional groups in the training objective. The first three rows implement the paired push–pull structure; the
+remaining rows constrain fidelity and optimization.
+Group
+Representative terms
+Function
+Full-path push
+∥D(gw, uw) −xw∥1
+Preserve the watermarked input when both decoder in-
+puts are present.
+Structural pull
+∥Ag(gw; k) −gc∥1
+Align the attacked structural input with the paired clean
+representation.
+Zero-auxiliary pull
+∥D(Ag(gw; k), 0) −xc∥1
+Train the exact form of the deployed decoder input to-
+ward the paired clean target.
+Reconstruction
+con-
+straints
+Clean reconstruction and ∥uc∥1
+Retain visible content and discourage unnecessary clean
+residual storage.
+Fidelity constraints
+Perceptual, high-frequency, and edge
+losses
+Penalize content, texture, and boundary changes in the
+attacked output.
+Spectral constraints
+Quantization and multiband magnitude
+losses
+Regularize the attacked structural latent and its fre-
+quency profile.
+4.3
+Latent-frequency operator and mechanism test
+The operator applies an rFFT to gw, uses low-, middle-, and high-frequency masks, and reconstructs the perturbed latent
+through inverse rFFT. For band B,
+\
+Ag(gw; k)(ω) = ρBc
+gw(ω) + ηB(ω),
+ω ∈B,
+(7)
+where ρB is a keep ratio and ηB is sampled magnitude or phase noise. Stage 3 uses keep ratios 0.90/0.55/0.35 for
+low/middle/high bands. A multiband magnitude loss aligns the attacked structural latent with gc. It does not constrain
+phase or imply pixel equality.
+Figure 3 separates the learned representation from the attack operator. The Fourier block inside the encoder mixes
+feature tokens during representation learning. In contrast, Ag is a parameterized intervention on the output gw. The
+main (k, u) sweep uses band attenuation and magnitude/phase noise. The ring notch for Tree-Ring is disabled in that
+sweep and enabled only for the radius experiment in Table 7.
+Figure 3: Structural-latent frequency intervention. The rFFT coefficients are divided into radial bands, modified by the
+k-controlled operator, and returned to the decoder through an inverse rFFT.
+The mechanism is tested by holding Ag(gw; k) fixed and restoring the auxiliary input. Locally,
+D(ˆgw, αuw) −D(ˆgw, 0) = αJuuw + Ru(α),
+(8)
+with ˆgw = Ag(gw; k). Equation (8) only isolates decoder sensitivity. The watermark-specific evidence comes from
+the BER response to α, not from the expansion itself. The conditional-information interpretation and its unverified
+premises are deferred to Appendix A.
+5
+Experimental Setup
+The (k, u) sweep uses DwtDct, DwtDctSvd, RivaGAN, and SSL Watermarking. Evaluation at the selected point adds
+StegaStamp, Stable Signature, and Tree-Ring. Each method and attack setting uses 100 samples. The coarse grid covers
+k, u ∈{0, 0.25, 0.50, 0.75, 1.00}. The fine grid uses k ∈[0.80, 1.20] and u ∈{0, 0.03, 0.05, 0.06, 0.10, 0.15, 0.20}.
+Candidates require average PSNR of at least 25 dB and are ranked by average RR. The same k = 1.10, u = 0 point is
+then applied across methods; the Tree-Ring radius scan is reported separately in Appendix B.
+The evaluation addresses four questions. First, does the shared grid contain a point that moves bit recovery toward
+chance without falling below the fidelity threshold? Second, does restoring u reverse part of that removal effect while the
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+6
+Table 3: Shared fine-sweep settings over DwtDct, DwtDctSvd, RivaGAN, and SSL Watermarking. Bold BER is closest
+to 0.5; bold PSNR/SSIM is larger.
+k
+u
+BER →0.5
+PSNR↑
+SSIM↑
+1.10
+0.00
+0.3958
+31.07
+0.9554
+1.00
+0.00
+0.3938
+31.07
+0.9553
+0.90
+0.00
+0.3867
+31.11
+0.9586
+0.90
+0.03
+0.3720
+31.30
+0.9591
+Table 4: Fine-sweep averages by auxiliary scale. Bold BER is closest to 0.5; bold PSNR/SSIM is larger.
+u
+BER →0.5
+PSNR↑
+SSIM↑
+0.00
+0.3893
+30.99
+0.9568
+0.03
+0.3695
+31.05
+0.9571
+0.06
+0.3521
+30.83
+0.9571
+0.15
+0.3357
+28.23
+0.9548
+0.20
+0.3426
+26.09
+0.9509
+attacked structural input remains fixed? Third, how does the selected point transfer between represented and excluded
+watermark families, and where does it lie relative to reconstruction and regeneration baselines? Fourth, which objective
+terms change the observed removal–fidelity profile? The result subsections follow this order so that operating-point
+selection is separated from mechanism interpretation.
+Baselines include JPEG, blur, noise, geometric transforms, BM3D [44], CtrlRegen [20], WatermarkAttacker [19], and
+SADRE variants [45]. Available outputs are measured with common method-specific evaluators and fidelity metrics.
+Attack-generation settings and available subsets differ across several baseline rows, so these results are operating-point
+comparisons rather than an identical-protocol benchmark. Full parameter grids, per-method scores, baseline settings,
+and complete tables appear in Appendix B.
+6
+Results
+6.1
+Selected operating point
+The fine sweep selects k = 1.10, u = 0. Its average BER is 0.3958, closer to 0.5 than the other reported shared settings,
+while PSNR remains 31.07 dB. Table 3 also reports nearby points to show the measured local tradeoff. We treat
+k = 1.10 as the selected grid point, not as evidence of a continuous or seed-stable optimum.
+The two controls play different roles. With u = 0, changing k from 0.90 to 1.10 moves BER from 0.3867 to 0.3958
+with little change in fidelity. Restoring u = 0.03 at k = 0.90 raises PSNR by 0.19 dB but moves BER to 0.3720. The
+full coarse and fine tables in Appendix B retain the points omitted here.
+6.2
+Auxiliary-input intervention
+Table 4 groups the fine sweep by residual scale. The change from u = 0 to u = 0.03 is small in fidelity: PSNR rises by
+0.06 dB and SSIM rises by 0.0003. BER nevertheless moves from 0.3893 to 0.3695, farther from random guessing. At
+u = 0.15, BER reaches 0.3357 and PSNR falls to 28.23 dB. Restoring u therefore does not act as a uniformly beneficial
+detail correction after g has been attacked.
+This intervention supports a functional statement: the evaluated decoders recover more payload information when
+the auxiliary input is restored. It does not identify which pixels or frequencies carry that information, and it does not
+show that g is information-free. The conclusion is limited to branch dependence under the trained model and tested
+watermark families.
+6.3
+Seen and unseen families
+At k = 1.10, u = 0, DwtDctSvd reaches BER 0.4856, RivaGAN 0.3697, and StegaStamp 0.4251 among the seen
+bit-decoder families. The unseen DwtDct, SSL Watermarking, and Stable Signature families reach 0.4106, 0.3207, and
+0.2275. The spread prevents a single generalization claim. It shows transfer to excluded families with method-dependent
+strength. Tree-Ring remains separate because its detector output is not a bit payload; its Acc Removal is 0.3200 at
+PSNR 26.81 dB.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+7
+Table 5: Selected-point results on all methods. Tree-Ring reports Acc Removal; other rows report BER, with values
+closer to 0.5 preferred.
+Method
+Family
+BER/Acc Rem.
+PSNR
+SSIM
+DwtDct
+Unseen
+0.4106
+31.69
+0.9656
+DwtDctSvd
+Seen
+0.4856
+31.54
+0.9659
+RivaGAN
+Seen
+0.3697
+31.65
+0.9597
+SSL Watermarking
+Unseen
+0.3207
+29.43
+0.9303
+StegaStamp
+Seen
+0.4251
+31.37
+0.9470
+Stable Signature
+Unseen
+0.2275
+28.35
+0.8934
+Tree-Ring
+Seen
+0.3200
+26.81
+0.8799
+The two transform-domain rows give the closest BERs to chance, despite DwtDct being absent from paired training.
+RivaGAN and StegaStamp show intermediate removal at PSNR above 31 dB. Transfer is weaker for SSL Watermarking
+and Stable Signature. The result is compatible with family-level transfer but also shows that a shared (k, u) point does
+not equalize difficulty across watermark designs.
+6.4
+Removal and fidelity relative to baselines
+Table 6 summarizes six bit-decoder methods with mean RR, PSNR, and SSIM. Tree-Ring is listed in separate columns.
+CtrlRegen and WatermarkAttacker obtain higher mean RR than our selected point, but at 21.28 and 24.13 dB PSNR.
+SADRE-Cheng reaches mean RR 0.7692 at similar mean PSNR, while our point gives RR 0.7464 and higher mean
+SSIM (0.9436 versus 0.8792). On Tree-Ring, our point has the largest Acc Removal in this subset. These aggregates
+describe a measured fidelity–removal profile; they do not establish uniform dominance.
+Table 6: Compact baseline comparison. Bit metrics average DwtDct, DwtDctSvd, RivaGAN, SSL Watermarking,
+StegaStamp, and Stable Signature. Tree-Ring detector results are not included in those averages.
+Attack
+Mean RR↑
+Mean PSNR↑
+Mean SSIM↑
+Tree-Ring Acc Removal↑
+Tree-Ring PSNR↑
+Tree-Ring SSIM↑
+JPEG
+0.1774
+35.87
+0.9669
+0.0000
+43.18
+0.9923
+Gaussian noise
+0.4769
+20.99
+0.4947
+0.0100
+22.45
+0.4555
+CtrlRegen
+0.9276
+21.28
+0.6139
+0.2200
+21.68
+0.6570
+WatermarkAttacker
+0.8251
+24.13
+0.7049
+0.1500
+24.98
+0.7702
+SADRE-Cheng
+0.7692
+30.73
+0.8792
+0.0400
+31.36
+0.8812
+Ours (k = 1.10, u = 0)
+0.7464
+30.67
+0.9436
+0.3200
+26.81
+0.8799
+The full baseline tables show why raw BER or TPR cannot be read alone. Brightness, rotation, and cropping remove
+some watermarks at PSNR values near 7–10 dB. JPEG preserves quality but leaves most learned payloads recoverable.
+Regeneration attacks move more decoders toward chance, although their fidelity is lower. Our selected point is strongest
+where the paired projection can suppress recoverable evidence without broad image reconstruction; Stable Signature
+remains a weak case.
+Figure 4 compares three representative outputs. The absolute residual records where each attack changes xw, while
+the signed residual records the direction of change. Regeneration and diffusion methods produce broad changes over
+object boundaries and textures. Our output has a weaker residual on DwtDctSvd and StegaStamp. Tree-Ring produces
+a broader footprint, consistent with the lower fidelity in Table 5. These images are qualitative diagnostics; they do not
+measure watermark information or prove frequency localization.
+Tree-Ring uses a structured frequency detector, so its ring radius is a detector-specific control rather than a bit-decoder
+parameter. Table 7 shows that a ring notch at r = 0.50 increases Acc Removal from 0.3200 to 0.3900. PSNR decreases
+from 26.81 to 25.47 dB. Larger radii recover fidelity but lose the removal gain. This tradeoff is reported separately
+from all BER averages.
+6.5
+Ablation
+Six retrained variants are evaluated at k = 1.10, u = 0. Table 8 averages the six bit-decoder methods and excludes
+Tree-Ring. Removing the multiband magnitude loss changes mean BER by −0.044, away from chance, while PSNR
+increases by 1.19 dB. In these runs the spectral term is associated with a stronger attack at a fidelity cost. Removing the
+scheduled drop0 term changes mean BER by +0.038 and PSNR by −3.37 dB.
+The drop0 result is not a clean ablation of zero-auxiliary supervision. In Stage 3, Ldrop0 and Lrecov are the same pixel
+residual with effective combined weight 16. The variant removes only the scheduled term; Lrecov remains. The two
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+8
+Figure 4: Representative outputs, absolute residuals |xatk −xw| × 8, and signed residuals (xatk −xw) × 8. Red and
+blue denote positive and negative signed changes. The full grid is in Appendix E.
+Table 7: Tree-Ring ring-notch radius scan at k = 1.10, u = 0.
+Attack
+Acc Removal↑
+PSNR↑
+SSIM↑
+No ring notch
+0.3200
+26.81
+0.8799
+r = 0.40
+0.3400
+26.60
+0.8723
+r = 0.45
+0.3600
+26.31
+0.8727
+r = 0.50
+0.3900
+25.47
+0.8724
+r = 0.55
+0.3500
+25.40
+0.8739
+r = 0.60
+0.3200
+26.24
+0.8770
+r = 0.65
+0.3200
+26.71
+0.8792
+perceptual names also reuse one pooled-VGG value with effective weight 10. These duplicate terms make the current
+variants schedule and weight ablations. Appendix G documents the implemented objective, and Appendix D reports
+every method–variant pair.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+9
+Table 8: Mean ablation changes over six bit-decoder methods. Tree-Ring is excluded. Positive ∆BER moves toward
+0.5 because all values remain below 0.5.
+Variant
+∆BER
+∆PSNR
+w/o spectral alignment
+−0.044
++1.19
+w/o scheduled drop0 term
++0.038
+−3.37
+w/o perceptual constraint
++0.010
+−0.31
+w/o high-frequency residual
+−0.001
+−0.01
+Fourier groups 4
++0.004
+−0.06
+Fourier groups 16
++0.001
+−0.06
+The per-method rows clarify the aggregate changes. Without spectral alignment, removal weakens on six of seven
+reported methods even though PSNR rises. This is an association within the trained variants, not proof that the
+magnitude term alone causes removal. Removing the scheduled drop0 term gives BERs closer to 0.5 on several
+bit decoders but lowers PSNR by about 3 dB. Tree-Ring Acc Removal also falls from 0.32 to 0.17. The remaining
+clean-target residual means the result concerns Stage 2 exposure and the effective Stage 3 weight.
+The perceptual ablation has a smaller mean effect and a heterogeneous method response. Stable Signature BER
+moves from 0.2275 to 0.3863, but SSIM falls from 0.8934 to 0.8360. RivaGAN, SSL Watermarking, DwtDctSvd, and
+StegaStamp move farther from chance without this term. The high-frequency residual and Fourier group-count variants
+change mean BER and PSNR by less than 0.01. Repeated seeds are required before treating these small differences as
+resolved component effects.
+7
+Discussion
+The evidence chain is specific. Paired supervision supplies an image-aligned clean target. Push keeps D(gw, uw)
+faithful to xw, whereas pull trains D(Ag(gw; k), 0) toward xc. Zeroing u then selects the trained pull path, and the
+u-restoration experiment measures how much decoder recovery returns. This sequence links the training resource,
+intervention, and observable outcome. It also separates the contribution from prior paired VAE removal: the empirical
+question is how recovery changes across two controlled decoder inputs.
+The selected k = 1.10 point controls the structural intervention, but the auxiliary scale is the cleaner mechanism
+variable. Across u = 0 settings, the reported changes in k alter average BER by less than 0.01 and leave PSNR near
+31 dB. Restoring a small fraction of uw changes BER more sharply. The experiment therefore supports the claim
+that the decoder response depends on the auxiliary input. It does not determine whether that response is caused by
+payload-specific evidence, watermark-correlated texture, or another residual feature.
+The baseline comparison also separates attack success from visible damage. CtrlRegen has the highest mean RR
+in Table 6, but its mean PSNR is 21.28 dB. SADRE-Cheng and our attack have similar mean PSNR, while our
+SSIM is higher and SADRE-Cheng has slightly higher mean RR. These tradeoffs do not support a claim of universal
+superiority. They show that paired push–pull learning occupies a distinct operating region from aggressive regeneration
+and high-fidelity but weak distortions.
+The comparison suggests a defense criterion. Watermark recovery should depend on image structure that cannot
+be removed by a learned content-preserving projection. This criterion is stronger than survival under a fixed list of
+distortions. It should be tested with paired learned attackers and reported under explicit fidelity constraints. Detector-
+based methods still require calibrated detector metrics and method-specific tuning; the Tree-Ring radius scan is therefore
+kept outside bit-decoder summaries.
+The two zero-auxiliary expressions serve different experimental roles. D(gw, 0) is the direct branch intervention: it asks
+what the decoder produces when the auxiliary input is removed and the structural latent is unchanged. D(Ag(gw; k), 0) is
+the complete attack: it combines the same branch intervention with a controlled perturbation of the remaining structural
+latent. Treating both outputs as evidence for one undifferentiated mechanism would conflate residual suppression with
+frequency attenuation. Our parameter sweep separates them through k, and the ablation separates the learned spectral
+constraint from the zero-auxiliary schedule. A stronger causal study would report all four counterfactuals, D(gw, uw),
+D(gw, 0), D(Ag(gw; k), uw), and D(Ag(gw; k), 0), for every watermark family.
+Paired supervision also changes how the attack should be described. The deployed mapping is query-free, but the
+training resource is stronger than an unpaired image collection. The reported operating point is selected after evaluator-
+side decoding. The relevant access axes are therefore separate: paired data are available during training, the watermark
+verifier is available during offline evaluation, and neither is supplied when one image is attacked. This distinction avoids
+calling the entire workflow “decoder-free.” It also permits a direct comparison with the ICLR 2025 workshop solution.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+10
+Both settings use paired supervision and single-image deployment. The proposed method adds a two-input decoder
+intervention and a latent-frequency structural path.
+The family split gives a limited transfer test rather than a universal no-box result. DwtDct is excluded from paired
+training but is structurally related to the represented DwtDctSvd family. SSL Watermarking and Stable Signature are also
+excluded, yet their recovery interfaces and embedding mechanisms differ from those in training. Their lower removal
+scores show that exclusion alone does not define difficulty. Future evaluation should vary family, implementation,
+payload, key, and image distribution independently. This would reveal whether transfer comes from shared signal
+structure, from the paired image prior, or from incidental overlap between implementations.
+8
+Limitations
+The four-method parameter sweep and seven-method selected-point evaluation use 100 samples per method. They
+do not cover broader datasets, implementations, resolutions, key distributions, or payload lengths. The finite (k, u)
+grid supports the selected point k = 1.10, u = 0 but cannot establish a continuous optimum or repeatability across
+seeds. Nearby grid points show similar aggregate values, yet one run cannot distinguish a smooth response region from
+sampling variation. Repeated training seeds and per-image confidence intervals are required before making a stability
+claim.
+Several baseline outputs come from different attack-generation settings and available subsets. We apply common
+method-specific evaluators and fidelity calculations to those outputs, but this metric alignment does not make the
+generation protocol identical. Runtime, compute budget, input resolution, stochastic sampling, and model-specific
+preprocessing may differ. Table 6 should therefore be read as an operating-point comparison. A controlled benchmark
+would regenerate every attack from the same image manifest, preserve per-image pairing, report failure counts, and
+tune each baseline under the same quality constraint.
+PSNR and SSIM are measured against the watermarked input and do not fully capture semantic or perceptual preserva-
+tion. This limitation is most visible for regeneration methods, which may retain recognizable content while changing
+fine texture, and for geometric attacks, which can obtain detector failure after large pixel displacement. LPIPS or
+another learned perceptual metric would add a complementary view [48]. Human inspection remains useful for semantic
+drift, but it should follow a defined sampling and rating protocol rather than a few selected examples.
+The mechanism theory is post-hoc. Mutual information is not estimated, the one-channel g is not a proven bottleneck,
+and the multiband magnitude loss does not constrain Fourier phase. The 98.75% u-probe accuracy is preliminary
+because it comes from one train/test split. The 21.25% g-probe accuracy cannot be interpreted as absence of information:
+reversing labels, changing the split, or using calibrated scores may expose discrimination. A confirmatory analysis
+should report AUROC, repeated cross-validation, uncertainty, and label-permutation tests. It should also vary the g
+channel count and quantization strength before attributing the response to a capacity bottleneck.
+The available ablations contain one summarized run per variant and no uncertainty estimates. Their bookkeeping also
+duplicates two Stage 3 residuals. A reproducible release should include the exact data manifest, family split, random
+seeds, configuration files, evaluation commands, per-image scores, and checkpoints. Future ablations should consolidate
+the duplicate pixel and perceptual terms before retraining. This would turn the current schedule/weight comparisons
+into tests of the intended objective components.
+9
+Conclusion
+We studied watermark removal with paired clean–watermarked training and single-image inference. The push path
+reconstructs the watermarked image; the pull path trains a zero-auxiliary decoding toward the paired clean target. At
+k = 1.10, u = 0, the attack reaches average BER 0.3958 at PSNR 31.07 dB in the four-method sweep. Restoring u
+moves recovery away from chance, which supports decoder dependence on the auxiliary input in this model. The result
+motivates paired learned attacks as part of fidelity-constrained watermark evaluation, while the full mechanism claim
+remains conditional on stronger representation tests.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+11
+References
+[1] C. I. Podilchuk and E. J. Delp, “Digital watermarking: Algorithms and applications,” IEEE Signal Processing Magazine,
+vol. 18, no. 4, pp. 33–46, 2002.
+[2] F. Hartung and M. Kutter, “Multimedia watermarking techniques,” Proceedings of the IEEE, vol. 87, no. 7, pp. 1079–1107,
+1999.
+[3] B. An et al., “WAVES: Benchmarking the robustness of image watermarks,” in Proc. International Conference on Machine
+Learning, PMLR, vol. 235, pp. 1456–1492, 2024.
+[4] F. Shamshad, T. Bakr, Y. Shaaban, N. Hussein, K. Nandakumar, and N. Lukas, “First-place solution to NeurIPS 2024 invisible
+watermark removal challenge,” in Proc. 1st Workshop on GenAI Watermarking, ICLR, 2025.
+[5] S. Gowal et al., “SynthID-Image: Image watermarking at internet scale,” arXiv preprint arXiv:2510.09263, 2025.
+[6] T. Sander, P. Fernandez, A. Oliviero Durmus, T. Furon, and M. Douze, “Watermark anything with localized messages,” in
+International Conference on Learning Representations, vol. 2025, pp. 79569–79599, May 2025.
+[7] Y. Wen, J. Kirchenbauer, J. Geiping, and T. Goldstein, “Tree-rings watermarks: Invisible fingerprints for diffusion images,” in
+Advances in Neural Information Processing Systems, vol. 36, pp. 58047–58063, 2023.
+[8] P. Fernandez, G. Couairon, H. Jégou, M. Douze, and T. Furon, “The stable signature: Rooting watermarks in latent diffusion
+models,” in Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 22466–22477, 2023.
+[9] L. Zhang, X. Liu, A. V. Martin, C. X. Bearfield, Y. Brun, and H. Guan, “Attack-resilient image watermarking using stable
+diffusion,” in Advances in Neural Information Processing Systems, vol. 37, pp. 38480–38507, 2024.
+[10] Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, “Image quality assessment: From error visibility to structural
+similarity,” IEEE Transactions on Image Processing, vol. 13, no. 4, pp. 600–612, 2004.
+[11] I. J. Cox, J. Kilian, F. T. Leighton, and T. Shamoon, “Secure spread spectrum watermarking for multimedia,” IEEE Transactions
+on Image Processing, vol. 6, no. 12, pp. 1673–1687, 1997.
+[12] M. Barni, F. Bartolini, and A. Piva, “Improved wavelet-based watermarking through pixel-wise masking,” IEEE Transactions
+on Image Processing, vol. 10, no. 5, pp. 783–791, 2001.
+[13] M. Barni, F. Bartolini, V. Cappellini, and A. Piva, “A DCT-domain system for robust image watermarking,” Signal Processing,
+vol. 66, no. 3, pp. 357–372, 1998.
+[14] M. R. R. Kumari, V. V. Kumar, and K. R. Naidu, “Digital image watermarking using DWT-SVD with enhanced tunicate swarm
+optimization algorithm,” Multimedia Tools and Applications, vol. 82, no. 18, pp. 28259–28279, 2023.
+[15] J. Zhu, R. Kaplan, J. Johnson, and L. Fei-Fei, “HiDDeN: Hiding data with deep networks,” in Proceedings of the European
+Conference on Computer Vision, pp. 657–672, 2018.
+[16] M. Tancik, B. Mildenhall, and R. Ng, “StegaStamp: Invisible hyperlinks in physical photographs,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 2117–2126, 2020.
+[17] K. A. Zhang, L. Xu, A. Cuesta-Infante, and K. Veeramachaneni, “Robust invisible video watermarking with attention,” arXiv
+preprint arXiv:1909.01285, 2019.
+[18] P. Fernandez, H. Elsahar, I. Z. Yalniz, and A. Mourachko, “Video seal: Open and efficient video watermarking,” arXiv preprint
+arXiv:2412.09492, 2024.
+[19] X. Zhao et al., “Invisible image watermarks are provably removable using generative AI,” in Advances in Neural Information
+Processing Systems, vol. 37, pp. 8643–8672, 2024.
+[20] Y. Liu, Y. Song, H. Ci, Y. Zhang, H. Wang, M. Z. Shou, and Y. Bu, “Image watermarks are removable using controllable
+regeneration from clean noise,” in International Conference on Learning Representations, vol. 2025, pp. 87310–87327, May
+2025.
+[21] Y. Hu, Z. Jiang, M. Guo, and N. Gong, “Stable signature is unstable: Removing image watermark from diffusion models,”
+arXiv preprint arXiv:2405.07145, 2024.
+[22] Y. Bengio, A. Courville, and P. Vincent, “Representation learning: A review and new perspectives,” IEEE Transactions on
+Pattern Analysis and Machine Intelligence, vol. 35, no. 8, pp. 1798–1828, 2013.
+[23] N. Tishby, F. C. Pereira, and W. Bialek, “The information bottleneck method,” arXiv preprint physics/0004057, 2000.
+[24] K. Kawaguchi, Z. Deng, X. Ji, and J. Huang, “How does information bottleneck help deep learning?” in International
+Conference on Machine Learning, pp. 16049–16096. PMLR, July 2023.
+[25] Z. Dang, M. Luo, C. Jia, G. Dai, J. Wang, X. Chang, and J. Wang, “Disentangled representation learning with transmitted
+information bottleneck,” IEEE Transactions on Circuits and Systems for Video Technology, vol. 34, no. 12, pp. 13297–13310,
+2024.
+[26] M. Fumero et al., “Leveraging sparse and shared feature activations for disentangled representation learning,” in Advances in
+Neural Information Processing Systems, vol. 36, pp. 27682–27698, 2023.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+12
+[27] C. P. Burgess, I. Higgins, A. Pal, L. Matthey, N. Watters, G. Desjardins, and A. Lerchner, “Understanding disentangling in
+β-VAE,” arXiv preprint arXiv:1804.03599, 2018.
+[28] F. Locatello, S. Bauer, M. Lucic, G. Raetsch, S. Gelly, B. Schölkopf, and O. Bachem, “Challenging common assumptions in
+the unsupervised learning of disentangled representations,” in International Conference on Machine Learning, pp. 4114–4124.
+PMLR, May 2019.
+[29] M. Xia, X. Liu, and T.-T. Wong, “Invertible grayscale,” ACM Transactions on Graphics, vol. 37, no. 6, pp. 1–10, 2018.
+[30] A. A. Alemi, I. Fischer, J. V. Dillon, and K. Murphy, “Deep variational information bottleneck,” arXiv preprint
+arXiv:1612.00410, 2016.
+[31] I. J. Goodfellow, J. Shlens, and C. Szegedy, “Explaining and harnessing adversarial examples,” arXiv preprint arXiv:1412.6572,
+2014.
+[32] A. Madry, A. Makelov, L. Schmidt, D. Tsipras, and A. Vladu, “Towards deep learning models resistant to adversarial attacks,”
+arXiv preprint arXiv:1706.06083, 2017.
+[33] M. I. Belghazi, A. Baratin, S. Rajeshwar, S. Ozair, Y. Bengio, A. Courville, and D. Hjelm, “Mutual information neural
+estimation,” in International Conference on Machine Learning, pp. 531–540. PMLR, July 2018.
+[34] B. Poole, S. Ozair, A. van den Oord, A. Alemi, and G. Tucker, “On variational bounds of mutual information,” in International
+Conference on Machine Learning, pp. 5171–5180. PMLR, May 2019.
+[35] K. Simonyan and A. Zisserman, “Very deep convolutional networks for large-scale image recognition,” arXiv preprint
+arXiv:1409.1556, 2014.
+[36] J. Johnson, A. Alahi, and L. Fei-Fei, “Perceptual losses for real-time style transfer and super-resolution,” in European
+Conference on Computer Vision, pp. 694–711. Springer, Cham, Sept. 2016.
+[37] L. Jiang, B. Dai, W. Wu, and C. C. Loy, “Focal frequency loss for image reconstruction and synthesis,” in Proceedings of the
+IEEE/CVF International Conference on Computer Vision, pp. 13919–13929, 2021.
+[38] O. Ronneberger, P. Fischer, and T. Brox, “U-Net: Convolutional networks for biomedical image segmentation,” in International
+Conference on Medical Image Computing and Computer-Assisted Intervention, pp. 234–241. Springer, Cham, Oct. 2015.
+[39] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for image recognition,” in Proceedings of the IEEE Conference
+on Computer Vision and Pattern Recognition, pp. 770–778, 2016.
+[40] P. Fernandez, A. Sablayrolles, T. Furon, H. Jégou, and M. Douze, “Watermarking images in self-supervised latent spaces,” in
+ICASSP 2022 – 2022 IEEE International Conference on Acoustics, Speech and Signal Processing, pp. 3054–3058. IEEE, May
+2022.
+[41] F. A. Petitcolas, R. J. Anderson, and M. G. Kuhn, “Attacks on copyright marking systems,” in International Workshop on
+Information Hiding, pp. 218–238. Springer, Berlin, Heidelberg, Apr. 1998.
+[42] D. Hendrycks and T. Dietterich, “Benchmarking neural network robustness to common corruptions and perturbations,” arXiv
+preprint arXiv:1903.12261, 2019.
+[43] G. K. Wallace, “The JPEG still picture compression standard,” Communications of the ACM, vol. 34, no. 4, pp. 30–44, 1991.
+[44] K. Dabov, A. Foi, V. Katkovnik, and K. Egiazarian, “Image denoising by sparse 3-D transform-domain collaborative filtering,”
+IEEE Transactions on Image Processing, vol. 16, no. 8, pp. 2080–2095, 2007.
+[45] I. Alam, M. T. Islam, and S. S. Woo, “Saliency-aware diffusion reconstruction for effective invisible watermark removal,” in
+Companion Proceedings of the ACM on Web Conference 2025, pp. 849–853, May 2025.
+[46] J. Ballé, D. Minnen, S. Singh, S. J. Hwang, and N. Johnston, “Variational image compression with a scale hyperprior,” arXiv
+preprint arXiv:1802.01436, 2018.
+[47] Z. Cheng, H. Sun, M. Takeuchi, and J. Katto, “Learned image compression with discretized Gaussian mixture likelihoods and
+attention modules,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 7939–7948,
+2020.
+[48] R. Zhang, P. Isola, A. A. Efros, E. Shechtman, and O. Wang, “The unreasonable effectiveness of deep features as a perceptual
+metric,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pp. 586–595, 2018.
+[49] C. Zhang, S. Bengio, M. Hardt, B. Recht, and O. Vinyals, “Understanding deep learning requires rethinking generalization,”
+arXiv preprint arXiv:1611.03530, 2016.
+[50] D. Arpit et al., “A closer look at memorization in deep networks,” in International Conference on Machine Learning,
+pp. 233–242. PMLR, July 2017.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+13
+A
+Formal Objective and Post-Hoc Mechanism Account
+A.1
+Fidelity-constrained removal risk
+Let W be a watermarking scheme and let SW(y, m) ∈[0, 1] measure recoverability of message m from attacked image
+y. For bit decoders,
+SW(y, m) = 2
+BERW(y, m) −1
+2
+ .
+(9)
+For an attack class A and visible-distortion budget ϵ, define
+Rϵ(W, A) = sup
+A∈A
+E(xw,m)[1 −SW(A(xw), m)]
+s.t.
+Exw[ℓvis(A(xw), xw)] ≤ϵ.
+(10)
+This quantity separates image destruction from removal under a stated fidelity budget. It also makes the attack class
+explicit. Robustness against a hand-designed distortion subset does not bound the risk over a larger class that contains
+paired learned attacks [31], [32].
+A.2
+Conditional-information interpretation
+For random payload m, the chain rule gives
+I(m; (gw, uw)) = I(m; gw) + I(m; uw | gw).
+(11)
+The identity partitions information in the joint representation but does not determine either term. An auxiliary-
+concentration interpretation would additionally require two premises: the full path retains payload-relevant information,
+and the attacked structural path contains little of it. One possible statement is
+I(m; (gw, uw)) ≥I(m; xw) −γ(δ),
+I(m; Ag(gw; k)) ≤εI,
+δ = E∥D(gw, uw) −xw∥.
+(12)
+Data processing would then give
+I(m; D(Ag(gw; k), 0)) ≤I(m; Ag(gw; k)).
+(13)
+The present training objective does not optimize mutual information, and the experiment does not estimate εI. Equa-
+tions (11)–(13) are therefore a conditional, post-hoc explanation. The u intervention measures decoder dependence but
+cannot establish exclusive storage or statistical disentanglement [33], [34].
+A.3
+Constrained push–pull view
+The main reconstruction targets can be summarized as
+min
+E,D
+E∥D(Ag(gw; k), 0) −xc∥2
+2
+s.t.
+E∥Ag(gw; k) −gc∥2 ≤εg,
+E∥D(gw, uw) −xw∥2 ≤δ.
+(14)
+Using uw is one way for the optimizer to satisfy the full-path constraint while the zero-auxiliary output follows the
+clean target. It is not the unique solution. A sufficiently expressive encoder can retain evidence in g, distribute it across
+both branches, or exploit decoder nonlinearities. The theory becomes predictive only after its representation premises
+are independently tested.
+The empirical checks suggested by this account are: (i) restoring u should move BER away from 0.5 when visible
+fidelity remains high; (ii) removing spectral alignment should reduce RR if the attacked structural latent no longer
+matches the clean target; and (iii) removing zero-auxiliary supervision should reduce the fidelity of the deployed path.
+The current residual-scale experiment addresses the first check. The second is descriptive because only one summarized
+run is available per ablation. The third is unresolved because the drop0 ablation leaves a duplicate Stage 3 clean-target
+residual active.
+B
+Extended Parameter Search and Per-Method Results
+B.1
+Coarse and fine grids
+Table 9 reports the four diagnostic corners. K0U0 has average BER closest to 0.5 but only 22.51 dB PSNR. Restoring
+the full auxiliary input at K0U1 raises PSNR to 37.80 dB and makes the payload recoverable. K1U0 is the only corner
+that combines high removal with PSNR above 30 dB.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+14
+Table 9: Coarse-grid corners. Method BERs follow SSL Watermarking/DwtDct/DwtDctSvd/RivaGAN. Bold BER is
+closest to 0.5; bold PSNR/SSIM is larger.
+Setting
+k
+u
+Avg. BER →0.5
+PSNR↑
+SSIM↑
+Method BERs
+K0U0
+0.00
+0.00
+0.4042
+22.51
+0.9144
+0.339/0.444/0.489/0.344
+K1U0
+1.00
+0.00
+0.3913
+31.07
+0.9553
+0.316/0.414/0.470/0.365
+K0U1
+0.00
+1.00
+0.0697
+37.80
+0.9883
+0.012/0.240/0.026/0.001
+K1U1
+1.00
+1.00
+0.1137
+27.95
+0.8583
+0.125/0.225/0.105/0.000
+Table
+10:
+Full
+set
+of
+selected
+fine-sweep
+points.
+Method
+BERs
+follow
+SSL
+Watermark-
+ing/DwtDct/DwtDctSvd/RivaGAN.
+Setting
+k
+u
+Avg. BER →0.5
+PSNR↑
+SSIM↑
+Method BERs
+Attack optimum
+1.10
+0.00
+0.3958
+31.07
+0.9554
+0.324/0.418/0.479/0.362
+Nearby point
+1.00
+0.00
+0.3938
+31.07
+0.9553
+0.324/0.411/0.473/0.368
+Balanced point
+0.90
+0.00
+0.3867
+31.11
+0.9586
+0.319/0.418/0.463/0.348
+Nonzero-u point
+0.90
+0.03
+0.3720
+31.30
+0.9591
+0.311/0.414/0.486/0.277
+Higher-u point
+0.90
+0.05
+0.3550
+31.29
+0.9593
+0.312/0.413/0.475/0.219
+Table 11: Fine-sweep averages grouped by auxiliary scale. Deltas are relative to u = 0.
+u
+BER →0.5
+∆BER
+PSNR↑
+∆PSNR
+SSIM↑
+0.00
+0.3893
+0.0000
+30.99
+0.00
+0.9568
+0.03
+0.3695
+−0.0198
+31.05
++0.06
+0.9571
+0.05
+0.3570
+−0.0323
+30.94
+−0.05
+0.9571
+0.06
+0.3521
+−0.0372
+30.83
+−0.16
+0.9571
+0.10
+0.3399
+−0.0494
+30.01
+−0.98
+0.9566
+0.15
+0.3357
+−0.0536
+28.23
+−2.76
+0.9548
+0.20
+0.3426
+−0.0467
+26.09
+−4.90
+0.9509
+B.2
+Per-method results
+Table 12 compares the selected point with a quality-oriented nonzero-u setting. Restoring u = 0.03 has the largest
+decoder effect on RivaGAN, whose BER moves from 0.3619 to 0.2772.
+Table 12: Per-method fine-sweep metrics. Bold BER is closest to 0.5; bold PSNR/SSIM is larger.
+Setting
+DwtDct
+DwtDctSvd
+RivaGAN
+SSL Watermarking
+BER→0.5
+PSNR
+SSIM
+BER→0.5
+PSNR
+SSIM
+BER→0.5
+PSNR
+SSIM
+BER→0.5
+PSNR
+SSIM
+k = 1.10, u = 0
+0.4181
+31.68
+0.9656
+0.4794
+31.54
+0.9659
+0.3619
+31.65
+0.9597
+0.3237
+29.42
+0.9302
+k = 0.90, u = 0.03
+0.4141
+31.85
+0.9683
+0.4859
+31.61
+0.9685
+0.2772
+31.83
+0.9627
+0.3110
+29.92
+0.9368
+B.3
+Tree-Ring radius and representation probes
+The ring-notch option is disabled for the reported (k, u) sweep and module ablations. It is enabled only for the
+detector-specific scan in Table 7 in the main paper.
+On 399 matched representations, one train/test linear probe distinguishes watermarked from attacked samples with
+98.75% accuracy using u. This is preliminary evidence of a linearly accessible intervention effect. The corresponding
+g probe gives 21.25% accuracy against a nominal 50% chance level. A below-chance value cannot be read as
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+15
+Table 13: Per-method points recomputed from the scan result files. Strongest attack maximizes RR with PSNR ≥25
+dB; constrained rows maximize PSNR subject to an RR floor.
+Method
+Selection
+k
+u
+BER→0.5
+PSNR↑
+SSIM↑
+DwtDct
+Strongest attack
+0.8500
+0.2500
+0.5003
+25.47
+0.9613
+DwtDct
+Best recovery
+0.0000
+1.0000
+0.2403
+37.27
+0.9900
+DwtDct
+RR ≥0.50 best PSNR
+0.9250
+0.0375
+0.4153
+31.88
+0.9679
+DwtDctSvd
+Strongest attack
+0.5000
+0.2500
+0.5000
+27.02
+0.9661
+DwtDctSvd
+Best recovery
+0.0000
+1.0000
+0.0262
+37.59
+0.9896
+DwtDctSvd
+RR ≥0.50 best PSNR
+0.9400
+0.0163
+0.4675
+31.67
+0.9677
+RivaGAN
+Strongest attack
+1.0000
+0.0000
+0.3694
+31.66
+0.9597
+RivaGAN
+Best recovery
+0.0000
+1.0000
+0.0006
+38.63
+0.9871
+RivaGAN
+RR ≥0.60 best PSNR
+0.9431
+0.0050
+0.3147
+31.82
+0.9616
+SSL Watermarking
+Strongest attack
+1.0000
+0.2000
+0.3570
+25.37
+0.9258
+SSL Watermarking
+Best recovery
+0.0000
+1.0000
+0.0115
+37.70
+0.9865
+SSL Watermarking
+RR ≥0.60 best PSNR
+0.8000
+0.0500
+0.3042
+30.04
+0.9416
+Figure 5: Full PSNR (left) and BER (right) views across attack strength k and auxiliary scale u. BER should be read by
+proximity to 0.5.
+“no information” because reversed labels, split instability, or calibration failure may still yield discriminability. A
+confirmatory probe should report score-based AUROC, repeated cross-validation, confidence intervals, and label-
+permutation tests.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+16
+C
+Complete Baseline Comparisons
+The tables below retain the method-level results used to derive Table 6. All available outputs are evaluated with
+method-specific decoders or detectors and common fidelity metrics. The attack-generation configurations and result
+subsets are not identical across rows.
+Table 14: Conventional image-space attacks and our selected point. Bold BER is closest to 0.5; bold detector removal
+and fidelity metrics are larger.
+Attack
+DwtDct
+DwtDctSvd
+RivaGAN
+SSL Watermarking
+StegaStamp
+Stable Signature
+Tree-Ring
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+Acc Rem.
+PSNR
+SSIM
+Gaussian blur
+0.3481
+29.30
+0.8906
+0.0000
+30.36
+0.9050
+0.0000
+30.77
+0.8945
+0.0000
+28.16
+0.8413
+0.0000
+28.09
+0.8482
+0.1813
+30.53
+0.9062
+0.0000
+29.48
+0.9003
+Gaussian noise
+0.6038
+20.59
+0.4996
+0.3025
+20.49
+0.4762
+0.0516
+20.55
+0.4794
+0.5055
+20.53
+0.5135
+0.0018
+20.52
+0.5072
+0.1842
+23.28
+0.4925
+0.0100
+22.45
+0.4555
+JPEG
+0.4038
+33.67
+0.9673
+0.0156
+34.28
+0.9680
+0.0025
+34.42
+0.9653
+0.0255
+34.43
+0.9515
+0.0001
+34.63
+0.9544
+0.0848
+43.80
+0.9950
+0.0000
+43.18
+0.9923
+Brightness
+0.4591
+7.78
+0.2871
+0.3787
+8.00
+0.2931
+0.1391
+8.39
+0.2910
+0.0023
+8.07
+0.2538
+0.0000
+7.87
+0.2584
+0.3762
+7.93
+0.2425
+0.0700
+7.32
+0.2448
+Contrast
+0.4587
+14.21
+0.6466
+0.3787
+14.35
+0.6687
+0.1309
+14.39
+0.6497
+0.0048
+14.34
+0.5788
+0.0000
+14.00
+0.5811
+0.4279
+14.69
+0.5733
+0.0100
+13.91
+0.5498
+Rotation
+0.4097
+9.69
+0.2187
+0.4094
+9.98
+0.2392
+0.3081
+9.82
+0.2329
+0.0333
+9.98
+0.2122
+0.4227
+9.59
+0.2100
+0.4281
+10.19
+0.2255
+0.7200
+8.98
+0.2101
+Cropping
+0.0356
+10.09
+0.2795
+0.0000
+10.26
+0.2909
+0.0013
+10.08
+0.2674
+0.4070
+10.41
+0.1865
+0.4860
+9.87
+0.1823
+0.1119
+10.79
+0.1939
+1.0000
+9.35
+0.2446
+Ours
+0.4106
+31.69
+0.9656
+0.4856
+31.54
+0.9659
+0.3697
+31.65
+0.9597
+0.3207
+29.43
+0.9303
+0.4251
+31.37
+0.9470
+0.2275
+28.35
+0.8934
+0.3200
+26.81
+0.8799
+Table 15: Denoising, reconstruction, and regeneration attacks compared with our selected point. Bold BER is closest to
+0.5; bold detector removal and fidelity metrics are larger.
+Attack
+DwtDct
+DwtDctSvd
+RivaGAN
+SSL Watermarking
+StegaStamp
+Stable Signature
+Tree-Ring
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+Acc Rem.
+PSNR
+SSIM
+BM3D
+0.4097
+35.45
+0.9422
+0.3591
+36.27
+0.9412
+0.0191
+36.22
+0.9391
+0.2903
+32.37
+0.8715
+0.0015
+32.56
+0.8837
+0.2035
+33.15
+0.9019
+0.0000
+33.22
+0.8973
+CtrlRegen
+0.4216
+21.16
+0.6242
+0.4713
+21.58
+0.6455
+0.4803
+21.66
+0.6272
+0.5298
+20.83
+0.5594
+0.4505
+20.91
+0.5949
+0.5112
+21.57
+0.6320
+0.2200
+21.68
+0.6570
+WatermarkAttacker
+0.4153
+23.96
+0.7154
+0.4088
+24.59
+0.7357
+0.4106
+24.84
+0.7210
+0.4885
+23.22
+0.6439
+0.2570
+23.37
+0.6755
+0.5050
+24.80
+0.7378
+0.1500
+24.98
+0.7702
+SADRE-BMSHJ
+0.4113
+29.30
+0.8676
+0.4000
+29.96
+0.8760
+0.3934
+30.15
+0.8615
+0.5053
+28.31
+0.8115
+0.3683
+28.41
+0.8272
+0.3360
+30.34
+0.8679
+0.0200
+29.91
+0.8587
+SADRE-Cheng
+0.4119
+30.59
+0.8943
+0.3875
+31.05
+0.8968
+0.4025
+31.26
+0.8851
+0.4905
+29.94
+0.8503
+0.3619
+30.08
+0.8629
+0.2533
+31.45
+0.8861
+0.0400
+31.36
+0.8812
+SADRE-Diff60
+0.4156
+25.99
+0.7663
+0.4844
+26.68
+0.7844
+0.3559
+27.02
+0.7647
+0.4838
+24.98
+0.6906
+0.2465
+25.19
+0.7237
+0.4771
+27.47
+0.8087
+0.0100
+28.44
+0.8559
+Ours
+0.4106
+31.69
+0.9656
+0.4856
+31.54
+0.9659
+0.3697
+31.65
+0.9597
+0.3207
+29.43
+0.9303
+0.4251
+31.37
+0.9470
+0.2275
+28.35
+0.8934
+0.3200
+26.81
+0.8799
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+17
+D
+Full Ablation Results
+The variants remove multiband magnitude alignment, the scheduled drop0 term, the pooled-VGG constraint, or the
+high-frequency residual input. The fg4 and fg16 variants change the Fourier-block group count from eight. The
+no-drop0 variant retains Lrecov on the same zero-auxiliary prediction and is therefore not a complete removal of
+zero-auxiliary supervision.
+Table 16: Ablations on DwtDct, DwtDctSvd, RivaGAN, and SSL Watermarking at k = 1.10, u = 0. Bold BER is
+closest to 0.5; bold PSNR/SSIM is larger.
+Variant
+DwtDct
+DwtDctSvd
+RivaGAN
+SSL Watermarking
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+Full
+0.4106
+31.69
+0.9656
+0.4856
+31.54
+0.9659
+0.3697
+31.65
+0.9597
+0.3208
+29.43
+0.9303
+w/o spectral alignment
+0.4131
+32.89
+0.9772
+0.4550
+33.01
+0.9776
+0.2828
+32.89
+0.9713
+0.2717
+30.30
+0.9517
+w/o scheduled drop0
+0.4225
+27.95
+0.9440
+0.4928
+27.33
+0.9425
+0.4934
+27.52
+0.9322
+0.3610
+26.76
+0.8976
+w/o perceptual constraint
+0.4144
+31.35
+0.9630
+0.4684
+31.18
+0.9640
+0.3159
+31.11
+0.9558
+0.2995
+30.00
+0.9323
+w/o high-frequency residual
+0.4147
+31.69
+0.9656
+0.4891
+31.58
+0.9657
+0.3669
+31.54
+0.9581
+0.3090
+29.57
+0.9303
+fg4
+0.4163
+31.51
+0.9660
+0.4794
+31.29
+0.9661
+0.4006
+31.37
+0.9588
+0.3093
+29.99
+0.9360
+fg16
+0.4125
+31.62
+0.9659
+0.4822
+31.48
+0.9661
+0.3678
+31.59
+0.9594
+0.3313
+29.44
+0.9314
+Table 17: Ablations on StegaStamp, Stable Signature, and Tree-Ring. Tree-Ring reports Acc Removal, not BER.
+Variant
+StegaStamp
+Stable Signature
+Tree-Ring
+BER
+PSNR
+SSIM
+BER
+PSNR
+SSIM
+Acc Rem.
+PSNR
+SSIM
+Full
+0.4251
+31.37
+0.9470
+0.2275
+28.35
+0.8934
+0.3200
+26.81
+0.8799
+w/o spectral alignment
+0.3573
+33.28
+0.9681
+0.1975
+28.78
+0.9001
+0.2700
+27.54
+0.8903
+w/o scheduled drop0
+0.4640
+27.67
+0.9175
+0.2321
+26.57
+0.8825
+0.1700
+24.66
+0.8410
+w/o perceptual constraint
+0.4164
+31.04
+0.9415
+0.3863
+27.48
+0.8360
+0.3700
+25.08
+0.8579
+w/o high-frequency residual
+0.4377
+31.26
+0.9453
+0.2135
+28.29
+0.8922
+0.3400
+26.36
+0.8756
+fg4
+0.4287
+31.14
+0.9471
+0.2294
+28.36
+0.8955
+0.3400
+24.76
+0.8702
+fg16
+0.4311
+31.25
+0.9461
+0.2221
+28.31
+0.8950
+0.3700
+25.39
+0.8758
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+18
+E
+Full Double Residual Visualization
+Figure 6 extends the diagnostic in Figure 4 to all evaluated watermarking systems. The same absolute and signed
+residual scaling is used throughout. In these displayed samples, regeneration and diffusion methods produce broader
+bidirectional residuals. The proposed attack produces weaker residuals for several bit-decoder methods, while Tree-Ring
+shows broader signed changes. These images describe spatial modification patterns and do not identify watermark
+information or a causal frequency mechanism.
+Figure 6: Full double residual comparison across all evaluated watermarking systems. Each watermarking block shows
+attack outputs, absolute residuals |xatk −xw| × 8, and signed residuals (xatk −xw) × 8 for the same attack methods
+as Tables 14 and 15.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+19
+F
+Architecture Details
+The implementation uses an encoder E and decoder D with no normalization layers or dropout. Inputs are resized to
+512 × 512 and normalized to [−1, 1]. Every model output that is decoded as an image or latent image is also bounded
+by a final tanh: g ∈[−1, 1]1×H×W , u ∈[−1, 1]C×H×W , and D(g, u) ∈[−1, 1]3×H×W . The auxiliary channel count
+is fixed to C = 16 in all reported runs.
+Both branches use the same high frequency extractor,
+H(y) = y −Gσ=1.0(y),
+(15)
+where G is a 5 × 5 Gaussian blur with padding 2. For RGB inputs, y = 0.299R + 0.587G + 0.114B; for one channel
+inputs, y is used directly. The encoder input is [x, H(rgb2gray(x))] and therefore has four channels. The decoder input
+is [g, u, H(g)] and therefore has 1 + 16 + 1 = 18 channels.
+Table 18: Encoder block table. A residual block is Conv(3, 1, 1)–ReLU–Conv(3, 1, 1) plus an identity skip. A down
+block is Conv(3, 2, 1)–Conv(3, 1, 1)–ReLU. An up block is bilinear upsample by 2, Conv(3, 1, 1)–Conv(3, 1, 1)–ReLU,
+followed by skip addition.
+Stage
+Operation
+Output size
+Notes
+Input fusion
+Concatenate
+RGB
+and
+H(rgb2gray(x))
+4 × H × W
+High frequency extractor uses kernel 5
+and σ = 1.0.
+Head
+Conv
+4
+→
+64,
+ResBlock(64) × 2
+64 × H × W
+First shared feature map.
+Down 1
+DownConv 64→128
+128 × H/2 × W/2
+The 64 channel head output is stored as
+a skip.
+Down 2
+DownConv 128→256
+256 × H/4 × W/4
+The 128 channel feature is stored as a
+skip.
+Bridge
+ResBlock(256) × 4
+256 × H/4 × W/4
+Bottleneck refinement.
+Up 1
+UpConv 256→128 + skip
+128 × H/2 × W/2
+Additive skip from Down 2 input.
+Up 2
+UpConv 128→64 + skip
+64 × H × W
+Additive skip from Down 1 input.
+Shared tail
+ResBlock(64) × 2
+64 × H × W
+Shared by the g and u heads.
+Fourier split
+Fourier block
+64 × H × W
+Residual Fourier disentanglement block
+used in the reported model.
+The encoder has two output heads after the shared tail and optional Fourier split block:
+g = tanh(Conv3×3
+32→1(ReLU(Conv3×3
+64→32(f)))),
+(16)
+u = tanh(Conv3×3
+64→16(ReLU(Conv3×3
+64→64(f)))).
+(17)
+Thus the structural head is 64 →32 →1 and the auxiliary head is 64 →64 →16. Both heads use stride 1 and padding
+1 for all 3 × 3 convolutions.
+Table 19: Decoder block table. The decoder is full resolution throughout; it does not downsample.
+Stage
+Operation
+Output size
+Notes
+Input fusion
+Concatenate g, u, and H(g)
+18 × H × W
+C = 16, so 1 + C + 1 = 18.
+Projection
+Conv 18→64
+64 × H × W
+3 × 3, stride 1, padding 1.
+Residual trunk
+ResBlock(64) × 8
+64 × H × W
+Full resolution residual refine-
+ment.
+Expansion
+Conv 64→256, GELU
+256 × H × W
+3 × 3, stride 1, padding 1.
+RGB head
+Conv 256→3, tanh
+3 × H × W
+1×1 projection to RGB in [−1, 1].
+Frequency blocks.
+The encoder frequency block is a residual rFFT block operating on the 64 channel shared feature
+map. It applies a two-dimensional orthonormal real Fourier transform, splits the real and imaginary components into 8
+token groups, and therefore uses 8 channels per group. Each group has a learned real mixing matrix and imaginary
+mixing matrix of shape 8 × 8, initialized with standard deviation 0.02. Learned per-channel real and imaginary scales
+of shape 1 × 64 × 1 × 1 are applied, followed by a soft-thresholding nonlinearity with threshold 0.01, inverse rFFT, and
+residual addition to the input feature.
+The latent attack operator Ag is also frequency-domain by default. It applies rFFT to gw, builds normalized radial masks
+with low band r ≤1/3, mid band 1/3 < r ≤2/3, and high band r > 2/3, attenuates each band, adds magnitude noise
+on the mid/high bands, adds phase noise on the high band, reconstructs with inverse rFFT, and clamps the result to
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+20
+[−1, 1]. Stage 2 keep ratios are (0.95, 0.75, 0.60) for low/mid/high, with magnitude and phase noise σ = (0.02, 0.03).
+Stage 3 keep ratios are (0.90, 0.55, 0.35), with magnitude and phase noise σ = (0.05, 0.06). The ring-notch option is
+disabled for the main (k, u) results and module ablations; it is enabled only for the Tree-Ring detector-specific radius
+scan in Table 7.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+21
+G
+Full Loss Weights
+The training objective is
+L = λinvLinv + λgraycLgrayc + λrec1Lrec1
++ λg−atkLg−atk + λgray_hatwLgray_hatw
++ wdrop0(e)Ldrop0 + wpvc0(e)Lpvc0 + λrecovLrecov
++ wpvc_pred0(e)Lpvc_pred0
++ λhf_pred0Lhf_pred0 + λedge_pred0Ledge_pred0
++ λuc∥uc∥1
++ λquant_hatwLquant_hatw
++ λg_hf_hatwLg_hf_hatw + λg_edge_hatwLg_edge_hatw
++ λfft_splitLfft_split
++ λuw_floorLufloor + λclean0Lclean0.
+(18)
+Table 20 lists every fixed or scheduled loss weight used by the training schedule in Appendix H. The implementation
+retains two pairs of duplicate Stage 3 computations for historical scheduling reasons. Specifically, Ldrop0 and Lrecov
+are both ∥xpred0 −xc∥1; after warmup their coefficients add to an effective pixel weight of 10 + 6 = 16. Likewise,
+Lpvc0 and Lpvc_pred0 reuse the same pooled-VGG value and have an effective Stage 3 weight of 4 + 6 = 10 after
+perceptual warmup. Reporting these effective weights makes the objective and existing checkpoints easier to interpret;
+full reproducibility still requires the exact run configuration, random seeds, data manifest, evaluation commands, and
+per-variant checkpoints listed in Section 6.5. Future implementations should consolidate each pair before running
+causal ablations.
+Table 20: Complete loss weights used in the reported training schedule. Stage 1, Stage 2, and Stage 3 correspond to
+epochs 0–14, 15–79, and 80–139.
+Weight
+Value
+Active stage
+Loss term / note
+λinv
+2.0
+1–3
+MSE between xc and D(gc, uc).
+λgrayc
+1.0
+1–3
+Grayscale conformity for gc.
+λrec1
+1.0
+1–3
+Multiplies ∥D(gw, uw) −xw∥1 after the schedule scale srec1(e).
+λg−atk
+3.0
+2–3
+∥Ag(gw; k) −gc∥1; zero in Stage 1.
+λgray_hatw
+1.0
+1–3
+Grayscale conformity for the attacked structural latent. In Stage 1,
+Ag is identity.
+λdrop0
+target 10.0
+2–3
+Same Stage 3 residual as Lrecov; warms from 2.0 to 10.0 in
+Stage 2 and is 10.0 in Stage 3.
+λpvc0,s1
+0.0
+1
+Pooled VGG cosine weight for D(Ag(gw), 0) in Stage 1.
+λpvc0,s2
+2.0
+2
+Multiplied by min(1, 3ps2), where ps2 is Stage 2 progress.
+λpvc0,s3
+4.0
+3
+Reuses the same Stage 3 pooled-VGG value as Lpvc_pred0 and
+follows the five-epoch warmup.
+λrecov
+6.0
+3
+Same ∥xpred0 −xc∥1 residual as Ldrop0.
+λpvc_pred0
+6.0
+3
+Reuses Lpvc0 in Stage 3 and follows the same five-epoch warmup.
+λhf_pred0
+0.8
+3
+Multiscale high frequency loss on xpred0.
+λedge_pred0
+0.5
+3
+Sobel edge consistency on xpred0.
+λuc
+1.0
+1–3
+∥uc∥1 clean auxiliary sparsity.
+λquant_hatw
+1.0
+3
+Quantization loss on Ag(gw; k) toward the nearest 8-bit level in
+[−1, 1].
+λg_hf_hatw
+0.3
+3
+Multiscale high frequency branch loss for (gc, Ag(gw; k)).
+λg_edge_hatw
+0.2
+3
+Sobel branch loss for (gc, Ag(gw; k)).
+λfft_split
+1.2
+2–3
+Multiband Fourier magnitude alignment between Ag(gw; k) and
+gc.
+λuw_floor
+0.2
+2–3
+max(0, τ −E|uw|) with τ = 0.04.
+λclean0
+0.0
+disabled
+Clean zero-auxiliary anchor branch is not computed.
+λgc_hf
+1.0
+inner weight
+Internal clean structural high frequency / edge branch weight.
+λgw_hf
+0.5
+inner weight
+Internal attacked structural high frequency / edge branch weight.
+The remaining scalar loss constants are as follows. Grayscale conformity uses threshold 70/127, VGG-19 features up
+to layer 21, and contrast weight 10−7. Its local structure weight is 0.5 in Stage 1, 0.2 in Stage 2, and 0.1 in Stage 3. The
+multiscale high frequency kernels are (3, 5, 9) with sigmas (0.8, 1.2, 2.0) and scale weights (0.5, 1.0, 1.5). The Fourier
+separation loss uses low/mid/high band weights (0.8, 1.0, 1.0). Charbonnier losses use ϵ = 10−3.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+22
+H
+Training Schedule
+Table 21 records the epoch ranges and the quantities that change at each transition.
+Table 21: Stage transition and scheduled quantities.
+Stage
+Epochs
+Schedule
+Stage 1
+0–14
+Ag is identity, attack strength k = 0, zero auxiliary attack losses are inactive, and
+srec1 = 1.
+Stage 2.1
+15–35
+Stage 2 starts. Attack strength follows a cosine ramp from 0.25 toward 0.75, λdrop0 warms
+from 2.0 toward 10.0, and srec1 begins cosine decay.
+Stage 2.2
+36–57
+Middle third of Stage 2; same schedules continue. The pooled VGG Stage 2 scale is
+min(1, 3ps2) and is saturated after the first third of Stage 2.
+Stage 2.3
+58–79
+Final third of Stage 2. Attack strength reaches 0.75 and srec1 reaches its floor 0.2.
+Stage 3
+80–139
+Full objective is active. Attack strength ramps continuously from 0.75 to 1.0 during the
+first 8 Stage 3 epochs and stays at 1.0 afterwards. Perceptual Stage 3 weights warm up
+over the first 5 Stage 3 epochs.
+
+
+Where Does the Watermark Hide? Push–Pull Disentanglement for Invisible Watermark Removal
+23
+I
+Additional evaluation protocol
+I.1
+Parameter search
+The coarse grid evaluates k ∈{0, 0.25, 0.50, 0.75, 1.00} and u ∈{0, 0.25, 0.50, 0.75, 1.00}. The fine grid refines the
+high performing region with k ∈[0.80, 1.20] and u ∈{0, 0.03, 0.05, 0.06, 0.10, 0.15, 0.20}. The shared selected point
+is chosen by maximizing the attack metric subject to visual quality constraints, rather than by maximizing BER alone.
+This distinction matters because destructive attacks such as brightness shifts, rotation, and cropping can produce high
+detector failure while making the output visibly unusable.
+I.2
+Metric interpretation
+For bit-decoder watermarks, BER is computed between the original embedded payload and the payload extracted after
+attack. Stronger removal means BER closer to 0.5, summarized by RR = 1 −2|BER −0.5|; BER above 0.5 is not
+automatically stronger. For Tree-Ring, lower TPR at the nominal 1%-FPR calibration target means stronger removal,
+and Acc Removal is 1 −TPR. The realized empirical FPR should be reported when it differs from the nominal target.
+PSNR and SSIM are computed against the watermarked input unless otherwise specified, so they measure visible
+preservation under attack rather than recovery of an unavailable clean image.
