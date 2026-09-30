@@ -1,0 +1,254 @@
+Title: Geometric Inconsistency Localization in Multi-View Image Sets
+
+URL Source: https://arxiv.org/pdf/2609.31247v1
+
+Published Time: Mon, 28 Sep 2026 01:06:11 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Geometric Inconsistency Localization in Multi-View Image Sets 
+
+# Xander Staelens 
+
+IDLab, Ghent University - imec Ghent, Belgium Xander.Staelens@ugent.be 
+
+# Albéric Loos 
+
+IDLab, Ghent University - imec Ghent, Belgium Alberic.Loos@ugent.be 
+
+# Bert Ramlot 
+
+IDLab, Ghent University - imec Ghent, Belgium Bert.Ramlot@ugent.be 
+
+# Hannes Mareen 
+
+IDLab, Ghent University - imec Ghent, Belgium Hannes.Mareen@ugent.be 
+
+# Peter Lambert 
+
+IDLab, Ghent University - imec Ghent, Belgium Peter.Lambert@ugent.be 
+
+# Glenn Van Wallendael 
+
+IDLab, Ghent University - imec Ghent, Belgium Glenn.VanWallendael@ugent.be 
+
+## Abstract 
+
+Novel view synthesis (NVS) models can produce realistic new views of the same scene from different viewpoints. However, these gen-erated views are not always geometrically consistent with one another. Multi-view (MV) consistency has shown promise as a tool for evaluating these NVS models. Its potential for multime-dia forensics, however, remains largely unexplored, particularly for localizing geometric inconsistencies across wide-baseline im-age pairs. To enable research in this direction, we introduce De-formView, a wide-baseline MV dataset with pixel-level annota-tions of geometric inconsistencies. Using DeformView, we eval-uate state-of-the-art MV consistency-scoring methods and show that approaches developed for NVS evaluation transfer poorly to the forensic task of geometric inconsistency localization. To ad-dress this limitation, we propose DEFECt3R, a lightweight learning-based classifier that uses cross-view feature relationships to localize geometric inconsistencies at the pixel level. By learning from ex-plicit supervision, including hard negatives from geometrically consistent yet deformed views, DEFECt3R improves localization performance and substantially reduces false positives compared to existing consistency-scoring methods. Ablation experiments fur-ther show that both feature representations and correspondence quality contribute to localization performance. Overall, our find-ings demonstrate that MV geometric consistency is a promising yet underexplored signal for multimedia forensics and establish a benchmark and baseline for geometric inconsistency localization in wide-baseline MV image pairs. Code and dataset are available at https://github.com/IDLabMedia/DeformView-DEFECt3R 
+
+## Keywords 
+
+Image Forensics, Geometric Inconsistency Localization, Wide-Baseline Multi-View Image Sets 
+
+## 1 Introduction 
+
+The quality of AI-generated images is improving at a remarkable pace. Modern text-to-image diffusion models can generate photore-alistic images from nothing more than a short text prompt [12, 15]. More recently, novel view synthesis models have been developed that can generate additional viewpoints of a scene starting from a single image [5, 14, 17], further increasing the realism. This rapid progress comes at a serious societal cost, i.e., increasing the risk of fake news, misinformation, and fraud. To address this problem, Synthetic Image Detection (SID) methods have emerged, aiming to View  1 View 2 
+
+DEFECt3R (o urs )MEt3R  Ground Truth 
+
+Geometrically 
+
+Inconsistent 
+
+Figure 1: An image pair, from the proposed DeformView dataset, shows two views of the same object taken from dif-ferent viewpoints. While both images appear plausible in isolation, they are geometrically inconsistent with one an-other. The figure shows the responses produced by MEt3R [1], the inconsistency map predicted by our proposed method, DEFECt3R, and the ground-truth annotation. Existing geo-metric consistency methods either produce only a global consistency score or require more views than are typically available in forensic settings. In contrast, DEFECt3R directly localizes geometric inconsistencies, producing pixel-level in-consistency maps that improve explainability while achiev-ing increased detection performance. 
+
+distinguish real from generated images. These methods typically analyze frequency- [6], and pixel artifacts [18], noise residuals [3], pretrained feature vectors [13], and lighting and shadow inconsis-tencies [16, 19]. A fundamental limitation of these SID approaches is that they analyze an image in isolation, without reasoning about relationships between views of the same scene, i.e., multi-view (MV) image sets. In particular, geometric consistency across views is difficult for current generative models to reproduce reliably. While real photographs of the same scene are inherently consistent because they capture the same physical geometry, generative models are not constrained in this way. As a result, even if individual views appear plausible, they arXiv:2609.31247v1 [cs.CV] 25 Sep 2026 Xander Staelens, Albéric Loos, Bert Ramlot, Hannes Mareen, Peter Lambert, and Glenn Van Wallendael 
+
+may geometrically contradict each other, revealing their synthetic origin (e.g., see Figure 1). Despite the potential of multi-view consistency as a robust signal for synthetic image detection, research in this area remains limited (only a few methods exist [1, 8, 20–22]) and is primarily focused on evaluating novel view synthesis and video generation models rather than multimedia forensics. Existing approaches either pro-duce only global consistency scores, rely on handcrafted geometric constraints, or operate on highly-overlapping image sequences (e.g., adjacent video frames) rather than wide-baseline image pairs (i.e., image pairs with large viewpoint differences and limited overlap). In contrast, multimedia forensics requires interpretable pixel-level predictions that localize geometrically inconsistent regions, as well as methods that remain applicable when views differ sub-stantially in viewpoint. Additionally, no suitable wide-baseline MV datasets exist that provide controlled geometric inconsistencies together with pixel-level ground-truth annotations, limiting the development and evaluation of localization methods in this setting. This paper addresses both problems with the following contri-butions: (i) We introduce DeformView , a dataset with pixel-level annotations of geometric inconsistencies in wide-baseline multi-view image sets, comprising 1029 objects rendered from 24 view-points with both original and deformed variants (Section 3). (ii) We propose DEFECt3R , a lightweight learning-based method for pixel-level geometric inconsistency localization in wide-baseline multi-view image sets. Built upon MEt3R [1], DEFECt3R substan-tially reduces false positives and improves localization performance (Section 4). (iii) We establish a benchmark for geometric inconsis-tency localization in wide-baseline multi-view image sets by evalu-ating state-of-the-art consistency-scoring methods (TSED [21] and MEt3R [1]) alongside DEFECt3R on DeformView, highlighting the limitations of existing methods for multimedia forensics (Section 5). 
+
+## 2 Related Work: Multi-View Consistency 
+
+Multi-view (MV) consistency refers to the geometric agreement between images of the same scene taken from different viewpoints. In real photographs, this consistency arises naturally, whereas gen-erative models are not inherently constrained to preserve it. This makes MV consistency a powerful signal for detecting synthetic images. Despite its promise, progress in this area is limited by two key challenges: (i) the lack of suitable datasets (Section 2.1), and (ii) limitations of existing methods (Section 2.2). 
+
+## 2.1 Multi-View Datasets 
+
+The first challenge is the lack of suitable datasets. While recent work has begun exploring geometric inconsistencies, existing datasets do not provide a suitable benchmark for wide-baseline multi-view image pairs. One related work is by Khangaonkar et al. [9], who introduce a dataset of 615 image triplets constructed via object copy-pasting across views. Its goal is to evaluate whether multimodal large language models can identify the geometrically inconsistent object. Therefore, annotations are provided at object level rather than pixel level. While these annotations could be converted into segmentation masks, they would reflect the extent of the pasted object rather than the actual geometric inconsistency. In particular, they do not distinguish between pixels that violate MV geometry and those that remain plausible, nor do they indicate where the geometric error actually occurs. As a result, this dataset is not suitable for pixel-level inconsistency localization. More recently, Gu et al. [8] introduced WarpBench and Oc-cluBench , two benchmarks for geometric inconsistency localiza-tion in generated videos. WarpBench simulates deformations using image-space thin-plate spline warps, while OccluBench focuses on occlusion inconsistency artifacts. Although WarpBench provides pixel-level annotations, it applies deformations independently in image space rather than as modifications to a shared 3D geometry. Consequently, the same deformation cannot be rendered consis-tently across multiple viewpoints, nor can the benchmark generate geometrically consistent yet visually deformed hard negatives. Such hard negatives are important when training localization models, as they prevent the model from simply detecting visual deformations instead of genuine cross-view geometric inconsistencies. 
+
+## 2.2 Multi-View Consistency Methods 
+
+The second challenge is the limitations of existing methods. Early forensic methods relied on handcrafted geometric constraints, such as homographies and fundamental matrices, to detect photographic composites [22]. More recently, only a handful of methods have been proposed to assess geometric consistency in MV image sets, primarily in the context of the evaluation of novel view synthe-sis and video generation models. However, these approaches ei-ther produce only global consistency scores or operate on highly-overlapping image sequences, restricting their utility for forensic analysis of wide-baseline image pairs. First, 3D consistency-scoring [20] (3DCS) trains a Neural Ra-diance Field [11] on a subset of views and compares rendered novel views to the held-out images. While effective in principle, this approach requires a large number of views to obtain a reliable re-construction, and hence is not applicable to only a pair of images. In practice, its performance depends strongly on the quality of the learned NeRF representation, making it less suitable for forensic settings where data is limited and uncontrolled. Second, TSED [21] extracts features from image pairs and veri-fies epipolar consistency given the (required) known camera poses. Two images are considered consistent if they have at least 𝑇 matches 
+
+correspondences and the median symmetric epipolar distance of these correspondences is below 𝑇 error . TSED’s dependence on cam-era poses complicates deployment in forensic settings, while its no-tion of consistency is limited to epipolar correspondence agreement rather than explicit reasoning about geometric inconsistencies. Third, MEt3R [1] evaluates MV consistency between image pairs without requiring camera poses. It extracts dense DINO [2] feature maps, upsamples them using FeatUp [7], and establishes geometric correspondence using a 3D matching model such as MASt3R [10]. Consistency is measured by computing the cosine similarity be-tween aligned features and averaging these into a global score. Despite improving upon prior methods, MEt3R remains a global metric designed to assess overall agreement between views rather than localize geometric inconsistencies. Geometric Inconsistency Localization in Multi-View Image Sets 
+
+More recently, GeCo [8] proposed dense geometric inconsis-tency localization for generated videos. GeCo combines optical-flow-based motion consistency with depth-reprojection-based struc-ture consistency to produce interpretable per-pixel inconsistency maps. While effective for highly-overlapping video frames, its motion-consistency component relies on dense optical flow and substantial co-visibility between frames, assumptions that become increasingly difficult to satisfy in wide-baseline image pairs. To address these two challenges, we first introduce a new wide-baseline MV dataset, DeformView, with controlled geometric in-consistencies and pixel-level ground-truth annotations (Section 3). We then propose DEFECt3R, a learning-based model for geometric inconsistency localization (Section 4) and evaluate its performance on our dataset (Section 5). 
+
+## 3 Proposed Dataset: DeformView 
+
+To address the lack of suitable datasets for geometric inconsistency localization, we propose DeformView . By applying deformations directly to 3D object meshes, DeformView introduces controlled geometric inconsistencies with known pixel-level ground-truth an-notations, while also allowing the same deformation to be rendered consistently from multiple viewpoints (as hard negatives). 
+
+Construction DeformView is constructed from the Google Scanned Objects collection [4], comprising 1029 3D object meshes. For each object, a localized sinusoidal deformation is applied to a contiguous mesh region covering 8%–16% of its faces. The deforma-tion amplitude is sampled uniformly between 4%–10% of the object bounding-box diagonal. Original and deformed meshes are rendered in a shared textured room at a resolution of 512 ×512 px. Each object is rendered from 24 viewpoints spaced 15 ◦ apart, using a fixed elevation of 20 ◦ and a 45 ◦ field of view. Image pairs are only formed from viewpoints separated by at most 120 ◦, resulting in a challenging wide-baseline setting while maintaining sufficient overlap for meaningful cross-view comparison. This yields up to 192 candidate viewpoint pairs per object. Pixel-level ground-truth masks are obtained by thresholding the per-pixel difference between corresponding renders of the original and deformed meshes. The dataset is split at the object level into training (75%), validation (15%), and test (10%) partitions, ensur-ing that no object appears in more than one split. This prevents memorization of object-specific geometry or textures and evaluates generalization to previously unseen objects. Unlike the dataset by Khangaonkar et al. [9] and WarpBench [8], which introduce inconsistencies through cross-view copy-pasting and image-space deformations, respectively, DeformView modifies the underlying 3D geometry itself. This enables precise pixel-level annotations, ensures that the same deformation is rendered con-sistently across multiple viewpoints, and allows for the creation of geometrically consistent yet visually deformed hard negatives. 
+
+Pair types DeformView contains three types of image pairs. 
+
+Positive pairs (original-deformed) contain one view of the origi-nal mesh and one view of the corresponding deformed mesh. The resulting geometric inconsistency is confined to the deformed re-gion, and its exact extent is given by the ground-truth mask. Easy negatives (original-original) contain two views of the original mesh and therefore exhibit geometric consistency. Hard negatives 
+
+(deformed-deformed) contain two views of the same deformed mesh. While the geometry itself is unusual, it remains consistent across viewpoints, requiring methods to verify cross-view disagreement rather than simply identify deformed regions. Original-deformed and deformed-deformed pairs are only kept if the deformed region is visible in both views Overall, these design choices yield a dataset with controlled geo-metric inconsistencies, pixel-level ground-truth annotations, and challenging hard negatives that require reasoning about cross-view consistency rather than appearance alone. DeformView therefore provides a suitable benchmark for evaluating geometric consistency-scoring methods and for training dedicated localization models such as DEFECt3R. 
+
+## 4 Proposed Method: DEFECt3R 
+
+Geometric inconsistency localization requires determining whether corresponding image regions in different views are mutually con-sistent. Existing consistency-scoring methods, like MEt3R [1], in-terpret aligned (DINO) feature dissimilarity as evidence of incon-sistency. Although geometric inconsistencies naturally lead to dif-ferences between corresponding features, feature differences can also arise due to geometrically consistent deformations, or from correspondence errors that cause unrelated image regions to be compared. Consequently, feature dissimilarity alone is insufficient evidence of geometric inconsistency. DEFECt3R addresses this chal-lenge through a supervised per-pixel classifier that learns to reason about cross-view consistency directly from aligned feature pairs. 
+
+Design An overview is shown in Figure 2. DEFECt3R builds on the correspondence pipeline introduced by MEt3R [1]. Given an image pair, DINO [2] feature maps are extracted and upsampled using FeatUp [7]. Pixel correspondences are then obtained using MASt3R [10], which estimates the camera geometry and internally produces dense feature representations used for aligning (i.e., pro-jecting View 2 to View 1). We use a frozen DINO ViT-S/16 backbone and frozen MASt3R descriptors throughout all experiments. For each aligned pixel pair, DEFECt3R computes the difference between the aligned DINO features (384-d) as well as the difference between the corresponding MASt3R feature representations (24-d). Prior to differencing, all feature vectors are L2-normalized. The resulting feature differences are passed to a lightweight multi-layer perceptron (MLP) classifier. To prevent the higher-dimensional DINO features from dom-inating the MASt3R contribution, the DINO difference vector is first projected from 384-d to 64-d dimensions using a two-layer MLP (384 →128 →64). The resulting 64-d embedding is concate-nated with the 24-d MASt3R difference vector and processed by a second two-layer MLP (88 →64 →1) that predicts an inconsistency probability. Both MLPs use GELU activations and a dropout rate of 0.15. The complete classifier contains approximately 63k trainable parameters. Each pixel is classified independently. This is possible because both DINO and MASt3R features together already encode rich geometric and contextual information per pixel, allowing the model to reason about cross-view consistency directly from aligned feature Xander Staelens, Albéric Loos, Bert Ramlot, Hannes Mareen, Peter Lambert, and Glenn Van Wallendael Trained 
+
+Classifier 
+
+MASt3R 
+
+DINO + 
+
+FeatUp 
+
+DINO + 
+
+FeatUp 
+
+Pixel 
+
+Correspondence 
+
+MASt3R 
+
+Features 
+
+> Projection to  View  1
+
+Cosine 
+
+Similarity    
+
+> For each aligned
+> pixel -pair Ground Truth
+
+Visualize DINO 
+
+feature 
+
+Visualize Pixel 
+
+correspondence   
+
+> View 1
+> View 2
+> MEt3R Output
+> DEFECt3R Output
+
+# -
+
+# -
+
+Figure 2: Overview of the proposed DEFECt3R method (Section 4) and its relation to MEt3R [1]. DINO [2] features are extracted and upsampled using FeatUp [7], then aligned using pixel correspondences estimated by MASt3R [10]. The MASt3R pipeline additionally produces feature representations used to establish these correspondences. Whereas MEt3R directly converts cosine similarity between aligned DINO features into an inconsistency score, DEFECt3R uses a lightweight MLP to learn whether DINO and MASt3R feature differences correspond to genuine geometric inconsistencies. 
+
+pairs. Consequently, no spatial aggregation is required and the model remains lightweight. 
+
+Training The classifier is trained on DeformView using focal loss ( 𝛾 = 4.0, 𝛼 = 0.5), the AdamW optimizer (LR = 10 −3, 𝜆 = 10 −3), and a cosine annealing learning-rate schedule. Training runs for up to 100 epochs with early stopping based on validation loss. All foreground pixels are used during training, while background pixels are randomly subsampled to 10% of the foreground count. This focuses learning on object regions, where inconsistencies oc-cur, while still providing sufficient background examples. By train-ing with explicit supervision, including hard negatives from the 
+
+deformed-deformed pair category, the classifier learns to distinguish true geometric inconsistencies from visual deformation. In summary, DEFECt3R combines aligned cross-view feature dif-ferences with supervised learning to distinguish genuine geometric inconsistencies from reprojection artifacts and geometrically con-sistent deformations, enabling pixel-level localization with substan-tially fewer false positives than consistency-scoring approaches. 
+
+## 5 Evaluation 
+
+Our proposed dataset and method enable an evaluation of pixel-level geometric inconsistency detection in wide-baseline multi-view image pairs. We conduct two types of experiments on the DeformView test set: (i) pixel-level localization, where each pixel is classified and evaluated against the ground truth mask (Section 5.1); and (ii) pair-level classification, where a single consistency decision is made per image pair (Section 5.2). We discuss the implications of these results in Section 6. 
+
+Baseline methods For pixel-level localization, we compare against MEt3R [1]. While MEt3R does not produce pixel-level pre-dictions, its internal cosine similarity map can be interpreted as a per-pixel inconsistency score, providing a natural baseline. For pair-level classification, we compare against MEt3R [1] and TSED [21]. Since TSED requires camera poses, we evaluate it using both ground-truth poses and poses estimated by MASt3R [10]. We do not evaluate 3DCS [20] or GeCo [8], as both are designed for fundamentally different settings. 3DCS requires a sufficiently large set of views to construct a reliable NeRF representation, whereas GeCo operates on highly-overlapping video frames within a temporal sliding window. DeformView instead focuses on wide-baseline image pairs with viewpoint differences of up to 120°. 
+
+Pair-level scoring DEFECt3R produces pixel-level inconsis-tency scores that must be aggregated into a pair-level score. Based on validation-set performance, we select the 99th percentile as the aggregation statistic. For a fair comparison, MEt3R is evaluated using both its original mean aggregation of the pixel-level similari-ties and the same 99th-percentile aggregation as DEFECt3R. TSED requires no aggregation as it directly produces pair-level scores. 
+
+Ground-truth correspondence evaluation To isolate the im-pact of pose estimation, we additionally evaluate all methods using ground-truth camera poses. As correspondences are obtained di-rectly from these poses rather than the MASt3R matching pipeline, the internal MASt3R feature representations are unavailable. Con-sequently, the ground-truth variant of DEFECt3R operates solely on DINO features. To separately assess the impact of MASt3R features and correspondence quality, we additionally train a DINO-only variant using MASt3R correspondences. 
+
+Evaluation metrics Performance at both the pixel and pair level is evaluated using area under the curve (AUC), F1-score, preci-sion, and recall, capturing both threshold-independent separability and performance at a fixed operating point. For pixel-level evalua-tion, only foreground pixels are considered. This focuses the evalua-tion on inconsistency localization within the object and avoids bias from the large number of trivially consistent background pixels. Decision thresholds are selected on the validation set by maximiz-ing the F1 score. For TSED, only the epipolar error threshold 𝑇 error Geometric Inconsistency Localization in Multi-View Image Sets 
+
+Table 1: Pixel-level geometric inconsistency localization performance of MEt3R [1] and DEFECt3R (Section 4) on the DeformView test set (Section 3). Results are reported on the full test set and per pair type, using different feature representations (DINO and DINO+MASt3R) and correspondence estimation methods (ground-truth and MASt3R-estimated camera poses). Background pixels are excluded to focus the evaluation on inconsistency localization rather than trivial background classification. For all-negative categories the FPR is reported instead of AUC, F1-score, precision, and recall. Note that the recall is identical for the full test set and the original-deformed subset as positive pixels occur exclusively in original-deformed pairs. Best and second-best results are shown in bold and underlined, respectively. DEFECt3R consistently outperforms MEt3R. Both correspondence quality and MASt3R features contribute to performance, with the former having the larger impact. Subset Metric MEt3R [1] DEFECt3R (ours) 
+
+Features DINO DINO DINO+MASt3R DINO DINO Pose estimation MASt3R GT MASt3R MASt3R GT 
+
+Entire Test Set 
+
+AUC ↑ 0.595 0.595 0.759 0.732 0.809 
+
+F1-score ↑ 0.063 0.051 0.168 0.145 0.207 
+
+Precision ↑ 0.033 0.027 0.140 0.109 0.184 
+
+Recall ↑ 0.640 0.390 0.208 0.218 0.238 
+
+Original-Deformed 
+
+AUC ↑ 0.583 0.571 0.683 0.661 0.723 
+
+F1-score ↑ 0.169 0.133 0.205 0.197 0.235 
+
+Precision ↑ 0.098 0.080 0.202 0.180 0.232 
+
+Recall ↑ 0.640 0.390 0.208 0.218 0.238 
+
+Deformed-Deformed 
+
+deformed region FPR ↓ 0.613 0.345 0.015 0.016 0.017 non-deformed region FPR ↓ 0.488 0.290 0.020 0.031 0.009 Original-Original FPR ↓ 0.470 0.293 0.015 0.030 0.007 
+
+is optimized, while 𝑇 matches is fixed to its default value of 10. For all-negative categories (i.e., original-original and deformed-deformed ), where AUC, F1-score, precision, and recall are undefined, we report the false positive rate (FPR) instead. 
+
+## 5.1 Pixel-Level Localization 
+
+Table 1 summarizes the pixel-level inconsistency localization results on the DeformView test set, both on the entire set and broken down by pair type. DEFECt3R consistently outperforms MEt3R in terms of AUC, F1, and precision, while substantially reducing false positives. The largest reduction occurs in the deformed regions of the hard-negative deformed-deformed pairs, indicating that DEFECt3R is less likely to mistake visually unusual but geometrically consistent regions for inconsistencies. Comparing DINO-only and DINO+MASt3R variants of DEFECt3R suggests that the feature representations produced by MASt3R provide complementary geometric information beyond the DINO representations alone, resulting in a modest but consistent improve-ment in localization performance. The larger gains obtained under the ground-truth pose setting indicate that correspondence quality has an even greater impact on performance. Ground-truth corre-spondences affect the two methods differently. For MEt3R, false positive rates decrease substantially, while overall discriminative performance remains largely unchanged. In contrast, DEFECt3R sig-nificantly benefits from the improved correspondences, achieving higher AUC, F1-score, and precision. While DEFECt3R’s recall decreases compared to MEt3R, DE-FECt3R achieves substantially higher precision, indicating a more conservative prediction strategy. This suggests that the proposed classifier successfully suppresses many of the erroneous detections produced by the cosine-similarity-based consistency measure, albeit at the cost of missing a larger fraction of true inconsistencies. Figure 3 provides qualitative examples from all three pair cat-egories. The consistent original-original pairs ((a)–(c)) illustrate a common failure mode of the MASt3R correspondence pipeline. Despite the simple scene geometry, large viewpoint differences make correspondence estimation challenging, occasionally result-ing in severely incorrect camera poses. The resulting reprojection errors cause non-overlapping object regions to be projected onto one another, producing large false-positive inconsistency responses. Although driven by the same correspondences, DEFECt3R is able to suppress many of these false positives. The inconsistent original-deformed pairs ((d)–(f)) demonstrate the target scenario of geometric inconsistency localization. While both MEt3R and DEFECt3R respond to the manipulated region, DEFECt3R produces cleaner and more localized predictions with fewer responses in consistent regions. Finally, rows (g)–(i) show the hard-negative deformed-deformed 
+
+pairs. Although these regions are geometrically consistent across views, their unusual appearance frequently causes MEt3R to assign high inconsistency scores. In contrast, DEFECt3R largely suppresses Xander Staelens, Albéric Loos, Bert Ramlot, Hannes Mareen, Peter Lambert, and Glenn Van Wallendael 
+
+Table 2: Pair-level geometric inconsistency classification performance of TSED [21], MEt3R [1], and DEFECt3R (Section 4) on the DeformView test set (Section 3). Results are reported using different feature representations (DINO and DINO+MASt3R), correspondence estimation methods (ground-truth and MASt3R-estimated camera poses), and aggregation strategies (mean and 99th-percentile). Best and second-best results are shown in bold and underlined, respectively. Recall values are not highlighted, as they primarily reflect the selected operating point rather than the underlying discriminative ability of the model. DEFECt3R substantially outperforms existing consistency-scoring methods. Similar to the pixel-level results, the largest gains are obtained from improved correspondences, while MASt3R features provide an additional benefit. Metric TSED [21] MEt3R [1] DEFECt3R (ours) 
+
+Features DINO DINO DINO DINO DINO+MASt3R DINO DINO Aggregation Mean Mean 99th 99th 99th 99th 99th Pose estimation MASt3R GT MASt3R GT MASt3R GT MASt3R MASt3R GT AUC ↑ 0.484 0.520 0.500 0.516 0.513 0.516 0.713 0.679 0.737 
+
+F1-score ↑ 0.316 0.325 0.482 0.480 0.481 0.478 0.537 0.528 0.558 
+
+Precision ↑ 0.316 0.325 0.319 0.317 0.319 0.314 0.394 0.404 0.510 
+
+Recall ↑ 0.904 0.958 0.992 0.993 0.977 0.993 0.843 0.764 0.616 these false positives, indicating that it has learned to distinguish visual deformation from genuine cross-view disagreement. Together, these examples demonstrate how DEFECt3R suppresses false positives caused by correspondence errors and geometrically consistent deformations, while retaining sensitivity to genuine geo-metric inconsistencies. 
+
+## 5.2 Pair-Level Classification 
+
+Table 2 reports the pair-level classification results on the Defor-mView test set. Both TSED and MEt3R achieve AUCs close to 0.5, indicating little discrimination between consistent and inconsistent image pairs. As a result, the F1-optimal operating points correspond to a high-recall regime, yielding recalls close to 1.0 but precisions closely matching the fraction of inconsistent pairs in the test set. For MEt3R, mean and 99th-percentile aggregation yield very similar results, indicating that aggregation choice has little impact on performance. Likewise, while ground-truth correspondences lead to modest improvements for TSED, the method remains close to random performance. Together, these results suggest that neither the aggregation strategy nor correspondence quality fully explains the limitations of existing consistency-scoring methods. Comparing the DINO-only and full variants of DEFECt3R yields similar conclusions to the pixel-level evaluation. While MASt3R features provide a modest improvement, the largest gains are ob-tained from improved correspondences, resulting in higher AUC, F1, and precision. Nevertheless, substantial room for improvement remains even under this idealized correspondence setting. Overall, DEFECt3R outperforms all baseline methods, demon-strating that learned localization cues provide a more informative basis for pair-level classification than existing consistency scores. 
+
+## 6 Discussion & Conclusion 
+
+Most existing consistency-scoring methods were designed for novel view synthesis evaluation rather than multimedia forensics. Their objective is to quantify how consistent a set of views is, not to de-termine whether and where an inconsistency is present. As a result, localized inconsistencies that are highly relevant for forensic anal-ysis may only have a minor influence on their global consistency score. Our experiments on the proposed DeformView dataset support this observation. More specifically, the limited impact of alterna-tive aggregation strategies for MEt3R suggests that the primary limitation lies not in its aggregation, but in its underlying cosine-similarity-based consistency signal. Similarly, TSED’s poor per-formance, even with ground-truth camera poses, indicates that epipolar correspondences alone are not sufficiently informative for geometric inconsistency detection. Furthermore, although using ground-truth correspondences in-stead of MASt3R’s estimates substantially reduces MEt3R’s false positives, they have little effect on its overall discriminative ability, suggesting that correspondence quality alone does not explain the limitations of existing consistency-scoring approaches. Neverthe-less, qualitative inspection revealed that errors in the correspon-dences produced by MASt3R remain an important source of false positives. DEFECt3R addresses part of these limitations through super-vised learning. Rather than interpreting feature differences directly as inconsistencies, it learns to recognize patterns associated with re-projection errors and visually unusual yet geometrically consistent regions. This substantially reduces false positives and improves localization performance. The comparison between the DINO-only, DINO+MASt3R, and ground-truth correspondence variants indicates that both feature representation quality and correspondence quality contribute to performance. Interestingly, DEFECt3R benefits more from improved (ground-truth) correspondences than MEt3R, suggesting that corre-spondence quality becomes increasingly important once cross-view feature relationships are interpreted through a learned model rather than directly converted into consistency scores. Nevertheless, DE-FECt3R’s precision and recall remain limited, indicating that reliable inconsistency localization remains a challenging open problem for future work. Geometric Inconsistency Localization in Multi-View Image Sets 
+
+More broadly, our findings suggest that multi-view geometric consistency can serve as a useful foundation for future multimedia forensic methods, provided that correspondence estimation and in-consistency modeling are addressed jointly. While the consistency-scoring approaches evaluated in this work transfer poorly to foren-sic analysis, the improvements achieved by DEFECt3R show that learned localization models can exploit information beyond simple consistency metrics and partially compensate for correspondence errors. A limitation of the current work is that DeformView relies on controlled geometric deformations rather than deformations in AI-generated multi-view imagery. While DeformView’s deformations provide precise ground-truth annotations and allow systematic evaluation, the extent to which the observed findings transfer to inconsistencies produced by modern generative models remains an important direction for future research. Extending DeformView with AI-generated multi-view content and evaluating localization methods on such data would provide a valuable next step. Together, these findings motivate the development of dedicated datasets, benchmarks, and methods for forensic geometric inconsis-tency localization. With DeformView and DEFECt3R, we provide a step in this direction. 
+
+## Acknowledgments 
+
+This work was funded in part by IDLab (Ghent University – imec), by Flanders Innovation & Entrepreneurship (VLAIO), by Research Foundation – Flanders (FWO) (1SA9O26N & G0A2523N), and by the European Union. 
+
+## References 
+
+[1] Mohammad Asim, Christopher Wewer, Thomas Wimmer, Bernt Schiele, and Jan Eric Lenssen. 2025. MET3R: Measuring Multi-View Consistency in Generated Images. In CVPR . 6034–6044. [2] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. 2021. Emerging Properties in Self-Supervised Vision Transformers. In ICCV . 9650–9660. [3] Riccardo Corvi, Davide Cozzolino, Giovanni Poggi, Koki Nagano, and Luisa Verdoliva. 2023. Intriguing Properties of Synthetic Images: From Generative Adversarial Networks to Diffusion Models. In CVPR . 973–982. [4] Laura Downs, Anthony Francis, Nate Koenig, Brandon Kinman, Ryan Hickman, Krista Reymann, Thomas B. McHugh, and Vincent Vanhoucke. 2022. Google Scanned Objects: A High-Quality Dataset of 3D Scanned Household Items. In 
+
+ICRA . 2553–2560. doi:10.1109/ICRA46639.2022.9811809 [5] Noam Elata, Bahjat Kawar, Yaron Ostrovsky-Berman, Miriam Farber, and Ron Sokolovsky. 2025. Novel view synthesis with pixel-space diffusion models. In 
+
+CVPR . 26756–26766. [6] Joel Frank, Thorsten Eisenhofer, Lea Schönherr, Asja Fischer, Dorothea Kolossa, and Thorsten Holz. 2020. Leveraging Frequency Analysis for Deep Fake Image Recognition. In ICML (Proceedings of Machine Learning Research, Vol. 119) . PMLR, 3247–3258. [7] Stephanie Fu, Mark Hamilton, Laura E. Brandt, Axel Feldmann, Zhoutong Zhang, and William Freeman. 2024. FeatUp: A Model-Agnostic Framework for Features at Any Resolution. In ICLR , Vol. 2024. 45324–45350. [8] Leslie Gu, Junhwa Hur, Charles Herrmann, Fangneng Zhan, Todd Zickler, Deqing Sun, and Hanspeter Pfister. 2026. GeCo: Evaluating Geometric Consistency for Video Generation via Motion and Structure. arXiv:2512.22274 [cs.CV] https: //arxiv.org/abs/2512.22274 [9] Om Khangaonkar, Hadi J Rad, and Hamed Pirsiavash. 2026. Multimodal Language Models Cannot Spot Spatial Inconsistencies. arXiv preprint arXiv:2604.00799 
+
+(2026). [10] Vincent Leroy, Yohann Cabon, and Jerome Revaud. 2025. Grounding Image Matching in 3D with MASt3R. In ECCV . Springer Nature Switzerland, Cham, 71–91. [11] Ben Mildenhall, Pratul P. Srinivasan, Matthew Tancik, Jonathan T. Barron, Ravi Ramamoorthi, and Ren Ng. 2021. NeRF: representing scenes as neural radiance fields for view synthesis. Commun. ACM 65, 1 (Dec. 2021), 99–106. doi:10.1145/ 3503250 [12] Alex Nichol, Prafulla Dhariwal, Aditya Ramesh, Pranav Shyam, Pamela Mishkin, Bob McGrew, Ilya Sutskever, and Mark Chen. 2021. Glide: Towards photorealistic image generation and editing with text-guided diffusion models. arXiv preprint arXiv:2112.10741 (2021). [13] Utkarsh Ojha, Yuheng Li, and Yong Jae Lee. 2023. Towards Universal Fake Image Detectors That Generalize Across Generative Models. In CVPR . 24480–24489. [14] Robin Rombach, Patrick Esser, and Björn Ommer. 2021. Geometry-Free View Synthesis: Transformers and no 3D Priors. In ICCV . 14336–14346. doi:10.1109/ ICCV48922.2021.01409 [15] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily L Denton, Kamyar Ghasemipour, Raphael Gontijo Lopes, Burcu Karagol Ayan, Tim Salimans, Jonathan Ho, David Fleet, and Mohammad Norouzi. 2022. Photore-alistic Text-to-Image Diffusion Models with Deep Language Understanding. In 
+
+NeurIPS , Vol. 35. Curran Associates, Inc., 36479–36494. [16] Ayush Sarkar, Hanlin Mai, Amitabh Mahapatra, Svetlana Lazebnik, D.A. Forsyth, and Anand Bhattad. 2024. Shadows Don’t Lie and Lines Can’t Bend! Generative Models don’t know Projective Geometry...for now. In CVPR . 28140–28149. [17] Junyoung Seo, Kazumi Fukuda, Takashi Shibuya, Takuya Narihira, Naoki Mu-rata, Shoukang Hu, Chieh-Hsin Lai, Seungryong Kim, and Yuki Mitsufuji. 2024. GenWarp: Single Image to Novel Views with Semantic-Preserving Gen-erative Warping. In NeurIPS , Vol. 37. Curran Associates, Inc., 80220–80243. doi:10.52202/079017-2550 [18] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, Ping Liu, and Yunchao Wei. 2024. Rethinking the Up-Sampling Operations in CNN-based Generative Network for Generalizable Deepfake Detection. In CVPR . 28130–28139. [19] Diangarti Tariang, Riccardo Corvi, Davide Cozzolino, Giovanni Poggi, Koki Nagano, and Luisa Verdoliva. 2024. Synthetic Image Verification in the Era of Generative Artificial Intelligence: What Works and What Isn’t There yet. IEEE Security & Privacy 22, 3 (2024), 37–49. doi:10.1109/MSEC.2024.3376637 [20] Daniel Watson, William Chan, Ricardo Martin-Brualla, Jonathan Ho, Andrea Tagliasacchi, and Mohammad Norouzi. 2022. Novel view synthesis with diffusion models. arXiv preprint arXiv:2210.04628 (2022). [21] Jason J. Yu, Fereshteh Forghani, Konstantinos G. Derpanis, and Marcus A. Brubaker. 2023. Long-Term Photometric Consistent Novel View Synthesis with Diffusion Models. In ICCV . 7094–7104. [22] Wei Zhang, Xiaochun Cao, Zhiyong Feng, Jiawan Zhang, and Ping Wang. 2009. Detecting photographic composites using two-view geometrical constraints. In 
+
+ICME . 1078–1081. doi:10.1109/ICME.2009.5202685 Xander Staelens, Albéric Loos, Bert Ramlot, Hannes Mareen, Peter Lambert, and Glenn Van Wallendael 
+
+MASt3R Pose-Estimation GT Poses View 1 View 2 Ground Truth MEt3R pred. DEFECt3R pred. (ours) DEFECt3R pred. (ours) Ground Truth MEt3R pred. DEFECt3R pred. (ours) DINO DINO DINO + MASt3R DINO DINO (a) 
+
+(b) 
+
+(c) 
+
+(d) 
+
+(e) 
+
+(f) 
+
+(g) 
+
+(h) 
+
+(i) 
+
+Figure 3: Image pairs from the DeformView test set and their corresponding predictions by all evaluated methods. Rows (a)–(c) show consistent original-original pairs, rows (d)–(f) inconsistent original-deformed pairs, and rows (g)–(i) consistent 
+
+deformed-deformed pairs. Predictions are shown from the perspective of view 1, with the object outline indicated in yellow. The examples highlight common failure modes, including reprojection errors and visually unusual yet geometrically consistent regions, and show how DEFECt3R suppresses many resulting false positives.

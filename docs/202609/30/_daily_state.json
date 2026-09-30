@@ -1,0 +1,73 @@
+{
+  "date": "20260930",
+  "date_label": "",
+  "generated_at": "2026-09-30 23:30:37 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.30934v1",
+      "route": "202609/30/2609.30934v1-manivid-unified-and-explainable-forensic-analysis-of-manipulated-videos",
+      "title": "ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "篡改视频的伪造检测与精确像素级痕迹定位",
+      "first_seen_at": "2026-09-30 23:30:37 UTC",
+      "updated_at": "2026-09-30 23:30:37 UTC"
+    },
+    {
+      "paper_id": "2609.31247v1",
+      "route": "202609/30/2609.31247v1-geometric-inconsistency-localization-in-multi-view-image-sets",
+      "title": "Geometric Inconsistency Localization in Multi-View Image Sets",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向多媒体取证的几何不一致像素级定位",
+      "first_seen_at": "2026-09-30 23:30:37 UTC",
+      "updated_at": "2026-09-30 23:30:37 UTC"
+    },
+    {
+      "paper_id": "2609.31514v1",
+      "route": "202609/30/2609.31514v1-forensic-twins-self-supervised-residual-learning-for-ai-generated-image-forensics",
+      "title": "Forensic Twins: Self-Supervised Residual Learning for AI-Generated Image Forensics",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向AI生成图像取证与归属的自监督残差学习",
+      "first_seen_at": "2026-09-30 23:30:37 UTC",
+      "updated_at": "2026-09-30 23:30:37 UTC"
+    },
+    {
+      "paper_id": "2609.32131v1",
+      "route": "202609/30/2609.32131v1-gaussian-image-steganography-via-parameter-domain-keyed-embeddings",
+      "title": "Gaussian Image Steganography via Parameter-Domain Keyed Embeddings",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "在高斯参数中用密钥嵌入隐藏信息实现隐写",
+      "first_seen_at": "2026-09-30 23:30:37 UTC",
+      "updated_at": "2026-09-30 23:30:37 UTC"
+    }
+  ]
+}

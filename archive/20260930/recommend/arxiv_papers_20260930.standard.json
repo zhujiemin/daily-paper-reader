@@ -1,0 +1,190 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-30T23:29:58.341067+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 4,
+    "quick_skim_target": 12,
+    "quick_selected": 4
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.30934v1",
+      "source": "arxiv",
+      "title": "ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos",
+      "abstract": "Rapid advances in AI-generated video (AIGV) have increased the risks posed by deceptive video manipulation. Unlike fully synthetic videos, manipulated videos retain most source content and alter only localized regions, making forensic analysis particularly challenging. Existing video forgery research faces two limitations in both data and methodology: (1) High-quality datasets and benchmarks tailored for manipulated videos remain scarce. (2) Multimodal large language models (MLLMs) extend forgery analysis beyond binary classification but struggle to use low-level forensic cues and provide precise pixel-level grounding. Specifically, we introduce ManiVid, a unified forensic analysis task covering forgery detection, artifact grounding, and anomaly explanation for manipulated videos. We construct ManiVid-38K, the first dataset to combine paired, open-vocabulary localized manipulations of general videos with authenticity labels, forgery masks, and anomaly explanations. It comprises about 19K manually verified real-fake video pairs, mostly at 1080P resolution, generated under 2 paradigms with 15 powerful generation models. We sample 1K pairs for ManiVidBench, balanced across six manipulation types and generation models for fair evaluation. We further propose ManiVidLens, a unified framework for explainable video forgery analysis. Its Forensic Evidence Router supplies shared low-level forensic evidence for multimodal reasoning and video segmentation. Its Prompt Distill Module converts grounding states into semantic and geometric prompts and distills spatial priors for mask decoding and full-video propagation. ManiVidLens achieves relative gains over the strongest comparison methods in artifact grounding (+21.1% mIoU; +21.3% J&F) and anomaly explanation (+131.3% ROUGE-L; +9.9% CSS). Its forgery detection remains comparable to dedicated classifiers (0.914 Acc; 0.913 F1).",
+      "authors": [
+        "Hengrui Kang",
+        "Zhonghao Yan",
+        "Yuxuan Yang",
+        "Ruoyan Jing",
+        "Yuncheng Guo",
+        "Hao Chen",
+        "Kongming Liang",
+        "Zhanyu Ma",
+        "Conghui He",
+        "Weijia Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-25T07:51:50+00:00",
+      "link": "https://arxiv.org/pdf/2609.30934v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "forgery detection and precise pixel-level artifact grounding in manipulated videos",
+      "llm_evidence_cn": "篡改视频的伪造检测与精确像素级痕迹定位",
+      "llm_evidence": "篡改视频的伪造检测与精确像素级痕迹定位",
+      "canonical_evidence": "篡改视频的伪造检测与精确像素级痕迹定位",
+      "llm_tldr_en": "This paper introduces ManiVid, a unified forensic task for manipulated videos covering forgery detection, artifact grounding, and anomaly explanation, addressing the lack of benchmarks and precise pixel-level localization.",
+      "llm_tldr_cn": "针对AI生成视频带来的欺骗性篡改风险以及现有视频取证在数据和方法上的不足，本文提出ManiVid统一取证分析任务，涵盖伪造检测、痕迹定位与异常解释。作者指出多模态大模型虽能超越二分类，却难以利用低层取证线索并给出精确像素级定位。该工作构建了面向篡改视频的数据与评测基准，推动视频伪造的像素级定位与可解释分析。",
+      "llm_tldr": "针对AI生成视频带来的欺骗性篡改风险以及现有视频取证在数据和方法上的不足，本文提出ManiVid统一取证分析任务，涵盖伪造检测、痕迹定位与异常解释。作者指出多模态大模型虽能超越二分类，却难以利用低层取证线索并给出精确像素级定位。该工作构建了面向篡改视频的数据与评测基准，推动视频伪造的像素级定位与可解释分析。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.31247v1",
+      "source": "arxiv",
+      "title": "Geometric Inconsistency Localization in Multi-View Image Sets",
+      "abstract": "Novel view synthesis (NVS) models can produce realistic new views of the same scene from different viewpoints. However, these generated views are not always geometrically consistent with one another. Multi-view (MV) consistency has shown promise as a tool for evaluating these NVS models. Its potential for multimedia forensics, however, remains largely unexplored, particularly for localizing geometric inconsistencies across wide-baseline image pairs. To enable research in this direction, we introduce DeformView, a wide-baseline MV dataset with pixel-level annotations of geometric inconsistencies. Using DeformView, we evaluate state-of-the-art MV consistency-scoring methods and show that approaches developed for NVS evaluation transfer poorly to the forensic task of geometric inconsistency localization. To address this limitation, we propose DEFECt3R, a lightweight learning-based classifier that uses cross-view feature relationships to localize geometric inconsistencies at the pixel level. By learning from explicit supervision, including hard negatives from geometrically consistent yet deformed views, DEFECt3R improves localization performance and substantially reduces false positives compared to existing consistency-scoring methods. Ablation experiments further show that both feature representations and correspondence quality contribute to localization performance. Overall, our findings demonstrate that MV geometric consistency is a promising yet underexplored signal for multimedia forensics and establish a benchmark and baseline for geometric inconsistency localization in wide-baseline MV image pairs. Code and dataset are available at https://github.com/IDLabMedia/DeformView-DEFECt3R",
+      "authors": [
+        "Xander Staelens",
+        "Albéric Loos",
+        "Bert Ramlot",
+        "Hannes Mareen",
+        "Peter Lambert",
+        "Glenn Van Wallendael"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CR",
+        "cs.MM"
+      ],
+      "published": "2026-09-25T13:25:56+00:00",
+      "link": "https://arxiv.org/pdf/2609.31247v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "pixel-level localization of geometric inconsistencies for multimedia forensics",
+      "llm_evidence_cn": "面向多媒体取证的几何不一致像素级定位",
+      "llm_evidence": "面向多媒体取证的几何不一致像素级定位",
+      "canonical_evidence": "面向多媒体取证的几何不一致像素级定位",
+      "llm_tldr_en": "NVS-generated views can be geometrically inconsistent; this work introduces DeformView, a wide-baseline multi-view dataset with pixel-level inconsistency annotations, and shows NVS-evaluation consistency scores transfer poorly to forensic localization.",
+      "llm_tldr_cn": "新视角合成模型生成的视图彼此间常存在几何不一致，但多视图一致性在多媒体取证中的定位潜力尚未被探索。本文提出DeformView，一个带几何不一致像素级标注的宽基线多视图数据集，并系统评估现有一致性评分方法。实验表明，为NVS评估设计的方法迁移到取证定位任务时表现不佳，凸显该方向的挑战。工作为跨视图图像篡改与不一致定位提供了首个基准，推动取证研究。",
+      "llm_tldr": "新视角合成模型生成的视图彼此间常存在几何不一致，但多视图一致性在多媒体取证中的定位潜力尚未被探索。本文提出DeformView，一个带几何不一致像素级标注的宽基线多视图数据集，并系统评估现有一致性评分方法。实验表明，为NVS评估设计的方法迁移到取证定位任务时表现不佳，凸显该方向的挑战。工作为跨视图图像篡改与不一致定位提供了首个基准，推动取证研究。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "identifying and localizing manipulated regions in digital images",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.31514v1",
+      "source": "arxiv",
+      "title": "Forensic Twins: Self-Supervised Residual Learning for AI-Generated Image Forensics",
+      "abstract": "Detectors of AI-generated images are typically trained using samples from all Generative AI architectures they must catch, and struggle as soon as a new architecture emerges. Recent approaches have explored self-supervised pre-training as an alternative solution, yet standard frameworks work against the forensic task, e.g., their augmentations overwrite the micro-statistics of image formation. This paper introduces Forensic Twins, a Self-Supervised Residual Learning (SSRL) framework whose pretext task suppresses macroscopic content availability. Each image is mapped through a frozen, off-the-shelf forensic residual extractor, from which two spatially disjoint crops are drawn. Sharing no pixel, the two views retain minimal semantic structure to align, leaving a redundancy-reduction objective with a predominant common signal: the stationary fingerprint of the image acquisition pipeline. Additionally, Forensic Twins is trained exclusively on real images; no AI-generated image is observed at any stage. Experiments show that Forensic Twins attributes AI generator sources with 56.61% accuracy, i.e., 6.13% above the previous state-of-the-art zero-shot method at 375x lower latency. We also demonstrate that fitting a Gaussian Mixture Model (GMM) offline using only the real image embeddings extracted from Forensic Twins turns it into a state-of-the-art zero-shot detector, reaching 97.99% AUC across 27 unseen AI generators, including GANs, diffusion models and commercial systems. Code, weights and exact splits will be made publicly available",
+      "authors": [
+        "Javier Muñoz-Haro",
+        "Ruben Tolosana",
+        "Ruben Vera-Rodriguez",
+        "Aythami Morales",
+        "Julian Fierrez"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-25T16:55:20+00:00",
+      "link": "https://arxiv.org/pdf/2609.31514v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-supervised residual learning for AI-generated image forensics and attribution",
+      "llm_evidence_cn": "面向AI生成图像取证与归属的自监督残差学习",
+      "llm_evidence": "面向AI生成图像取证与归属的自监督残差学习",
+      "canonical_evidence": "面向AI生成图像取证与归属的自监督残差学习",
+      "llm_tldr_en": "This paper targets detection of AI-generated images that must generalize to unseen generative architectures. Forensic Twins uses self-supervised residual learning with disjoint crops through a frozen forensic residual extractor, preserving micro-statistics for robust forensics.",
+      "llm_tldr_cn": "针对AI生成图像检测器通常需用所有待检生成架构样本训练、遇到新架构即失效的问题，本文提出Forensic Twins自监督残差学习框架。其 pretext 任务抑制宏观内容可得性，将图像经冻结的取证残差提取器映射后取两个空间不重叠的裁剪视图，二者不共享像素而保留图像形成的微统计特征。该设计避免了常规自监督增强覆盖取证线索的弊端，提升了跨架构泛化能力。工作与生成内容来源认证、AI生成图像取证与归属主题相关。",
+      "llm_tldr": "针对AI生成图像检测器通常需用所有待检生成架构样本训练、遇到新架构即失效的问题，本文提出Forensic Twins自监督残差学习框架。其 pretext 任务抑制宏观内容可得性，将图像经冻结的取证残差提取器映射后取两个空间不重叠的裁剪视图，二者不共享像素而保留图像形成的微统计特征。该设计避免了常规自监督增强覆盖取证线索的弊端，提升了跨架构泛化能力。工作与生成内容来源认证、AI生成图像取证与归属主题相关。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.32131v1",
+      "source": "arxiv",
+      "title": "Gaussian Image Steganography via Parameter-Domain Keyed Embeddings",
+      "abstract": "2D Gaussian-based image representation is becoming increasingly popular, and our work proposes a new approach to steganography by embedding information within Gaussian parameters rather than image pixels. We first fit the parameters of this representation to the target image and employ a secret key to select a subset of these parameters for fine-tuning, allowing us to embed an 8-bit message while maintaining high visual fidelity in the reconstructed image. Thirty fitting experiments on three synthetic images show that the correct key can recover the message without error, while decoding with incorrect keys yields a Bit Error Rate (BER) of $0.543$, close to random guessing. Compared with random selection using the key, selecting the least-disturbing edits recovers the message more reliably (one-sided $p=0.031$), and the average PSNR cost is only $0.091$ dB in visual quality. The embedding method transfers to 112 natural images at $256\\times256$ using 4,096 Gaussians. The correct-key BER is $0.000$, and decoding under a wrong key stays close to random guessing at $0.520$. Our method embeds the payload through three Gaussian parameter types: log-anisotropy, opacity, and color luminance. In a separate nine-fit reduced setting, color luminance is removed, so the payload uses two instead of three parameter types, a $33.3\\%$ reduction; all 256 Gaussians remain in the fitted representation. The correct key still recovers the message without error. However, wrong-key BER rises from $0.514$ to $0.571$, moving farther from random guessing ($0.5$).",
+      "authors": [
+        "Tong Wu",
+        "Runze Cheng",
+        "Xiaoyue Fan",
+        "Kaan Akşit"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.GR"
+      ],
+      "published": "2026-09-26T01:24:10+00:00",
+      "link": "https://arxiv.org/pdf/2609.32131v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "keyed embedding of hidden messages within Gaussian parameters for steganography",
+      "llm_evidence_cn": "在高斯参数中用密钥嵌入隐藏信息实现隐写",
+      "llm_evidence": "在高斯参数中用密钥嵌入隐藏信息实现隐写",
+      "canonical_evidence": "在高斯参数中用密钥嵌入隐藏信息实现隐写",
+      "llm_tldr_en": "This work embeds secret messages in the parameters of 2D Gaussian image representations rather than pixels, using a secret key to select parameters for fine-tuning, achieving error-free 8-bit message recovery with high fidelity.",
+      "llm_tldr_cn": "二维高斯图像表示日益流行，但其参数域中的隐蔽信息嵌入尚未被充分利用。本文提出一种参数域隐写方法，先将高斯参数拟合到目标图像，再用密钥选择部分参数微调，从而在保持重建图像高保真的同时嵌入8位消息。在合成图像上的多次实验表明，正确密钥可无误恢复消息，而错误密钥的比特错误率约为0.543接近随机猜测。该工作把隐写载体从像素扩展到表示参数，为不可见信息嵌入提供了新途径。",
+      "llm_tldr": "二维高斯图像表示日益流行，但其参数域中的隐蔽信息嵌入尚未被充分利用。本文提出一种参数域隐写方法，先将高斯参数拟合到目标图像，再用密钥选择部分参数微调，从而在保持重建图像高保真的同时嵌入8位消息。在合成图像上的多次实验表明，正确密钥可无误恢复消息，而错误密钥的比特错误率约为0.543接近随机猜测。该工作把隐写载体从像素扩展到表示参数，为不可见信息嵌入提供了新途径。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "embedding imperceptible watermarks for image authentication and recovery",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

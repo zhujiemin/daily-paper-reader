@@ -1,0 +1,69 @@
+{
+  "label": "2026-09-30",
+  "date": "2026-09-30",
+  "generated_at": "2026-09-30T23:30:39",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202609/30/2609.30934v1-manivid-unified-and-explainable-forensic-analysis-of-manipulated-videos",
+      "section": "quick",
+      "title_en": "ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos",
+      "authors": "Hengrui Kang, Zhonghao Yan, Yuxuan Yang, Ruoyan Jing, Yuncheng Guo, Hao Chen, Kongming Liang, Zhanyu Ma, Conghui He, Weijia Li",
+      "date": "2026-09-25",
+      "pdf": "https://arxiv.org/pdf/2609.30934v1",
+      "score": "7.0",
+      "evidence": "篡改视频的伪造检测与精确像素级痕迹定位",
+      "tldr": "AI生成视频带来欺骗风险，而篡改视频仅局部改动、保留大部分原始内容，取证尤为困难，且高质量数据集与基准稀缺。为此提出统一取证任务ManiVid，涵盖伪造检测、伪影定位与异常解释，并构建首个配对开放词汇篡改数据集ManiVid-38K及平衡基准ManiVidBench。进一步提出ManiVidLens框架，用取证证据路由器提供共享低层线索，以提示蒸馏模块驱动多模态推理与视频分割。结果显示伪影定位与异常解释大幅领先，检测性能与专用分类器相当。",
+      "tags": "query:image-tamper",
+      "abstract_en": "Rapid advances in AI-generated video (AIGV) have increased the risks posed by deceptive video manipulation. Unlike fully synthetic videos, manipulated videos retain most source content and alter only localized regions, making forensic analysis particularly challenging. Existing video forgery research faces two limitations in both data and methodology: (1) High-quality datasets and benchmarks tailored for manipulated videos remain scarce. (2) Multimodal large language models (MLLMs) extend forgery analysis beyond binary classification but struggle to use low-level forensic cues and provide precise pixel-level grounding. Specifically, we introduce ManiVid, a unified forensic analysis task covering forgery detection, artifact grounding, and anomaly explanation for manipulated videos. We construct ManiVid-38K, the first dataset to combine paired, open-vocabulary localized manipulations of general videos with authenticity labels, forgery masks, and anomaly explanations. It comprises about 19K manually verified real-fake video pairs, mostly at 1080P resolution, generated under 2 paradigms with 15 powerful generation models. We sample 1K pairs for ManiVidBench, balanced across six manipulation types and generation models for fair evaluation. We further propose ManiVidLens, a unified framework for explainable video forgery analysis. Its Forensic Evidence Router supplies shared low-level forensic evidence for multimodal reasoning and video segmentation. Its Prompt Distill Module converts grounding states into semantic and geometric prompts and distills spatial priors for mask decoding and full-video propagation. ManiVidLens achieves relative gains over the strongest comparison methods in artifact grounding (+21.1% mIoU; +21.3% J&F) and anomaly explanation (+131.3% ROUGE-L; +9.9% CSS). Its forgery detection remains comparable to dedicated classifiers (0.914 Acc; 0.913 F1).",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/30/2609.31247v1-geometric-inconsistency-localization-in-multi-view-image-sets",
+      "section": "quick",
+      "title_en": "Geometric Inconsistency Localization in Multi-View Image Sets",
+      "authors": "Xander Staelens, Albéric Loos, Bert Ramlot, Hannes Mareen, Peter Lambert, Glenn Van Wallendael",
+      "date": "2026-09-25",
+      "pdf": "https://arxiv.org/pdf/2609.31247v1",
+      "score": "6.0",
+      "evidence": "面向多媒体取证的几何不一致像素级定位",
+      "tldr": "新视角合成模型能生成逼真新视角，但多视角间常存在几何不一致，其在多媒体取证中的定位潜力尚未被充分探索。为此，作者构建了带像素级几何不一致标注的宽基线多视角数据集 DeformView，并提出轻量分类器 DEFECt3R，利用跨视角特征关系定位不一致。实验表明，现有 NVS 一致性评分方法迁移到取证定位任务效果不佳，而 DEFECt3R 显著提升定位性能并降低误报。该工作为宽基线多视角图像对的几何不一致定位建立了基准与基线。",
+      "tags": "query:image-tamper",
+      "abstract_en": "Novel view synthesis (NVS) models can produce realistic new views of the same scene from different viewpoints. However, these generated views are not always geometrically consistent with one another. Multi-view (MV) consistency has shown promise as a tool for evaluating these NVS models. Its potential for multimedia forensics, however, remains largely unexplored, particularly for localizing geometric inconsistencies across wide-baseline image pairs. To enable research in this direction, we introduce DeformView, a wide-baseline MV dataset with pixel-level annotations of geometric inconsistencies. Using DeformView, we evaluate state-of-the-art MV consistency-scoring methods and show that approaches developed for NVS evaluation transfer poorly to the forensic task of geometric inconsistency localization. To address this limitation, we propose DEFECt3R, a lightweight learning-based classifier that uses cross-view feature relationships to localize geometric inconsistencies at the pixel level. By learning from explicit supervision, including hard negatives from geometrically consistent yet deformed views, DEFECt3R improves localization performance and substantially reduces false positives compared to existing consistency-scoring methods. Ablation experiments further show that both feature representations and correspondence quality contribute to localization performance. Overall, our findings demonstrate that MV geometric consistency is a promising yet underexplored signal for multimedia forensics and establish a benchmark and baseline for geometric inconsistency localization in wide-baseline MV image pairs. Code and dataset are available at https://github.com/IDLabMedia/DeformView-DEFECt3R",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/30/2609.31514v1-forensic-twins-self-supervised-residual-learning-for-ai-generated-image-forensics",
+      "section": "quick",
+      "title_en": "Forensic Twins: Self-Supervised Residual Learning for AI-Generated Image Forensics",
+      "authors": "Javier Muñoz-Haro, Ruben Tolosana, Ruben Vera-Rodriguez, Aythami Morales, Julian Fierrez",
+      "date": "2026-09-25",
+      "pdf": "https://arxiv.org/pdf/2609.31514v1",
+      "score": "6.0",
+      "evidence": "面向AI生成图像取证与归属的自监督残差学习",
+      "tldr": "AI生成图像检测器通常依赖覆盖已知生成架构的训练样本，面对新架构泛化差；标准自监督预训练的增强又会破坏图像形成微统计。Forensic Twins提出自监督残差学习，用冻结残差提取器从同一图像取两块无重叠裁剪，迫使模型学习采集管线的稳定指纹。该方法仅用真实图像训练，无需观察任何AI生成图像，即可实现跨生成器溯源与零样本检测。在27个未见生成器上达到97.99% AUC，并以更低延迟超越此前零样本方法。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Detectors of AI-generated images are typically trained using samples from all Generative AI architectures they must catch, and struggle as soon as a new architecture emerges. Recent approaches have explored self-supervised pre-training as an alternative solution, yet standard frameworks work against the forensic task, e.g., their augmentations overwrite the micro-statistics of image formation. This paper introduces Forensic Twins, a Self-Supervised Residual Learning (SSRL) framework whose pretext task suppresses macroscopic content availability. Each image is mapped through a frozen, off-the-shelf forensic residual extractor, from which two spatially disjoint crops are drawn. Sharing no pixel, the two views retain minimal semantic structure to align, leaving a redundancy-reduction objective with a predominant common signal: the stationary fingerprint of the image acquisition pipeline. Additionally, Forensic Twins is trained exclusively on real images; no AI-generated image is observed at any stage. Experiments show that Forensic Twins attributes AI generator sources with 56.61% accuracy, i.e., 6.13% above the previous state-of-the-art zero-shot method at 375x lower latency. We also demonstrate that fitting a Gaussian Mixture Model (GMM) offline using only the real image embeddings extracted from Forensic Twins turns it into a state-of-the-art zero-shot detector, reaching 97.99% AUC across 27 unseen AI generators, including GANs, diffusion models and commercial systems. Code, weights and exact splits will be made publicly available",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/30/2609.32131v1-gaussian-image-steganography-via-parameter-domain-keyed-embeddings",
+      "section": "quick",
+      "title_en": "Gaussian Image Steganography via Parameter-Domain Keyed Embeddings",
+      "authors": "Tong Wu, Runze Cheng, Xiaoyue Fan, Kaan Akşit",
+      "date": "2026-09-26",
+      "pdf": "https://arxiv.org/pdf/2609.32131v1",
+      "score": "6.0",
+      "evidence": "在高斯参数中用密钥嵌入隐藏信息实现隐写",
+      "tldr": "针对2D高斯图像表示，本文提出在参数域而非像素中嵌入信息的隐写方法。先用密钥选择部分高斯参数微调，通过log-anisotropy、不透明度和颜色亮度三类参数嵌入8位消息，并保持重建图像高保真。在合成图与112张256×256自然图上，正确密钥可无误恢复，错误密钥BER接近随机猜测；平均PSNR代价仅0.091 dB。该工作验证了参数域密钥嵌入的可行性与低视觉开销。",
+      "tags": "query:image-tamper",
+      "abstract_en": "2D Gaussian-based image representation is becoming increasingly popular, and our work proposes a new approach to steganography by embedding information within Gaussian parameters rather than image pixels. We first fit the parameters of this representation to the target image and employ a secret key to select a subset of these parameters for fine-tuning, allowing us to embed an 8-bit message while maintaining high visual fidelity in the reconstructed image. Thirty fitting experiments on three synthetic images show that the correct key can recover the message without error, while decoding with incorrect keys yields a Bit Error Rate (BER) of $0.543$, close to random guessing. Compared with random selection using the key, selecting the least-disturbing edits recovers the message more reliably (one-sided $p=0.031$), and the average PSNR cost is only $0.091$ dB in visual quality. The embedding method transfers to 112 natural images at $256\\times256$ using 4,096 Gaussians. The correct-key BER is $0.000$, and decoding under a wrong key stays close to random guessing at $0.520$. Our method embeds the payload through three Gaussian parameter types: log-anisotropy, opacity, and color luminance. In a separate nine-fit reduced setting, color luminance is removed, so the payload uses two instead of three parameter types, a $33.3\\%$ reduction; all 256 Gaussians remain in the fitted representation. The correct key still recovers the message without error. However, wrong-key BER rises from $0.514$ to $0.571$, moving farther from random guessing ($0.5$).",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
