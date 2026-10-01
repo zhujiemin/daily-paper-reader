@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-30</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-01</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 4 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 2 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-30 23:30:37 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-01 23:06:52 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,7 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日速读4篇，聚焦视频篡改、AI生成图像与多视角几何取证，其中《ManiVid》以7.0分领跑。最值得看的是统一且可解释的篡改视频分析，以及自监督残差学习用于AI生成图像取证。普通读者可优先了解视频真伪鉴别与AI生成内容溯源工具，提升对可疑影像的警惕。</p>
+<p>今天速读2篇，聚焦生成语音水印与可解释深伪检测。</p>
+<p>值得看的是：语音水印用频谱结构让令牌变化不影响溯源，深伪检测则免训练挖掘区域、先看后判以兼顾定位与解释。</p>
+<p>普通读者可优先关注这两类“可验证+可解释”的AI安全思路，留意其落地效果。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -91,12 +93,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">4 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos">ManiVid: Unified and Explainable Forensic Analysis of Manipulated Videos</span></li><li><span class="dpr-home-dashboard-paper-title" title="Geometric Inconsistency Localization in Multi-View Image Sets">Geometric Inconsistency Localization in Multi-View Image Sets</span></li><li><span class="dpr-home-dashboard-paper-title" title="Forensic Twins: Self-Supervised Residual Learning for AI-Generated Image Forensics">Forensic Twins: Self-Supervised Residual Learning for AI-Generated Image Forensics</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech">Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech</span></li><li><span class="dpr-home-dashboard-paper-title" title="Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection">Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>3</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 

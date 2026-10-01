@@ -1,0 +1,39 @@
+{
+  "label": "2026-10-01",
+  "date": "2026-10-01",
+  "generated_at": "2026-10-01T23:06:54",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202610/01/2609.33774v1-tokens-change-structure-endures-spectral-watermarking-for-generated-speech",
+      "section": "quick",
+      "title_en": "Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech",
+      "authors": "Kanghwi Lee, Kyeongseok Jeong, Jeongmin Liu",
+      "date": "2026-09-27",
+      "pdf": "https://arxiv.org/pdf/2609.33774v1",
+      "score": "6.0",
+      "evidence": "面向AI生成语音溯源的水印",
+      "tldr": "AI生成语音需溯源，令牌级水印无需训练，却因重令牌化改变token身份而失效。Redwing把重令牌化观测到的token替换建为图，以拉普拉斯基让易互替token获得相近取值，并联合优化嵌入与检测。在Moshi经Mimi连续八次重合成后，Redwing以1%校准FPR达80.7% TPR，KGW仅8.3%，WMAR至多7.3%。它还通过另外三种编解码器及TTS模型验证泛化性，表明重令牌化结构可作鲁棒水印设计原则。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Watermarking is a promising tool for establishing the provenance of AI-generated speech. While many neural audio watermarking methods rely on a separately trained watermark generator, token-level watermarking is a training-free alternative that operates directly during generation. Its main weakness is retokenization: decoding generated speech to a waveform and encoding it again can change token identities and erode the watermark. To make the watermark robust to these changes, we propose Redwing, REtokenization-Durable Watermarking IN Generation. It builds a graph from the token substitutions observed under retokenization, whose Laplacian yields a basis that assigns similar values to tokens likely to substitute for one another. Over this basis, embedding and detection functions are jointly optimized to preserve watermark signal through retokenization while limiting embedding distortion and detector variability on unwatermarked speech. On the Moshi full-duplex system, after eight consecutive passes of Mimi resynthesis, Redwing achieves 80.7% TPR at a calibrated 1% FPR, compared with 8.3% for KGW and at most 7.3% for WMAR. It also has the highest TPR after eight passes through three other neural codecs (77.5-93.0%), and the gains generalize to TTS models at a speech-quality cost close to that of KGW. These results show that retokenization is not merely a source of noise: its transition structure can be exploited as a design principle for robust token-level watermarking.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/01/2609.35536v1-look-before-you-judge-training-free-region-mining-for-grounded-and-explainable-deepfake-detection",
+      "section": "quick",
+      "title_en": "Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection",
+      "authors": "Chia-Ling Chen, Yu-Ting Ta, Jian-Yu Jiang-Lin, Tai-Ming Huang, Ling Lo, Po-Ching Chen, Yan-Tsung Wang, Pei-Heng Li, Ling Zou, Hong-Han Shuai, Wen-Huang Cheng",
+      "date": "2026-09-28",
+      "pdf": "https://arxiv.org/pdf/2609.35536v1",
+      "score": "6.0",
+      "evidence": "具有空间定位证据的可解释深度伪造检测",
+      "tldr": "多模态大模型虽能用自然语言解释深伪判定，但解释未必真正扎根于图像证据，常由语言先验臆测伪影。本文提出免训练框架 Look Before You Judge，把可解释深伪检测重构为序贯证据获取：先通过对比原图与高斯模糊图的解码器到视觉注意力，定位图像专属候选证据区域，再逐一检验局部证据并融合全局上下文后给出最终判定。在五个开源 MLLM、TriDF 与 MMTD-Set 上，检测准确率最高提升 12.8%，CHAIR 降低 33.4%，幻觉率降低 21.3%，优于代表性免训练解码与注意力方法。",
+      "tags": "query:image-tamper",
+      "abstract_en": "Multimodal large language models (MLLMs) can explain deepfake verdicts in natural language, but such explanations are not necessarily visually grounded in the visual evidence underlying the prediction. A model may describe plausible artifacts inferred from language priors rather than from image evidence. Existing grounding methods improve visual reliance through decoding or attention interventions, but they generally strengthen grounding over the entire image, making them ill-suited for forensic artifacts that are subtle, spatially localized, and image-dependent. We propose Look Before You Judge, a training-free framework that formulates explainable deepfake detection as a sequential evidence acquisition process. Instead of directly predicting image authenticity from holistic visual reasoning, our framework first identifies image-specific candidate evidence regions by contrasting the MLLM's decoder-to-visual attention between an original image and its Gaussian-blurred counterpart. The identified regions are then inspected individually, and the resulting local evidence is integrated with the global image context before reaching a final verdict. The framework operates without manipulation masks, external forensic models, or parameter updates, making it directly applicable to off-the-shelf MLLMs. Across five open-source MLLMs on TriDF and MMTD-Set, our framework improves detection accuracy by up to 12.8%, reduces CHAIR by up to 33.4% and hallucination rate by up to 21.3%, and outperforms representative training-free decoding and attention methods.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,41 @@
+{
+  "date": "20261001",
+  "date_label": "",
+  "generated_at": "2026-10-01 23:06:52 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.33774v1",
+      "route": "202610/01/2609.33774v1-tokens-change-structure-endures-spectral-watermarking-for-generated-speech",
+      "title": "Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向AI生成语音溯源的水印",
+      "first_seen_at": "2026-10-01 23:06:52 UTC",
+      "updated_at": "2026-10-01 23:06:52 UTC"
+    },
+    {
+      "paper_id": "2609.35536v1",
+      "route": "202610/01/2609.35536v1-look-before-you-judge-training-free-region-mining-for-grounded-and-explainable-deepfake-detection",
+      "title": "Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "具有空间定位证据的可解释深度伪造检测",
+      "first_seen_at": "2026-10-01 23:06:52 UTC",
+      "updated_at": "2026-10-01 23:06:52 UTC"
+    }
+  ]
+}

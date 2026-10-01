@@ -1,0 +1,107 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-01T23:06:23.363102+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.33774v1",
+      "source": "arxiv",
+      "title": "Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech",
+      "abstract": "Watermarking is a promising tool for establishing the provenance of AI-generated speech. While many neural audio watermarking methods rely on a separately trained watermark generator, token-level watermarking is a training-free alternative that operates directly during generation. Its main weakness is retokenization: decoding generated speech to a waveform and encoding it again can change token identities and erode the watermark. To make the watermark robust to these changes, we propose Redwing, REtokenization-Durable Watermarking IN Generation. It builds a graph from the token substitutions observed under retokenization, whose Laplacian yields a basis that assigns similar values to tokens likely to substitute for one another. Over this basis, embedding and detection functions are jointly optimized to preserve watermark signal through retokenization while limiting embedding distortion and detector variability on unwatermarked speech. On the Moshi full-duplex system, after eight consecutive passes of Mimi resynthesis, Redwing achieves 80.7% TPR at a calibrated 1% FPR, compared with 8.3% for KGW and at most 7.3% for WMAR. It also has the highest TPR after eight passes through three other neural codecs (77.5-93.0%), and the gains generalize to TTS models at a speech-quality cost close to that of KGW. These results show that retokenization is not merely a source of noise: its transition structure can be exploited as a design principle for robust token-level watermarking.",
+      "authors": [
+        "Kanghwi Lee",
+        "Kyeongseok Jeong",
+        "Jeongmin Liu"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.CL",
+        "cs.CR",
+        "cs.LG",
+        "eess.AS"
+      ],
+      "published": "2026-09-27T17:13:53+00:00",
+      "link": "https://arxiv.org/pdf/2609.33774v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermarking for provenance of AI-generated speech",
+      "llm_evidence_cn": "面向AI生成语音溯源的水印",
+      "llm_evidence": "面向AI生成语音溯源的水印",
+      "canonical_evidence": "面向AI生成语音溯源的水印",
+      "llm_tldr_en": "Token-level watermarking is a training-free way to mark AI-generated speech, but retokenization erodes the mark. Redwing builds a substitution graph whose Laplacian basis assigns similar values to interchangeable tokens, yielding retokenization-durable spectral watermarks.",
+      "llm_tldr_cn": "词元级水印是训练无关的生成内容溯源方案，但重分词会改变词元身份并侵蚀水印。本文提出Redwing，基于重分词下观察到的词元替换构建图，用其拉普拉斯谱基为易相互替换的词元分配相近取值并在该基上嵌入水印。实验表明该方法对重分词具有更强鲁棒性，能保持生成语音水印的可检测性。该工作为生成内容水印的溯源提供了抗重分词的新思路，虽面向语音但方法可迁移。",
+      "llm_tldr": "词元级水印是训练无关的生成内容溯源方案，但重分词会改变词元身份并侵蚀水印。本文提出Redwing，基于重分词下观察到的词元替换构建图，用其拉普拉斯谱基为易相互替换的词元分配相近取值并在该基上嵌入水印。实验表明该方法对重分词具有更强鲁棒性，能保持生成语音水印的可检测性。该工作为生成内容水印的溯源提供了抗重分词的新思路，虽面向语音但方法可迁移。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.35536v1",
+      "source": "arxiv",
+      "title": "Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection",
+      "abstract": "Multimodal large language models (MLLMs) can explain deepfake verdicts in natural language, but such explanations are not necessarily visually grounded in the visual evidence underlying the prediction. A model may describe plausible artifacts inferred from language priors rather than from image evidence. Existing grounding methods improve visual reliance through decoding or attention interventions, but they generally strengthen grounding over the entire image, making them ill-suited for forensic artifacts that are subtle, spatially localized, and image-dependent. We propose Look Before You Judge, a training-free framework that formulates explainable deepfake detection as a sequential evidence acquisition process. Instead of directly predicting image authenticity from holistic visual reasoning, our framework first identifies image-specific candidate evidence regions by contrasting the MLLM's decoder-to-visual attention between an original image and its Gaussian-blurred counterpart. The identified regions are then inspected individually, and the resulting local evidence is integrated with the global image context before reaching a final verdict. The framework operates without manipulation masks, external forensic models, or parameter updates, making it directly applicable to off-the-shelf MLLMs. Across five open-source MLLMs on TriDF and MMTD-Set, our framework improves detection accuracy by up to 12.8%, reduces CHAIR by up to 33.4% and hallucination rate by up to 21.3%, and outperforms representative training-free decoding and attention methods.",
+      "authors": [
+        "Chia-Ling Chen",
+        "Yu-Ting Ta",
+        "Jian-Yu Jiang-Lin",
+        "Tai-Ming Huang",
+        "Ling Lo",
+        "Po-Ching Chen",
+        "Yan-Tsung Wang",
+        "Pei-Heng Li",
+        "Ling Zou",
+        "Hong-Han Shuai",
+        "Wen-Huang Cheng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-28T16:19:22+00:00",
+      "link": "https://arxiv.org/pdf/2609.35536v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "grounded explainable deepfake detection with spatially localized forensic evidence",
+      "llm_evidence_cn": "具有空间定位证据的可解释深度伪造检测",
+      "llm_evidence": "具有空间定位证据的可解释深度伪造检测",
+      "canonical_evidence": "具有空间定位证据的可解释深度伪造检测",
+      "llm_tldr_en": "MLLM explanations of deepfake verdicts are often not visually grounded, and existing grounding methods strengthen the whole image, ill-suited to subtle localized artifacts. The paper proposes a training-free framework casting explainable deepfake detection as sequential evidence acquisition over regions, improving visual grounding.",
+      "llm_tldr_cn": "多模态大模型虽能解释深度伪造判定，但其解释往往并非真正基于图像证据，且现有定位方法多在整图上增强依据，不适合细微而空间局部的伪造痕迹。作者提出免训练框架Look Before You Judge，将可解释深度伪造检测建模为顺序式证据获取过程，逐步挖掘区域证据。该框架使判定更依赖图像局部证据，提升了可解释性与视觉依据性。工作为局部化、依赖图像的伪造取证提供了免训练的可解释检测思路。",
+      "llm_tldr": "多模态大模型虽能解释深度伪造判定，但其解释往往并非真正基于图像证据，且现有定位方法多在整图上增强依据，不适合细微而空间局部的伪造痕迹。作者提出免训练框架Look Before You Judge，将可解释深度伪造检测建模为顺序式证据获取过程，逐步挖掘区域证据。该框架使判定更依赖图像局部证据，提升了可解释性与视觉依据性。工作为局部化、依赖图像的伪造取证提供了免训练的可解释检测思路。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "identifying and localizing manipulated regions in digital images",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
