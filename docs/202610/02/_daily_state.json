@@ -1,0 +1,201 @@
+{
+  "date": "20261002",
+  "date_label": "",
+  "generated_at": "2026-10-02 23:22:39 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.39024v1",
+      "route": "202610/02/2609.39024v1-persistent-watermarking-of-text-to-image-models",
+      "title": "Persistent Watermarking of Text-to-Image Models",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "文本到图像模型的持久水印，抵抗微调与输出后处理",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.38251v1",
+      "route": "202610/02/2609.38251v1-forensic-aware-continual-adaptation-for-image-forgery-localization",
+      "title": "Forensic-Aware Continual Adaptation for Image Forgery Localization",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "图像伪造定位与持续学习适配",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.39623v1",
+      "route": "202610/02/2609.39623v1-semantic-watermarking-for-malicious-image-manipulation-detection",
+      "title": "Semantic Watermarking for Malicious Image Manipulation Detection",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "以可恢复语义参考的语义水印检测恶意图像篡改",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.40031v1",
+      "route": "202610/02/2609.40031v1-warp-a-unified-benchmark-for-invisible-image-watermarking----robustness-and-protection-against-attacks",
+      "title": "WARP: A Unified Benchmark for Invisible Image Watermarking -- Robustness and Protection Against Attacks",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "不可见图像水印抗擦除攻击的鲁棒性基准",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2610.01778v1",
+      "route": "202610/02/2610.01778v1-giftbench-diagnosing-generalization-in-image-forgery-localization-and-informing-model-design",
+      "title": "GIFTBench: Diagnosing Generalization in Image Forgery Localization and Informing Model Design",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "像素级图像伪造定位基准",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2610.02010v1",
+      "route": "202610/02/2610.02010v1-exploring-weaknesses-of-generative-image-watermarks-against-latent-frequency-masking",
+      "title": "Exploring Weaknesses of Generative Image Watermarks against Latent Frequency Masking",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "通过潜频掩蔽抹除扩散水印证据的攻击",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.36882v2",
+      "route": "202610/02/2609.36882v2-less-supervision-better-generalization-weakly-supervised-fake-region-localization-in-diffusion-edited-images",
+      "title": "Less Supervision, Better Generalization: Weakly Supervised Fake Region Localization in Diffusion-Edited Images",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "扩散编辑图像中AI编辑区域的弱监督定位",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2610.00780v1",
+      "route": "202610/02/2610.00780v1-made-to-measure-designing-image-watermarks-to-specification",
+      "title": "Made to Measure: Designing Image Watermarks to Specification",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "面向来源认证与归因的图像水印组合框架",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.39066v1",
+      "route": "202610/02/2609.39066v1-agentic-tool-augmented-reasoning-for-explainable-image-forgery-detection",
+      "title": "Agentic Tool-Augmented Reasoning for Explainable Image Forgery Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "用智能体工具增强推理检测、定位并解释图像伪造",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.36822v1",
+      "route": "202610/02/2609.36822v1-red-reconstruction-evolution-dynamics-for-generalizable-ai-generated-image-detection",
+      "title": "RED: Reconstruction Evolution Dynamics for Generalizable AI-Generated Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "基于重建动态的AI生成图像检测",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.37783v1",
+      "route": "202610/02/2609.37783v1-a-benchmark--dataset-for-detecting-ai-manipulated-visual-evidence-in-the-court-system",
+      "title": "A Benchmark & Dataset for Detecting AI-Manipulated Visual Evidence in the Court System",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向司法场景的AI操纵视觉证据检测基准与局部编辑",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    },
+    {
+      "paper_id": "2609.37937v2",
+      "route": "202610/02/2609.37937v2-look-closer-patch-wise-supervision-for-ai-generated-image-detection",
+      "title": "Look Closer: Patch-wise Supervision for AI-Generated Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "图块级监督用于AI生成图像检测",
+      "first_seen_at": "2026-10-02 23:22:39 UTC",
+      "updated_at": "2026-10-02 23:22:39 UTC"
+    }
+  ]
+}

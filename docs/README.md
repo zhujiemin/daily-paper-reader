@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-01</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-02</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 2 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 12 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-01 23:06:52 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-02 23:22:39 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,9 +69,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今天速读2篇，聚焦生成语音水印与可解释深伪检测。</p>
-<p>值得看的是：语音水印用频谱结构让令牌变化不影响溯源，深伪检测则免训练挖掘区域、先看后判以兼顾定位与解释。</p>
-<p>普通读者可优先关注这两类“可验证+可解释”的AI安全思路，留意其落地效果。</p>
+<p>今天精读7篇、速读5篇，主攻图像水印、伪造定位与AI生成图检测。最值得看的是满分工作《Persistent Watermarking of Text-to-Image Models》和9分的《Forensic-Aware Continual Adaptation for Image Forgery Localization》，前者关注水印持久性，后者强调持续适应下的取证定位。普通读者可优先了解这两篇的核心思路，再按需扫读速读列表中弱监督伪造定位与可解释检测方向。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -80,12 +78,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">0 篇</strong>
+    <strong class="dpr-home-dashboard-count">7 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Persistent Watermarking of Text-to-Image Models">Persistent Watermarking of Text-to-Image Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Forensic-Aware Continual Adaptation for Image Forgery Localization">Forensic-Aware Continual Adaptation for Image Forgery Localization</span></li><li><span class="dpr-home-dashboard-paper-title" title="Semantic Watermarking for Malicious Image Manipulation Detection">Semantic Watermarking for Malicious Image Manipulation Detection</span></li></ul>
   </div>
-
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>4</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>3</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -93,12 +91,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">5 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech">Tokens Change, Structure Endures: Spectral Watermarking for Generated Speech</span></li><li><span class="dpr-home-dashboard-paper-title" title="Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection">Look Before You Judge: Training-Free Region Mining for Grounded and Explainable Deepfake Detection</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Less Supervision, Better Generalization: Weakly Supervised Fake Region Localization in Diffusion-Edited Images">Less Supervision, Better Generalization: Weakly Supervised Fake Region Localization in Diffusion-Edited Images</span></li><li><span class="dpr-home-dashboard-paper-title" title="Agentic Tool-Augmented Reasoning for Explainable Image Forgery Detection">Agentic Tool-Augmented Reasoning for Explainable Image Forgery Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="RED: Reconstruction Evolution Dynamics for Generalizable AI-Generated Image Detection">RED: Reconstruction Evolution Dynamics for Generalizable AI-Generated Image Detection</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>5</strong></span></div>
 </section>
 </div>
 

@@ -1,0 +1,534 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-02T23:18:21.491781+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 8,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 5,
+    "quick_skim_target": 12,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2609.39024v1",
+      "source": "arxiv",
+      "title": "Persistent Watermarking of Text-to-Image Models",
+      "abstract": "Text-to-image (T2I) generation is gaining increasing popularity with the general public, motivating the development of reliable mechanisms for copyrighting such models given their expensive training costs. An adversary may obtain and reuse a pretrained T2I model without authorization, and then serve a modified version through an API service. Such modifications may arise from ordinary downstream adaptation or deliberate attempts to erase ownership, including input-prompt preprocessing, model fine-tuning, and output post-processing. From the model owner's perspective, a key challenge is therefore to embed trigger data that remain persistent under such changes while preserving the model's normal image-generation capabilities. In this work, we propose a contrastive-style watermarking objective with a term that explicitly encourages the watermarked model to behave differently from the original model on trigger inputs. Experiments show substantially stronger trigger-data persistence than prior methods across a wide range of downstream modifications and deliberate attempts to weaken the watermark, resulting in higher detection rates, often approaching 100% TPR@FPR<$10^{-4}$.",
+      "authors": [
+        "Dixi Yao",
+        "Kaiwen Chen",
+        "Tahseen Rabbani",
+        "Tian Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-30T05:29:04+00:00",
+      "link": "https://arxiv.org/pdf/2609.39024v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "persistent watermarking of text-to-image models robust to fine-tuning, prompt preprocessing and post-processing",
+      "llm_evidence_cn": "文本到图像模型的持久水印，抵抗微调与输出后处理",
+      "llm_evidence": "文本到图像模型的持久水印，抵抗微调与输出后处理",
+      "canonical_evidence": "文本到图像模型的持久水印，抵抗微调与输出后处理",
+      "llm_tldr_en": "T2I models are costly yet easily reused or modified; this work proposes contrastive-style watermarking that embeds trigger data persistent under fine-tuning, prompt preprocessing and output post-processing while preserving image-generation quality.",
+      "llm_tldr_cn": "文本到图像模型训练成本高昂，却容易被未授权复用或篡改，普通下游适配、提示预处理、模型微调与输出后处理都可能抹去所有权信息。本文提出对比式水印方法，将触发数据嵌入模型，使其在上述改动下仍保持持久，同时不损害正常图像生成能力。实验表明该水印在多种模型修改下可稳定检测，为生成模型版权保护与来源认证提供了可靠手段。",
+      "llm_tldr": "文本到图像模型训练成本高昂，却容易被未授权复用或篡改，普通下游适配、提示预处理、模型微调与输出后处理都可能抹去所有权信息。本文提出对比式水印方法，将触发数据嵌入模型，使其在上述改动下仍保持持久，同时不损害正常图像生成能力。实验表明该水印在多种模型修改下可稳定检测，为生成模型版权保护与来源认证提供了可靠手段。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "digital watermarking for diffusion models that generate images",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.38251v1",
+      "source": "arxiv",
+      "title": "Forensic-Aware Continual Adaptation for Image Forgery Localization",
+      "abstract": "The rapid evolution of image manipulation techniques has raised growing public security concerns. Existing Image Forgery Localization (IFL) methods can accurately localize manipulated regions but are often unable to adapt to newly emerging forgeries. In real-world forensic scenarios, data typically arrive sequentially, yet continual model adaptation remains largely unexplored in IFL. To bridge this gap, we introduce the first continual learning framework for IFL and establish a comprehensive benchmark under two realistic data-evolution protocols: cross-dataset and cross-content continual learning. Evaluations of representative state-of-the-art IFL and continual learning methods reveal substantial performance degradation, highlighting two key challenges: (1) adaptively capturing intrinsic forensic traces from incoming data across unseen domains, and (2) preserving previously acquired forensic knowledge during sequential adaptation. To address these challenges, we propose a forensic-aware continual adaptation framework. First, a forensic trace mining module employs Spatial Mixture-of-Forensic-Experts (SMoFE) to dynamically route complementary forensic cues across spatial locations, together with Forensic Evidence-Guided Dense Prompting (FEGDP) to transform low-level forensic traces into structured localization evidence for SAM. Second, Fisher-weighted LoRA Gradient (FLAG) surgery identifies old-task-sensitive adaptation directions and suppresses conflicting updates, mitigating catastrophic forgetting while preserving plasticity for emerging forgery domains. Extensive experiments demonstrate state-of-the-art performance in both pixel-level forgery localization and image-level forgery detection across diverse continual learning scenarios.",
+      "authors": [
+        "Chenqi Kong",
+        "Song Xia",
+        "Anwei Luo",
+        "Peisong He",
+        "Alex C. Kot",
+        "Yuming Fang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-09-29T07:47:57+00:00",
+      "link": "https://arxiv.org/pdf/2609.38251v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "image forgery localization with continual learning adaptation",
+      "llm_evidence_cn": "图像伪造定位与持续学习适配",
+      "llm_evidence": "图像伪造定位与持续学习适配",
+      "canonical_evidence": "图像伪造定位与持续学习适配",
+      "llm_tldr_en": "This paper addresses image forgery localization models that fail to adapt to newly emerging manipulations, proposing the first continual learning framework and benchmark for IFL under cross-dataset and cross-content protocols.",
+      "llm_tldr_cn": "针对图像伪造定位方法虽能定位篡改区域却难以适应不断涌现的新型伪造这一问题，该文首次将持续学习引入图像伪造定位，提出面向跨数据集与跨内容两种真实数据演化协议的持续学习框架与基准。实验表明现有主流定位方法与持续学习方法均出现显著性能退化，揭示了灾难性遗忘等关键挑战。该工作为篡改定位在动态取证场景下的可扩展性提供了新范式。",
+      "llm_tldr": "针对图像伪造定位方法虽能定位篡改区域却难以适应不断涌现的新型伪造这一问题，该文首次将持续学习引入图像伪造定位，提出面向跨数据集与跨内容两种真实数据演化协议的持续学习框架与基准。实验表明现有主流定位方法与持续学习方法均出现显著性能退化，揭示了灾难性遗忘等关键挑战。该工作为篡改定位在动态取证场景下的可扩展性提供了新范式。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "How to localize image tampering at the pixel level using deep learning models?",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.39623v1",
+      "source": "arxiv",
+      "title": "Semantic Watermarking for Malicious Image Manipulation Detection",
+      "abstract": "The proliferation of high-fidelity generative editing models has made it possible to inject violent or sexual content into otherwise ordinary images while preserving visual plausibility, with concrete consequences for public discourse and vulnerable populations. We propose a robust semantic watermarking framework that reframes the watermark as a recoverable semantic reference rather than an opaque identifier. Our framework combines a $β$-VAE-based binary watermark (CLIP-VAE) with explicit channel-aware training---random bit-flip noise is injected during training so that the decoder learns graceful degradation under the noisy watermarking channel. As a downstream application, a lightweight module SDA-Net uses the recovered semantic embedding to expose not only whether but in which semantic direction an image has been altered. In a 5-way comparison against representative binary hashing baselines (SimHash, ITQ, HashNet, and their robust-MLP variants), CLIP-VAE achieves the highest reconstruction cosine similarity to the original CLIP embedding under realistic InstructPix2Pix bit-error rates, and uniquely supports direction-of-drift detection---a forensic complement to existing content-moderation pipelines.",
+      "authors": [
+        "Yoonseo Kim",
+        "Seungwoo Baek",
+        "Junyoung Park"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-30T12:33:19+00:00",
+      "link": "https://arxiv.org/pdf/2609.39623v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "semantic watermarking with recoverable semantic reference for detecting malicious image manipulation",
+      "llm_evidence_cn": "以可恢复语义参考的语义水印检测恶意图像篡改",
+      "llm_evidence": "以可恢复语义参考的语义水印检测恶意图像篡改",
+      "canonical_evidence": "以可恢复语义参考的语义水印检测恶意图像篡改",
+      "llm_tldr_en": "Generative editing can inject harmful content into ordinary images while staying plausible; this paper proposes a robust semantic watermarking framework using a beta-VAE binary watermark with channel-aware training, plus SDA-Net to expose manipulated regions.",
+      "llm_tldr_cn": "高保真生成编辑模型可向普通图像注入暴力或色情内容且保持视觉逼真，威胁公共讨论与弱势群体。本文提出鲁棒语义水印框架，将水印重构为可恢复的语义参考而非不透明标识，结合β-VAE二值水印CLIP-VAE与信道感知训练，训练中注入随机比特翻转噪声使解码器在噪声信道下优雅退化。下游模块SDA-Net利用恢复的语义嵌入暴露被篡改区域，为生成式图像篡改检测提供了新思路。",
+      "llm_tldr": "高保真生成编辑模型可向普通图像注入暴力或色情内容且保持视觉逼真，威胁公共讨论与弱势群体。本文提出鲁棒语义水印框架，将水印重构为可恢复的语义参考而非不透明标识，结合β-VAE二值水印CLIP-VAE与信道感知训练，训练中注入随机比特翻转噪声使解码器在噪声信道下优雅退化。下游模块SDA-Net利用恢复的语义嵌入暴露被篡改区域，为生成式图像篡改检测提供了新思路。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "embedding imperceptible watermarks for image authentication and recovery",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.40031v1",
+      "source": "arxiv",
+      "title": "WARP: A Unified Benchmark for Invisible Image Watermarking -- Robustness and Protection Against Attacks",
+      "abstract": "Digital image watermarking is increasingly critical in media contexts, as emerging regulations and industry practices require marking AI-generated content and ensuring traceable sources to prevent manipulation or misuse. Recent advances in invisible watermarking methods highlight the need to update existing benchmarking practices to reflect current techniques and evaluation criteria.   We address this by introducing WARP -- a unified framework and benchmark for evaluating the robustness of invisible watermarks. WARP incorporates 32 recent classical, deep, and generative watermarking methods, as well as 34 different erasing techniques, ranging from traditional distortions to more sophisticated adversarial, purification, and re-embedding attacks. It provides standardized, reproducible, and easily scalable protocols for evaluating perceptual quality, watermark readability, and attack resilience.   Using WARP, we extensively evaluate current invisible watermarking techniques, collecting the largest robustness benchmark in the field. Results identify the most robust approaches under both distortion and adversarial conditions, and reveal consistent relationships between watermarking methods and the attack strategies most effective against them. Our experiments also highlight that some of the watermarking methods considered are highly vulnerable to reembedding, even if they are robust to standard distortions. The code is made available at https://github.com/ispras/wibe.",
+      "authors": [
+        "Khaled Abud",
+        "Aleksey Yakushev",
+        "Aleksandr Akimenkov",
+        "Irina Serzhenko",
+        "Kirill Aistov",
+        "Egor Kovalev",
+        "Dmitry Obydenkov",
+        "Sergey Lavrushkin",
+        "Anastasia Antsiferova",
+        "Dmitriy Vatolin",
+        "Yury Markin",
+        "Kirill Lukianov"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.MM"
+      ],
+      "published": "2026-09-30T16:03:02+00:00",
+      "link": "https://arxiv.org/pdf/2609.40031v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmark for invisible image watermarking robustness against erasing attacks",
+      "llm_evidence_cn": "不可见图像水印抗擦除攻击的鲁棒性基准",
+      "llm_evidence": "不可见图像水印抗擦除攻击的鲁棒性基准",
+      "canonical_evidence": "不可见图像水印抗擦除攻击的鲁棒性基准",
+      "llm_tldr_en": "WARP is a unified benchmark evaluating the robustness of invisible image watermarks, covering 32 watermarking methods and 34 erasing techniques from distortions to adversarial purification.",
+      "llm_tldr_cn": "针对新兴法规与行业实践要求标记AI生成内容并保证来源可追溯，而现有基准已难反映最新不可见水印技术这一问题，该文提出WARP统一框架与基准，系统评估不可见水印的鲁棒性。WARP纳入32种经典、深度与生成式水印方法以及34种擦除技术，覆盖传统失真到对抗、净化等更复杂的攻击。该基准为水印抗移除攻击评估与防御研究提供了标准化平台，直接服务于生成内容溯源与保护。",
+      "llm_tldr": "针对新兴法规与行业实践要求标记AI生成内容并保证来源可追溯，而现有基准已难反映最新不可见水印技术这一问题，该文提出WARP统一框架与基准，系统评估不可见水印的鲁棒性。WARP纳入32种经典、深度与生成式水印方法以及34种擦除技术，覆盖传统失真到对抗、净化等更复杂的攻击。该基准为水印抗移除攻击评估与防御研究提供了标准化平台，直接服务于生成内容溯源与保护。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "Defenses against watermark removal and adversarial attacks on generated image watermarks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.01778v1",
+      "source": "arxiv",
+      "title": "GIFTBench: Diagnosing Generalization in Image Forgery Localization and Informing Model Design",
+      "abstract": "Reliable evaluation of image forgery localization (IFL) requires assessing models under diverse distribution changes, yet existing benchmarks often cover limited manipulation conditions or entangle multiple factors in cross-dataset evaluation. Consequently, aggregate performance provides an incomplete view of localization generalization. We introduce GIFTBench, a multi-axis benchmark of 115,013 manipulated images with pixel-level annotations spanning manipulation source, semantic target, editing operation, and composition complexity. GIFTBench supports axis-specific transfer analysis and evaluation on twelve external datasets. Its diagnostic studies reveal asymmetric cross-source transfer, recall-dominated failures, and heterogeneous degradation across semantic, operational, and compositional changes. Beyond diagnosis, the scale and diversity of GIFTBench provide a substantially broader training distribution than conventional IFL datasets. Training representative localizers on GIFTBench consistently improves their aggregate transfer to external datasets, showing that the benchmark serves not only as an evaluation tool but also as an effective training resource for cross-domain localization. Guided by the diagnostic findings, we further develop ForenScope, a detection and localization framework combining classification-adapted representations with multi-depth, multi-scale spatial features, learned layer fusion, and selective coarse-scale conditioning. Experiments show improved cross-dataset localization while retaining image-level detection capability. The GIFTBench dataset showcase page is available at https://giftbench-preview.doudoudouya337.chatgpt.site.",
+      "authors": [
+        "Baoke Dou",
+        "Ziye Wang",
+        "Hao Wang",
+        "Guoqing Cai",
+        "Wende Tan",
+        "Chenyang Si",
+        "Liucheng Guo",
+        "Yueming Lyu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-01T14:31:20+00:00",
+      "link": "https://arxiv.org/pdf/2610.01778v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "pixel-level image forgery localization benchmark",
+      "llm_evidence_cn": "像素级图像伪造定位基准",
+      "llm_evidence": "像素级图像伪造定位基准",
+      "canonical_evidence": "像素级图像伪造定位基准",
+      "llm_tldr_en": "GIFTBench is a multi-axis benchmark of 115013 manipulated images with pixel-level annotations, diagnosing generalization in image forgery localization across manipulation source, target, operation and complexity.",
+      "llm_tldr_cn": "现有图像伪造定位基准往往篡改条件有限，跨数据集评估又纠缠多个因素，使总体指标无法反映真实泛化能力。作者提出GIFTBench，包含115013张带像素级标注的篡改图像，从篡改来源、语义目标、编辑操作与组合复杂度多个轴进行诊断，并支持十二个外部数据集评测。实验揭示跨来源迁移不对称、召回主导的失败等现象，为伪造定位模型设计提供依据。",
+      "llm_tldr": "现有图像伪造定位基准往往篡改条件有限，跨数据集评估又纠缠多个因素，使总体指标无法反映真实泛化能力。作者提出GIFTBench，包含115013张带像素级标注的篡改图像，从篡改来源、语义目标、编辑操作与组合复杂度多个轴进行诊断，并支持十二个外部数据集评测。实验揭示跨来源迁移不对称、召回主导的失败等现象，为伪造定位模型设计提供依据。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.02010v1",
+      "source": "arxiv",
+      "title": "Exploring Weaknesses of Generative Image Watermarks against Latent Frequency Masking",
+      "abstract": "Invisible watermarking has become a central tool for tracing AI-generated images, but its robustness against adaptive removal attacks remains an open security question. We introduce Latent Frequency Masking, an attack that erases watermark evidence by replacing selected Fourier coefficients in the latent representation of a watermarked image. The replacement can be sampled from Gaussian noise for efficiency or derived from diffusion regeneration for improved image preservation. We provide a theoretical distortion bound relating the change between the reconstructed adversarial image and the masked latent-frequency perturbation. We evaluate the proposed attack against six diffusion watermarking methods on images generated from DiffusionDB and MS-COCO prompts. Latent Frequency Masking removes or substantially weakens several watermarks while preserving perceptual quality and achieving favorable runtime compared with existing attacks. These results identify latent-frequency manipulation as a practical attack surface and highlight the need to include such attacks in robustness evaluations of generative image watermarking.",
+      "authors": [
+        "Kirill Aistov",
+        "Khaled Abud",
+        "Irina Serzhenko",
+        "Egor Kovalev",
+        "Aleksey Yakushev",
+        "Aleksandr Akimenkov",
+        "Dmitry Obydenkov",
+        "Yury Markin",
+        "Sergey Lavrushkin",
+        "Dmitriy Vatolin",
+        "Anastasia Antsiferova"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.MM"
+      ],
+      "published": "2026-10-01T16:36:29+00:00",
+      "link": "https://arxiv.org/pdf/2610.02010v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "attack erasing watermark evidence via latent frequency masking against diffusion watermarks",
+      "llm_evidence_cn": "通过潜频掩蔽抹除扩散水印证据的攻击",
+      "llm_evidence": "通过潜频掩蔽抹除扩散水印证据的攻击",
+      "canonical_evidence": "通过潜频掩蔽抹除扩散水印证据的攻击",
+      "llm_tldr_en": "Invisible watermarking traces AI-generated images but robustness against adaptive removal attacks is unclear. This paper introduces Latent Frequency Masking, which erases watermark evidence by replacing Fourier coefficients in the latent space, and evaluates it against six diffusion watermarking methods.",
+      "llm_tldr_cn": "针对AI生成图像溯源中隐形水印对自适应移除攻击鲁棒性不明的问题，本文提出潜频掩蔽攻击，通过在潜表示中替换选定傅里叶系数来抹除水印证据。替换可用高斯噪声采样以提升效率，或用扩散重生成以保持图像质量，并给出理论失真界。实验在DiffusionDB生成图像上评估了六种扩散水印方法，揭示了现有生成图像水印的安全弱点。",
+      "llm_tldr": "针对AI生成图像溯源中隐形水印对自适应移除攻击鲁棒性不明的问题，本文提出潜频掩蔽攻击，通过在潜表示中替换选定傅里叶系数来抹除水印证据。替换可用高斯噪声采样以提升效率，或用扩散重生成以保持图像质量，并给出理论失真界。实验在DiffusionDB生成图像上评估了六种扩散水印方法，揭示了现有生成图像水印的安全弱点。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.00780v1",
+      "source": "arxiv",
+      "title": "Made to Measure: Designing Image Watermarks to Specification",
+      "abstract": "Image watermarking supports provenance and attribution by embedding verifiable identity information into images. Practical deployments, however, must jointly satisfy requirements for attack resistance, false-positive rate (FPR), image quality, and latency. Existing watermarking methods are robust to different classes of transformations, so combining complementary methods can provide broader protection than any single watermark. Such composition is challenging, as additional fragments increase distortion and decoding cost and must share the same FPR budget. Therefore, we propose **TAILOR**, a request-conditioned watermark composition framework with three stages: (1) *offline characterization* measures fragment recovery, distortion, and runtime as response curves over embedding strength; (2) *joint configuration selection* encodes the request as an SMT model over these curves and solves for the lowest-distortion composition of fragments, strengths, order, and geometric recovery; and (3) *live calibration* validates the selected configuration on the user's images and refines predictions that fail to transfer. Experimental results across 7,321 distinct requests spanning five scenarios and 20 attack settings show that **TAILOR** achieves **96.21%** scenario-averaged request satisfaction with a mean PSNR of **41.02 dB**, outperforming existing methods in robustness while achieving consistently better image quality. Code is available at [https://github.com/aaFrostnova/Tailor](https://github.com/aaFrostnova/Tailor).",
+      "authors": [
+        "Mingzhe Li",
+        "Yuefeng Peng",
+        "Kejing Xia",
+        "Pranav Jeyakumar",
+        "Ruolan Leslie Famularo",
+        "Shiqing Ma"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-09-30T22:17:04+00:00",
+      "link": "https://arxiv.org/pdf/2610.00780v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "image watermarking for provenance and attribution with request-conditioned composition",
+      "llm_evidence_cn": "面向来源认证与归因的图像水印组合框架",
+      "llm_evidence": "面向来源认证与归因的图像水印组合框架",
+      "canonical_evidence": "面向来源认证与归因的图像水印组合框架",
+      "llm_tldr_en": "Image watermarking supports provenance and attribution, but deployments must jointly meet attack resistance, FPR, quality and latency. TAILOR is a request-conditioned composition framework that characterizes and combines complementary watermark fragments under a shared FPR budget.",
+      "llm_tldr_cn": "图像水印可用于在图像中嵌入可验证身份信息以支持来源认证与归属，但实际部署需同时满足抗攻击、误报率、图像质量和延迟等多重约束，单一方法难以兼顾。作者提出TAILOR，一个由请求条件驱动的图像水印组合框架，先离线刻画各水印片段的恢复率、失真与运行时曲线，再在共享误报率预算下优化组合。实验表明该框架能按规格提供更广的变换鲁棒性，为可定制水印部署提供新路径。",
+      "llm_tldr": "图像水印可用于在图像中嵌入可验证身份信息以支持来源认证与归属，但实际部署需同时满足抗攻击、误报率、图像质量和延迟等多重约束，单一方法难以兼顾。作者提出TAILOR，一个由请求条件驱动的图像水印组合框架，先离线刻画各水印片段的恢复率、失真与运行时曲线，再在共享误报率预算下优化组合。实验表明该框架能按规格提供更广的变换鲁棒性，为可定制水印部署提供新路径。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.36882v2",
+      "source": "arxiv",
+      "title": "Less Supervision, Better Generalization: Weakly Supervised Fake Region Localization in Diffusion-Edited Images",
+      "abstract": "Localizing AI-edited regions is essential for interpretable forensic analysis, but remains challenging due to subtle and spatially distributed artifacts that are misaligned with semantic or object boundaries. Existing approaches rely on pixel-level supervision from controlled editing pipelines, which is difficult to scale and can introduce misleading signals: artifacts frequently extend beyond annotated regions, while out-of-mask pixels are treated as authentic. This limits models' ability to capture transferable evidence and generalize across generators and datasets. To address these issues, we propose ReGFLoW, a Reconstruction-Guided Fake Localization framework under Weak supervision, which is the first weakly supervised approach for diffusion-edited fake region localization. ReGFLoW requires only real/fake labels at the image level and uses diffusion reconstruction errors as dense spatial guidance to inject them into both feature and score spaces. Furthermore, by artifact-centric multiple instance learning, ReGFLoW utilizes localized diffusion evidence without relying on semantic-affinity or boundary-based pseudo-mask priors. Extensive experiments show competitive cross-generator localization, while ReGFLoW outperforms all evaluated fully supervised baselines when evaluation includes both partially edited and fully synthetic images and in cross-dataset tests, without target-domain adaptation.",
+      "authors": [
+        "Junhee Lee",
+        "Donghyeon Jeon",
+        "Taeoh Kim",
+        "Beomyoung Kim",
+        "MyeongAh Cho"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-29T07:12:03+00:00",
+      "link": "https://arxiv.org/pdf/2609.36882v2",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "weakly supervised localization of AI-edited regions in diffusion-edited images",
+      "llm_evidence_cn": "扩散编辑图像中AI编辑区域的弱监督定位",
+      "llm_evidence": "扩散编辑图像中AI编辑区域的弱监督定位",
+      "canonical_evidence": "扩散编辑图像中AI编辑区域的弱监督定位",
+      "llm_tldr_en": "Localizing AI-edited regions is hard due to subtle, spatially distributed artifacts. This paper proposes ReGFLoW, a reconstruction-guided weakly supervised fake localization framework, improving cross-generator and cross-dataset generalization over pixel-level supervised methods.",
+      "llm_tldr_cn": "定位AI编辑区域对可解释取证至关重要，但伪影细微分散且常超出标注范围，现有像素级监督难以扩展并引入误导信号。本文提出ReGFLoW弱监督重建引导伪造定位框架，在弱监督下学习可迁移的伪造证据。实验表明其跨生成器与数据集的泛化能力优于传统像素级监督方法，为扩散编辑图像取证提供了可扩展方案。",
+      "llm_tldr": "定位AI编辑区域对可解释取证至关重要，但伪影细微分散且常超出标注范围，现有像素级监督难以扩展并引入误导信号。本文提出ReGFLoW弱监督重建引导伪造定位框架，在弱监督下学习可迁移的伪造证据。实验表明其跨生成器与数据集的泛化能力优于传统像素级监督方法，为扩散编辑图像取证提供了可扩展方案。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "Pixel level localization of copy move, splicing, and generative editing in digital images",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2609.39066v1",
+      "source": "arxiv",
+      "title": "Agentic Tool-Augmented Reasoning for Explainable Image Forgery Detection",
+      "abstract": "Conventional image forgery detection methods produce binary scores or pixel-level masks without interpretable evidence, while recent multimodal large language model (MLLM)-based approaches generate post-hoc explanations of predetermined classification results rather than reasoning from evidence. Inspired by the forensic workflow of human judicial experts, we propose Agentic Tool-Augmented Reasoning (ATAR), a framework integrating 22 specialized forensic tools across seven complementary domains to autonomously detect, localize, and explain image forgeries through multi-turn reasoning. A Dual-Stream Forensic Reasoning paradigm combines a high-level semantic anomaly path, which magnifies suspicious regions for fine-grained inspection, with a low-level forgery artifact path, which invokes forensic tools to extract objective evidence. We further introduce Forensics Curriculum Learning: during General Experience SFT, an automated teacher-student mentoring pipeline synthesizes multi-turn tool-usage reasoning trajectories; during Forensic Scene RL, a Tool Prior Curriculum guides early tool exploration and progressively transfers control to the agent, while a Structured Evidence Reward provides fine-grained process-level supervision. Experiments across IMDL, Deepfake detection, DMDL, and AIGC detection show that ATAR achieves 78.5% average image-level F1 on six zero-shot IMDL benchmarks, surpassing the strongest MLLM baseline by 11.8 percentage points, and remains competitive with specialized detectors on other tasks while producing substantially more faithful and grounded explanations.",
+      "authors": [
+        "Zhiya Tan",
+        "Jing Huang",
+        "Changtao Miao",
+        "Lin Tan",
+        "Xin Zhang",
+        "Weiwei Feng",
+        "Jianshu Li",
+        "Joey Tianyi Zhou"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-30T06:05:16+00:00",
+      "link": "https://arxiv.org/pdf/2609.39066v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "agentic tool-augmented reasoning to detect, localize and explain image forgeries",
+      "llm_evidence_cn": "用智能体工具增强推理检测、定位并解释图像伪造",
+      "llm_evidence": "用智能体工具增强推理检测、定位并解释图像伪造",
+      "canonical_evidence": "用智能体工具增强推理检测、定位并解释图像伪造",
+      "llm_tldr_en": "Conventional forgery detection outputs binary scores or masks without interpretable evidence. ATAR integrates 22 forensic tools across seven domains to autonomously detect, localize and explain image forgeries through multi-turn dual-stream reasoning.",
+      "llm_tldr_cn": "传统图像伪造检测方法只输出二值分数或像素掩码，缺乏可解释证据，而基于多模态大模型的近期方法多对既定结果做事后解释而非从证据推理。受司法专家取证流程启发，本文提出ATAR框架，集成七领域22种专用取证工具，通过多轮推理自主检测、定位并解释图像伪造。其双流推理结合高层语义异常与低层伪影线索，实现检测、定位与解释一体化，为可解释图像取证提供新范式。",
+      "llm_tldr": "传统图像伪造检测方法只输出二值分数或像素掩码，缺乏可解释证据，而基于多模态大模型的近期方法多对既定结果做事后解释而非从证据推理。受司法专家取证流程启发，本文提出ATAR框架，集成七领域22种专用取证工具，通过多轮推理自主检测、定位并解释图像伪造。其双流推理结合高层语义异常与低层伪影线索，实现检测、定位与解释一体化，为可解释图像取证提供新范式。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "How to localize image tampering at the pixel level using deep learning models?",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.36822v1",
+      "source": "arxiv",
+      "title": "RED: Reconstruction Evolution Dynamics for Generalizable AI-Generated Image Detection",
+      "abstract": "The rapid evolution of image generators calls for forensic cues that generalize beyond known generation mechanisms. Existing detectors often rely on static image representations or endpoint reconstruction discrepancies, leaving the evolution of intermediate reconstruction stages underexplored. We observe that the relative token predictability of real and generated images can reverse across reconstruction scales, suggesting that intermediate stages may expose forensic evidence overlooked by endpoint comparisons. Motivated by this observation, we propose RED (Reconstruction Evolution Dynamics), a framework that captures transferable forensic cues from coarse-to-fine reconstruction evolution. To our knowledge, RED is the first framework to use scale-wise token predictability to guide forensic evidence aggregation across intermediate reconstruction states. It represents the reconstruction trajectory produced by a frozen multiscale VQ-VAE in the shared feature space of a frozen CLIP encoder. To connect the observed predictability variations with visual evidence, RED learns image-adaptive stage weights from scale-wise token negative log-likelihoods provided by a frozen VAR model. A cross-stage evidence aggregation module then jointly models the original-image representation and the weighted reconstruction features, capturing complementary forensic cues through interactions along the reconstruction trajectory. Experiments on six diverse benchmarks demonstrate that RED achieves the highest average accuracy of 92.5\\% and average precision of 97.5\\% among the evaluated methods. Further evaluations show strong robustness to common image degradations, supporting the value of reconstruction evolution for generalizable AI-generated image detection. The code will be made publicly available upon acceptance of this paper.",
+      "authors": [
+        "Wenpeng Mu",
+        "Junshan Jin",
+        "Tanfeng Sun",
+        "Xinghao Jiang",
+        "Qiang Xu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-29T06:33:54+00:00",
+      "link": "https://arxiv.org/pdf/2609.36822v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "AI-generated image detection via reconstruction dynamics",
+      "llm_evidence_cn": "基于重建动态的AI生成图像检测",
+      "llm_evidence": "基于重建动态的AI生成图像检测",
+      "canonical_evidence": "基于重建动态的AI生成图像检测",
+      "llm_tldr_en": "AI-generated image detectors generalize poorly because they rely on static or endpoint reconstruction cues. RED captures transferable forensic evidence from coarse-to-fine reconstruction evolution, where token predictability reverses between real and generated images, improving cross-generator detection.",
+      "llm_tldr_cn": "图像生成器快速演化，要求取证线索能泛化到未知生成机制，而现有检测器多依赖静态图像表示或端点重建差异，忽略了中间重建阶段。本文观察到真实与生成图像的相对token可预测性会随重建尺度反转，据此提出RED框架，从由粗到细的重建演化中提取可迁移的取证线索。实验表明该框架在跨生成机制检测上具有更好的泛化性。该工作为AI生成图像检测提供了新的重建演化视角。",
+      "llm_tldr": "图像生成器快速演化，要求取证线索能泛化到未知生成机制，而现有检测器多依赖静态图像表示或端点重建差异，忽略了中间重建阶段。本文观察到真实与生成图像的相对token可预测性会随重建尺度反转，据此提出RED框架，从由粗到细的重建演化中提取可迁移的取证线索。实验表明该框架在跨生成机制检测上具有更好的泛化性。该工作为AI生成图像检测提供了新的重建演化视角。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.37783v1",
+      "source": "arxiv",
+      "title": "A Benchmark & Dataset for Detecting AI-Manipulated Visual Evidence in the Court System",
+      "abstract": "Photographic evidence is becoming increasingly vulnerable to forms of alteration and fabrication that existing legal and technical workflows are not well equipped to evaluate. Surveillance frames, dashcam stills, and phone photographs may be used to establish presence, sequence, causation, damage, or identity, yet contemporary generative systems allow non-experts to alter or fabricate such images through ordinary prompt-based interfaces. Existing image-forensics benchmarks provide important resources for face manipulation, classical tampering, and general synthetic-image detection, but they are not organized around the forms of visual evidence submitted in courts, the localized edits that can change what an exhibit appears to prove, or the consumer-tool threat model now facing the justice system. We introduce the CIFAR Synthetic Evidence Corpus for Detecting AI-Manipulated Images, a benchmark for evidentiary image authentication in court and justice-system contexts. The corpus contains 1,505 photographic items, including 720 authentic controls and 785 manipulated or fabricated images, spanning surveillance, dashcam, and consumer-photo imagery. Manipulations are organized into scene-condition edits, localized element edits, and full fabrications produced with contemporary generative systems. Each item is released with structured metadata covering source provenance, manipulation tier, subtype, generator, prompt template, and scene attributes, enabling controlled evaluation beyond aggregate binary detection. We also establish baselines with publicly available image-manipulation detectors, showing that current systems exhibit error profiles that remain problematic for evidentiary use. The dataset, prompts, metadata, code, and baseline evaluation scripts are released to support research on visual evidence authentication, information integrity, and trustworthy AI for the justice system.",
+      "authors": [
+        "Kelly McConvey",
+        "Sajad Ebrahimi",
+        "Nima Jamali",
+        "Jalehsadat Mahdavimoghaddam",
+        "Matina Mahdizadeh Sani",
+        "Maksym Taranukhin",
+        "Wentao Zhang",
+        "Jacquelyn Burkell",
+        "Yuntian Deng",
+        "Karen Eltis",
+        "Maura R. Grossman",
+        "Vered Shwartz",
+        "Ebrahim Bagheri"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-29T15:17:16+00:00",
+      "link": "https://arxiv.org/pdf/2609.37783v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "benchmark and dataset for detecting AI-manipulated visual evidence with localized edits",
+      "llm_evidence_cn": "面向司法场景的AI操纵视觉证据检测基准与局部编辑",
+      "llm_evidence": "面向司法场景的AI操纵视觉证据检测基准与局部编辑",
+      "canonical_evidence": "面向司法场景的AI操纵视觉证据检测基准与局部编辑",
+      "llm_tldr_en": "Existing image-forensics benchmarks cover face manipulation and synthetic-image detection but not court-submitted visual evidence or the localized edits that change what an exhibit proves; this paper builds a court-oriented benchmark and dataset for detecting AI-manipulated evidence.",
+      "llm_tldr_cn": "现有图像取证基准多面向人脸篡改、传统篡改与通用合成图像检测，却未覆盖法庭上常见的视觉证据形式及其局部编辑。本文构建了面向司法场景的AI操纵视觉证据检测基准与数据集，聚焦能改变证据证明力的局部修改操作。该资源为评估取证方法在真实法律流程中的可靠性提供了统一平台，推动取证技术与法律工作流的衔接。",
+      "llm_tldr": "现有图像取证基准多面向人脸篡改、传统篡改与通用合成图像检测，却未覆盖法庭上常见的视觉证据形式及其局部编辑。本文构建了面向司法场景的AI操纵视觉证据检测基准与数据集，聚焦能改变证据证明力的局部修改操作。该资源为评估取证方法在真实法律流程中的可靠性提供了统一平台，推动取证技术与法律工作流的衔接。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.37937v2",
+      "source": "arxiv",
+      "title": "Look Closer: Patch-wise Supervision for AI-Generated Image Detection",
+      "abstract": "How much of an image does a detector need to see? Small RGB regions can retain useful evidence of image synthesis even when they reveal little of the full scene. Motivated by single-patch detection, we study patch-wise supervision: a shared backbone classifies explicit crops, each crop receives its own loss, and patch probabilities are averaged only at inference. The procedure requires neither handcrafted residual filtering nor a learned image-level fusion module. Experiments span single-patch selection, multiple generator collections, and four CNN and Transformer backbones. On GenImage, the reported patch-wise variants improve average accuracy over their whole-image counterparts across all four backbones. Comparisons of supervision granularity, source resolution, crop size, and inference coverage further characterize the approach, while post-processing tests and difficult-image evaluation reveal its limitations. The historical experiments include evaluation-based model selection, so their scores are not presented as a uniformly selected leaderboard comparison. Overall, the study identifies explicit local input and patch-level supervision as a simple, useful combination for investigating generalizable AI-generated image detection.",
+      "authors": [
+        "Zhida Zhang",
+        "Tao Wu",
+        "Siyu Liu",
+        "Jie Cao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-29T16:19:18+00:00",
+      "link": "https://arxiv.org/pdf/2609.37937v2",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "patch-wise supervision for AI-generated image detection",
+      "llm_evidence_cn": "图块级监督用于AI生成图像检测",
+      "llm_evidence": "图块级监督用于AI生成图像检测",
+      "canonical_evidence": "图块级监督用于AI生成图像检测",
+      "llm_tldr_en": "Small image crops can still carry synthesis evidence, motivating patch-wise supervision for AI-generated image detection. A shared backbone classifies crops with per-crop losses and averages patch probabilities at inference, improving average accuracy over whole-image supervision across four backbones on GenImage.",
+      "llm_tldr_cn": "检测AI生成图像时，一幅图需要看多大区域尚不明确，但小RGB区域即使信息有限也可能保留合成证据。本文研究图块级监督：共享骨干对显式裁剪块分别分类并施加独立损失，仅在推理时对块概率求平均，无需手工残差滤波或图像级融合模块。在GenImage及四种CNN与Transformer骨干上，图块级变体平均准确率均优于整图监督。该工作说明细粒度监督能有效提升生成图像检测的泛化与性能。",
+      "llm_tldr": "检测AI生成图像时，一幅图需要看多大区域尚不明确，但小RGB区域即使信息有限也可能保留合成证据。本文研究图块级监督：共享骨干对显式裁剪块分别分类并施加独立损失，仅在推理时对块概率求平均，无需手工残差滤波或图像级融合模块。在GenImage及四种CNN与Transformer骨干上，图块级变体平均准确率均优于整图监督。该工作说明细粒度监督能有效提升生成图像检测的泛化与性能。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

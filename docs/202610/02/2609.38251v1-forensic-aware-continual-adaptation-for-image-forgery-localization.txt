@@ -1,0 +1,3018 @@
+Forensic-Aware Continual Adaptation for Image
+Forgery Localization
+Chenqi Kong1, Song Xia2, Anwei Luo3, Peisong He4,
+Alex C. Kot2, Yuming Fang3
+1School of Computing, National University of Singapore, Singapore.
+2ROSE Lab, School of EEE, Nanyang Technological University, Singapore.
+3School of Computing and Artificial Intelligence, Jiangxi University of
+Finance and Economics, Nanchang, China.
+4School of Cyber Science and Engineering, Sichuan University, Chengdu,
+China.
+Contributing authors: cqkong@nus.edu.sg; xias0002@ntu.edu.sg;
+luoanwei@jxufe.edu.cn; gokeyhps@scu.edu.cn; eackot@ntu.edu.sg;
+fa0001ng@e.ntu.edu.sg;
+Abstract
+The rapid evolution of image manipulation techniques has raised pressing public
+security concerns. Existing countermeasures mitigate these threats by accurately
+localizing manipulated regions in images. However, they are often unable to
+adapt dynamically to newly emerging forgeries. In real-world forensic scenarios,
+data typically arrive sequentially, yet existing Image Forgery Localization (IFL)
+methods largely overlook the need for continual model adaptation in practical
+workflows. To address this gap, we introduce the first continual learning frame-
+work for IFL and establish a comprehensive benchmark under two realistic data-
+evolution protocols: cross-dataset and cross-content continual learning. Extensive
+evaluations of representative state-of-the-art IFL and continual learning methods
+reveal substantial performance degradation under both settings, exposing two key
+challenges: (1) how to adaptively capture intrinsic forensic traces from incoming
+data across diverse unseen domains, and (2) how to preserve previously acquired
+forensic knowledge during sequential adaptation. To address these challenges,
+we propose a forensic-aware continual adaptation framework. First, we develop
+a forensic trace mining module with a Spatial Mixture-of-Forensic-Experts
+(SMoFE) mechanism to dynamically route complementary forensic cues at differ-
+ent spatial locations, together with Forensic Evidence-Guided Dense Prompting
+1
+arXiv:2609.38251v1  [cs.CR]  29 Sep 2026
+
+
+(FEGDP) to transform low-level forensic traces into structured localization evi-
+dence for SAM. Second, we introduce a Fisher-weighted LoRA Gradient (FLAG)
+surgery strategy that identifies old-task-sensitive adaptation directions and selec-
+tively suppresses conflicting updates, thereby mitigating catastrophic forgetting
+while retaining sufficient plasticity for emerging forgery domains. Extensive
+experiments demonstrate state-of-the-art performance in both pixel-level forgery
+localization and image-level forgery detection across diverse continual learning
+scenarios.
+Keywords: Image forgery localization, Image forgery detection, Information forensics
+1 Introduction
+Image manipulation has long posed serious security concerns across a wide range
+of areas, such as politics and fraud. To counter these threats, substantial efforts
+have been made to develop Image Forgery Localization (IFL) techniques to capture
+various manipulation artifacts, including lens distortions (Mayer and Stamm, 2018;
+Yerushalmy and Hel-Or, 2011), Color Filter Array (CFA) artifacts (Kong et al, 2025;
+Cao and Kot, 2009), noise patterns (Lyu et al, 2014; Kobayashi et al, 2010), compres-
+sion artifacts (Fan and De Queiroz, 2003; Chen and Hsu, 2011), among others. Beyond
+these hand-crafted features, later learning-based methods built upon advanced archi-
+tectures (e.g., SAM (Kirillov et al, 2023) and Swin (Liu et al, 2021)) have achieved
+higher localization accuracy. Recent studies have further focused on improving model
+generalization to unseen datasets and robustness against common image distortions.
+Despite this progress, existing IFL models still exhibit limited generalizability
+when encountering newly emerging forgeries. This limitation has become more severe
+with the advent of frontier foundation models, such as Nano Banana 2 (Nan, 2026) and
+GPT-Image 2.5 (GPT, 2026), which can generate highly realistic content and blur the
+boundary between authentic and manipulated images. These limitations mainly arise
+from two challenges. First, newly emerging forgeries are increasingly sophisticated
+and often leave fewer detectable traces for existing models. Second, new manipulation
+techniques can be applied to substantially different image domains, such as document
+and scientific images, resulting in large domain gaps. As foundation models rapidly
+evolve, IFL defenses often lag behind emerging attacks. Therefore, IFL models must
+be frequently updated to adapt to new forgeries.
+However, state-of-the-art IFL models, particularly SAM-based methods (Kirillov
+et al, 2023; Kwon et al, 2025; Peng et al, 2025), typically contain a large number of
+parameters and are trained on datasets with millions of images. Retraining the entire
+model on previous datasets whenever new forgeries emerge is computationally expen-
+sive and impractical for real-world deployment. This motivates the need for a continual
+IFL paradigm that can progressively adapt IFL models to newly emerging forgeries
+while retaining previously learned knowledge. As illustrated in Figure 1, unlike prior
+studies that formulate IFL as a conventional static learning task, this work recasts IFL
+as a more practical continual learning problem. Specifically, the model is sequentially
+2
+
+
+Fig. 1: Illustration of Continual Image Forgery Localization (CIFL) pipeline (Best
+viewed in color). M indicates different models.
+updated on a series of newly arriving training sets, resulting in progressive model evo-
+lution across different learning stages. After each stage, the updated model is tested
+on both previously seen and newly introduced test sets, thereby assessing its ability
+to acquire new forensic knowledge while preserving previously learned capabilities.
+To this end, we first conduct an extensive benchmark of state-of-the-art continual
+learning and IFL methods under two evaluation protocols. Protocol 1 consists of
+four image manipulation datasets with diverse forgery types, namely Classic (Dong
+et al, 2013; IFC, 2013; Zampoglou et al, 2015; Novozamsky et al, 2020), Defacto (Mah-
+foudi et al, 2019), FantasticReality (Kniaz et al, 2019), and TampCOCO (Kwon et al,
+2022), sorted according to their release dates. This protocol simulates practi-
+cal scenarios in which datasets arrive sequentially. Protocol 2 covers three types of
+image content: natural images (Dong et al, 2013; IFC, 2013; Zampoglou et al, 2015;
+Novozamsky et al, 2020), document images (Qu et al, 2023; Yu et al, 2023), and
+scientific images (Cardenuto and Rocha, 2022; Sabir et al, 2021; Lin et al, 2024).
+This protocol reflects more complex real-world scenarios and introduces more pro-
+nounced domain gaps. We benchmarked SOTA continual learning and IFL techniques
+under both protocols and found that these methods suffer significant performance
+degradation in the continual learning paradigm.
+Based on these observations, we identify two critical challenges in continual IFL:
+(1) how to adaptively capture intrinsic forensic traces from incoming data across
+diverse unseen domains; and (2) how to preserve previously acquired forensic knowl-
+edge while adapting to substantially shifted manipulation distributions. To address
+3
+
+
+these challenges, we propose a forensic-aware continual adaptation framework that
+jointly enhances forensic representation learning and knowledge preservation. For rep-
+resentation adaptation, we introduce Spatial Mixture-of-Forensic-Experts (SMoFE),
+which performs fine-grained spatial routing over complementary forensic traces,
+together with Forensic Evidence-Guided Dense Prompting (FEGDP), which bridges
+the forensic-to-prompt representation gap by transforming low-level artifacts into
+structured localization evidence for SAM. For knowledge preservation, we develop
+a Fisher-weighted LoRA Gradient (FLAG) surgery strategy that constructs an
+importance-aware adaptation geometry and selectively suppresses updates that con-
+flict with old-task-sensitive directions. Together, these designs enable the model to
+continuously acquire emerging forensic patterns while retaining previously learned
+localization knowledge.
+The main contributions of this work are summarized as follows:
+• We systematically study Continual Image Forgery Localization (CIFL), reformu-
+lating conventional static IFL into a more practical continual learning setting. We
+further establish cross-dataset and cross-content benchmarks to facilitate future
+forensic research.
+• We propose a novel forensic-aware representation adaptation framework that goes
+beyond conventional feature fusion. Specifically, SMoFE performs spatially adaptive
+Top-1 routing over heterogeneous forensic traces, while FEGDP bridges the forensic-
+to-prompt representation gap by converting low-level artifacts into structured
+localization evidence for SAM.
+• We introduce a novel Fisher-guided gradient surgery strategy for knowledge-
+preserving continual adaptation. Our method establishes an importance-aware
+geometry and selectively suppresses conflicts along old-task-sensitive directions,
+thereby improving the stability-plasticity trade-off during continual adaptation.
+• Extensive experiments demonstrate state-of-the-art performance in both pixel-
+level forgery localization and image-level forgery detection across two continual
+learning protocols. Ablation experiments further demonstrate the effectiveness and
+adaptability of the designed modules.
+2 RELATED WORKS
+2.1 Image forgery localization
+Image forgery localization aims to identify manipulated regions at the pixel level and
+is a central task in multimedia forensics. Early methods primarily relied on hand-
+crafted forensic cues, such as sensor noise inconsistencies (Lyu et al, 2014; Kobayashi
+et al, 2010; Popescu and Farid, 2004; Mahdian and Saic, 2009; Cozzolino et al, 2015;
+Fan et al, 2013), JPEG compression artifacts (Fan and De Queiroz, 2003; Chen and
+Hsu, 2011; Iakovidou et al, 2018; Barni et al, 2010; Bianchi and Piva, 2012; Fu et al,
+2007; Pasquini et al, 2017), demosaicing traces (Kong et al, 2025; Cao and Kot, 2009;
+Ferrara et al, 2012; Popescu and Farid, 2005; Gallagher and Chen, 2008; Ho et al,
+2010), and lens distortions (Mayer and Stamm, 2018; Yerushalmy and Hel-Or, 2011;
+Johnson and Farid, 2006; Yerushalmy and Hel-Or, 2011; Gloe et al, 2010; Fu and
+4
+
+
+Cao, 2012), to reveal local tampering evidence. With the rise of deep learning, con-
+volutional neural networks substantially improved localization accuracy by learning
+forgery-aware representations directly from data. These methods include RGB-based
+segmentation approaches (Lou et al, 2025; Yao et al, 2025; Chen et al, 2025), noise-
+and residual-guided frameworks (Han et al, 2024; Li et al, 2024a,b), frequency-domain
+methods (Liu et al, 2023; Wang et al, 2022a; Li and Huang, 2019; Wu et al, 2019),
+and multi-branch architectures (Chen et al, 2024; Sun et al, 2026) that fuse com-
+plementary forensic cues. More recently, transformer-based models (Lin et al, 2023;
+Kong et al, 2025) and large pretrained vision backbones (Huang et al, 2025; Xu et al,
+2025; Huang et al, 2026; Kwon et al, 2025) have demonstrated stronger representa-
+tion capacity and better cross-domain generalization, motivating their adaptation to
+forgery localization through lightweight fine-tuning and task-specific modules. Never-
+theless, robust forgery localization in the wild remains challenging due to weak and
+heterogeneous manipulation traces and substantial domain gaps across manipulation
+types and datasets (Kong et al, 2025). These challenges indicate that effective localiza-
+tion requires not only strong generic visual priors but also explicit modeling of forensic
+evidence and adaptation mechanisms that preserve previously acquired manipulation
+knowledge.
+2.2 Continual learning in forensics
+With the rapid development of AIGC techniques, IFL systems inevitably encounter
+test samples from unseen domains, making continual adaptation to newly collected
+data essential. Continual learning methods can be broadly categorized into three
+groups: (1) regularization-based methods (Wang et al, 2026; Kirkpatrick et al, 2017;
+Wang et al, 2022c), which introduce additional regularization terms to consolidate
+previously learned knowledge while adapting models to new tasks; (2) replay-based
+methods (Zhanwang et al, 2026; Kapoor et al, 2026), which selectively store samples
+from previous tasks in a memory bank and replay them during training on the cur-
+rent task; and (3) parameter-isolation methods (Zhang et al, 2026b; Ye et al, 2026),
+which typically rely on a task oracle to design task-specific architectures or allocate
+task-specific parameters. Recent efforts in continual forensic learning have covered
+a wide range of applications, including face anti-spoofing (Cai et al, 2023; Rostami
+et al, 2021; P´erez-Cabo et al, 2020), AIGC detection (Tang et al, 2025; Marra et al,
+2019; Wang et al, 2022b), and face forgery detection (Cheng et al, 2025; Zhang et al,
+2025; Tian et al, 2024; Sun et al, 2025). Although these methods address continual
+binary classification and alleviate catastrophic forgetting to some extent, continual
+image forgery localization remains largely unexplored. Unlike binary classification,
+IFL is a dense prediction task that requires pixel-level localization of manipulated
+regions, making continual adaptation substantially more challenging. To tackle this
+problem, we introduce spatially adaptive forensic evidence modeling for fine-grained
+localization and Fisher-guided gradient regulation for preserving previously acquired
+knowledge during sequential adaptation.
+5
+
+
+3 Methodology
+3.1 Problem Formulation
+Conventional image forgery localization assumes that all training samples are available
+simultaneously and are drawn from a stationary distribution. In contrast, we consider a
+more practical Continual Image Forgery Localization (CIFL) setting, in which forensic
+data from different domains arrive sequentially. Formally, let
+S =
+
+D[1], D[2], . . . , D[Q]
+(1)
+denote an ordered stream of Q continual-learning tasks. The training set of the q-th
+task is defined as
+D[q] =
+n
+x[q]
+n , m[q]
+n , y[q]
+n
+oNq
+n=1 ,
+q ∈{1, . . . , Q},
+(2)
+where Nq is the number of training samples in the current task, x[q]
+n
+∈R3×H×W
+denotes an input image, and m[q]
+n ∈{0, 1}H×W is its pixel-level manipulation mask.
+The corresponding image-level forgery label is defined as y[q]
+n ∈{0, 1}.
+3.2 Framework Overview
+Figure 2 illustrates the overall framework of the proposed methodology. As shown in
+Figure 2 (a), the model consists of an image encoder Eθ,ϕ, a forensic prompt learner,
+and a mask decoder Dψ, where the pretrained image encoder weights are frozen, while
+only the LoRA modules in Eθ,ϕ are updated during training. The designed Foren-
+sic Trace Mining module consists of a Spatial Mixture-of-Forensic-Experts (SMoFE)
+module and a Forensic Evidence-Guided Dense Prompting (FEGDP) module. SMoFE
+adaptively combines local anomalies from different forensic maps via MoE mecha-
+nisms, and FEGDP aims to transform forensic knowledge into structured prompts
+that can be readily incorporated into the SAM backbone. In addition, we introduce
+Fisher-guided gradient surgery for continual adaptation, which selectively regulates
+parameter updates according to their importance to previously learned forensic
+knowledge, thereby mitigating catastrophic forgetting.
+3.3 Forensic-Aware Representation Adaptation (FARA)
+To adapt forensic representations to evolving manipulation domains, we develop
+two complementary components. Spatial Mixture-of-Forensic-Experts (SMoFE) adap-
+tively selects informative forensic traces at each spatial location from multiple
+heterogeneous experts. Based on the routed evidence, Forensic Evidence-Guided Dense
+Prompting (FEGDP) further transforms low-level forensic responses into structured,
+localization-oriented prompts that can be effectively consumed by SAM.
+6
+
+
+Fig. 2: The proposed continual image forgery localization framework. (a) Forensic-
+Aware Representation Adaptation (FARA) module: Spatial Mixture-of-Forensic-
+Experts (SMoFE) and Forensic Evidence-Guided Dense Prompting (FEGDP); (b)
+Fisher-weighted LoRA Gradient (FLAG) surgery module; (c) The overall objectives.
+3.3.1 Spatial Mixture-of-Forensic-Experts (SMoFE)
+We build our model upon the Segment Anything Model (SAM) and adapt it to image
+forgery localization by learning forensic prompts. Given an input image x ∈R3×H×W ,
+SAM first extracts visual embeddings
+zimg = Eθ,ϕ(x) ∈RC×h×w,
+(3)
+where Eθ,ϕ denotes the SAM image encoder equipped with LoRA adapters. The
+pretrained SAM parameters θ are frozen, while the low-rank adapters ϕ are trainable.
+There are two challenges in modeling forensic representations in the continual
+paradigm: (1) How to expose manipulation artifacts that are not explicitly modeled
+by natural-image segmentation backbones? (2) How to adaptively extract the most
+appropriate forensic features of newly incoming data from unseen domains?
+In this work, we introduce a forensic trace branch with multiple artifact experts.
+Specifically, we use four complementary trace extractors, which have been widely
+proven effective in previous IFL works:
+E = {Sobel, SRM, JPEG, Bayer},
+(4)
+These forensic experts respectively capture edge discontinuities (Dong et al, 2022),
+high-frequency residuals (Fridrich and Kodovsky, 2012), compression blockiness (Fan
+and De Queiroz, 2003), and CFA/Bayer-pattern (Wu et al, 2019) inconsistencies. For
+each expert k ∈E, a handcrafted forensic trace prior is first extracted and then
+7
+
+
+projected to the SAM embedding space:
+zk = Pk(Tk(x)) ∈RC×h×w,
+(5)
+where Tk(·) is the k-th forensic trace extractor, and Pk(·) is a learnable convolutional
+projector.
+Different manipulation types tend to expose forensic artifacts in different local
+regions. To complementarily integrate these diverse forensic traces, we design a
+novel spatial Mixture-of-Experts (MoE) mechanism. Unlike previous MoE works that
+usually select the optimal expert map along the channel dimension, we perform
+element-wise MoE in the spatial feature plane. Due to the geometric alignment among
+the four forensic trace maps, our designed SMoFE can adaptively combine local
+anomalies from these traces. Such spatially sparse routing allows different locations
+within the same image to activate different forensic experts, making it particularly
+suitable for capturing localized and heterogeneous manipulation artifacts.
+We design a gate network to predict expert probabilities conditioned on both
+semantic visual features and forensic trace features:
+π = softmax
+ G
+ [zimg; z1, . . . , zK]
+
+,
+π ∈RK×h×w.
+(6)
+The SAM image embedding zimg is incorporated into the MoE router as contextual
+guidance rather than as an additional expert. While the forensic experts capture low-
+level manipulation traces such as edges, noise residuals, compression artifacts, and
+CFA inconsistencies, the image embedding provides semantic and structural context
+from the visual backbone. By concatenating image and expert embeddings, the router
+can make spatially adaptive expert selections conditioned on both forensic evidence
+and image content. This allows the model to suppress unreliable trace responses in
+benign regions and emphasize the most relevant forensic cue around manipulated
+areas. We perform element-wise expert selection as follows:
+˜π = onehot
+
+arg max
+k
+πk
+
+.
+(7)
+The fused forensic trace embedding is then computed as:
+zfor =
+K
+X
+k=1
+˜πk ⊙zk.
+(8)
+In this way, the fused forensic representation integrates complementary local artifacts
+from different forensic experts. Compared to simply concatenating the four forensic
+maps, the adopted SMoFE scheme can dynamically select the most relevant forensic
+expert at each spatial location for newly coming data from unseen domains. By selec-
+tively emphasizing the most informative forensic cue at each spatial location, SMoFE
+also suppresses noisy or domain-irrelevant trace responses, yielding a more flexible
+forensic representation as the data distribution evolves over time.
+8
+
+
+3.3.2 Forensic Evidence-Guided Dense Prompting (FEGDP)
+The vanilla SAM takes image embeddings together with meaningful dense or sparse
+prompts (e.g., masks, points, or bounding boxes) as inputs. Previous SAM-based
+IFL methods typically inject low-level forensic cues into SAM as prompts. How-
+ever, such forensic traces mainly characterize local signal irregularities and are not
+naturally aligned with the semantic and spatial representations expected by the pre-
+trained SAM prompt-mask decoding pipeline. This forensic-to-prompt representation
+gap motivates us to transform raw forensic responses into structured manipulation
+evidence before prompting SAM. Accordingly, we propose FEGDP to progressively
+convert heterogeneous forensic traces into localization-oriented evidence, including
+regional inconsistency, manipulation boundaries, and routing uncertainty, and further
+compose them into a SAM-compatible dense forensic prompt.
+To bridge this representation gap, we decompose forgery evidence into two comple-
+mentary localization cues: regional inconsistency, which identifies suspicious regions
+exhibiting abnormal forensic statistics, and boundary evidence, which captures transi-
+tion patterns between manipulated and pristine regions. Such evidence decomposition
+provides a structured intermediate representation between low-level forensic traces
+and the spatial prompts consumed by SAM. We first predict an inconsistency evidence
+map from the fused forensic embedding:
+zinc = Hinc(zfor),
+(9)
+where Hinc(·) measures local feature inconsistency through multi-scale neighborhood
+statistics. In particular, for each spatial scale s ∈{3, 5, 7}, we compare the local fea-
+ture with its neighborhood mean and aggregate cosine dissimilarity and local variance
+cues. This encourages the model to highlight regions whose forensic traces are locally
+inconsistent with their surroundings. Compared with directly forwarding raw foren-
+sic responses, such local-reference modeling emphasizes relative forensic anomalies
+rather than absolute trace magnitudes, making the resulting evidence less sensitive to
+domain-dependent variations in forensic statistics.
+We further estimate boundary evidence by jointly modeling forensic and visual
+representations:
+ˆb = Hbd
+ zfor, zimg, zinc
+,
+(10)
+where Hbd(·) takes the forensic embedding zfor, the SAM image embedding zimg,
+and the inconsistency evidence zinc as inputs. The forensic embedding provides
+manipulation-sensitive low-level responses, while the image embedding supplies
+semantic and structural context. Their complementary interaction helps distinguish
+genuine manipulation boundaries from strong but benign image edges, while the incon-
+sistency evidence further provides a spatial prior that focuses boundary estimation on
+suspicious regions. In this way, the boundary branch captures fine-grained transition
+artifacts around manipulated regions.
+Beyond deterministic forensic evidence, we further preserve the uncertainty of
+expert selection rather than discarding it after Top-1 routing. Specifically, the routing
+9
+
+
+uncertainty is measured by the normalized entropy of the expert probabilities:
+u = −
+1
+log K
+K
+X
+k=1
+πk log(πk + ϵ).
+(11)
+The normalized gate entropy u quantifies the uncertainty of the forensic MoE router at
+each spatial location. A low entropy indicates that one forensic expert provides a dom-
+inant explanation, whereas a high entropy suggests competing or ambiguous evidence
+among different forensic traces. Instead of treating such ambiguity as noise, FEGDP
+explicitly exposes it to the prompt composer, allowing the generated prompt to dis-
+tinguish confident forensic evidence from regions requiring more cautious evidence
+integration.
+The three signals characterize complementary aspects of manipulation evidence:
+inconsistency indicates suspicious regions, boundary evidence refines their spatial
+extent, and routing uncertainty reflects the reliability of the underlying forensic
+traces. Rather than directly injecting heterogeneous low-level forensic features into
+SAM, FEGDP jointly transforms these signals into a localization-oriented dense
+prompt. Specifically, the prompt composer is implemented as a lightweight three-layer
+convolutional network:
+p = Hpr
+
+[zinc, ˆb, u]
+
+,
+(12)
+where [·] denotes concatenation along the channel dimension and p denotes the result-
+ing dense forensic prompt. The prompt is subsequently encoded by the SAM prompt
+encoder and injected into the SAM mask decoder:
+ˆm = Dψ
+ zimg, PSAM(p)
+
+,
+(13)
+where PSAM denotes the SAM prompt encoder and Dψ denotes the SAM mask
+decoder.
+In this manner, FEGDP converts heterogeneous low-level forensic responses into
+structured, localization-oriented evidence that is better aligned with the pretrained
+SAM prompting mechanism. Unlike manually specified point or box prompts, or
+the direct injection of raw forensic features, the resulting dense prompt explicitly
+encodes suspicious regions, manipulation boundaries, and forensic uncertainty, pro-
+viding SAM with task-specific evidence for precise forgery localization. Importantly,
+the prompt representation is constructed from generic forensic evidence rather than
+manipulation-specific semantic categories, making it naturally suitable for continually
+evolving forgery domains.
+3.4 Fisher-Weighted LoRA Gradient Surgery (FLAG)
+Continual image forgery localization requires adapting to evolving manipulation dis-
+tributions without overwriting forensic knowledge acquired from previous domains.
+Different domains may exhibit substantially different forensic cues and image con-
+tents, thereby leading to catastrophic forgetting. We perform knowledge preservation
+within the lightweight LoRA adaptation subspace.
+10
+
+
+A key observation is that different LoRA dimensions contribute unequally to pre-
+viously learned forensic knowledge. Treating all parameter dimensions uniformly may
+restrict less important directions while failing to sufficiently protect those critical to
+previous tasks. To account for this asymmetry, we propose an importance-aware gra-
+dient surgery strategy, which characterizes the importance of individual adaptation
+directions learned from previous tasks, thereby preserving previously acquired forensic
+knowledge while retaining sufficient flexibility to learn emerging forgery patterns.
+3.4.1 Fisher-Guided Adaptation Importance Modeling
+Let ϕ denote the trainable LoRA parameters of the SAM image encoder. For each
+completed task i < t, we maintain a small memory buffer Mi containing 256 repre-
+sentative samples. During task t, a mini-batch from the current task and a reference
+mini-batch from previous-task memories are used to obtain the corresponding LoRA
+gradients:
+gt = ∇ϕL(Bt; Θ),
+g<t = ∇ϕL(B<t; Θ).
+(14)
+Here, gt represents the adaptation direction preferred by the current forgery domain,
+whereas g<t provides a compact estimate of the direction that preserves previously
+learned forensic knowledge.
+A key limitation of conventional gradient-conflict handling is that all parameter
+dimensions are typically treated uniformly. However, interference on an old-task-
+critical LoRA dimension can be considerably more destructive than an equally large
+conflict on an unimportant dimension. To explicitly characterize this asymmetry, we
+estimate the importance of each LoRA parameter using diagonal Fisher information.
+After completing task i, its Fisher importance is estimated from the stored samples as
+Fi = EB∼Mi
+h
+(∇ϕL(B; Θ))2i
+,
+(15)
+where the square is computed element-wise, and the resulting importance vectors
+from all previous tasks are averaged to obtain the accumulated importance weights
+w<t =
+1
+t−1
+Pt−1
+i=1 Fi.
+In this way, w<t establishes an importance-aware geometry over the LoRA adap-
+tation space: dimensions that are highly sensitive to previous forensic domains receive
+larger weights, whereas less relevant dimensions remain comparatively unconstrained.
+3.4.2 Importance-Aware Gradient Surgery
+Given the accumulated Fisher importance w<t, we further use it to regulate gradient
+interference between the current and previous tasks. Conventional gradient surgery
+typically measures gradient conflicts in a uniform Euclidean space, implicitly treating
+all parameter dimensions as equally important. However, in continual adaptation,
+conflicts along directions that are critical to previous tasks should receive greater
+attention than those occurring along less important directions. We therefore define a
+11
+
+
+Fisher-weighted inner product as
+⟨a, b⟩w =
+X
+j
+wj
+<tajbj.
+(16)
+A negative value of ⟨gt, g<t⟩w indicates that the current update conflicts with previ-
+ously learned knowledge, particularly along LoRA dimensions that are important to
+old tasks. When such a conflict occurs, we remove only the component of the current
+gradient that interferes with the previous-task direction under the Fisher-weighted
+geometry:
+¯gt =
+
+
+
+
+
+gt −⟨gt, g<t⟩w
+∥g<t∥2w + ϵg<t,
+⟨gt, g<t⟩w < 0,
+gt,
+otherwise.
+(17)
+The projected gradient ¯gt is used only to update the LoRA parameters, while
+all remaining trainable components retain their ordinary current-task gradients.
+Therefore, previous-task samples define a reference direction for identifying poten-
+tially destructive updates. Conflicts along old-task-critical LoRA dimensions are
+emphasized, whereas disagreement along less important dimensions is suppressed.
+Consequently, the proposed gradient surgery provides an explicit balance between
+stability and plasticity. It suppresses updates that are likely to overwrite previously
+acquired forensic cues while preserving sufficient freedom to learn manipulation-
+specific patterns from newly arriving domains.
+3.5 Overall Objectives
+The overall training objective L consists of the following four parts: the mask predic-
+tion loss Lmask, the image classification loss Lcls, the boundary prediction loss Lbd,
+and the MoE loss Lmoe:
+L =Lmask + λclsLcls + λbdLbd + λmoeLmoe,
+(18)
+where Lmask and Lcls compute the binary cross-entropy losses between the predicted
+mask ˆm and class ˆy and the ground-truth manipulation mask m and image-level label
+y ∈{0, 1}, respectively. We aggregate global visual and forensic features together with
+evidence-map statistics to predict the image-level manipulation score:
+ˆy = C
+
+[zimg, zfor, Stat(zinc, ˆb, p)]
+
+,
+(19)
+where Stat(·) includes the mean and top-k mean of each evidence map, and C repre-
+sents two convolutional layers. The boundary loss supervises the predicted boundary
+ˆb with the boundary label b:
+Lbd = Focal
+
+ˆb, b
+
++ Dice
+
+ˆb, b
+
++
+ˆb −∂ˆm
+
+1 ,
+(20)
+12
+
+
+where the third component makes the boundary evidence consistent with the final
+SAM prediction, ∂ˆm calculates the boundary of the predicted forgery mask. Finally,
+the expert balance loss prevents the Top-1 router from collapsing to a single forensic
+expert:
+Lmoe =
+
+1
+hw
+X
+i,j
+π:,i,j −1
+K 1
+
+2
+2
+.
+(21)
+4 Experiments
+4.1 Experimental Settings
+4.1.1 Protocols and Datasets
+Protocol 1 simulates a practical scenario in which the model continually adapts as
+new datasets emerge. Accordingly, the model under Protocol 1 evolves through the fol-
+lowing sequence of tasks: Classic (Dong et al, 2013; IFC, 2013; Zampoglou et al, 2015;
+Novozamsky et al, 2020)→DEFACTO(Mahfoudi et al, 2019)→FantasticReality
+(Kniaz et al, 2019)→TampCOCO (Kwon et al, 2022), sorted by release date, where
+Classic incorporates four traditional manipulation datasets: CASIAv2 (Dong et al,
+2013), IFC (IFC, 2013), WildWeb (Zampoglou et al, 2015), IMD2020 (Novozamsky
+et al, 2020). These datasets include diverse manipulation types (e.g., splicing, copy-
+move, and inpainting) with various forgery region areas. We carefully split the data
+into training and testing sets to avoid information leakage. The image numbers of the
+training and testing sets are shown in Table 1 (a).
+Protocol 2 is tailored to assess IFL models’ capability when facing novel forgery
+content, which encompasses three tasks: Natural (N), Scientific (S), and Document
+(D) data. We collect natural image data from the following four datasets: CASIAv2
+(Dong et al, 2013), IFC (IFC, 2013), WildWeb (Zampoglou et al, 2015), IMD2020
+(Novozamsky et al, 2020). The scientific data consists of three datasets: RSIID (Car-
+denuto and Rocha, 2022), Biofors (Sabir et al, 2021), SciSp (Lin et al, 2024). For
+document images, we combine STFD (Yu et al, 2023) with a subset of DocTamper (Qu
+et al, 2023). Similarly, we carefully breakdown the training and testing sets to avoid
+information leakage. The image numbers of the training and testing sets are shown
+in Table 1 (b). Under Protocol 2, we evaluate all six possible task orders (N→S→D,
+N→D→S, D→S→N, D→N→S, S→N→D, and S→D→N) in a continual learning set-
+ting. Compared with Protocol 1, Protocol 2 introduces substantially larger domain
+gaps between sequential tasks due to the pronounced content differences among nat-
+ural, scientific, and document images, thereby providing a more challenging setting
+for evaluating the continual adaptation capability of IFL models.
+4.1.2 Baseline Methods
+We incorporate eight SOTA baseline methods from continual learning and image
+forgery localization, primarily published in recent top-tier journals and conferences.
+13
+
+
+Table 1: Statistics of training and testing datasets of Protocol 1 and Protocol 2.
+(a) Protocol 1
+Dataset
+Sum
+Train
+Test
+Classic
+25,999
+19,735
+6,264
+DEFACTO
+27,106
+21,106
+6,000
+FantasticReality
+36,000
+26,677
+9,323
+TampCOCO
+48,445
+36,445
+12,000
+Image numbers of the training and testing sets for
+the four datasets under Protocol 1.
+(b) Protocol 2
+Dataset
+Sum
+Train
+Test
+Natural
+16,946
+12,582
+4,364
+Scientific
+8,131
+5,671
+2,460
+Document
+16,432
+12,750
+3,682
+Image numbers of the training and testing
+sets for the three datasets under Protocol 2.
+HiDe-Prompt (Wang et al, 2023) (NeurIPS’23) boosts prompt-based continual
+learning under self-supervised pretraining by decomposing the objective into predic-
+tion, task identification, and task adaptation and explicitly optimizing them with
+task-specific prompt ensembles and contrastive regularization.
+Eclipse (Kim et al, 2024) (CVPR’24) enables efficient continual panoptic segmen-
+tation by freezing the backbone and learning only prompt embeddings, with logit
+manipulation to reduce drift and forgetting while adapting to new classes.
+Cprompt (Gao et al, 2024) (CVPR’24) improves prompt-based continual learning
+by enforcing training–testing consistency through jointly training all classifiers with
+prompts and enhancing prompt selection robustness.
+SEMA (Wang et al, 2025) (CVPR’25) enables pretrained model-based continual
+learning to self-expand by reusing or adding modular adapters only when distribution-
+shift descriptors detect unmet changes, with a router to mix adapter outputs for
+sub-linear growth and better stability–plasticity.
+PIM (Kong et al, 2025) (TPAMI’25) designs masked self-attention to capture
+global pixel inconsistencies, a local dependency stream to mine fine-grained manip-
+ulation cues, and a pixel-inconsistency data augmentation strategy to emphasize
+demosaicing-induced pixel-correlation artifacts.
+SAFIRE (Kwon et al, 2025) (AAAI’25) localizes forgeries by using point prompts
+to segment and partition an image into multiple source regions (rather than binary
+masks), enabling more stable learning of within-source consistency and improving
+both multi-source and binary forgery localization.
+IFA-Net (Zhang et al, 2026a) (CVPR’26) localizes manipulations by using a frozen
+masked autoencoder (MAE) as a realness prior in a closed-loop scheme that fuses
+reconstruction residuals for coarse masks and then injects task-adaptive prompts to
+amplify MAE reconstruction failures for refined localization.
+SAM-B&LoRA (Kirillov et al, 2023). We use SAM-Base with LoRA as the
+baseline model. Only LoRA modules are updated while other parameters in the image
+encoder are frozen during training.
+4.1.3 Evaluation Metrics
+For image-level forgery detection, we use accuracy (ACC) and the Area Under
+the Receiver Operating Characteristic Curve (AUC) as the primary metrics. AUC
+measures the area under the Receiver Operating Characteristic (ROC) curve. For
+pixel-level forgery localization, following previous methods (Kong et al, 2025; Dong
+14
+
+
+Table 2: Pixel-level continual forgery localization performance on sequential tasks
+(T1-T4) under Protocol 1. F1 and IoU (fixed threshold of 0.5 for both metrics) scores
+are reported.
+Method
+Task
+Classic
+DEFACTO
+FantasticReality
+TampCOCO
+Average
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+HiDe-Prompt
+(NeurIPS’23)
+T1
+0.4955
+0.4196
+-
+-
+-
+-
+-
+-
+0.4955
+0.4196
+T2
+0.4758
+0.4085
+0.1378
+0.1051
+-
+-
+-
+-
+0.3068
+0.2568
+T3
+0.4661
+0.4001
+0.1342
+0.1023
+0.1723
+0.1148
+-
+-
+0.2575
+0.2057
+T4
+0.4614
+0.3959
+0.1317
+0.1007
+0.2169
+0.1539
+0.4156
+0.3630
+0.3064
+0.2534
+Eclipse
+(CVPR’24)
+T1
+0.4918
+0.4363
+-
+-
+-
+-
+-
+-
+0.4918
+0.4363
+T2
+0.4641
+0.4166
+0.0935
+0.0723
+-
+-
+-
+-
+0.2788
+0.2444
+T3
+0.3688
+0.3232
+0.0983
+0.0746
+0.1858
+0.1250
+-
+-
+0.2176
+0.1743
+T4
+0.3647
+0.3196
+0.0957
+0.0725
+0.2116
+0.1465
+0.3187
+0.2702
+0.2477
+0.2022
+Cprompt
+(CVPR’24)
+T1
+0.5821
+0.5363
+-
+-
+-
+-
+-
+-
+0.5821
+0.5363
+T2
+0.0914
+0.0746
+0.2767
+0.2431
+-
+-
+-
+-
+0.1841
+0.1588
+T3
+0.1329
+0.1071
+0.0998
+0.0781
+0.6593
+0.5714
+-
+-
+0.2973
+0.2522
+T4
+0.0824
+0.0680
+0.1156
+0.0978
+0.6188
+0.5574
+0.8527
+0.8253
+0.4174
+0.3871
+SEMA
+(CVPR’25)
+T1
+0.4934
+0.4565
+-
+-
+-
+-
+-
+-
+0.4934
+0.4565
+T2
+0.0614
+0.0490
+0.2343
+0.2044
+-
+-
+-
+-
+0.1479
+0.1267
+T3
+0.0943
+0.0721
+0.0813
+0.0599
+0.4556
+0.3617
+-
+-
+0.2104
+0.1646
+T4
+0.0412
+0.0301
+0.1067
+0.0873
+0.2912
+0.2384
+0.6747
+0.6296
+0.2784
+0.2464
+PIM
+(TPAMI’25)
+T1
+0.3836
+0.3180
+-
+-
+-
+-
+-
+-
+0.3836
+0.3180
+T2
+0.2941
+0.2190
+0.1691
+0.1262
+-
+-
+-
+-
+0.2316
+0.1726
+T3
+0.2559
+0.1756
+0.1235
+0.0814
+0.4949
+0.3694
+-
+-
+0.2914
+0.2088
+T4
+0.1363
+0.0913
+0.0618
+0.0429
+0.3702
+0.2755
+0.6249
+0.5491
+0.2983
+0.2397
+SAFIRE
+(AAAI’25)
+T1
+0.5819
+0.4979
+-
+-
+-
+-
+-
+-
+0.5819
+0.4979
+T2
+0.1241
+0.0794
+0.1811
+0.1337
+-
+-
+-
+-
+0.1526
+0.1065
+T3
+0.1865
+0.1217
+0.1217
+0.0821
+0.3597
+0.2508
+-
+-
+0.2226
+0.1515
+T4
+0.1110
+0.0690
+0.0773
+0.0512
+0.2424
+0.1534
+0.4101
+0.2955
+0.2102
+0.1423
+IFA-Net
+(CVPR’26)
+T1
+0.5228
+0.4587
+-
+-
+-
+-
+-
+-
+0.5228
+0.4587
+T2
+0.1190
+0.0820
+0.1660
+0.1304
+-
+-
+-
+-
+0.1425
+0.1062
+T3
+0.1249
+0.0833
+0.0797
+0.0539
+0.3776
+0.2693
+-
+-
+0.1940
+0.1355
+T4
+0.1282
+0.0867
+0.0780
+0.0567
+0.3816
+0.2931
+0.6561
+0.5775
+0.3110
+0.2535
+SAM-B&LoRA
+(Baseline)
+T1
+0.4606
+0.4168
+-
+-
+-
+-
+-
+-
+0.4606
+0.4168
+T2
+0.0365
+0.0292
+0.2116
+0.1871
+-
+-
+-
+-
+0.1241
+0.1081
+T3
+0.1695
+0.1369
+0.0900
+0.0901
+0.6989
+0.6151
+-
+-
+0.3195
+0.2807
+T4
+0.0841
+0.0683
+0.1116
+0.0947
+0.5819
+0.5182
+0.8197
+0.7927
+0.3993
+0.3685
+FOCAL
+(Ours)
+T1
+0.6801
+0.6310
+-
+-
+-
+-
+-
+-
+0.6801
+0.6310
+T2
+0.4813
+0.4269
+0.4086
+0.3583
+-
+-
+-
+-
+0.4450
+0.3926
+T3
+0.3884
+0.3399
+0.2203
+0.1811
+0.6869
+0.6057
+-
+-
+0.4319
+0.3756
+T4
+0.4386
+0.3923
+0.1970
+0.1694
+0.7761
+0.7165
+0.8771
+0.8512
+0.5722
+0.5324
+et al, 2022; Kwon et al, 2022), we use F1 and IoU scores as primary metrics. F1 Score
+calculates the harmonic mean of precision and recall:
+F1 = 2 × Precision × Recall
+Precision + Recall =
+2 × TP
+2 × TP + FP + FN ,
+(22)
+where TP, TN, FP, and FN are True Positives, True Negatives, False Positives, and
+False Negatives. The numerator of the IoU metric measures the area of intersection
+between prediction P and ground-truth G, while the denominator calculates the area
+of the union between P and G:
+IoU = P ∩G
+P ∪G.
+(23)
+15
+
+
+Table 3: Image-level continual forgery detection performance on sequential tasks (T1-
+T4) under Protocol 1. AUC and ACC (threshold: 0.5) scores are reported.
+Method
+Task
+Classic
+DEFACTO
+FantasticReality
+TampCOCO
+Average
+AUC
+ACC
+AUC
+ACC
+AUC
+ACC
+AUC
+ACC
+AUC
+ACC
+HiDe-Prompt
+(NeurIPS’23)
+T1
+0.8472
+0.7696
+-
+-
+-
+-
+-
+-
+0.8472
+0.7696
+T2
+0.7577
+0.7125
+0.6052
+0.5055
+-
+-
+-
+-
+0.6815
+0.6090
+T3
+0.7337
+0.7024
+0.6044
+0.5055
+0.7931
+0.5488
+-
+-
+0.7104
+0.5856
+T4
+0.7269
+0.7035
+0.6030
+0.5080
+0.8122
+0.5588
+0.7751
+0.6805
+0.7293
+0.6127
+Eclipse
+(CVPR’24)
+T1
+0.8618
+0.7720
+-
+-
+-
+-
+-
+-
+0.8618
+0.7720
+T2
+0.7789
+0.7300
+0.6425
+0.5562
+-
+-
+-
+-
+0.7107
+0.6431
+T3
+0.7322
+0.7066
+0.6025
+0.5435
+0.8840
+0.6569
+-
+-
+0.7396
+0.6357
+T4
+0.7249
+0.7048
+0.6027
+0.5495
+0.8932
+0.6798
+0.7747
+0.7120
+0.7489
+0.6615
+Cprompt
+(CVPR’24)
+T1
+0.9618
+0.9053
+-
+-
+-
+-
+-
+-
+0.9618
+0.9053
+T2
+0.5272
+0.5378
+0.7998
+0.6893
+-
+-
+-
+-
+0.6635
+0.6136
+T3
+0.4168
+0.5741
+0.6493
+0.6070
+0.9998
+0.9942
+-
+-
+0.6886
+0.7251
+T4
+0.5124
+0.4015
+0.6678
+0.5728
+0.9835
+0.8943
+0.9798
+0.9237
+0.7859
+0.6981
+SEMA
+(CVPR’25)
+T1
+0.9317
+0.8736
+-
+-
+-
+-
+-
+-
+0.9317
+0.8736
+T2
+0.5145
+0.5209
+0.7657
+0.6650
+-
+-
+-
+-
+0.6401
+0.5930
+T3
+0.6185
+0.6427
+0.5821
+0.5568
+0.9918
+0.9571
+-
+-
+0.7308
+0.7189
+T4
+0.6179
+0.4566
+0.6508
+0.5598
+0.9577
+0.7517
+0.9288
+0.8028
+0.7888
+0.6427
+PIM
+(TPAMI’25)
+T1
+0.8420
+0.7604
+-
+-
+-
+-
+-
+-
+0.8420
+0.7604
+T2
+0.7906
+0.7200
+0.6184
+0.5102
+-
+-
+-
+-
+0.7045
+0.6151
+T3
+0.3668
+0.6965
+0.4974
+0.5000
+0.9966
+0.5199
+-
+-
+0.6203
+0.5721
+T4
+0.5902
+0.6967
+0.5340
+0.5000
+0.9237
+0.5199
+0.8827
+0.6783
+0.7327
+0.5987
+SAFIRE
+(AAAI’25)
+T1
+0.8786
+0.8027
+-
+-
+-
+-
+-
+-
+0.8786
+0.8027
+T2
+0.6680
+0.7184
+0.6664
+0.5158
+-
+-
+-
+-
+0.6672
+0.6171
+T3
+0.7413
+0.7000
+0.5076
+0.4993
+0.9674
+0.5284
+-
+-
+0.7388
+0.5759
+T4
+0.6568
+0.6967
+0.5203
+0.5000
+0.8359
+0.5203
+0.8412
+0.6783
+0.7136
+0.5988
+IFA-Net
+(CVPR’26)
+T1
+0.8706
+0.7917
+-
+-
+-
+-
+-
+-
+0.8706
+0.7917
+T2
+0.5715
+0.6729
+0.6901
+0.5392
+-
+-
+-
+-
+0.6308
+0.6060
+T3
+0.6705
+0.7087
+0.5417
+0.5063
+0.9782
+0.6465
+-
+-
+0.7301
+0.6205
+T4
+0.5681
+0.6983
+0.5770
+0.5188
+0.9110
+0.6101
+0.9094
+0.6852
+0.7414
+0.6281
+SAM-B&LoRA
+(Baseline)
+T1
+0.8966
+0.8151
+-
+-
+-
+-
+-
+-
+0.8966
+0.8151
+T2
+0.5891
+0.5350
+0.7716
+0.6787
+-
+-
+-
+-
+0.6803
+0.6068
+T3
+0.5238
+0.6062
+0.6185
+0.5722
+0.9990
+0.9815
+-
+-
+0.7138
+0.7199
+T4
+0.4905
+0.4255
+0.6633
+0.5733
+0.9884
+0.9189
+0.9714
+0.8972
+0.7784
+0.7037
+FOCAL
+(Ours)
+T1
+0.9646
+0.9029
+-
+-
+-
+-
+-
+-
+0.9646
+0.9029
+T2
+0.8423
+0.7816
+0.8343
+0.6970
+-
+-
+-
+-
+0.8383
+0.7393
+T3
+0.7951
+0.7459
+0.6604
+0.5898
+0.9996
+0.9899
+-
+-
+0.8183
+0.7752
+T4
+0.8284
+0.7106
+0.7106
+0.6120
+0.9931
+0.9467
+0.9822
+0.9347
+0.8786
+0.8010
+4.1.4 Implementation Details
+Our model is implemented in PyTorch (Paszke et al, 2019) and trained on one NVIDIA
+RTX PRO 6000 GPU. We adopt the SAM ViT-B backbone initialized from the pre-
+trained SAM checkpoint, and insert LoRA modules with rank 32 into the image
+encoder. The input image size is 512 × 512. We use the Adam optimizer (Kingma
+and Ba, 2015) with β1=0.9 and β2=0.999 to train the model with batch size 64. The
+learning rate and weight decay are 1e-4 and 1e-5, respectively. The model is trained
+for 10 epochs for each continual-learning task and validated after every epoch on all
+seen validation sets.
+4.2 Experimental Results under Protocol 1
+The results in Tables 2 and 3 demonstrate the superiority of the proposed FOCAL
+framework in continual forgery detection at both pixel and image levels. Compared
+with existing continual learning methods and IFL baselines, FOCAL consistently
+16
+
+
+Fig. 3: Experimental results under Protocol 2. The top and bottom rows of radar
+charts show the average F1 and IoU scores, respectively, for different methods across
+T1-T3 from left to right.
+achieves the best average performance across the sequential tasks. At the pixel level,
+FOCAL achieves the highest average F1 and IoU, indicating its stronger ability to pre-
+serve localization knowledge while adapting to newly arriving forgery domains. At the
+image level, FOCAL also achieves the best average AUC and ACC, showing that the
+learned forensic representations are effective not only for dense localization but also for
+global forgery discrimination. The consistent improvements across pixel-level localiza-
+tion and image-level discrimination suggest that the learned forensic representations
+preserve useful manipulation evidence at both local and global scales during sequential
+adaptation. These gains are consistent with the joint design of FOCAL, where spatially
+adaptive forensic modeling continuously incorporates informative traces from newly
+arriving domains, while importance-aware gradient regulation prevents such adapta-
+tion from excessively overwriting previously acquired knowledge. These results verify
+that FOCAL provides an effective continual learning scheme for forgery detection by
+jointly enhancing forensic feature mining and knowledge preservation.
+4.3 Experimental Results under Protocol 2
+Figure 3 shows the experimental results under Protocol 2. Each vertex of a radar
+chart represents a continual setting (e.g., NDS: Natural→Document→Scientific). The
+top and bottom rows of radar charts show the average F1 and IoU scores, respec-
+tively, for different methods across T1-T3 from left to right. For instance, the middle
+column presents the average F1 and IoU scores across the first two datasets after the
+17
+
+
+Fig. 4: Forgery localization results across Task 1 to Task 4. Models are trained under
+Protocol 1. The three leftmost columns show the input images, corresponding ground-
+truth masks, and localization results of our method. The eight rightmost columns
+present the results of the baseline methods.
+18
+
+
+model trained on Task 2. The proposed FOCAL achieves the largest radar coverage
+across all six task orders under Protocol 2, indicating its strong robustness when fac-
+ing novel image content from natural, scientific, and document domains. Compared
+with existing IFL methods, FOCAL consistently achieves promising performance on
+different order permutations, while the competing methods show obvious fluctuations
+across task orders. This suggests that FOCAL is less sensitive to the order of incoming
+domains and can better preserve previously learned forgery knowledge while adapting
+to new content types. In contrast, methods such as SAM-B&LoRA, HiDe-Prompt,
+and PIM suffer from unstable performance under certain orders, revealing their lim-
+ited ability to handle large domain shifts. IFA-Net and SAFIRE provide relatively
+competitive results, but they still fall behind FOCAL in terms of overall stability
+and coverage. These results demonstrate the effectiveness of FOCAL in content-level
+incremental forgery localization, especially under challenging cross-domain continual
+learning scenarios.
+4.4 Continual Forgery Localization Results
+The qualitative comparisons in Figure 4 further demonstrate the effectiveness of
+FOCAL for continual forgery localization. The models are sequentially trained from
+Task 1 to Task 4, with all results evaluated after completing Task 4. This setting
+jointly assesses the ability to adapt to newly introduced forgery patterns and retain
+localization knowledge acquired from previous tasks. FOCAL consistently produces
+accurate and spatially compact localization masks across all four tasks. For the latest
+Task 4, FOCAL effectively adapts to newly introduced forgery patterns, while main-
+taining outstanding localization performance on the previously learned Tasks 1-3.
+Even after sequential adaptation through all four tasks, FOCAL accurately identifies
+manipulated regions across diverse scenes involving small objects, irregular regions,
+human subjects, and complex foreground structures. In contrast, the baseline meth-
+ods frequently suffer from under- or over-localization and even complete localization
+failures, showing missing masks and extensive spurious activations. Moreover, some
+baselines’ predictions are considerably less consistent across different tasks, indicating
+catastrophic forgetting issues and limited adaptability to evolving forgery patterns.
+Overall, these qualitative results demonstrate that FOCAL achieves a favorable
+stability-plasticity trade-off, effectively adapting to newly emerging forgery patterns
+while preserving previously acquired forensic knowledge, thereby enabling robust and
+consistent forgery localization throughout the continual learning process.
+4.5 T-SNE Distributions
+Figure 5 presents the t-SNE feature distributions obtained after sequential training
+from Task 1 to Task 4 under Protocol 1. FOCAL exhibits a more consistent separation
+between real and fake samples across the four tasks, with the advantage becoming
+more evident on later tasks where inter-task interference is stronger. In comparison,
+SAM+LoRA produces more entangled real/fake distributions despite forming rela-
+tively compact clusters, indicating limited discriminative preservation under continual
+adaptation. IFL improves upon the plain baseline, but FOCAL maintains clearer class
+19
+
+
+Fig. 5: T-SNE distributions from Task 1 to Task 4 under Protocol 1 for our proposed
+FOCAL, the SOTA method IFL, and the baseline SAM+LoRA.
+Fig. 6: T-SNE visualizations of the Task 1 test data after sequential training on Tasks
+1–4, comparing our FOCAL method with the SOTA method IFL and the baseline
+SAM+LoRA.
+separation on most tasks, particularly Tasks 3 and 4, where it achieves substantially
+higher silhouette scores. These results indicate that FOCAL better preserves discrimi-
+native feature structures while adapting to newly introduced forgery domains, thereby
+improving continual forgery localization.
+Figure 6 visualizes the Task 1 feature distributions after sequential training
+through Tasks 1-4, providing a direct assessment of how well each method preserves
+previously learned representations during continual adaptation. FOCAL maintains a
+clearer and more structured separation between manipulated foreground and authentic
+background features than IFL and SAM+LoRA. Even after completing Task 4, the two
+feature clusters under FOCAL remain well separated, whereas SAM+LoRA exhibits
+substantial feature mixing and weaker class-discriminative structure. Quantitatively,
+FOCAL achieves the strongest final-stage separability on Task 1 among the three
+methods, with a larger inter-class feature distance than IFL and SAM+LoRA. These
+results suggest that FOCAL better preserves the discriminative structure learned from
+earlier tasks, which is crucial for retaining forgery localization capability throughout
+continual adaptation.
+20
+
+
+Table 4: Effectiveness of FOCAL on different backbones.
+Setting
+Task
+Classic
+DEFACTO
+FantasticReality
+TampCOCO
+Average
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+SAM-Tiny
+T1
+0.5369
+0.4982
+-
+-
+-
+-
+-
+-
+0.5369
+0.4982
+T2
+0.0615
+0.0500
+0.2055
+0.1808
+-
+-
+-
+-
+0.1335
+0.1154
+T3
+0.1545
+0.1265
+0.0859
+0.0678
+0.6555
+0.5748
+-
+-
+0.2986
+0.2564
+T4
+0.0947
+0.0777
+0.0739
+0.0621
+0.5075
+0.4465
+0.8045
+0.7737
+0.3702
+0.3400
+SAM-Tiny
++ FOCAL
+T1
+0.5571
+0.5152
+-
+-
+-
+-
+-
+-
+0.5571
+0.5152
+T2
+0.1562
+0.1328
+0.2190
+0.1937
+-
+-
+-
+-
+0.1876
+0.1633
+T3
+0.2220
+0.1826
+0.0768
+0.0595
+0.6687
+0.5902
+-
+-
+0.3225
+0.2774
+T4
+0.1404
+0.1195
+0.1050
+0.0878
+0.5766
+0.5126
+0.8293
+0.8013
+0.4128
+0.3803
+SAM-Base
+T1
+0.4606
+0.4168
+-
+-
+-
+-
+-
+-
+0.4606
+0.4168
+T2
+0.0365
+0.0292
+0.2116
+0.1871
+-
+-
+-
+-
+0.1241
+0.1081
+T3
+0.1695
+0.1369
+0.0900
+0.0901
+0.6989
+0.6151
+-
+-
+0.3195
+0.2807
+T4
+0.0841
+0.0683
+0.1116
+0.0947
+0.5819
+0.5182
+0.8197
+0.7927
+0.3993
+0.3685
+SAM-Base
++ FOCAL
+T1
+0.6801
+0.6310
+-
+-
+-
+-
+-
+-
+0.6801
+0.6310
+T2
+0.4813
+0.4269
+0.4086
+0.3583
+-
+-
+-
+-
+0.4450
+0.3926
+T3
+0.3884
+0.3399
+0.2203
+0.1811
+0.6869
+0.6057
+-
+-
+0.4319
+0.3756
+T4
+0.4386
+0.3923
+0.1970
+0.1694
+0.7761
+0.7165
+0.8771
+0.8512
+0.5722
+0.5324
+SAM-Large
+T1
+0.7696
+0.7279
+-
+-
+-
+-
+-
+-
+0.7696
+0.7279
+T2
+0.2130
+0.1824
+0.5573
+0.5024
+-
+-
+-
+-
+0.3851
+0.3424
+T3
+0.2431
+0.2116
+0.2366
+0.1977
+0.7945
+0.7330
+-
+-
+0.4247
+0.3807
+T4
+0.1507
+0.1348
+0.2289
+0.1952
+0.7257
+0.6661
+0.9208
+0.9015
+0.5065
+0.4744
+SAM-Large
++ FOCAL
+T1
+0.8050
+0.7630
+-
+-
+-
+-
+-
+-
+0.8050
+0.7630
+T2
+0.4962
+0.4497
+0.6064
+0.5495
+-
+-
+-
+-
+0.5513
+0.4996
+T3
+0.4930
+0.4498
+0.3867
+0.3299
+0.8235
+0.7645
+-
+-
+0.5677
+0.5147
+T4
+0.4458
+0.4025
+0.3216
+0.2753
+0.7868
+0.7306
+0.9119
+0.8919
+0.6165
+0.5751
+Table 5: Effectiveness of the designed modules.
+Setting
+Task
+Classic
+DEFACTO
+FantasticReality
+TampCOCO
+Average
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+FOCAL
+T1
+0.6801
+0.6310
+-
+-
+-
+-
+-
+-
+0.6801
+0.6310
+T2
+0.4813
+0.4269
+0.4086
+0.3583
+-
+-
+-
+-
+0.4450
+0.3926
+T3
+0.3884
+0.3399
+0.2203
+0.1811
+0.6869
+0.6057
+-
+-
+0.4319
+0.3756
+T4
+0.4386
+0.3923
+0.1970
+0.1694
+0.7761
+0.7165
+0.8771
+0.8512
+0.5722
+0.5324
+w/o FARA
+T1
+0.6721
+0.6256
+-
+-
+-
+-
+-
+-
+0.6721
+0.6256
+T2
+0.1841
+0.1560
+0.3982
+0.3525
+-
+-
+-
+-
+0.2911
+0.2543
+T3
+0.1828
+0.1501
+0.1452
+0.1174
+0.7142
+0.6340
+-
+-
+0.3474
+0.3005
+T4
+0.1164
+0.0992
+0.1471
+0.1252
+0.6419
+0.5788
+0.8490
+0.8245
+0.4386
+0.4069
+w/o FLAG
+T1
+0.6801
+0.6310
+-
+-
+-
+-
+-
+-
+0.6801
+0.6310
+T2
+0.4463
+0.3937
+0.3670
+0.3221
+-
+-
+-
+-
+0.4067
+0.3579
+T3
+0.3614
+0.3047
+0.2125
+0.1756
+0.6615
+0.5918
+-
+-
+0.4118
+0.3574
+T4
+0.3955
+0.3559
+0.1637
+0.1398
+0.7202
+0.6585
+0.8796
+0.8574
+0.5398
+0.5029
+4.6 Ablation Experiments
+4.6.1 Effectiveness on Different Backbones
+To examine the flexibility of the proposed method for continual IFL, we further inte-
+grate FOCAL with alternative SAM backbones of different model capacities, including
+SAM-Tiny, SAM-Large, and the default SAM-Base. We report the evaluation results
+across different backbones under Protocol 1 in Table 4. It can be observed that FOCAL
+consistently improves the overall performance across all three backbone variants and
+different stages of continual learning, demonstrating the adaptability of the proposed
+method. In particular, the performance gains become more evident as the learning
+21
+
+
+Table 6: Effectiveness of the used forensic experts.
+Setting
+Task
+Classic
+DEFACTO
+FantasticReality
+TampCOCO
+Average
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+FOCAL
+T1
+0.6801
+0.6310
+-
+-
+-
+-
+-
+-
+0.6801
+0.6310
+T2
+0.4813
+0.4269
+0.4086
+0.3583
+-
+-
+-
+-
+0.4450
+0.3926
+T3
+0.3884
+0.3399
+0.2203
+0.1811
+0.6869
+0.6057
+-
+-
+0.4319
+0.3756
+T4
+0.4386
+0.3923
+0.1970
+0.1694
+0.7761
+0.7165
+0.8771
+0.8512
+0.5722
+0.5324
+w/o Sobel
+T1
+0.6571
+0.6096
+-
+-
+-
+-
+-
+-
+0.6571
+0.6096
+T2
+0.3878
+0.3435
+0.3957
+0.3499
+-
+-
+-
+-
+0.3917
+0.3467
+T3
+0.3756
+0.3357
+0.2108
+0.1809
+0.6789
+0.6001
+-
+-
+0.4218
+0.3722
+T4
+0.3739
+0.3369
+0.1476
+0.1272
+0.7092
+0.6540
+0.8762
+0.8548
+0.5267
+0.4932
+w/o SRM
+T1
+0.6753
+0.6253
+-
+-
+-
+-
+-
+-
+0.6753
+0.6253
+T2
+0.3748
+0.3307
+0.3987
+0.3509
+-
+-
+-
+-
+0.3867
+0.3408
+T3
+0.3797
+0.3381
+0.2161
+0.1791
+0.6408
+0.5609
+-
+-
+0.4122
+0.3594
+T4
+0.3924
+0.3545
+0.1725
+0.1492
+0.6289
+0.5695
+0.8636
+0.8402
+0.5143
+0.4783
+w/o JPEG
+T1
+0.6634
+0.6126
+-
+-
+-
+-
+-
+-
+0.6634
+0.6126
+T2
+0.3476
+0.3038
+0.4149
+0.3632
+-
+-
+-
+-
+0.3812
+0.3335
+T3
+0.3576
+0.3287
+0.2282
+0.1903
+0.6800
+0.6029
+-
+-
+0.4219
+0.3740
+T4
+0.3804
+0.3427
+0.1504
+0.1289
+0.7246
+0.6663
+0.8736
+0.8523
+0.5323
+0.4975
+w/o Bayer
+T1
+0.6713
+0.6225
+-
+-
+-
+-
+-
+-
+0.6713
+0.6225
+T2
+0.3767
+0.3321
+0.3902
+0.3453
+-
+-
+-
+-
+0.3835
+0.3387
+T3
+0.3059
+0.2665
+0.1869
+0.1542
+0.5907
+0.5116
+-
+-
+0.3612
+0.3107
+T4
+0.3240
+0.2894
+0.1623
+0.1389
+0.5822
+0.5254
+0.8624
+0.8405
+0.4827
+0.4485
+sequence progresses, where the vanilla backbones exhibit substantial degradation on
+previously learned forgery domains after adapting to new tasks. In contrast, incorpo-
+rating FOCAL generally maintains stronger performance on these previous domains
+while effectively adapting to newly introduced forgery data. This observation suggests
+that FOCAL provides a favorable balance between knowledge retention and contin-
+ual adaptation. Overall, these results demonstrate that FOCAL can be seamlessly
+integrated with different SAM variants in a plug-and-play manner, highlighting its
+flexibility and generalizability for continual IFL.
+4.6.2 Effectiveness of the Designed Components
+FOCAL consists of the Forensic-Aware Representation Adaptation (FARA) and
+Fisher-weighted LoRA Gradient (FLAG) surgery modules, where FARA aims to adap-
+tively extract robust forensic features, while FLAG is designed to preserve previously
+learned knowledge. We present the ablation results under Protocol 1 in Table 5. It
+can be observed that ablating either module leads to consistent performance degra-
+dation, demonstrating the effectiveness and complementarity of the two components.
+In particular, the removal of FARA results in an obvious overall performance drop,
+highlighting its importance in learning robust forensic representations and adapting
+them to evolving forgery distributions. Meanwhile, removing FLAG mainly degrades
+the performance on previously learned domains while maintaining competitive per-
+formance on the newly introduced domain. This observation suggests that FLAG
+effectively mitigates catastrophic forgetting by protecting knowledge important to
+previous tasks without sacrificing the plasticity required to learn emerging forgery
+patterns. Overall, these results demonstrate that FARA and FLAG jointly provide
+a favorable balance between learning robust forensic representations and preserving
+22
+
+
+Table 7: Impacts of the LoRA rank.
+Setting
+Task
+Classic
+DEFACTO
+FantasticReality
+TampCOCO
+Average
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+rank = 4
+T1
+0.6399
+0.5868
+-
+-
+-
+-
+-
+-
+0.6399
+0.5868
+T2
+0.3762
+0.3256
+0.3109
+0.2704
+-
+-
+-
+-
+0.3436
+0.2980
+T3
+0.3417
+0.2919
+0.1608
+0.1307
+0.7051
+0.6245
+-
+-
+0.4025
+0.3491
+T4
+0.3469
+0.3053
+0.1604
+0.1343
+0.6656
+0.5950
+0.8378
+0.8099
+0.5027
+0.4611
+rank = 8
+T1
+0.6368
+0.5871
+-
+-
+-
+-
+-
+-
+0.6368
+0.5871
+T2
+0.4286
+0.3729
+0.2921
+0.2553
+-
+-
+-
+-
+0.3604
+0.3141
+T3
+0.3578
+0.3065
+0.1700
+0.1388
+0.7075
+0.6282
+-
+-
+0.4117
+0.3579
+T4
+0.3787
+0.3319
+0.1675
+0.1417
+0.6960
+0.6264
+0.8130
+0.7834
+0.5138
+0.4708
+rank = 16
+T1
+0.6785
+0.6245
+-
+-
+-
+-
+-
+-
+0.6785
+0.6245
+T2
+0.4158
+0.3683
+0.3392
+0.2972
+-
+-
+-
+-
+0.3775
+0.3327
+T3
+0.3419
+0.2965
+0.1921
+0.1562
+0.6621
+0.5819
+-
+-
+0.3987
+0.3448
+T4
+0.4038
+0.3616
+0.1724
+0.1473
+0.7252
+0.6621
+0.8696
+0.8442
+0.5427
+0.5038
+rank = 32
+T1
+0.6801
+0.6310
+-
+-
+-
+-
+-
+-
+0.6801
+0.6310
+T2
+0.4813
+0.4269
+0.4086
+0.3583
+-
+-
+-
+-
+0.4450
+0.3926
+T3
+0.3884
+0.3399
+0.2203
+0.1811
+0.6869
+0.6057
+-
+-
+0.4319
+0.3756
+T4
+0.4386
+0.3923
+0.1970
+0.1694
+0.7761
+0.7165
+0.8771
+0.8512
+0.5722
+0.5324
+rank = 64
+T1
+0.6763
+0.6331
+-
+-
+-
+-
+-
+-
+0.6763
+0.6331
+T2
+0.4721
+0.4203
+0.4023
+0.3547
+-
+-
+-
+-
+0.4372
+0.3875
+T3
+0.4319
+0.3802
+0.2551
+0.2082
+0.7268
+0.6477
+-
+-
+0.4713
+0.4120
+T4
+0.4192
+0.3777
+0.1552
+0.1331
+0.7346
+0.6770
+0.8906
+0.8688
+0.5499
+0.5141
+previously acquired knowledge, enabling FOCAL to effectively adapt to continually
+evolving forgery domains.
+4.6.3 Effectiveness of the Forensic Experts
+The ablation results in Table 6 validate the effectiveness of the proposed Spatial
+Mixture-of-Forensic-Experts (SMoFE) module in continual image forgery localization.
+The full FOCAL model consistently achieves the best overall performance across the
+continual learning sequence, especially at the final stage T4, where it outperforms
+all expert-removal variants in terms of average F1 and IoU. This demonstrates that
+SMoFE effectively mitigates performance degradation during continual adaptation by
+dynamically integrating complementary forensic cues. Removing any expert weakens
+the model’s overall ability to mine robust forensic traces, with the removal of Bayer and
+SRM experts causing particularly large drops. These results indicate that SMoFE can
+adaptively capture diverse low-level forensic evidence, including demosaicing artifacts,
+noise residuals, boundaries, and compression traces, thereby enhancing both forensic
+feature mining and continual learning performance.
+4.6.4 Ablation Study on LoRA Rank
+Table 7 reports the effect of the LoRA rank on continual image forgery localization.
+Small ranks, such as 4 and 8, provide limited adaptation capacity and yield weaker
+performance when learning newly introduced forgery domains. Increasing the rank
+generally improves continual adaptation, with rank 32 achieving the best overall per-
+formance at the final stage T4. This indicates that rank 32 provides sufficient capacity
+to learn new manipulation patterns while retaining previously acquired knowledge.
+Although rank 64 remains competitive, its lower final performance suggests that
+23
+
+
+further increasing the adaptation capacity provides limited benefits, introduces redun-
+dant parameters, and may increase the risk of overfitting. We therefore adopt rank 32
+as the default setting in all experiments.
+5 Conclusion
+To the best of our knowledge, we present the first continual learning framework for
+Image Forgery Localization (IFL), aiming to enable IFL models to adapt to sequen-
+tially arriving forgery data while preserving previously acquired forensic knowledge.
+We first establish a comprehensive benchmark with two realistic data evolution pro-
+tocols, namely, cross-dataset and cross-content protocols, to systematically evaluate
+the continual adaptation capabilities of existing IFL and continual learning meth-
+ods. Experimental results reveal that existing methods suffer from severe performance
+degradation when adapting to emerging forgery domains, particularly in the presence
+of substantial domain gaps.
+To address these challenges, we propose FOrensic-aware Continual Adaptation
+with LoRA surgery (FOCAL), which comprises a forensic-aware representation adap-
+tation module and a Fisher-weighted LoRA gradient surgery strategy. Specifically, the
+Spatial Mixture-of-Forensic-Experts (SMoFE) mechanism adaptively integrates com-
+plementary forensic cues from multiple trace experts, enabling the model to capture
+robust manipulation evidence across diverse and previously unseen domains. Forensic
+Evidence-Guided Dense Prompting (FEGDP) bridges the forensic-to-prompt repre-
+sentation gap by converting low-level artifacts into structured localization evidence for
+SAM. Meanwhile, Fisher-weighted LoRA Gradient (FLAG) surgery selectively mod-
+ulates the gradients of LoRA parameters according to their importance to previously
+learned tasks, thereby mitigating catastrophic forgetting while retaining sufficient
+plasticity to learn new forgery patterns. Extensive quantitative and visualization
+experiments under both protocols demonstrate that FOCAL consistently achieves
+superior performance in both pixel-level forgery localization and image-level forgery
+detection. Despite considering two practical data evolution protocols, the proposed
+benchmark does not fully capture the complexity of real-world continual learning sce-
+narios. Future work could therefore incorporate more complex learning protocols and
+more diverse datasets to further advance continual learning for real-world multime-
+dia forensics. We hope that this work provides a strong benchmark and baseline for
+future research in this important direction.
+Declarations
+Data Availability Statements. We conducted experiments using several pub-
+licly accessible image forgery localization datasets: CASIAv2 (Dong et al, 2013),
+IFC (IFC, 2013), WildWeb (Zampoglou et al, 2015), IMD2020 (Novozamsky et al,
+2020), DEFACTO (Mahfoudi et al, 2019), FantasticReality (Kniaz et al, 2019),
+TampCOCO (Kwon et al, 2022), RSIID (Cardenuto and Rocha, 2022), Biofors
+(Sabir et al, 2021), SciSp (Lin et al, 2024), STFD (Yu et al, 2023), and Doc-
+Tamper (Qu et al, 2023). These datasets are critical to our analysis and are
+readily available online. Specifically, CASIAv2 is accessible at https://github.com/
+24
+
+
+namtpham/casia2groundtruth; IFC is accessible at https://signalprocessingsociety.
+org/newsletter/2013/06/ifs-tc-image-forensics-challenge;
+WildWeb
+is
+accessible
+at
+https://mklab.iti.gr/results/the-wild-web-tampered-image-dataset/;
+IMD2020
+is
+accessible
+at
+https://staff.utia.cas.cz/novozada/db/;
+DEFACTO
+is
+acces-
+sible
+at
+https://defactodataset.github.io/;
+FantasticReality
+is
+accessible
+at
+https://github.com/mjkwon2021/CAT-Net/issues/51#issuecomment-2537517937;
+TampCOCO is accessible at https://www.kaggle.com/datasets/qsii24/tampcoco;
+RSIID is accessible at https://zenodo.org/records/15095089; Biofors is accessible at
+https://drive.google.com/file/d/1UVSJ6h7r8pmOWYZkqWeAZ YvwbFr1wV3/view;
+SciSp is accessible at https://zenodo.org/records/10989921; STFD is accessible
+at
+https://drive.google.com/file/d/12MvM1R4R2iE-KGZmB1BSAXqR1Wo1kPIj/
+view; DocTamper is accessible at https://github.com/qcf-568/DocTamper.
+References
+(2013) Ieee ifs-tc image forensics challenge dataset. https://signalprocessingsociety.
+org/newsletter/2013/06/ifs-tc-image-forensics-challenge
+(2026) Available. [EB/OL], https://artlist.io/
+(2026)
+Available.
+[EB/OL],
+https://openai.com/zh-Hans-CN/index/
+introducing-chatgpt-images-2-0/
+Barni M, Costanzo A, Sabatini L (2010) Identification of cut & paste tampering by
+means of double-jpeg detection and image segmentation. In: Proceedings of 2010
+IEEE International Symposium on Circuits and Systems, IEEE, pp 1687–1690
+Bianchi T, Piva A (2012) Image forgery localization via block-grained analysis of jpeg
+artifacts. IEEE Transactions on Information Forensics and Security 7(3):1003–1017
+Cai R, Cui Y, Li Z, et al (2023) Rehearsal-free domain continual face anti-spoofing:
+Generalize more and forget less. In: Proceedings of the IEEE/CVF International
+Conference on Computer Vision, pp 8037–8048
+Cao H, Kot AC (2009) Accurate detection of demosaicing regularity for digital image
+forensics. IEEE Transactions on Information Forensics and Security 4(4):899–910
+Cardenuto JP, Rocha A (2022) Benchmarking scientific image forgery detectors.
+Science and engineering ethics 28(4):35
+Chen Y, Cheng H, Wang H, et al (2024) Ean: Edge-aware network for image manipula-
+tion localization. IEEE Transactions on Circuits and Systems for Video Technology
+35(2):1591–1601
+Chen Y, Huang X, Zhang Q, et al (2025) Gim: A million-scale benchmark for gener-
+ative image manipulation detection and localization. In: Proceedings of the AAAI
+Conference on Artificial Intelligence, pp 2311–2319
+25
+
+
+Chen YL, Hsu CT (2011) Detecting recompression of jpeg images via periodicity
+analysis of compression artifacts for tampering detection. IEEE Transactions on
+Information Forensics and Security 6(2):396–406
+Cheng J, Yan Z, Zhang Y, et al (2025) Stacking brick by brick: Aligned feature
+isolation for incremental face forgery detection. In: Proceedings of the Computer
+Vision and Pattern Recognition Conference, pp 13927–13936
+Cozzolino D, Poggi G, Verdoliva L (2015) Splicebuster: A new blind image splic-
+ing detector. In: 2015 IEEE International Workshop on Information Forensics and
+Security (WIFS), IEEE, pp 1–6
+Dong C, Chen X, Hu R, et al (2022) Mvss-net: Multi-view multi-scale supervised
+networks for image manipulation detection. IEEE Transactions on Pattern Analysis
+and Machine Intelligence
+Dong J, Wang W, Tan T (2013) CASIA image tampering detection evaluation
+database. In: 2013 IEEE China Summit and International Conference on Signal
+and Information Processing. IEEE, https://doi.org/10.1109/chinasip.2013.6625374,
+URL https://doi.org/10.1109/chinasip.2013.6625374
+Fan J, Cao H, Kot AC (2013) Estimating exif parameters based on noise features
+for image manipulation detection. IEEE Transactions on Information Forensics and
+Security 8(4):608–618
+Fan Z, De Queiroz RL (2003) Identification of bitmap compression history: Jpeg
+detection and quantizer estimation. IEEE Transactions on Image Processing
+12(2):230–235
+Ferrara P, Bianchi T, De Rosa A, et al (2012) Image forgery localization via fine-
+grained analysis of cfa artifacts. IEEE Transactions on Information Forensics and
+Security 7(5):1566–1577
+Fridrich J, Kodovsky J (2012) Rich models for steganalysis of digital images. IEEE
+Transactions on information Forensics and Security 7(3):868–882
+Fu D, Shi YQ, Su W (2007) A generalized benford’s law for jpeg coefficients and its
+applications in image forensics. In: Security, Steganography, and Watermarking of
+Multimedia Contents IX, SPIE, pp 574–584
+Fu H, Cao X (2012) Forgery authentication in extreme wide-angle lens using distor-
+tion cue and fake saliency map. IEEE Transactions on Information Forensics and
+Security 7(4):1301–1314
+Gallagher AC, Chen T (2008) Image authentication by detecting traces of demosaic-
+ing. In: 2008 IEEE Computer Society Conference on Computer Vision and Pattern
+Recognition Workshops, IEEE, pp 1–8
+26
+
+
+Gao Z, Cen J, Chang X (2024) Consistent prompting for rehearsal-free continual
+learning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, pp 28463–28473
+Gloe T, Borowka K, Winkler A (2010) Efficient estimation and large-scale evaluation
+of lateral chromatic aberration for digital image forensics. In: Media Forensics and
+Security II, SPIE, pp 62–74
+Han R, Wang X, Bai N, et al (2024) Hdf-net: Capturing homogeny difference fea-
+tures to localize the tampered image. IEEE Transactions on Pattern Analysis and
+Machine Intelligence 46(12):10005–10020
+Ho JS, Au OC, Zhou J, et al (2010) Inter-channel demosaicking traces for digital
+image forensics. In: 2010 IEEE International Conference on Multimedia and Expo,
+IEEE, pp 1475–1480
+Huang Q, Xu Z, Zhang X, et al (2026) Realign: Generalizable image forgery detection
+via reasoning-aligned representation. In: Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, pp 21295–21305
+Huang Z, Hu J, Li X, et al (2025) Sida: Social media image deepfake detection,
+localization and explanation with large multimodal model. In: Proceedings of the
+Computer Vision and Pattern Recognition Conference, pp 28831–28841
+Iakovidou C, Zampoglou M, Papadopoulos S, et al (2018) Content-aware detec-
+tion of jpeg grid inconsistencies for intuitive image forensics. Journal of Visual
+Communication and Image Representation 54:155–170
+Johnson MK, Farid H (2006) Exposing digital forgeries through chromatic aberration.
+In: Proceedings of the 8th workshop on Multimedia and security, pp 48–55
+Kapoor K, Mackey W, Aloimonos Y, et al (2026) Hicl: Hippocampal-inspired contin-
+ual learning. In: Proceedings of the AAAI Conference on Artificial Intelligence, pp
+22518–22526
+Kim B, Yu J, Hwang SJ (2024) Eclipse: Efficient continual learning in panoptic seg-
+mentation with visual prompt tuning. In: Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, pp 3346–3356
+Kingma DP, Ba J (2015) Adam: A method for stochastic optimization. International
+Conference for Learning Representations pp 1–15
+Kirillov A, Mintun E, Ravi N, et al (2023) Segment anything. In: Proceedings of the
+IEEE/CVF international conference on computer vision, pp 4015–4026
+Kirkpatrick J, Pascanu R, Rabinowitz N, et al (2017) Overcoming catastrophic
+forgetting in neural networks. Proceedings of the national academy of sciences
+27
+
+
+114(13):3521–3526
+Kniaz VV, Knyaz V, Remondino F (2019) The point where reality meets fan-
+tasy: Mixed adversarial generators for image splice detection. Advances in neural
+information processing systems 32
+Kobayashi M, Okabe T, Sato Y (2010) Detecting forgery from static-scene video
+based on inconsistency in noise level functions. IEEE Transactions on Information
+Forensics and Security 5(4):883–892
+Kong C, Luo A, Wang S, et al (2025) Pixel-inconsistency modeling for image
+manipulation localization. IEEE Transactions on Pattern Analysis and Machine
+Intelligence
+Kwon MJ, Nam SH, Yu IJ, et al (2022) Learning jpeg compression artifacts for image
+manipulation detection and localization. International Journal of Computer Vision
+130(8):1875–1895
+Kwon MJ, Lee W, Nam SH, et al (2025) Safire: Segment any forged image region. In:
+Proceedings of the AAAI conference on artificial intelligence, pp 4437–4445
+Li D, Zhu J, Fu X, et al (2024a) Noise-assisted prompt learning for image forgery
+detection and localization. In: European Conference on Computer Vision, Springer,
+pp 18–36
+Li H, Huang J (2019) Localization of deep inpainting using high-pass fully convo-
+lutional network. In: proceedings of the IEEE/CVF international conference on
+computer vision, pp 8301–8310
+Li S, Ma W, Guo J, et al (2024b) Unionformer: Unified-learning transformer
+with multi-view representation for image manipulation detection and localization.
+In: Proceedings of the IEEE/CVF conference on computer vision and pattern
+recognition, pp 12523–12533
+Lin X, Wang S, Deng J, et al (2023) Image manipulation detection by multiple
+tampering traces and edge artifact enhancement. Pattern Recognition 133:109026
+Lin X, Tang W, Wang H, et al (2024) Exposing image splicing traces in scientific
+publications via uncertainty-guided refinement. Patterns 5(9)
+Liu W, Shen X, Pun CM, et al (2023) Explicit visual prompting for low-level structure
+segmentations. In: Proceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, pp 19434–19445
+Liu Z, Lin Y, Cao Y, et al (2021) Swin transformer: Hierarchical vision transformer
+using shifted windows. In: Proceedings of the IEEE/CVF international conference
+on computer vision, pp 10012–10022
+28
+
+
+Lou Z, Cao G, Guo K, et al (2025) Exploring multi-view pixel contrast for general
+and robust image forgery localization. IEEE Transactions on Information Forensics
+and Security
+Lyu S, Pan X, Zhang X (2014) Exposing region splicing forgeries with blind local
+noise estimation. International journal of computer vision 110:202–221
+Mahdian B, Saic S (2009) Using noise inconsistencies for blind image forensics. Image
+and Vision Computing 27(10):1497–1503
+Mahfoudi G, Tajini B, Retraint F, et al (2019) Defacto: Image and face manipulation
+dataset. In: 2019 27th European Signal Processing Conference (EUSIPCO), IEEE,
+pp 1–5
+Marra F, Saltori C, Boato G, et al (2019) Incremental learning for the detection and
+classification of gan-generated images. In: 2019 IEEE international workshop on
+information forensics and security (WIFS), IEEE, pp 1–6
+Mayer O, Stamm MC (2018) Accurate and efficient image forgery detection using lat-
+eral chromatic aberration. IEEE Transactions on information forensics and security
+13(7):1762–1777
+Novozamsky A, Mahdian B, Saic S (2020) Imd2020: a large-scale annotated dataset
+tailored for detecting manipulated images. In: Proceedings of the IEEE/CVF
+Winter Conference on Applications of Computer Vision Workshops, pp 71–80
+Pasquini C, Boato G, P´erez-Gonz´alez F (2017) Statistical detection of jpeg traces
+in digital images in uncompressed formats. IEEE Transactions on Information
+Forensics and Security 12(12):2890–2905
+Paszke A, Gross S, Massa F, et al (2019) PyTorch: An imperative style, high-
+performance deep learning library. Neural Information Processing Systems pp
+8026–8037
+Peng R, Tan S, Kong C, et al (2025) Forensicssam: Toward robust and unified image
+forgery detection and localization resisting to adversarial attack. arXiv preprint
+arXiv:250807402
+P´erez-Cabo D, Jim´enez-Cabello D, Costa-Pazo A, et al (2020) Learning to learn face-
+pad: a lifelong learning approach. In: 2020 IEEE International Joint Conference on
+Biometrics (IJCB), IEEE, pp 1–9
+Popescu AC, Farid H (2004) Statistical tools for digital forensics. In: International
+workshop on information hiding, Springer, pp 128–147
+Popescu AC, Farid H (2005) Exposing digital forgeries in color filter array interpolated
+images. IEEE Transactions on Signal Processing 53(10):3948–3959
+29
+
+
+Qu C, Liu C, Liu Y, et al (2023) Towards robust tampered text detection in document
+image: New dataset and new solution. In: Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, pp 5937–5946
+Rostami M, Spinoulas L, Hussein M, et al (2021) Detection and continual learning
+of novel face presentation attacks. In: Proceedings of the IEEE/CVF international
+conference on computer vision, pp 14851–14860
+Sabir E, Nandi S, Abd-Almageed W, et al (2021) Biofors: A large biomedical image
+forensics dataset. In: Proceedings of the IEEE/CVF International Conference on
+Computer Vision, pp 10963–10973
+Sun K, Chen S, Yao T, et al (2025) Continual face forgery detection via historical
+distribution preserving. International Journal of Computer Vision 133(3):1067–1084
+Sun Z, Jiang H, Chen H, et al (2026) Forgerysleuth: Empowering multimodal large
+language models for image manipulation detection. Advances in Neural Information
+Processing Systems 38:153136–153175
+Tang S, He P, Li H, et al (2025) Towards extensible detection of ai-generated
+images via content-agnostic adapter-based category-aware incremental learning.
+IEEE Transactions on Information Forensics and Security
+Tian J, Yu C, Wang X, et al (2024) Dynamic mixed-prototype model for incremental
+deepfake detection. In: Proceedings of the 32nd ACM International Conference on
+Multimedia, pp 8129–8138
+Wang H, Lu H, Yao L, et al (2025) Self-expansion of pre-trained models with mixture
+of adapters for continual learning. In: Proceedings of the Computer Vision and
+Pattern Recognition Conference, pp 10087–10098
+Wang HD, Bae S, Chen Z, et al (2026) Learning with preserving for continual mul-
+titask learning. In: Proceedings of the AAAI Conference on Artificial Intelligence,
+pp 26178–26186
+Wang J, Wu Z, Chen J, et al (2022a) Objectformer for image manipulation detection
+and localization. In: Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition, pp 2364–2373
+Wang L, Xie J, Zhang X, et al (2023) Hierarchical decomposition of prompt-
+based continual learning: Rethinking obscured sub-optimality. Advances in Neural
+Information Processing Systems 36:69054–69076
+Wang Y, Huang Z, Hong X (2022b) S-prompts learning with pre-trained transformers:
+An occam’s razor for domain incremental learning. Advances in Neural Information
+Processing Systems 35:5682–5695
+30
+
+
+Wang Z, Zhang Z, Lee CY, et al (2022c) Learning to prompt for continual learn-
+ing. In: Proceedings of the IEEE/CVF conference on computer vision and pattern
+recognition, pp 139–149
+Wu Y, AbdAlmageed W, Natarajan P (2019) Mantra-net: Manipulation tracing net-
+work for detection and localization of image forgeries with anomalous features.
+In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition, pp 9543–9552
+Xu Z, Zhang X, Li R, et al (2025) Fakeshield: Explainable image forgery detection and
+localization via multi-modal large language models. In: International Conference on
+Learning Representations, pp 31186–31216
+Yao Y, Han T, Jia S, et al (2025) Dense feature interaction network for image
+inpainting localization. IEEE Transactions on Information Forensics and Security
+20:1636–1648
+Ye F, Zhong Y, Liu Q, et al (2026) Learning adaptive and expandable mixture
+model for continual learning. In: Proceedings of the AAAI Conference on Artificial
+Intelligence, pp 27773–27781
+Yerushalmy I, Hel-Or H (2011) Digital image forgery detection based on lens and
+sensor aberration. International journal of computer vision 92:71–91
+Yu Z, Li B, Lin Y, et al (2023) Learning to locate the text forgery in smartphone
+screenshots. In: ICASSP 2023–2023 IEEE International Conference on Acoustics,
+Speech and Signal Processing (ICASSP), IEEE, pp 1–5
+Zampoglou M, Papadopoulos S, Kompatsiaris Y (2015) Detecting image splicing in
+the wild (web). In: 2015 IEEE International Conference on Multimedia & Expo
+Workshops (ICMEW), IEEE, pp 1–6
+Zhang J, Gao S, Liu B, et al (2026a) Detecting ai-generated forgeries via iterative
+manifold deviation amplification. Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition
+Zhang X, Zhu P, Zhang C, et al (2025) Generalization-preserved learning: Closing the
+backdoor to catastrophic forgetting in continual deepfake detection. In: Proceedings
+of the IEEE/CVF International Conference on Computer Vision, pp 3798–3808
+Zhang Y, Guo X, Zhao Y, et al (2026b) Grow-on-demand: Sparse and adaptive expert
+expansion for continual instruction tuning. In: Proceedings of the AAAI Conference
+on Artificial Intelligence, pp 28474–28482
+Zhanwang L, Yuting L, Haoyuan G, et al (2026) Ider: Idempotent experience replay for
+reliable continual learning. In: Proceedings of International Conference on Learning
+Representations (ICLR), pp 1–20
+31
