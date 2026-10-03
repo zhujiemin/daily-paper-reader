@@ -1,0 +1,246 @@
+Title: StegGNN: Learning Graphical Representation for Image Steganography
+
+URL Source: https://arxiv.org/pdf/2609.32362v1
+
+Published Time: Tue, 29 Sep 2026 01:04:29 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# StegGNN: Learning Graphical Representation for Image Steganography 
+
+# Abhinav Kumar Shorya Singhal Agam Pandey Tushar Kumar Sukrit Jindal Indian Institute of Technology Roorkee 
+
+> abhinav k@ma.iitr.ac.in
+
+# Abstract 
+
+Image steganography refers to embedding secret messages within cover images while maintaining imperceptibility. Re-cent advances in deep learning—primarily driven by Con-volutional Neural Networks (CNNs) and architectures such as inverse neural networks, autoencoders, and generative adversarial networks—have led to notable progress. How-ever, these frameworks are primarily built on CNN archi-tectures, which treat images as regular grids and are lim-ited by their receptive field size and a bias toward spa-tial locality. In parallel, Graph Neural Networks (GNNs) have recently demonstrated strong adaptability in several computer vision tasks, achieving state-of-the-art perfor-mance with architectures such as Vision GNN (ViG). This work moves in that direction and introduces StegGNN—a novel autoencoder-based, cover-agnostic image steganog-raphy framework based on GNNs. By modeling images as graph structures, our approach leverages the represen-tational flexibility of GNNs over the grid-based rigidity of conventional CNNs. We conduct extensive experiments on standard benchmark datasets to evaluate visual quality and imperceptibility. Our results show that our GNN-based method performs comparably to existing CNN benchmarks. These findings suggest that GNNs provide a promising al-ternative representation for steganographic embedding and open the field of deep learning-based steganography to fur-ther exploration of GNN-based architectures. 
+
+# 1. Introduction 
+
+Steganography is a widely studied technique [12] that in-volves hiding secret data within container media such as images [33], videos [45], and text [43] to prevent detec-tion by unauthorized parties. Unlike cryptography, which prioritizes robustness, steganography focuses on capacity and invisibility—ensuring that only authorized receivers can recover hidden messages while maintaining the stego medium’s indistinguishability from the original. This leads to its widespread applications in copyright protection [3], digital watermarking [14], and informa- 
+
+> Figure 1. Overall autoencoder framework for cover agnostic steganography.
+
+tion retrospection [74]. Traditional image steganography methods operate in spatial [34, 48] or frequency domains [2], typically embedding data in the least significant bits [11, 44]. However, these approaches suffer from limited capacity (0.2-4 bits per pixel) and vulnerability to statisti-cal detection [19]. With the advent of deep learning over the past decade, a surge of deep learning-based approaches [28, 55] have been proposed for image steganography. In his seminal work, Baluja [4] proposed the first end-to-end CNN autoencoder framework for hiding complete images within carrier images. This was complemented by [25], who introduced adversarial training for steganogra-phy. Building on these foundational works, [77] developed the first comprehensive watermarking framework that inte-grated autoencoder architecture with noise layers and adver-sarial discriminators to enhance robustness and stego image quality. This autoencoder paradigm inspired numerous sub-sequent works focusing on improved imperceptibility and visual fidelity [18, 29, 51, 64]. Parallel to autoencoder-based approaches, [42] introduced an alternative frame-work based on invertible neural networks (INNs) for large-capacity steganography, spawning a series of INN-based methods [22, 32, 67]. While INN-based approaches offer computational efficiency, they impose strict weight-sharing constraints between encoder-decoder architectures, limiting 1arXiv:2609.32362v1 [cs.CV] 26 Sep 2026 the architectural flexibility of autoencoder frameworks. The above methods come under cover-dependent steganography framework [72]. Particularly, they embed secret messages by modifying a specific cover image. The encoding is tightly coupled to the cover, thus decreasing its scalability for copyright protection and watermarking ap-plications. In contrast, several researchers have focused on cover-less steganography to avoid altering a given cover im-age altogether [50]. However, such frameworks have pri-marily focused on hiding bits in container images [40], and only a few explorations involve hiding images without re-sorting to cover images [70]. Furthermore, these are not generalizable across various image domains, as the gener-ated stego image quality and diversity depend on the gen-erative model [70]. Parallel to these approaches, [72] pro-posed a cover-agnostic steganography, which decouples the secret encoding from the specific cover image, leading to universal, cover-agnostic secret embeddings. In this work, we adopt the cover-agnostic method, as it provides an effective and efficient way to model image data as graphs. Specifically, given a cover image C and a secret image S, our encoder module processes S to produce a uni-versal secret embedding Se. This embedding is then added to any cover image to produce the corresponding stego im-age C′, which our decoder module uses to reconstruct the original secret message S′ (Fig. 1). Compared to convolu-tional neural networks (CNNs) [37], which have previously been used in encoder and decoder modules [72], our ap-proach leverages recent advances in graph neural networks (GNNs) for vision domains [24, 46, 47, 56] to capture long-range dependencies. 
+
+# 2. Related Work 
+
+In the following subsection, we briefly discuss the progress made by cover-dependent and cover-independent steganog-raphy methods, as well as Graph Neural Networks. 
+
+## 2.1. Cover Dependent 
+
+Cover-dependent steganography modifies an existing cover image to embed secrets. Early spatial-domain tech-niques—such as least significant bit (LSB) replacement [11, 44] offered simple embedding but were vulnerable to statistical steganalysis [30, 49]. Frequency-domain ap-proaches (e.g. DFT [52], DCT [27] and DWT [6]) im-proved robustness and undetectability, but were limited to bit-level payloads and were unsuitable for hiding full im-ages. To overcome these constraints, deep neural network (DNN)–based steganography was proposed in [4] which spurred a series of advancements, support for embedding multiple hidden images [5], techniques for concealing bi-nary data, text and watermarks [57, 63, 77]. Concur-rent research leveraging invertible neural networks (INNs) [16, 42, 65] framed the tasks of embedding and recovery as inverse problems, enabling the encoder and decoder to share weights within a unified architecture and inspired sub-sequent efforts [32, 67, 69]. Recent improvements leverage generative adversarial networks (GANs) to further improve the perceptual quality of stego-images [25, 73]. 
+
+## 2.2. Cover Independent 
+
+Cover-independent (or agnostic) steganography decouples the secret encoding process entirely from the cover image [72]. Unlike cover-dependent methods that bind the secret with unique cover features, cover-independent techniques generate a universal secret representation. By leaving the cover image unmodified, this approach preserves its inher-ent statistical properties and visual quality, avoiding arti-facts introduced by synthetic stego generation as seen in some coverless methods. Moreover, the same secret can be embedded across diverse covers, enabling universal wa-termarking and light field messaging applications [72]. 
+
+## 2.3. Graph Neural Networks 
+
+GNNs emerged as an extension of the convolution operation of CNNs for regular-structured data such as images to the graph domain. [10] proposed the first modern GNN by ex-tending the convolutional operator of CNNs [37] to graphs. Incorporating concepts of signal processing on graphs [15], introduced localized spectral filtering for graphs. Later [36], approximated the spectral filtering operation to obtain effi-cient Graph Convolutional Networks (GCNs). GNNs are typically used for learning graph-structured data represen-tations such as social networks [23], citation networks [54], and biochemical graphs [59]. Recently, Graph Convolution Networks (GCNs)/GNNs have been introduced in computer vision domains where they have been used for scene graph generation [66], image segmentation [20], and classification [24, 56]. Moving in this direction, this paper is the first to extend GNNs/GCNs in image steganography. 
+
+> Figure 2. Difference between Graph Convolution Network(GCN) and Convolution Neural Network(CNN) operation.
+
+2Figure 3. Overall framework of the proposed StegGNN model, illustrating the different components of our pipeline. 
+
+# 3. Methodology 
+
+## 3.1. Overview 
+
+We adopt a cover-independent autoencoder framework, as proposed by [72]. Specifically, given a secret image S and a cover image C, the encoder module processes the secret image and generates a universal secret representation Se,which can be added to any cover image to produce the stego image C′. The decoder module then takes the stego image as input and reconstructs the original secret image, yielding 
+
+S′ (Fig. 3). For simplicity, we use similar architectures for both the encoder and decoder modules. Following previous work [4, 72], we train the entire network using the following loss, where || · || denotes the ℓ2 norm and β is set to 0.75 .
+
+L(C, C′, S, S′) = ∥C − C′∥ + β∥S − S′∥
+
+## 3.2. Encoder Module Architecture 
+
+3.2.1. Image to Feature Node Stem Module. Given a secret image of size H × W × 3,the encoder module first divides the image into overlapping patches [60]. Specifically, we apply a convolutional opera-tion with stride S, kernel size 2S−1, and padding size S−1,producing an output tensor of dimensions HS × WS × Ch,where Ch is the number of output channels. Motivated by recent works [13, 31], we discard the fixed-size posi-tional encoding [17] in favor of zero-padding-based posi-tional encoding during patchification. Consequently, we ob-tain N = H 
+
+> 8
+
+× W 
+
+> 8
+
+nodes, corresponding to three consecutive downsampling operations with stride 2 each. Each overlapping patch is transformed into a fea-ture vector xi ∈ RD , forming the matrix X =[x1, x2, . . . , xN ], where D denotes the feature dimension and i = 1 , 2, . . . , N . These features are treated as an un-ordered set of nodes V = v1, v 2, . . . , v N in a graph. For each node vi, we identify its K nearest neighbors N (vi) in the feature space and establish directed edges eji from each neighbor vj ∈ N (vi) to vi, as described in detailed in the next section. 
+
+3.2.2. Shifted Window-based Grapher Module 
+
+Given the feature matrix X ∈ RN ×D produced by the Stem module (or previous Grapher layers), we apply a 
+
+window partitioning operation [41] that divides the spa-tial representation into non-overlapping windows of fixed spatial size M × M . To capture both short- and long-range dependencies effectively, we perform multiscale pro-cessing by partitioning and processing the input tensor X
+
+in parallel using windows of three different sizes: M ∈{
+
+j H′
+
+> 2
+
+k
+
+,
+
+j H′
+
+> 4
+
+k
+
+,
+
+j H′
+
+> 8
+
+k
+
+}. This way, larger windows effec-tively model the global context, while smaller ones focus on local patterns. Further, we incorporate a shifted window mechanism as proposed by [56] to enable cross-window interaction between adjacent windows and avoid isolated processing. Specifically, for each window size M , we apply a cyclic shift of size  M
+
+> 2
+
+ along both height and width dimensions. This shift operation allows graph construction and mes-sage passing across window boundaries, promoting cross-window information flow. To allow connections between adjacent nodes in the fea-ture map and prevent invalid edges, we follow [56] and apply a masking strategy within each shifted window that restricts connections to nodes within the same visible sub-region (Fig. 4). This may result in multiple disconnected 3Figure 4. Illustration of the cyclic shifting process used to obtain shifted windows for cross window interaction 
+
+subgraphs per window, with the number of valid neighbors varying across positions due to the shift. To compensate for this uneven connectivity, we scale the number of neigh-bors per node based on the ratio of available connections, using ki = k × Pi  
+
+> M2
+
+, where Pi is the number of permissible neighbors for node i. This adjustment ensures balanced and meaningful message passing across all windows. The graph construction and convolution operations are applied independently within each shifted window, enabling localized modeling and cross-region communication. Fi-nally, the processed features by all graph convolution lay-ers are concatenated and passed through a channel atten-tion module to explicitly reweight the importance of differ-ent processing and ensure the secret image is hidden across each channel effectively. 
+
+3.2.3. Graph Neural Network and Feed Forward Net-work Module 
+
+Consider a particular window w consisting of a set of nodes 
+
+V(w). Within this window, we dynamically construct a di-rected graph G(w) = ( V(w), E(w)) by connecting each node to its k nearest neighbors in the feature space using the 
+
+k-nearest neighbor (k-NN) algorithm. This graph is re-constructed after every layer processing, allowing the edge connections to adapt based on updated node features. Im-portantly, the similarity between nodes is measured via dot product in the feature space rather than spatial proximity. To perform graph-based message passing, we employ the EdgeConv operation [61] for feature aggregation and up-date. For a node i in window w, the updated feature x′(w)
+
+> i
+
+is computed as: 
+
+xi′(w) = max  
+
+> j∈N wi
+
+Wupdate 
+
+h 
+
+x(w) 
+
+> i
+
+| (x(w) 
+
+> j
+
+− x(w) 
+
+> i
+
+)
+
+i 
+
+, (1) where: • N i(w) denotes the set of k nearest neighbors of node i in window w,• | denotes vector concatenation, • max denotes channel-wise max across feature channels, • Wupdate is a learnable weight matrix also known as Multi-Layer Perceptron (MLP). 
+
+> Figure 5. Illustrative example of the dynamic graph convolution of StegGNN.
+
+GCNs typically suffer from over-smoothing [21], where increasing depth leads to indistinguishable node features and a degradation in representational power. To address this, we introduce a Feed Forward Network (FFN) mod-ule [24] following each Grapher module to increase non-linearity and enhance feature expressiveness. Additionally, to promote feature diversity and ensure consistent dimen-sionality before and after the graph convolution, we apply 
+
+1 × 1 after channel attention reweighting (Fig. 6). This combination of dynamic graph construction, EdgeConv-based message passing, and FFN-based transformation al-lows the network to effectively capture local and global feature dependencies while maintaining high discriminative power. 
+
+3.2.4. Inter Block Connection 
+
+Following the initial patch embedding, the feature map is processed by a cascade of five identical Block modules , each containing a Grapher, a FFN, and a channel-attention sub-module. Let x0 denote the stem output. The network main-tains a running sum initialized as: 
+
+acc 0 = x0,
+
+and iteratively computes for each block i = 1 , . . . , 5:
+
+yi = Block i(acc i−1), acc i = acc i−1 + yi.
+
+4Figure 6. Illustrative example of Feed Forward Network(FFN) Module 
+
+This additive “dense + residual” connectivity ensures that each block has access to all preceding features while preserving a local residual path [76]. The final fused fea-ture, acc 5, is then forwarded to the upsampling head 
+
+3.2.5. Feature Node to Image 
+
+The updated node features are reshaped and successively upsampled to convert the nodes into a secret image repre-sentation. Specifically, this involves a series of ConvTrans-pose2D layers [71] and PReLU activation [26], followed by a Tanh activation function in last. The resulting secret image representation is then added to the cover image to produce the stego image. The decoder follows a similar architecture, with the key difference being that it takes the stego image as input and reconstructs the secret image as output. 
+
+# 4. Experiments and Results 
+
+## 4.1. Training 
+
+Our StegGNN model is trained on the DIV2K training dataset [1], which comprises 800 high-resolution images. During training, we randomly crop 256 × 256 patches from the images and apply horizontal and vertical flipping as data augmentation techniques. A batch size of 8 is used, with half of the patches randomly designated as cover images and the other half as secret images. The model is trained for 3000 epochs using the Adam optimizer [35]. The initial learning rate is set to 1 × 10 −4 and is reduced by a factor of 2 every 500 epochs. 
+
+## 4.2. Evaluation and Benchmarks 
+
+To verify the effectiveness of our approach, we evaluate our method on three datasets: the DIV2K validation dataset [1], 1000 cover-secret image pairs randomly sampled from both ImageNet [53] and COCO [39]. All testing images are re-sized using bilinear interpolation to ensure that the cover and secret images have the same resolution of 256 × 256 .We compare our method against several state-of-the-art (SOTA) image-in-image hiding methods, including cover-dependent methods like Baluja [4], HiDDeN [77], HiNet [32], and PuSNet [38], and cover-independent method like UDH [72]. For fair comparison, we retrain all aforemen-tioned models on the DIV2K training dataset and evaluate their performance under the same conditions as our method. 
+
+## 4.3. Visual Quality 
+
+To evaluate the visual quality of cover/stego and secret/reconstructed-secret image pairs, we adopt the fol-                                                                                                                                  
+
+> Table 1. Performance comparisons on different datasets. “ ↑”: the larger the better, “ ↓”: the smaller the better. Methods Cover/Stego-image pair
+> DIV2K COCO ImageNet PSNR(dB) ↑SSIM ↑LPIPS ↓PSNR(dB) ↑SSIM ↑LPIPS ↓PSNR(dB) ↑SSIM ↑LPIPS ↓
+> HIDDeN [77] 28.49 0.9300 0.1148 29.02 0.9283 0.1223 28.35 0.9217 0.1455 Baluja [4] 28.33 0.9363 0.1232 28.95 0.9328 0.1266 28.23 0.9242 0.1516 UDH [72] 34.21 0.9419 0.0147 35.00 0.9345 0.0164 34.95 0.9311 0.0149 HiNet [32] 43.00 0.9913 0.0002 44.05 0.9906 0.0002 43.77 0.9898 0.0003
+> PUSNet [38] 38.15 0.9581 0.0004 39.09 0.9572 0.0003 38.94 0.9456 0.0004
+> Ours 39.55 0.9682 0.0003 40.08 0.9642 0.0001 40.46 0.9671 0.0002
+> Methods Secret/Recovered image pair
+> DIV2K COCO ImageNet PSNR(dB) ↑SSIM ↑LPIPS ↓PSNR(dB) ↑SSIM ↑LPIPS ↓PSNR(dB) ↑SSIM ↑LPIPS ↓
+> HIDDeN [77] 27.66 0.8657 0.1260 28.38 0.8636 0.1281 28.15 0.8580 0.1413 Baluja [4] 28.23 0.9055 0.1505 27.43 0.9064 0.1461 27.16 0.8957 0.1719 UDH [72] 33.02 0.9365 0.0420 33.82 0.9302 0.0420 33.99 0.9279 0.0518
+> HiNet [32] 34.67 0.9655 0.0010 34.44 0.9722 0.0008 34.95 0.9647 0.0011
+> PUSNet [38] 26.22 0.8363 0.1806 26.16 0.8211 0.1710 26.28 0.8028 0.1808
+> Ours 28.49 0.8924 0.0651 29.43 0.8964 0.0601 29.04 0.8769 0.0777
+
+5Figure 7. Examples of stego and reconstructed secret image generated by different architectures. 
+
+lowing metrics: Peak Signal-to-Noise Ratio (PSNR), Struc-tural Similarity Index Measure (SSIM [62]), and Learned Perceptual Image Patch Similarity (LPIPS [75]). As shown in Table 1, our StegGNN model outperforms HiDDeN, Baluja, UDH, and PUSNet across all three met-rics and datasets in terms of stego-image visual quality. Specifically, StegGNN achieves a performance gain of 10 dB on every dataset compared with HiDDeN and Baluja, and surpasses UDH and PUSNet by over 5 dB and 1 dB, re-spectively—ranking second only to HiNet. However, our decoder module does not perform as strongly as the en-coder, attaining a PSNR of approximately 29 dB. Never-theless, this is sufficient to reveal meaningful content in the reconstructed images and remains comparable with most state-of-the-art baselines (HiDDeN: 28 dB; PUSNet: 26 dB; Baluja: 27 dB). Fig. 7 illustrates the stego and reconstructed secret im-ages generated by different models. It can be observed that our StegGNN model produces high visual quality stego and reconstructed secret images that closely resemble the orig-inal cover and secret images, whereas those generated by HiDDeN and Baluja exhibit subtle visual differences. 
+
+## 4.4. Steganographic analysis 
+
+4.4.1. Statistical steganalysis 
+
+To evaluate the undetectability of the stego-images gener-ated by our model against statistical methods, we follow the same protocol as proposed in [4, 32, 38]. Specifically, we 
+
+> Figure 8. Detection accuracy vs. number of training pairs for SRNet.
+
+6use an open-source steganalysis tool called StegExpose [8]. We ran our StegGNN model on all cover-secret image pairs present in the three test datasets. We then fed these into StegExpose for evaluation. By varying the detection thresh-olds in StegExpose, we obtain a receiver operating char-acteristic (ROC) curve. The area under the curve (AUC) of the ROC is 0.56, which is close to random guessing (AUC = 0.5) and comparable to the results reported in PUS-Net (AUC = 0.58) and HiNet (AUC = 0.51). This demon-strates the high undetectability of our stego-images against StegExpose and confirms with previous work [4] that our deep learning model does not simply hide the secret image in the least significant bits of the cover image. 
+
+4.4.2. Deep learning-based steganalysis 
+
+To evaluate the undetectability of our stego-images in more realistic scenarios, we assessed them against popular state-of-the-art open-source deep learning-based steganal-ysis tools, specifically SRNet [9, 32]. To measure the re-sistance of our model to detection by SRNet, we followed the protocol used in [32]. Specifically, we retrained the steganalysis model using varying numbers of cover/stego-image pairs to investigate how many samples are required for accurate detection. Fig. 8 shows how the detection ac-curacy varies with the number of training images, where we gradually increased the amount of training data used to retrain SRNet. As the figure shows, our method out-performs cover-independent frameworks by a large mar-gin and performs comparably with cover-dependent frame-works. Fig. 8 indicates that an adversary requires at least 100 cover-stego image pairs to reliably detect the presence of secret data ( >95% accuracy). This presents a challenge in real-world applications. Since there is always a trade-off between payload capacity and undetectability [78, 79], the sender can reduce the amount of secret information embed-ded in the stego-image to improve its undetectability. 
+
+# 5. Limitations and Future Work 
+
+While StegGNN demonstrates the viability of graph-based cover-agnostic steganography, its decoder module achieves moderate reconstruction quality (around 29 dB PSNR), lim-iting fine-detail recovery. Here we list some possible solutions which might be worth exploring in future: 1. Unlike UDH, which uses a UNet-style encoder-decoder with skip connections, or HiNet, which adopts an in-vertible neural network (INN) for tight encoder–decoder coupling, our simple autoencoder design constrains the decoder’s expressive power. Future work could ex-plore replacing or augmenting our decoder with a UNet-like architecture for richer multi-scale feature fusion, or adopting an INN-based framework to enforce invertibil-ity and improve secret extraction fidelity. 2. Similarly, although StegGNN resists statistical and deep-learning detectors, further hardening could be achieved by incorporating adversarial training and domain-specific losses. For example, HiDDeN employs GAN-based objectives to strengthen anti-steganalysis robust-ness, while HiNet uses wavelet-domain loss to penalize detectable artifacts. Integrating adversarial and wavelet losses into our training may boost undetectability with-out sacrificing payload capacity. 3. Finally, advanced graph architectures, such as transformer-augmented GNN layers [68], attention-based message passing [58], or hierarchical graph pooling [7], could be integrated to capture complex dependencies and improve overall performance. These enhancements may enable StegGNN to model higher-order relationships, close the gap with state-of-the-art CNN and INN-based steganography, and provide more flexible embedding methods. 
+
+# 6. Conclusion 
+
+We introduce StegGNN, the first cover-agnostic steganog-raphy framework underpinned by Graph Neural Networks. By representing image patches as graph nodes and utiliz-ing shifted-window k-nearest-neighbor graphs, StegGNN achieves high stego-image visual quality and strong imper-ceptibility while reconstructing secret images with satisfac-tory details. These results are attained with a concise au-toencoder architecture in a challenging cover-independent setting. Our findings demonstrate the viability of GNNs as an effective alternative to traditional grid-based meth-ods and provide a foundation for future developments in steganographic model design. Our implementation is pub-licly available at https://github.com/1609abhi/ StegGNN .7References 
+
+[1] Eirikur Agustsson and Radu Timofte. Ntire 2017 challenge on single image super-resolution: Dataset and study. In Pro-ceedings of the IEEE conference on computer vision and pat-tern recognition workshops , pages 126–135, 2017. 5 [2] Adel Almohammad, Robert M Hierons, and Gheorghita Gh-inea. High capacity steganographic method based upon jpeg. In 2008 Third International Conference on Availability, Re-liability and Security , pages 544–549. IEEE, 2008. 1 [3] Alaa A Jabbar Altaay, Shahrin Bin Sahib, and Mazdak Za-mani. An introduction to image steganography techniques. In 2012 international conference on advanced computer sci-ence applications and technologies (ACSAT) , pages 122– 126. IEEE, 2012. 1 [4] Shumeet Baluja. Hiding images in plain sight: Deep steganography. Advances in neural information processing systems , 30, 2017. 1, 2, 3, 5, 6, 7 [5] Shumeet Baluja. Hiding images within images. IEEE trans-actions on pattern analysis and machine intelligence , 42(7): 1685–1697, 2019. 2 [6] Mauro Barni, Franco Bartolini, and Alessandro Piva. Improved wavelet-based watermarking through pixel-wise masking. IEEE transactions on image processing , 10(5): 783–791, 2001. 2 [7] Filippo Maria Bianchi and Veronica Lachi. The expressive power of pooling in graph neural networks. Advances in neu-ral information processing systems , 36:71603–71618, 2023. 7[8] Benedikt Boehm. Stegexpose-a tool for detecting lsb steganography. arXiv preprint arXiv:1410.6656 , 2014. 7 [9] Mehdi Boroumand, Mo Chen, and Jessica Fridrich. Deep residual network for steganalysis of digital images. IEEE Transactions on Information Forensics and Security , 14(5): 1181–1193, 2018. 7 [10] Joan Bruna, Wojciech Zaremba, Arthur Szlam, and Yann Le-Cun. Spectral networks and deep locally connected networks on graphs. In 2nd International Conference on Learning Representations, ICLR 2014 , 2014. 2 [11] Chi-Kwong Chan and Lee-Ming Cheng. Hiding data in im-ages by simple lsb substitution. Pattern recognition , 37(3): 469–474, 2004. 1, 2 [12] Yambem Jina Chanu, Kh Manglem Singh, and Themrichon Tuithung. Image steganography and steganalysis: A survey. 
+
+International Journal of Computer Applications , 975:8887. 1[13] Xiangxiang Chu, Zhi Tian, Bo Zhang, Xinlong Wang, and Chunhua Shen. Conditional positional encodings for vision transformers. In The Eleventh International Conference on Learning Representations . 3 [14] Ingemar Cox, Matthew Miller, Jeffrey Bloom, Jessica Fridrich, and Ton Kalker. Digital watermarking and steganography . Morgan kaufmann, 2007. 1 [15] Micha¨ el Defferrard, Xavier Bresson, and Pierre Van-dergheynst. Convolutional neural networks on graphs with fast localized spectral filtering. Advances in neural informa-tion processing systems , 29, 2016. 2 [16] Laurent Dinh, David Krueger, and Yoshua Bengio. Nice: Non-linear independent components estimation. arXiv preprint arXiv:1410.8516 , 2014. 2 [17] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, G Heigold, S Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations , 2020. 3 [18] Xintao Duan, Kai Jia, Baoxia Li, Daidou Guo, En Zhang, and Chuan Qin. Reversible image steganography scheme based on a u-net structure. Ieee Access , 7:9314–9323, 2019. 1[19] Jessica Fridrich, Miroslav Goljan, and Rui Du. Reliable de-tection of lsb steganography in color and grayscale images. In Proceedings of the 2001 workshop on Multimedia and se-curity: new challenges , pages 27–30, 2001. 1 [20] Jhony H Giraldo, Vincenzo Scarrica, Antonino Staiano, Francesco Camastra, and Thierry Bouwmans. Hypergraph convolutional networks for weakly-supervised semantic seg-mentation. In 2022 IEEE international conference on image processing (ICIP) , pages 16–20. IEEE, 2022. 2 [21] Jhony H Giraldo, Konstantinos Skianis, Thierry Bouwmans, and Fragkiskos D Malliaros. On the trade-off between over-smoothing and over-squashing in deep graph neural net-works. In Proceedings of the 32nd ACM international con-ference on information and knowledge management , pages 566–576, 2023. 4 [22] Zhenyu Guan, Junpeng Jing, Xin Deng, Mai Xu, Lai Jiang, Zhou Zhang, and Yipeng Li. Deepmih: Deep invertible network for multiple image hiding. IEEE Transactions on Pattern Analysis and Machine Intelligence , 45(1):372–390, 2022. 1 [23] Will Hamilton, Zhitao Ying, and Jure Leskovec. Inductive representation learning on large graphs. Advances in neural information processing systems , 30, 2017. 2 [24] Kai Han, Yunhe Wang, Jianyuan Guo, Yehui Tang, and En-hua Wu. Vision gnn: An image is worth graph of nodes. Ad-vances in neural information processing systems , 35:8291– 8303, 2022. 2, 4 [25] Jamie Hayes and George Danezis. Generating stegano-graphic images via adversarial training. Advances in neural information processing systems , 30, 2017. 1, 2 [26] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Delving deep into rectifiers: Surpassing human-level perfor-mance on imagenet classification. In Proceedings of the IEEE international conference on computer vision , pages 1026–1034, 2015. 5 [27] Chiou-Ting Hsu and Ja-Ling Wu. Hidden digital watermarks in images. IEEE Transactions on image processing , 8(1):58– 68, 1999. 2 [28] Kun Hu, Mingpei Wang, Xiaohui Ma, Jia Chen, Xiaochao Wang, and Xingjun Wang. Learning-based image steganog-raphy and watermarking: A survey. Expert Systems with Ap-plications , page 123715, 2024. 1 [29] Chen-Hsiu Huang and Ja-Ling Wu. Image data hiding with multi-scale autoencoder network. Electronic Imaging , 34: 1–6, 2022. 1 
+
+8[30] Shoko Imaizumi and Kei Ozawa. Multibit embedding algo-rithm for steganography of palette-based images. In Image and Video Technology: 6th Pacific-Rim Symposium, PSIVT 2013, Guanajuato, Mexico, October 28-November 1, 2013, Proceedings , page 99. Springer, 2014. 2 [31] Md Amirul Islam, Sen Jia, and Neil DB Bruce. How much position information do convolutional neural networks en-code? In International Conference on Learning Representa-tions . 3 [32] Junpeng Jing, Xin Deng, Mai Xu, Jianyi Wang, and Zhenyu Guan. Hinet: Deep image hiding by invertible network. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 4733–4742, 2021. 1, 2, 5, 6, 7 [33] Inas Jawad Kadhim, Prashan Premaratne, Peter James Vial, and Brendan Halloran. Comprehensive survey of image steganography: Techniques, evaluations, and trends in future research. Neurocomputing , 335:299–326, 2019. 1 [34] Eiji Kawaguchi and Richard O Eason. Principles and appli-cations of bpcs steganography. In Multimedia systems and applications , pages 464–473. SPIE, 1999. 1 [35] Diederik P Kingma and Jimmy Ba. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980 ,2014. 5 [36] Thomas N Kipf and Max Welling. Semi-supervised classi-fication with graph convolutional networks. In International Conference on Learning Representations , 2017. 2 [37] Yann LeCun, L´ eon Bottou, Yoshua Bengio, and Patrick Haffner. Gradient-based learning applied to document recog-nition. Proceedings of the IEEE , 86(11):2278–2324, 1998. 2[38] Guobiao Li, Sheng Li, Zicong Luo, Zhenxing Qian, and Xin-peng Zhang. Purified and unified steganographic network. In Proceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 27569–27578, 2024. 5, 6[39] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Doll´ ar, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In 
+
+Computer vision–ECCV 2014: 13th European conference, zurich, Switzerland, September 6-12, 2014, proceedings, part v 13 , pages 740–755. Springer, 2014. 5 [40] Qiang Liu, Xuyu Xiang, Jiaohua Qin, Yun Tan, and Yao Qiu. Coverless image steganography based on densenet feature mapping. EURASIP Journal on Image and Video Process-ing , 2020:1–18, 2020. 2 [41] Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo. Swin transformer: Hierarchical vision transformer using shifted windows. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 10012–10022, 2021. 3 [42] Shao-Ping Lu, Rong Wang, Tao Zhong, and Paul L Rosin. Large-capacity image steganography based on invertible neural networks. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition , pages 10816–10825, 2021. 1, 2 [43] Mohammed Abdul Majeed, Rossilawati Sulaiman, Zarina Shukur, and Mohammad Kamrul Hasan. A review on text steganography techniques. Mathematics , 9(21):2829, 2021. 1[44] Jarno Mielikainen. Lsb matching revisited. IEEE signal pro-cessing letters , 13(5):285–287, 2006. 1, 2 [45] Ramadhan J Mstafa and Khaled M Elleithy. Compressed and raw video steganography techniques: a comprehensive survey and analysis. Multimedia Tools and Applications , 76: 21749–21786, 2017. 1 [46] Mustafa Munir, William Avery, and Radu Marculescu. Mo-bilevig: Graph-based sparse attention for mobile vision ap-plications. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 2211– 2219, 2023. 2 [47] Mustafa Munir, William Avery, Md Mostafijur Rahman, and Radu Marculescu. Greedyvig: Dynamic axial graph construction for efficient vision gnns. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 6118–6127, 2024. 2 [48] Michiharu Niimi, Hideki Noda, Eiji Kawaguchi, and Richard O Eason. High capacity and secure digital steganog-raphy to palette-based images. In Proceedings. International conference on image processing , pages II–II. IEEE, 2002. 1 [49] Niels Provos and Peter Honeyman. Hide and seek: An in-troduction to steganography. IEEE security & privacy , 1(3): 32–44, 2003. 2 [50] Jiaohua Qin, Yuanjing Luo, Xuyu Xiang, Yun Tan, and Hua-jun Huang. Coverless image steganography: a survey. IEEE access , 7:171372–171394, 2019. 2 [51] Rafia Rahim, Shahroz Nadeem, et al. End-to-end trained cnn encoder-decoder networks for image steganography. In 
+
+Proceedings of the European conference on computer vision (ECCV) workshops , pages 0–0, 2018. 1 [52] JJKO Ruanaidh, William J Dowling, and Francis M Boland. Phase watermarking of digital images. In Proceedings of 3rd IEEE International Conference on Image Processing , pages 239–242. IEEE, 1996. 2 [53] Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, San-jeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, et al. Imagenet large scale visual recognition challenge. International journal of computer vision , 115:211–252, 2015. 5 [54] Prithviraj Sen, Galileo Namata, Mustafa Bilgic, Lise Getoor, Brian Galligher, and Tina Eliassi-Rad. Collective classifica-tion in network data. AI magazine , 29(3):93–93, 2008. 2 [55] Bingbing Song, Ping Wei, Sixing Wu, Yu Lin, and Wei Zhou. A survey on deep-learning-based image steganography. Ex-pert Systems with Applications , page 124390, 2024. 1 [56] Gabriele Spadaro, Marco Grangetto, Attilio Fiandrotti, Enzo Tartaglione, and Jhony H Giraldo. Wignet: Windowed vision graph neural network. arXiv preprint arXiv:2410.00807 ,2024. 2, 3 [57] Matthew Tancik, Ben Mildenhall, and Ren Ng. Stegastamp: Invisible hyperlinks in physical photographs. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 2117–2126, 2020. 2 [58] Petar Veliˇ ckovi´ c, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Li` o, and Yoshua Bengio. Graph at-
+
+9tention networks. In International Conference on Learning Representations , 2018. 7 [59] Nikil Wale, Ian A Watson, and George Karypis. Compar-ison of descriptor spaces for chemical compound retrieval and classification. Knowledge and Information Systems , 14: 347–375, 2008. 2 [60] Wenhai Wang, Enze Xie, Xiang Li, Deng-Ping Fan, Kaitao Song, Ding Liang, Tong Lu, Ping Luo, and Ling Shao. Pvt v2: Improved baselines with pyramid vision transformer. 
+
+Computational visual media , 8(3):415–424, 2022. 3 [61] Yue Wang, Yongbin Sun, Ziwei Liu, Sanjay E Sarma, Michael M Bronstein, and Justin M Solomon. Dynamic graph cnn for learning on point clouds. ACM Transactions on Graphics (tog) , 38(5):1–12, 2019. 4 [62] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Si-moncelli. Image quality assessment: from error visibility to structural similarity. IEEE transactions on image processing ,13(4):600–612, 2004. 6 [63] Eric Wengrowski and Kristin Dana. Light field messaging with deep photographic steganography. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 1515–1524, 2019. 2 [64] Pin Wu, Yang Yang, and Xiaoqiang Li. Stegnet: Mega image steganography capacity with deep convolutional net-work. Future Internet , 10(6):54, 2018. 1 [65] Mingqing Xiao, Shuxin Zheng, Chang Liu, Yaolong Wang, Di He, Guolin Ke, Jiang Bian, Zhouchen Lin, and Tie-Yan Liu. Invertible image rescaling. In Computer Vision–ECCV 2020: 16th European Conference, Glasgow, UK, August 23– 28, 2020, Proceedings, Part I 16 , pages 126–144. Springer, 2020. 2 [66] Danfei Xu, Yuke Zhu, Christopher B Choy, and Li Fei-Fei. Scene graph generation by iterative message passing. In Pro-ceedings of the IEEE conference on computer vision and pat-tern recognition , pages 5410–5419, 2017. 2 [67] Youmin Xu, Chong Mou, Yujie Hu, Jingfen Xie, and Jian Zhang. Robust invertible image steganography. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 7875–7884, 2022. 1, 2 [68] Junhan Yang, Zheng Liu, Shitao Xiao, Chaozhuo Li, Defu Lian, Sanjay Agrawal, Amit Singh, Guangzhong Sun, and Xing Xie. Graphformers: Gnn-nested transformers for rep-resentation learning on textual graph. Advances in Neural Information Processing Systems , 34:28798–28810, 2021. 7 [69] Huayuan Ye, Shenzhuo Zhang, Shiqi Jiang, Jing Liao, Shuhang Gu, Changbo Wang, and Chenhui Li. Pprsteg: Printing and photography robust qr code steganography via attention flow-based model. arXiv e-prints , pages arXiv– 2405, 2024. 2 [70] Jiwen Yu, Xuanyu Zhang, Youmin Xu, and Jian Zhang. Cross: Diffusion model makes controllable, robust and se-cure image steganography. Advances in Neural Information Processing Systems , 36:80730–80743, 2023. 2 [71] Matthew D Zeiler, Dilip Krishnan, Graham W Taylor, and Rob Fergus. Deconvolutional networks. In 2010 IEEE Com-puter Society Conference on computer vision and pattern recognition , pages 2528–2535. IEEE, 2010. 5 [72] Chaoning Zhang, Philipp Benz, Adil Karjauv, Geng Sun, and In So Kweon. Udh: Universal deep hiding for steganography, watermarking, and light field messaging. Advances in Neural Information Processing Systems , 33:10223–10234, 2020. 2, 3, 5 [73] Kevin Alex Zhang, Alfredo Cuesta-Infante, Lei Xu, and Kalyan Veeramachaneni. Steganogan: High capacity image steganography with gans. CoRR , 2019. 2 [74] Peiying Zhang, Chenhui Li, and Changbo Wang. Vis-code: Embedding information in visualization images using encoder-decoder network. IEEE Transactions on Visualiza-tion and Computer Graphics , 27(2):326–336, 2020. 1 [75] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shecht-man, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE conference on computer vision and pattern recogni-tion , pages 586–595, 2018. 6 [76] Yulun Zhang, Yapeng Tian, Yu Kong, Bineng Zhong, and Yun Fu. Residual dense network for image super-resolution. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 2472–2481, 2018. 5 [77] Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei. Hidden: Hiding data with deep networks. In Proceedings of the European conference on computer vision (ECCV) , pages 657–672, 2018. 1, 2, 5 [78] Zhiying Zhu, Sheng Li, Zhenxing Qian, and Xinpeng Zhang. Destroying robust steganography in online social networks. 
+
+Information Sciences , 581:605–619, 2021. 7 [79] Zhiying Zhu, Ping Wei, Zhenxing Qian, Sheng Li, and Xin-peng Zhang. Image sanitization in online social networks: A general framework for breaking robust information hid-ing. IEEE Transactions on Circuits and Systems for Video Technology , 33(6):3017–3029, 2022. 7 
+
+10

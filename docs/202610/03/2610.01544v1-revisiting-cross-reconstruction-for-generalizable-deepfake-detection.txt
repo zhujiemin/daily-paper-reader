@@ -1,0 +1,256 @@
+Title: Revisiting Cross-Reconstruction for Generalizable Deepfake Detection
+
+URL Source: https://arxiv.org/pdf/2610.01544v1
+
+Published Time: Fri, 02 Oct 2026 01:34:57 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Revisiting Cross-Reconstruction for Generalizable Deepfake Detection 
+
+# Bingjian Yang 1, Shilei Zhao 1, Zheng Wang 1∗
+
+> 1
+
+National Engineering Research Center for Multimedia Software, School of Computer Science, Wuhan University, China yangbingjian@whu.edu.cn, 649162208@qq.com, wangzwhu@whu.edu.cn 
+
+Abstract 
+
+Existing image forgery detectors often suffer from general-ization to unseen manipulation methods due to the limited ability to capture transferable forensic cues. Recent cross-reconstruction based methods attempt to improve generaliza-tion through semantic-artifact disentanglement, but typically align heterogeneous artifacts across generators and exclude ar-tifact representations during reconstruction, which may over-look the inherent diversity and visual cues of manipulation ar-tifacts. In this work, we revisit cross-reconstruction and intro-duce an artifact-oriented disentanglement framework for ro-bust image forgery detection. We argue that artifact diversity ,i.e., the intrinsic variations of manipulation artifacts intro-duced by different generation processes, contains complemen-tary forensic cues rather than undesirable domain variations. Instead of enforcing explicit artifact alignment, our frame-work preserves diverse artifact characteristics through seman-tically aligned cross-generator reconstruction. Furthermore, we incorporate artifact representations into the reconstruc-tion process and introduce a masked frequency-aware recon-struction strategy to emphasize manipulation-related residuals while reducing semantic interference. This design enables the model to learn transferable forensic representations from di-verse artifacts. Extensive experiments on multiple benchmark datasets demonstrate improvements under both cross-dataset and cross-generator evaluation settings. Further analysis and ablation studies validate the effectiveness of artifact diversity preservation and artifact-aware cross-reconstruction. 
+
+# Introduction 
+
+Recent image forgery detectors have increasingly explored disentangled representation learning to separate semantic in-formation from manipulation artifacts for better generaliza-tion. Among them, cross-reconstruction based methods (Yan et al. 2023a; Lin et al. 2024) construct paired real-fake sam-ples and decompose their representations into semantic and artifact components. By swapping artifact representations while preserving semantic representations, they reconstruct the original RGB images to encourage semantic-artifact dis-entanglement. They further divide artifact representations into generator-related and generator-invariant components, where the former is supervised by generator classification and the latter is utilized for forgery detection. However, we argue that such paradigm overlooks an impor-tant property of forgery artifacts, namely artifact diversity as 
+
+> ∗
+
+Corresponding author. Copyright © 2027, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved. 
+
+(a) (b) Seen Fake Real Unseen Fake Misclassi fi ed 
+
+(c) 
+
+Figure 1: Motivation of preserving artifact diversity. (a)-(b) Examples from different generators, showing diverse forgery artifacts, including color inconsistency and unnatural facial details (e.g., teeth). (c) Artifact alignment across generators may harm generalization to unseen generators, causing mis-classification of unseen manipulations. shown in Fig. 1. Artifact diversity refers to the intrinsic vari-ations of manipulation artifacts introduced by different gen-eration models, training strategies, and synthesis pipelines. Although these artifacts exhibit heterogeneous distributions across generators, they often contain complementary foren-sic cues that reveal different aspects of the manipulation process. Therefore, artifact diversity should not be regarded as undesirable domain variation that needs to be eliminated, but rather as valuable forensic knowledge that should be pre-served and exploited. As illustrated in Fig. 1, existing cross-reconstruction meth-ods tend to align artifacts from different generators into a shared representation space. While this strategy improves arXiv:2610.01544v1 [cs.CV] 1 Oct 2026 invariance to seen generators, it may suppress generator-specific but transferable forensic cues and lead to overfit-ting. Consequently, the learned representation can be biased toward the artifact statistics of training generators and fail to capture the diverse forensic patterns required for unseen manipulations. Besides artifact alignment, another limita-tion lies in the role of artifacts during reconstruction. Exist-ing methods typically exclude artifact representations from reconstruction process, assuming that artifacts are merely reconstruction-irrelevant noise. However, forgery artifacts are not merely reconstruction-irrelevant noise. As illustrated in Fig. 1(a)-(b), they contain meaningful visual information, such as color mismatch and detail distortion, providing com-plementary forensic cues for identifying manipulated images. Therefore, whether artifacts should participate in reconstruc-tion remains an open question. To address these limitations, we propose an artifact-oriented disentanglement framework for robust image forgery detection. Instead of enforcing explicit artifact align-ment, our method preserves artifact diversity and learns transferable forensic representations from heterogeneous ar-tifacts. We redesign cross-reconstruction by incorporating ar-tifact representations as reconstruction guidance. To enhance artifact supervision, we introduce a masked frequency-aware reconstruction strategy that suppresses semantic-dominant components while emphasizing manipulation-related resid-uals. Extensive experiments on multiple benchmarks demon-strate consistent improvements under cross-dataset settings. Ablation studies further validate the effectiveness of artifact diversity preservation and artifact-aware reconstruction. Our contributions are summarized as follows: 
+
+• We revisit cross-reconstruction for deepfake detection and identify two limitations: aligning heterogeneous artifacts suppresses artifact diversity, while the exclusion of arti-fact representations from reconstruction overlooks some forensic cues. 
+
+• We propose an artifact-aware disentanglement frame-work using semantically aligned cross-generator pairs. Cross-reconstruction incorporates artifact representa-tions into the reconstruction process, enabling the ex-ploitation of diverse manipulation cues. Meanwhile, masked high-frequency residual reconstruction empha-sizes manipulation-related details and promotes transfer-able forensic representation learning. 
+
+• Extensive cross-dataset experiments demonstrate com-petitive state-of-the-art performance. Ablation studies further validate the benefits of artifact diversity preser-vation and artifact-aware cross-reconstruction. 
+
+# Related Works 
+
+Generalizable Deepfake Detection 
+
+Existing deepfake detectors (Li et al. 2023; Ba et al. 2024; Concas et al. 2024) have achieved remarkable performance under in-domain evaluation, yet their generalization abil-ity remains limited when encountering unseen manipula-tion methods or datasets. To alleviate this issue, recent stud-ies(Zhu et al. 2026; Chou et al. 2026) have explored various strategies for learning more generalizable representations. Some works (Stehouwer et al. 2019; Li et al. 2020a; Nguyen et al. 2024) exploit forgery artifacts in the spatial and fre-quency domains, such as blending inconsistencies, abnor-mal noise patterns, and spectral artifacts. Another direc-tion introduces large-scale pre-trained vision models, such as Xception(Chollet 2017) and CLIP(Radford et al. 2021) into deepfake detection to leverage their powerful visual rep-resentations and superior transferability. Effort (Yan et al. 2024b) explicitly enforces orthogonality between semantic and forgery subspaces based on CLIP representations. CFB (Li et al. 2025) performs multi-scale feature-level disentan-glement of semantic and artifact representations using an Xception backbone. Beyond semantic-artifact disentangle-ment, recent studies(Lin et al. 2024; Yang et al. 2026) further decompose forensic representations into generator-specific and generator-shared components to improve cross-generator generalization. Such methods assume that the shared arti-fact space can be effectively learned from a limited number of seen generators. However, given the limited diversity of generators available during training and the rapid evolution of deepfake generation techniques, this assumption may be overly restrictive and potentially lead to over-specialized rep-resentations. We therefore argue that preserving the diversity of forgery artifacts, rather than enforcing a predefined shared artifact space, may provide a more effective path toward ro-bust generalization. 
+
+Reconstruction Based Representation Learning in Deepfake Detection 
+
+Reconstruction based representation learning(Kim and Mnih 2018; Lee et al. 2018; Zhao et al. 2026) has been widely adopted to disentangle latent factors and learn discrimina-tive feature representations. By reconstructing samples from latent representations, these methods encourage different representation subspaces to capture complementary infor-mation while suppressing nuisance factors. Inspired by its success in representation disentanglement, recent deepfake detection methods have incorporated reconstruction to sep-arate semantic content from forgery-related representations. UCF (Yan et al. 2023a) introduces cross-reconstruction to uncover common forgery features shared across different manipulation methods, encouraging the detector to focus on manipulation-relevant information. Similarly, PFG(Lin et al. 2024) employs cross-reconstruction to disentangle de-mographic attributes from forgery representations, thereby learning domain-agnostic forensic features for improved cross-domain generalization. CFB(Li et al. 2025) extends reconstruction from the image level to the feature level, enabling multi-scale disentanglement of semantic and arti-fact representations. Despite their effectiveness, the recon-struction objective is designed in a task-agnostic manner rather than being tailored for forensic representation learn-ing. Given that forgery artifacts are predominantly mani-fested in high-frequency components, directly reconstruct-ing RGB images may provide suboptimal supervision for learning artifact-aware representations. Method 
+
+Overview 
+
+Our framework aims to learn transferable forensic represen-tations by preserving the diversity of manipulation artifacts rather than enforcing explicit artifact alignment. Given se-mantically aligned image pairs generated by different ma-nipulation methods, the framework extracts disentangled se-mantic and artifact representations through a query-based encoder and a decouple head. To exploit the complementary information in diverse artifacts, we introduce a diversity-preserving cross-reconstruction module, where artifact rep-resentations are exchanged and incorporated into recon-struction. Meanwhile, masked high-frequency residuals are adopted as reconstruction targets to emphasize manipulation-related variations and facilitate the learning of transferable forensic representations. For forgery detection, we introduce a CLIP-based clas-sification module guided by artifact-aware attention biases. The entire framework is jointly optimized with classification loss, artifact contrastive loss, and cross-reconstruction loss, enabling effective exploitation of diverse manipulation cues for generalized deepfake detection. 
+
+Training Pair Formation 
+
+We adopt the FaceForensics++ (Rossler et al. 2019) dataset as the training set, since it provides pristine videos together with multiple face manipulation methods generated from the same source videos. Different from conventional cross-reconstruction methods, which typically construct training pairs from real and fake images, our training pairs are com-posed of semantically similar samples generated by different manipulation methods, as illustrated in Fig. 2. Specifically, FF++ dataset consists of pristine videos together with two categories of manipulated videos: face reenactment and face swapping. During pair construction, pristine videos and face reenactment videos are grouped together, while face swap-ping videos are treated as a separate group. For each training pair, two videos are sampled from one group. The paired sam-ples therefore exhibit highly consistent facial pose, expres-sion, and background while originating from different gener-ators. Afterward, frames with identical indices are extracted from each paired video to form image pairs for training. Stan-dard face preprocessing, including face detection, alignment, and cropping, follows the protocol in DeepfakeBench (Yan et al. 2023b). 
+
+Diversity Preserving Cross-Reconstruction 
+
+Encoder. Our encoder is built upon a lightweight Vision Transformer (ViT). Following ForensicAdapter (Cui et al. 2025) and VLA-Forge (Zhu et al. 2026), we introduce a set of learnable query tokens as Q0 ∈ RNq ×dv . Instead of relying on a learnable projection to determine the function-ality of query tokens, we explicitly assign different roles to the queries. Specifically, the first Nq /2 = 128 query tokens 
+
+Qs0 ∈ RNq /2×dv are designated as semantic queries, while the remaining 128 queries Qa0 ∈ RNq /2×dv are designated as artifact queries. The query tokens are then concatenated with the visual tokens and fed into ViT, where they progressively (a) FaceSwap (b) Deepfakes (c) NeuralTextures (d) Face2Face (e) NeuralTextures (f) Real 
+
+Figure 2: Examples of the training data. (a) and (b) are gener-ated by two face swapping methods. (c) and (d) are generated by two face reenactment methods. (e) and (f) show a face reenactment sample and its corresponding pristine image, which preserves the same semantic content. aggregate visual information through stacked Transformer blocks. Consequently, the output embeddings are denoted as 
+
+[V, Qs, Qa] ∈ R(Np+Nq )×dv , where Np denotes the number of spatial patches. 
+
+Decouple Head. We introduce a decouple head to trans-form the semantic and artifact query embeddings into task-specific latent representations. The semantic and artifact query embeddings are first projected into a shared la-tent space through multi-layer perceptrons (MLPs), yielding 
+
+ˆQs ∈ RNq /2×dl and ˆQa ∈ RNq /2×dl , where dl denotes the latent embedding dimension. The visual tokens are pro-jected into the same latent space as ˆV ∈ RL×dl . The query-conditioned features are generated using the inner product of query tokens [ ˆQs, ˆQa] and visual tokens ˆV:
+
+f s = ˆV( ˆQs)⊤, f a = ˆV( ˆQa)⊤, (1) where f s, f a ∈ RNp×Nq /2. The resulting features retain the spatial correspondence of visual tokens and integrate query-specific information. f s captures semantic cues, while 
+
+f a captures forgery-related artifact cues, which are further utilized for cross-reconstruction. For a pair of semantically aligned samples (xi, x j ), the decouple head produces four representations: {f si , f ai , f sj , f aj }.To enhance the discrimination of artifact representa-tions, we introduce a mask-guided patch-level contrastive objective. Given a batch of artifact representations Fa ∈
+
+RB×Np×dl , we further divide features into manipulated and non-manipulated regions according to the manipulation masks, denoted as Faf and Far , respectively. Different from conventional contrastive learning that pulls all samples from the same category together, we do not impose alignment on manipulated patches. This is because artifacts introduced by different manipulation methods exhibit inherent diversity, and forcing them to be clustered may degrade the general-ization ability to unseen generators. Generator AGenerator B       
+
+> visual tokens query tokens
+> Decouple Head
+> CLIP Real or Fake Gaussian Blur
+> Encoder Decoder
+> Generator B
+> Reconstruction Target
+> query tokens visual tokens
+> Decouple Head
+> Real or Fake
+> CLIP
+> Gaussian Blur
+> Encoder Decoder
+> Generator A
+> Reconstruction Target
+> 𝐐 𝑖 𝑠
+> attention bias
+> 𝐐𝑖 𝑎 𝐕𝑖 𝒇𝑖 𝑠 𝒇 𝑖 𝑎
+> 𝐕 𝑗
+> attention bias
+> 𝐐 𝑗 𝑠 𝐐𝑗 𝑎 𝒇𝑗 𝑎 𝒇 𝑗 𝑠
+> Modules in and share weights Visual token Semantic query Artifact query Semantic feature Artifact feature
+
+Figure 3: Overview of the proposed artifact-aware disentanglement framework. Given a pair (xi, x j ), the encoder extracts visual tokens V and learns query tokens Qs and Qa . The decouple head produces semantic features f s and artifact features f a, which are used for cross-reconstruction. The artifact-aware attention bias guides the frozen CLIP encoder for forgery prediction. In the decoder, artifact features are exchanged between paired samples through AdaIN-based fusion to reconstruct the high-frequency masked targets. M denotes the union of manipulation masks, and Lcls , Lcontra , and Lcross represent classification loss, artifact contrastive loss, and cross-reconstruction loss, respectively. Therefore, we encourage the real patches to maintain fea-ture consistency, while separating forgery patches from real regions. The artifact contrastive loss is formulated as: 
+
+Lcontra = − log exp( δ(Far , Far )/τ )exp( δ(Far , Far )/τ ) + exp( δ(Faf , Far )/τ ) .
+
+(2) 
+
+Decoder. To further enforce the disentanglement between semantic and artifact representations, we introduce a recon-struction decoder. Given the four features produced by de-couple head: {f si , f ai , f sj , f aj }, the decoder performs cross-reconstruction by exchanging artifact representations while preserving semantic representations. Specifically, Adaptive Instance Normalization (AdaIN) (Huang and Belongie 2017) is employed to inject artifact representations into semantic representations: 
+
+AdaIN( f s, f a) = σ(f a) f s − μ(f s)
+
+σ(f s) + μ(f a), (3) where μ(·) and σ(·) denote the channel-wise mean and stan-dard deviation, respectively. The exchanged representations are formulated as: 
+
+Zj←i = AdaIN( f sj , f ai ), Zi←j = AdaIN( f si , f aj ).
+
+(4) The reconstructed images are obtained through a lightweight decoder as: 
+
+ˆxj←i = D(Zj←i), ˆxi←j = D(Zi←j ), (5) where D denotes convolution layers that transform the di-mension of the output as ˆx ∈ Rh×w×3 .
+
+Reconstruction Target. Directly reconstructing RGB im-ages may introduce excessive low-frequency semantic infor-mation into the reconstruction objective, making it difficult to explicitly optimize the manipulation-related artifacts. To alleviate this issue, we redefine the reconstruction target by removing the low-frequency components from the original image. A Gaussian filter is adopted as a low-frequency filter, and the reconstruction target is formulated as: 
+
+xgt = x − G( x), (6) where G( ·) denotes the Gaussian blur operation. By sup-pressing low-frequency information, the reconstructed target mainly preserves high-frequency variations, where manipu-lation artifacts are more prominent. Given the reconstructed target xgt and the prediction ˆx,the reconstruction loss is defined as: 
+
+Lrec = ˆx − xgt . (7) Although the high-frequency reconstruction target empha-sizes manipulation-related artifacts, not all high-frequency components are associated with forgery patterns. The back-ground may contain irrelevant details, such as natural textures and scene details. Therefore, we introduce a spatial mask to focus the reconstruction supervision on manipulation-related regions. Since cross-reconstruction exchanges artifact repre-sentations between paired samples, the reconstructed target should contain artifact responses from both samples. We adopt the union of manipulation regions from the paired samples to cover all potential artifact areas. For a paired sample (xi, x j ), the reconstruction mask is defined as: 
+
+M = Mi ∪ M j , (8) where Mi and Mj denote the binary pixel-level masks of the manipulated regions in the paired samples. The final cross-reconstruction loss is calculated within the manipulated regions: 
+
+Lcross = M ⊙ ( (ˆ xj←i − xgt i ) + (ˆ xi←j − xgt j ) ), (9) where ⊙ denotes element-wise multiplication. 
+
+Classification. To fully leverage the capability of the pre-trained VLM, we adopt a frozen CLIP visual encoder with an attention bias mechanism similar to SideAdapter(Xu et al. 2023a) as our classification module. Specifically, the initial CLS token of CLIP is duplicated Nq times to form addi-tional tokens: X[CLS ∗] = [ X[CLS] , . . . , X[CLS] ] ∈ RNq ×dc ,
+
+which are concatenated with the original CLIP input to-kens: [X0vis , X0[CLS] , X0[CLS ∗]]. During the training process, the CLIP parameters are frozen, while the duplicated CLS to-kens are updated through self-attention with an artifact-aware attention bias. Specifically, an attention mask is applied to the self-attention operation, where the duplicated CLS tokens 
+
+X[CLS ∗] are allowed to interact only with the visual patch to-kens. At the l-th Transformer layer, the update of X[CLS ∗]
+
+can be formulated as: 
+
+Xl+1 [CLS ∗] = Softmax 
+
+
+
+Ql
+
+> [CLS ∗]
+
+(Kl
+
+> vis
+
+)⊤ + ∆⊤
+
+Vl
+
+> vis
+
+,
+
+(10) where Ql
+
+> [CLS ∗]
+
+, Kl
+
+> vis
+
+, and Vl 
+
+> vis
+
+denote the query of X[CLS ∗],key of visual tokens, and value of visual tokens at the l-th layer, respectively. ∆ represents the artifact-aware attention bias, which is generated from the decouple head using the same artifact queries Qa as those used to generate the artifact representation. This process can be denoted as: 
+
+∆ = ϕ(V)( ˆQa)⊤, (11) where ϕ(·) denotes a learnable projection implemented by MLPs. After L Transformer layers, the final duplicated CLS representations are obtained as XL 
+
+> [CLS ∗]
+
+∈ RNq ×dc . The au-thenticity prediction is produced by applying a classification head: 
+
+ˆy = Softmax(Conv( XL
+
+> [CLS ∗]
+
+)) , (12) where ˆy denotes the predicted class. Given the ground truth label y, the binary classification loss is formulated as: 
+
+Lcls = − (y log ˆ y + (1 − y) log(1 − ˆy)) . (13) 
+
+Overall Objectives 
+
+The overall training objective is designed to jointly optimize the classification capability, artifact contrastive learning, and cross-reconstruction. The final objective is formulated as: 
+
+L = λ1Lcls + λ2Lcontra + λ3Lcross , (14) where λ1, λ2, and λ3 are hyper-parameters controlling the contribution of each loss term. 
+
+# Experiments 
+
+Settings 
+
+Dataset. Following previous works, we train our model on the c23 version of FaceForensics++ (FF++) dataset(Rossler et al. 2019). For evaluation, we conduct cross-dataset ex-periments on widely-used benchmarks, including Celeb-DF-v1/v2 (Li et al. 2020b), DFDCP (Dolhansky et al. 2019), DFDC (Dolhansky et al. 2020), DFD (Dufour and Gully 2019), and four full-face synthesis datasets in DF40 (Yan et al. 2024c), including VQGAN (Esser, Rombach, and Om-mer 2021), StyleGAN-XL (StyleGAN) (Sauer, Schwarz, and Geiger 2022), SiT-XL/2 (SiT) (Atito, Awais, and Kittler 2021), and DiT (Peebles and Xie 2023). 
+
+Implementation Details. We use ViT-Tiny/16 (Dosovit-skiy et al. 2020) for visual feature extraction and a frozen CLIP ViT-L/14 (Radford et al. 2021) for classification. The entire model is trained on the FF++ c23 training set with a batch size of 16, using the Adam optimizer (Kingma and Ba 2014) with a learning rate of 0.0002 and a weight decay of 0.0005. The overall objective is optimized with a weighted combination of classification loss, artifact contrastive loss, and cross-reconstruction loss, where the loss weights λ1, λ2,and λ3 are set to 10, 20, and 50, respectively. Detection per-formance is evaluated by AUC (Area Under the ROC Curve), AP (Average Precision), and EER (Equal Error Rate).The random seed is fixed to 1020 for reproducible experiments. All experiments are conducted on one NVIDIA RTX 4090 GPU. 
+
+Evaluations 
+
+Cross-Dataset Evaluation. We first evaluate the general-ization ability of our method under a cross-dataset setting, where models are trained on FF++ and tested on several un-seen datasets. As shown in Table 1, our method achieves the best overall performance among compared approaches, ob-taining the highest average AUC of 90.6% across five bench-mark datasets. In particular, our method improves the de-tection performance on multiple unseen domains, achieving AUC scores of 93.0% and 90.3% on CDF-v1 and CDF-v2, respectively, while also maintaining strong performance on DFDC, DFDCP, and DFD. These results demonstrate that our proposed representation learning strategy can effectively cap-ture generalizable forensic patterns beyond dataset-specific artifacts, leading to more robust cross-domain deepfake de-tection. We further evaluate whether the learned representations can be effectively generalized from frame-level detection to video-level prediction. Comparison with existing approaches Method Venue CDF-v1 CDF-v2 DFDC DFDCP DFD Avg. Xception (Rossler et al. 2019) ICCV’19 0.779 0.737 0.708 0.737 0.816 0.755 F3Net (Qian et al. 2020) AAAI’20 0.777 0.735 0.702 0.735 0.798 0.749 X-ray (Li et al. 2019) CVPR’20 0.709 0.679 0.633 0.694 0.766 0.696 FFD (Dang et al. 2020) CVPR’20 0.784 0.744 0.703 0.743 0.802 0.755 SPSL (Liu et al. 2021) CVPR’21 0.815 0.765 0.704 0.741 0.812 0.767 SRM (Luo et al. 2021) CVPR’21 0.793 0.755 0.700 0.741 0.812 0.760 Recce (Cao et al. 2022) CVPR’22 0.768 0.732 0.713 0.734 0.812 0.752 SBI (Shiohara and Yamasaki 2022) CVPR’22 - 0.813 - 0.799 0.774 -UCF (Yan et al. 2023a) ICCV’23 0.779 0.753 0.719 0.759 0.807 0.763 ED (Ba et al. 2024) AAAI’24 0.818 0.864 0.721 0.851 - -LSDA (Yan et al. 2024a) CVPR’24 0.867 0.830 0.736 0.815 0.880 0.826 CFM (Luo et al. 2023) TIFS’24 - 0.828 - 0.758 0.915 -UDD (Fu et al. 2025) AAAI’25 - 0.869 0.758 0.856 0.910 -ForAda (Cui et al. 2025) † CVPR’25 0.909 0.882 0.861 0.905 0.924 0.896 CRDA (Chou et al. 2026) AAAI’26 0.901 0.854 0.743 0.797 - -VLAForge (Zhu et al. 2026) † CVPR’26 0.907 0.895 0.869 0.907 0.929 0.901 
+
+Ours - 0.930 0.903 0.873 0.898 0.929 0.906 
+
+Table 1: Cross-dataset evaluation results (Frame-level AUC). All methods are trained on FF++ and evaluated on other datasets. The best results are indicated in bold and the second-best results are underlined. † denotes results reproduced by us.                                           
+
+> Method Venue CDF-v2 DFDC TALL (Xu et al. 2023b) ICCV’23 0.908 0.768 SeeABLE (Larue et al. 2023) ICCV’23 0.873 0.759 TALL++ (Xu et al. 2024) IJCV’24 0.920 0.785 SAM (Choi et al. 2024) CVPR’24 0.890 -FCG (Han et al. 2025) CVPR’25 0.950 0.818 AUNet (Bai et al. 2023) CVPR’23 0.928 0.738 CADDM (Dong et al. 2023) CVPR’23 0.939 0.739 SFDG (Wang et al. 2023) CVPR’23 0.758 0.736 LSDA (Yan et al. 2024a) CVPR’24 0.911 0.770 ForAda (Cui et al. 2025) †CVPR’25 0.929 0.883 RepDFD (Lin et al. 2025) AAAI’25 0.899 0.810 VLAForge (Zhu et al. 2026) †CVPR’26 0.942 0.893
+> Ours -0.951 0.895
+
+Table 2: Cross-dataset evaluation results (Video-level AUC). The top section presents video-based methods and the bot-tom section corresponds to frame-based methods. † denotes results reproduced by us. is presented in Table 2. Notably, our method achieves state-of-the-art performance on CDF-v2 and DFDC, obtaining AUC scores of 95.1% and 89.5%, respectively. These results further verify that the learned representations can capture robust forensic cues beyond specific datasets and remain effective when applied to practical video-level deepfake detection scenarios. 
+
+Cross-Generator Evaluation. To evaluate generalization to unseen generation methods, we conduct cross-dataset ex-periments on four unseen generators, including VQGAN, StyleGAN, SiT, and DiT. As shown in Table 3, our method achieves competitive performance at both frame and video                              
+
+> Setting Method VQGAN StyleGAN SiT DiT
+> F-level ForAda †0.978 0.897 0.767 0.707 VLAForge †0.983 0.980 0.794 0.737
+> Ours 0.984 0.958 0.802 0.749
+> V-level ForAda †0.998 0.965 0.850 0.800 VLAForge †0.995 0.993 0.880 0.815
+> Ours 0.999 0.995 0.881 0.824
+
+Table 3: AUC results on frame-level (F-level) and video-level (V-level) forgery detection across GAN- and diffusion-based generators. † denotes results reproduced by us. levels. Particularly, our method outperforms existing ap-proaches on diffusion-based generators, achieving AUC im-provements on SiT and DiT. This demonstrates that preserv-ing artifact diversity enables the model to capture comple-mentary forensic cues beyond seen generator statistics, im-proving generalization to unseen manipulations. For GAN-based generators, our method also achieves comparable per-formance. 
+
+Ablation Study 
+
+Impact of Loss Functions. We investigate the effective-ness of the proposed loss functions in Table 4. Since the clas-sification loss directly supervises the final deepfake detection objective, we keep it unchanged and focus on evaluating the contributions of Lcontra and Lcross . Removing both losses results in a clear performance drop, demonstrating the im-portance of learning artifact-aware representations. Among them, Lcross provides the dominant improvement, increasing the AUC from 85.6% to 91.4% on CDF-v1 and from 85.3% to 89.3% on CDF-v2. Lcontra Lcross                                                                                                  
+
+> CDF-v1 CDF-v2 DFDC DFDCP DFD AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓××0.856 0.914 23.2 0.853 0.920 23.3 0.860 0.886 22.0 0.894 0.943 19.2 0.920 0.982 14.6
+> ×✓0.914 0.939 18.4 0.893 0.940 13.1 0.858 0.883 22.5 0.891 0.941 19.5 0.922 0.989 13.9
+> ✓×0.889 0.928 19.5 0.869 0.927 21.8 0.846 0.874 23.5 0.876 0.935 20.8 0.918 0.990 14.7
+> ✓✓0.930 0.955 15.6 0.903 0.947 18.4 0.873 0.897 21.1 0.898 0.945 18.6 0.929 0.991 13.8
+
+Table 4: Ablation study on the effect of contrastive and cross-reconstruction losses. Evaluation metrics are frame-level AUC, AP, and EER, respectively.                                                                                                       
+
+> Setting Pair Target CDF-v1 CDF-v2 DFDC DFDCP DFD AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓AUC ↑AP ↑EER ↓
+> Conv. R-F RGB 0.871 0.918 23.2 0.841 0.907 23.6 0.818 0.835 26.2 0.845 0.911 24.2 0.903 0.988 17.9 F-F RGB 0.905 0.941 18.0 0.896 0.942 18.9 0.869 0.893 21.1 0.908 0.943 17.1 0.925 0.989 14.1 R-F Res 0.886 0.932 20.9 0.880 0.936 20.8 0.859 0.883 21.9 0.869 0.930 21.9 0.924 0.991 13.9
+> Ours F-F Res 0.930 0.955 15.6 0.903 0.947 18.4 0.873 0.897 21.1 0.898 0.945 18.6 0.929 0.991 13.8
+
+Table 5: Ablation study on the cross-reconstruction module. R-F and F-F denote real-fake pairs and semantically identical fake pairs. RGB and Res represent RGB image reconstruction target and our residual target. 
+
+Impact of Cross-Reconstruction Settings. We investigate the impact of different cross-reconstruction designs, includ-ing the choice of reconstruction pairs and targets. As shown in Table 5, we establish a baseline using real-fake pairs with RGB image reconstruction. By replacing real-fake pairs with semantically identical fake pairs generated by different ma-nipulation methods, the detection performance is improved on most datasets. The AUC on CDF-v1 increases from 87.1% to 90.5%, demonstrating that fake-fake pairs provide a more effective way to capture diverse forensic artifacts while re-ducing semantic interference. Furthermore, replacing RGB reconstruction with residual reconstruction further enhances the generalization capabil-ity by focusing on high-frequency forensic cues rather than image content. Combining both designs, i.e., fake-fake pairs with residual reconstruction, achieves the best overall per-formance, obtaining the highest AUC on four out of five benchmark datasets and improving the AUC on CDF-v1 from 87.1% to 93.0%. These results verify that the proposed cross-reconstruction strategy benefits from both artifact-aware pair construction and residual-level supervision, enabling the model to learn more generalizable forensic representations beyond dataset-specific appearance information. 
+
+Visualization 
+
+The t-SNE Visualization. To further analyze the effective-ness of the proposed adapter, we visualize the feature distri-butions extracted from the original CLIP and the adapted CLIP with the proposed attention bias mechanism. Specifi-cally, we construct a visualization set containing 2,000 sam-ples, where the seen samples are randomly selected from the FF++, while the unseen samples are collected from the CDF-v1. We then apply the t-SNE algorithm to project the extracted features into a two-dimensional space for visual-ization. As shown in Fig. 4, Our method does not require explicit feature alignment between different datasets, yet still Seen Real Seen Fake Unseen Real Unseen Fake 
+
+Figure 4: T-SNE visualization of feature distributions. preserves clear discrimination under domain shifts. This fur-ther supports our motivation that modeling diverse and trans-ferable forensic artifacts is more effective than enforcing dataset-level alignment for cross-domain generalization. 
+
+# Conclusion 
+
+In this work, we revisit cross-reconstruction for image forgery detection and highlight the importance of artifact diversity in improving generalization. Unlike previous approaches that attempt to align heterogeneous artifacts or exclude them from reconstruction, we demonstrate that diverse manip-ulation artifacts contain complementary forensic cues that should be preserved and exploited. Based on this insight, we propose an artifact-aware disentanglement framework that leverages semantically aligned cross-generator pairs. By in-corporating artifact representations into cross-reconstruction and introducing masked high-frequency residual targets, our framework learns transferable forensic representations while maintaining diverse artifact characteristics. Extensive experi-ments on multiple benchmarks demonstrate the effectiveness of our approach under both cross-dataset and cross-generator evaluation settings. References 
+
+Atito, S.; Awais, M.; and Kittler, J. 2021. Sit: Self-supervised vision transformer. arXiv preprint arXiv:2104.03602 .Ba, Z.; Liu, Q.; Liu, Z.; Wu, S.; Lin, F.; Lu, L.; and Ren, K. 2024. Exposing the deception: Uncovering more forgery clues for deepfake detection. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 38, 719–728. Bai, W.; Liu, Y.; Zhang, Z.; Li, B.; and Hu, W. 2023. Aunet: Learning relations between action units for face forgery de-tection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 24709–24719. Cao, J.; Ma, C.; Yao, T.; Chen, S.; Ding, S.; and Yang, X. 2022. End-to-end reconstruction-classification learning for face forgery detection. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition , 4113– 4122. Choi, J.; Kim, T.; Jeong, Y.; Baek, S.; and Choi, J. 2024. Exploiting style latent flows for generalizing deepfake video detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 1133–1143. Chollet, F. 2017. Xception: Deep learning with depthwise separable convolutions. In Proceedings of the IEEE con-ference on computer vision and pattern recognition , 1251– 1258. Chou, Y.; Yu, T.; Huang, W.; Dai, T.; Xia, S.-T.; et al. 2026. Improving deepfake detection with reinforcement learning-based adaptive data augmentation. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 40, 3381–3389. Concas, S.; La Cava, S. M.; Casula, R.; Orru, G.; Puglisi, G.; and Marcialis, G. L. 2024. Quality-based artifact modeling for facial deepfake detection in videos. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 3845–3854. Cui, X.; Li, Y.; Luo, A.; Zhou, J.; and Dong, J. 2025. Foren-sics adapter: Adapting clip for generalizable face forgery de-tection. In Proceedings of the Computer Vision and Pattern Recognition Conference , 19207–19217. Dang, H.; Liu, F.; Stehouwer, J.; Liu, X.; and Jain, A. K. 2020. On the detection of digital face manipulation. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern recognition , 5781–5790. Dolhansky, B.; Bitton, J.; Pflaum, B.; Lu, J.; Howes, R.; Wang, M.; and Ferrer, C. C. 2020. The deepfake detection challenge (dfdc) dataset. arXiv preprint arXiv:2006.07397 .Dolhansky, B.; Howes, R.; Pflaum, B.; Baram, N.; and Ferrer, C. C. 2019. The deepfake detection challenge (dfdc) preview dataset. arXiv preprint arXiv:1910.08854 .Dong, S.; Wang, J.; Ji, R.; Liang, J.; Fan, H.; and Ge, Z. 2023. Implicit identity leakage: The stumbling block to im-proving deepfake detection generalization. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 3994–4004. Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; et al. 2020. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929 .Dufour, N.; and Gully, A. 2019. Contributing Data to Deepfake Detection Research. https://research.google/blog/ contributing-data-to-deepfake-detection-research/. Ac-cessed: 2021-11-13. Esser, P.; Rombach, R.; and Ommer, B. 2021. Taming transformers for high-resolution image synthesis. In 2021 IEEE/CVF conference on computer vision and pattern recog-nition (CVPR) , 12868–12878. IEEE. Fu, X.; Yan, Z.; Yao, T.; Chen, S.; and Li, X. 2025. Exploring unbiased deepfake detection via token-level shuffling and mixing. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, 3040–3048. Han, Y.-H.; Huang, T.-M.; Hua, K.-L.; and Chen, J.-C. 2025. Towards more general video-based deepfake detec-tion through facial component guided adaptation for founda-tion model. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 22995–23005. Huang, X.; and Belongie, S. 2017. Arbitrary style transfer in real-time with adaptive instance normalization. In Pro-ceedings of the IEEE international conference on computer vision , 1501–1510. Kim, H.; and Mnih, A. 2018. Disentangling by factorising. In 
+
+International conference on machine learning , 2649–2658. PMLR. Kingma, D. P.; and Ba, J. 2014. Adam: A method for stochas-tic optimization. arXiv preprint arXiv:1412.6980 .Larue, N.; Vu, N.-S.; Struc, V.; Peer, P.; and Christophides, V. 2023. Seeable: Soft discrepancies and bounded con-trastive learning for exposing deepfakes. In Proceedings of the IEEE/CVF international conference on computer vision ,21011–21021. Lee, H.-Y.; Tseng, H.-Y.; Huang, J.-B.; Singh, M.; and Yang, M.-H. 2018. Diverse image-to-image translation via dis-entangled representations. In Proceedings of the European conference on computer vision (ECCV) , 35–51. Li, K.; Ren, W.; Li, J.; Wang, W.; and Cao, X. 2025. Crit-ical forgetting-based multi-scale disentanglement for deep-fake detection. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, 424–432. Li, L.; Bao, J.; Zhang, T.; Yang, H.; Chen, D.; Wen, F.; and Guo, B. 2019. Face x-ray for more general face forgery detection. arXiv preprint arXiv:1912.13458 .Li, L.; Bao, J.; Zhang, T.; Yang, H.; Chen, D.; Wen, F.; and Guo, B. 2020a. Face x-ray for more general face forgery detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 5001–5010. Li, M.; Li, X.; Yu, K.; Deng, C.; Huang, H.; Mao, F.; Xue, H.; and Li, M. 2023. Spatio-temporal catcher: A self-supervised transformer for deepfake video detection. In Proceedings of the 31st ACM international conference on multimedia ,8707–8718. Li, Y.; Yang, X.; Sun, P.; Qi, H.; and Lyu, S. 2020b. Celeb-df: A large-scale challenging dataset for deepfake forensics. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 3207–3216. Lin, K.; Lin, Y.; Li, W.; Yao, T.; and Li, B. 2025. Standing on the shoulders of giants: Reprogramming visual-language model for general deepfake detection. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, 5262–5270. Lin, L.; He, X.; Ju, Y.; Wang, X.; Ding, F.; and Hu, S. 2024. Preserving fairness generalization in deepfake detection. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 16815–16825. Liu, H.; Li, X.; Zhou, W.; Chen, Y.; He, Y.; Xue, H.; Zhang, W.; and Yu, N. 2021. Spatial-phase shallow learning: re-thinking face forgery detection in frequency domain. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , 772–781. Luo, A.; Kong, C.; Huang, J.; Hu, Y.; Kang, X.; and Kot, A. C. 2023. Beyond the prior forgery knowledge: Mining critical clues for general face forgery detection. IEEE Transactions on Information Forensics and Security , 19: 1168–1182. Luo, Y.; Zhang, Y.; Yan, J.; and Liu, W. 2021. Generalizing face forgery detection with high-frequency features. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , 16317–16326. Nguyen, D.; Mejri, N.; Singh, I. P.; Kuleshova, P.; Astrid, M.; Kacem, A.; Ghorbel, E.; and Aouada, D. 2024. Laa-net: Localized artifact attention network for quality-agnostic and generalizable deepfake detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 17395–17405. Peebles, W.; and Xie, S. 2023. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF international conference on computer vision , 4195–4205. Qian, Y.; Yin, G.; Sheng, L.; Chen, Z.; and Shao, J. 2020. Thinking in frequency: Face forgery detection by mining frequency-aware clues. In European conference on computer vision , 86–103. Springer. Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; et al. 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning , 8748–8763. PmLR. Rossler, A.; Cozzolino, D.; Verdoliva, L.; Riess, C.; Thies, J.; and Nießner, M. 2019. Faceforensics++: Learning to detect manipulated facial images. In Proceedings of the IEEE/CVF international conference on computer vision , 1–11. Sauer, A.; Schwarz, K.; and Geiger, A. 2022. Stylegan-xl: Scaling stylegan to large diverse datasets. In ACM SIG-GRAPH 2022 conference proceedings , 1–10. Shiohara, K.; and Yamasaki, T. 2022. Detecting deepfakes with self-blended images. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,18720–18729. Stehouwer, J.; Dang, H.; Liu, F.; Liu, X.; and Jain, A. 2019. On the detection of digital face manipulation. arXiv , arXiv– 1910. Wang, Y.; Yu, K.; Chen, C.; Hu, X.; and Peng, S. 2023. Dy-namic graph learning with content-guided spatial-frequency relation reasoning for deepfake detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 7278–7287. Xu, M.; Zhang, Z.; Wei, F.; Hu, H.; and Bai, X. 2023a. Side adapter network for open-vocabulary semantic segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2945–2954. Xu, Y.; Liang, J.; Jia, G.; Yang, Z.; Zhang, Y.; and He, R. 2023b. Tall: Thumbnail layout for deepfake video detection. In Proceedings of the IEEE/CVF international conference on computer vision , 22658–22668. Xu, Y.; Liang, J.; Sheng, L.; and Zhang, X.-Y. 2024. Learn-ing spatiotemporal inconsistency via thumbnail layout for face deepfake detection. International Journal of Computer Vision , 132(12): 5663–5680. Yan, Z.; Luo, Y.; Lyu, S.; Liu, Q.; and Wu, B. 2024a. Tran-scending forgery specificity with latent space augmentation for generalizable deepfake detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 8984–8994. Yan, Z.; Wang, J.; Wang, Z.; Jin, P.; Zhang, K.-Y.; Chen, S.; Yao, T.; Ding, S.; Wu, B.; and Yuan, L. 2024b. Effort: Efficient orthogonal modeling for generalizable ai-generated image detection. arXiv preprint arXiv:2411.15633 , 2(6): 7. Yan, Z.; Yao, T.; Chen, S.; Zhao, Y.; Fu, X.; Zhu, J.; Luo, D.; Wang, C.; Ding, S.; Wu, Y.; et al. 2024c. Df40: Toward next-generation deepfake detection. Advances in Neural In-formation Processing Systems , 37: 29387–29434. Yan, Z.; Zhang, Y.; Fan, Y.; and Wu, B. 2023a. Ucf: Uncov-ering common features for generalizable deepfake detection. In Proceedings of the IEEE/CVF international conference on computer vision , 22412–22423. Yan, Z.; Zhang, Y.; Yuan, X.; Lyu, S.; and Wu, B. 2023b. Deepfakebench: A comprehensive benchmark of deepfake detection. arXiv preprint arXiv:2307.01426 .Yang, Y.; Li, Y.; Huang, H.; Li, Z.; Du, B.; and Wu, Y. 2026. Improving Synthesized Image Detection by Disentangling Generator-Shared and Generator-Specific Image Artifacts. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 8019–8028. Zhao, S.; Liu, W.; Xu, D.; Zhou, J. T.; and Wang, Z. 2026. PhyTrace: Tracing Physical Inconsistency in AI-Generated Images via ISP Emulation. IEEE Transactions on Image Processing , 1–1. Zhu, J.; Miao, Y.; Zhang, X.; Deng, J.; and Pang, G. 2026. Unleashing Vision-Language Semantics for Deepfake Video Detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 42953–42963.

@@ -1,0 +1,4103 @@
+Title: CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding
+
+URL Source: https://arxiv.org/pdf/2609.33332v1
+
+Published Time: Tue, 29 Sep 2026 01:54:30 GMT
+
+Number of Pages: 54
+
+Markdown Content:
+Preprint 
+
+# CERT MARK : D ISTORTION -F REE MULTI -B IT WATER -
+
+# MARKING WITH CERTIFIED DECODING 
+
+Paweł Batorski 1 Przemysław Spurek 2,3 Paul Swoboda 1
+
+> 1
+
+Heinrich Heine University Düsseldorf 2Jagiellonian University 3IDEAS Research Institute 
+
+## ABSTRACT 
+
+Leading multi-bit watermarking methods for language models encode messages by biasing the model’s next-token probabilities, creating a trade-off between message recovery and text quality. Their decoders typically return the highest-scoring candi-date from accumulated token-level evidence, without a certified abstention rule that bounds the probability of outputting an incorrect message. We introduce CertMark, a distribution-preserving multi-bit watermark with certified decoding. Rather than modifying probabilities, CertMark uses the embedded message to seed an exact Gumbel-max sampler, thereby preserving the model’s original sampling distri-bution. We propose two scalable decoders: a model-agnostic, text-only decoder and a model-aware variant that leverages the original next-token distributions for stronger recovery. Both support certified abstention with mathematical bounds on the probability of returning an incorrect message. Across text completion, summa-rization, and story generation, CertMark matches the perplexity of unwatermarked text while reliably recovering multi-bit messages. The model-aware decoder fur-ther achieves higher bit accuracy than probability-biasing baselines. Our code is publicly available at https://github.com/Batorskq/CertMark .
+
+## 1 INTRODUCTION 
+
+Multi-bit watermarks let the provider of a language model attach a payload to text generation, such as a user identifier or a model version, and recover it later from the text alone (Wang et al., 2024; Yoo et al., 2024; Xu et al., 2026). The most prominent schemes (Xu et al., 2026) encode the payload by biasing the model’s next-token probabilities toward a message-dependent part of the vocabulary, the multi-bit form of the green-list watermark (Kirchenbauer et al., 2023; Yoo et al., 2024; Xu et al., 2026). The bias introduced into the distribution encodes the watermarking signal. Therefore, watermarking recovery and text quality compete against each other (Kirchenbauer et al., 2023; 2024; Hu et al., 2024; Giboulot & Furon, 2024). Additionally, the watermarking decoder returns a vote with no bound on the probability that the recovered message is wrong (Yoo et al., 2024; Wang et al., 2024; Xu et al., 2026). Alternatively, distortion-free sampling methods do not decrease text quality. They are well established for deciding whether a text is watermarked at all (Kuditipudi et al., 2024; Christ et al., 2024; Hu et al., 2024; Wu et al., 2024), and has been extended to the multi-bit case (Jiang et al., 2025; 2026; Feng et al., 2025) but does not come with a certificate for recovering the message and recovers messages less accurately. CertMark is the first method that is distortion-free, multi-bit and comes with certificates on message recovery. Our method encodes messages into the seeds for the random sampling during autoregressive decoding. Specifically, the message seeds the random draws of a Gumbel-max sampler (Maddison et al., 2014), every token is still sampled from the deployed model’s own distribution, and a text produced this way is, to anyone without the key, distributed exactly like unwatermarked text, the guarantee that distortion-free zero-bit schemes provide (Kuditipudi et al., 2024; Christ et al., 2024). The key holder, in turn, can replay the draws for every candidate message. A wrong candidate scores like pure chance whatever the text, so the decoder can attach to each recovered message an exact bound on the probability that it is wrong, and abstain when the evidence is too thin. When the detector can also run the model, it weighs each token by how surprising the model found it (Lu et al., 2024; Lee et al., 2024) and recovers the payload where text alone cannot. Our results are twofold. The distortion-free, chance-level and certificate statements are theorems under the standard idealisation of the pseudorandom function as a random function (Christ et al., 1arXiv:2609.33332v1 [cs.CL] 27 Sep 2026 Preprint 2024; Golowich & Moitra, 2024). The empirical claims come from the XMark benchmark (Xu et al., 2026), text completion on C4 (Raffel et al., 2020), summarization on CNN/DailyMail (Hermann et al., 2015) and story generation on WritingPrompts (Fan et al., 2018) with Qwen3.5-4B and Llama-3.1-8B, together with machine translation, long messages, a copy-paste attack (Kirchenbauer et al., 2024; Xu et al., 2026), a runtime comparison and a direct check of the certificate. In summary, our contributions are as follows: i) A distortion-free multi-bit watermark whose text-only decoder comes with an exact cer-tificate on the probability of returning a wrong message, valid for any model, prompt and text. ii) A model-aware decoder that reads the same generations through the deployed sampler and remains certified and robust when part of the text has been edited. iii) An evaluation on two model families in which CertMark keeps text quality at the unwater-marked level, recovers payloads at or above every baseline once the model is available, has the fastest text-only decoder, and whose certificate holds empirically. 
+
+## 2 RELATED WORK 
+
+Zero-bit watermarking. Zero-bit watermarks detect whether a text is marked but carry no payload. Schemes either bias the next-token distribution toward keyed tokens (Kirchenbauer et al., 2023; Fernandez et al., 2023; Zhao et al., 2024; Kirchenbauer et al., 2024; Liu et al., 2024a;b; Liu & Bu, 2024; Chang et al., 2024), or control sampling while preserving the unwatermarked law (Kuditipudi et al., 2024; Hu et al., 2024; Wu et al., 2024; Christ et al., 2024; Dathathri et al., 2024; Zhao et al., 2025; He et al., 2025; Chen et al., 2025). Token-level signals remain vulnerable to strong rewriting and paraphrasing (Krishna et al., 2023; Zhang et al., 2024; Pang et al., 2024; Jovanovi´ c et al., 2024). 
+
+Multi-bit watermarking. Multi-bit schemes carry an identifier or metadata rather than a single presence bit. Most use message-conditioned logit shifts, vocabulary partitions, or blockwise allocation, trading payload recovery against decoding cost, robustness, and text quality (Fernandez et al., 2023; Wang et al., 2024; Li et al., 2024; Yoo et al., 2024; Qu et al., 2025; Xu et al., 2025a;b; 2026; Kim et al., 2026). Distribution-preserving alternatives use keyed reweighting or place the message in the sampler’s randomness (Jiang et al., 2025; Feng et al., 2025; Boroujeny et al., 2024; Jiang et al., 2026). All return the highest-scoring message with no bound on the probability that it is wrong. CertMark instead uses the payload to seed an exact Gumbel-max draw, couples its text-only decoder to an exact wrong-message null, and optionally uses the model to decode the same generations more accurately. 
+
+## 3 METHOD 
+
+Table 1 collects the notation used in this section. 
+
+Preliminaries Write V for the vocabulary, x for the prompt, y<t for the tokens emitted before step t
+
+and pt(·) = p(· | x, y <t ) for the law the deployed sampler actually draws yt from, after temperature and truncation. A multi-bit watermark embeds a message m ∈ { 0, 1}L, such as a user identifier, into the generated text so that the holder of a secret key κ can recover it from the text alone (Wang et al., 2024; Yoo et al., 2024; Xu et al., 2026). Three properties are wanted of such a scheme at once, for a message m, a key κ and the generated text y:
+
+L(y | m, κ ) = Q 
+
+> t
+
+pt
+
+| {z }
+
+> (i) distortion-free
+
+, ˆm(y, κ ) = m
+
+| {z }
+
+> (ii) recoverable
+
+, Pr[ ˆ m̸ = m] ≤ σ
+
+| {z }
+
+> (iii) certified
+
+. (1) Most existing schemes maximise (ii) alone: green-list and other logit bias methods alters the sampling law at every step, so (i) fails. Typically, the decoder returns the highest-scoring message with no bound of the form (iii). The schemes that do satisfy (i), by reweighting the law so that its mean over the key is unchanged or by moving the message into the sampling randomness (Jiang et al., 2025; Feng et al., 2025; Jiang et al., 2026), still return a vote with no bound of the form (iii). Appendix F compares them with CertMark. In this work we develop CertMark, a distortion-free multi-bit watermark that attains (i)–(iii) that lets the message select the sampler’s randomness rather than its law. 2Preprint Table 1: Notation used in the method. 
+
+Model and text Encoder 
+
+V vocabulary h context length in tokens 
+
+x prompt ct = yt−h:t−1 context of step ty1: n, yt, y<t text, its t-th token, its prefix it chunk carried at step tY1: n emitted text as a random variable Ct contexts used so far 
+
+pt(·) = p(· | x, y <t ) deployed sampler’s law at step t at argument tuple of step t
+
+Key and randomness ut(v) uniform attached to token v at step tκ ∈ S secret key, S = {0, 1}64 S(v) Gumbel-max score of token v
+
+PRF κ, ⟨·⟩ keyed PRF, its argument encoding E encoder as a deterministic map 
+
+X typed PRF arguments Decoder and certificate 
+
+ρ : S → (0 , 1) seed to a grid point in (0 , 1) T visited positions (first occurrences) 
+
+chunk , msg , fresh domain-separating tags Tc, nc = |T c| positions of chunk c, their count 
+
+Pr κ probability over the idealised key {T c}Cc=1 scored positions of all chunks 
+
+Message u(m′) 
+
+> t
+
+(v) uniform under candidate m′
+
+m ∈ { 0, 1}L message of L bits Sc(m′) text-only score of candidate m′
+
+m = ( m1, . . . , m C ) its C chunks, mc ∈ { 0, 1}kc ˆδc, δ chunk certificate, chosen level 
+
+m′ candidate value of a chunk Dδ , ⊥ certified decoder, abstention 
+
+ˆmc, ˆm decoded chunk, decoded message H1, H0 hypotheses mc = m′ and mc̸ = m′
+
+σ error budget in (1) 
+
+3.1 ENCODING AND MODEL -A GNOSTIC DECODING 
+
+CertMark uses the key κ and message m ∈ { 0, 1}L to determine the sampler’s randomness and lets 
+
+pt unchanged. A key holder can reconstruct this randomness, while anyone without the key sees an ordinary sample from pt. The following identity, the Gumbel-max trick (Gumbel, 1954; Maddison et al., 2014), makes this possible. 
+
+Lemma 1 (Gumbel-max sampling) . Fix a step t and recall that pt is the sampler’s law over V at that step, redrawn at every step. Draw u(v) ∼ U (0 , 1) i.i.d. over v ∈ V , form the Gumbel variates and the scores 
+
+S(v) = log pt(v) − log  − log u(v), (2) 
+
+and emit y = arg max v∈V S(v). Then Pr[ y = v] = pt(v) for every v ∈ V .
+
+The lemma separates the sampling law from the realized draw: pt fixes the law, while ut selects the sample. We generate ut pseudorandomly from (κ, m ), so the encoder and detector can reproduce it without changing pt. Each ut must remain i.i.d. uniform conditional on the prefix and must be fresh across steps. The pseudorandom function and freshness rule below ensure this. The lemma and chain rule then yield Theorem 1. The decoder uses the same randomness to distinguish the correct message from wrong candidates. 
+
+Pseudorandom function. As is standard in multi-bit watermarking, the sampling randomness comes from a pseudorandom function PRF κ : {0, 1}∗ → S , S = {0, 1}64 , keyed by the secret key κ (Goldreich et al., 1986). It is deterministic, so anyone holding κ can recompute any of its values, while without the key its values at distinct inputs are computationally indistinguishable from independent uniform elements of S. We evaluate it at tuples of typed arguments from X
+
+(tags, token sequences and integers), mapped to a single input by an injective, prefix-free encoding, 
+
+PRF κ(x1, . . . , x r ) := PRF κ(⟨x1, . . . , x r ⟩), so distinct tuples are distinct inputs, and the tags chunk ,
+
+msg and fresh separate its three uses. An output z ∈ S , read as an unsigned integer, becomes a number in (0 , 1) through ρ(z) = ( ⌊z/ 211 ⌋ + 12 ) 2 −53 , which is uniform on the 53 -bit midpoint grid of 
+
+(0 , 1) when z is uniform. Throughout the analysis we use the standard random-function idealisation: 
+
+PRF κ is treated as a uniformly random function, so the values ρ(PRF κ(a)) at distinct inputs a are independent U (0 , 1) variables. A uniform is therefore fresh exactly when its argument tuple has not been queried before, which the encoder below guarantees. Appendix I gives our instantiation. 
+
+Encoder Rather than encoding the full message m at once, the encoder divides it into chunks: for m ∈ { 0, 1}L, we write m = ( m1, . . . , m C ) with mc ∈ { 0, 1}kc and PCc=1 kc = L. When a previously unseen context appears, the encoder uses that step to encode one selected chunk. 3Preprint                                                                      
+
+> context ct=yt−h:t−1
+> message m∈ { 0,1}L
+> in Cchunks of kcbits first occurrence of ctin the text yyt−h· · · yt−1it= PRF κ(chunk , c t)mod C
+> chunk selected by the context at= ( msg , c t, m it)
+> at= ( fresh , c t, t )
+> repeated context
+> ut(v) = ρ PRF κ(at, v )
+> v∈V
+> uniforms for every token
+> yt= arg max v
+> log pt(v)
+> −log( −log ut(v)) 
+> Gumbel-max: emit yt
+> m1mit· · · mClanguage model: pt(· | x, y <t )
+> new ct
+> seen ct
+> chunk it
+> append ytto the text and move to step t+ 1
+> yt−h· · · yt−1ytit= PRF κ(chunk , c t)mod C
+> recomputed from yand κ
+> message unknown: try all 2kccandidates
+> every m′∈ { 0,1}kc:
+> (msg , c t, m ′)
+> u(m′)
+> t(yt)=
+> ρ PRF κ(msg , c t, m ′, y t)
+> uniform of the emitted token
+> Sit(m′) += −log  1−u(m′)
+> t(yt)
+> ˆmc= arg max m′Sc(m′),certificate ˆδc
+> accumulate and decide after the last token
+> yt
+> same same
+> Encoder
+> holds  κ, m, model
+> Decoder
+> holds  κ, text only
+
+Figure 1: One step of CertMark. The encoder (top) hashes the context to pick a chunk, reads the uniforms at an argument tuple carrying that chunk’s value, or at a fresh position tuple when the context recurs, and emits the Gumbel-max token. The decoder (bottom) recomputes context and chunk from text and key alone, tries every value of the chunk, and accumulates − log(1 − u) over the emitted tokens. Ordinary sampling turns a prefix into pt(·| x, y <t ) and then draws yt ∼ pt using fresh randomness. Below we detail our new encoder 
+
+E : ( y<t , p t, κ, m ) 7 −→ yt . (3) 
+
+E consumes no randomness of its own but replaces it deterministically by the message m and key κ,yet, by Lemma 1, emits yt ∼ pt.At step t the model defines the next-token distribution pt(v) of Section 3, and we take as context the last h emitted tokens, ct = yt−h:t−1. The context alone selects the message chunk, 
+
+it = PRF κ(chunk , c t) mod C, (4) and that chunk’s value then enters the arguments at which the uniforms are read. Lemma 1 requires the uniforms at step t to be new: were ut to repeat a vector already used in this generation, it would no longer be independent of the prefix. A context occurring for the first time guarantees this, because the tuple (msg , c t, m it ) is then one the encoder has never queried. A context that recurs does not, so at those steps the encoder replaces the message by the position t, which is new by construction. Writing Ct−1 for the contexts already used in this generation, the step reads its uniforms at the argument tuple at given by 
+
+at =
+
+((fresh , c t, t ), ct ∈ C t−1,
+
+(msg , c t, m it ), otherwise, and Ct = Ct−1 ∪ { ct}, ut(v) = ρ PRF κ(at, v ), (5) and the encoder emits the token that Lemma 1 produces from these uniforms, 
+
+yt = arg max 
+
+v∈V
+
+h
+
+log pt(v) − log  − log ut(v)i
+
+. (6) Thus, a repeated context encodes no message chunk. Figure 1 summarises the encoder and, aligned beneath it, the decoder of the next paragraph. Appendix H gives both as pseudocode. The key property of the encoder is that it changes the source of the sampling randomness without changing the distribution of the generated text. Because each uniform vector is independent of the prefix, Lemma 1 applies at every step and gives the same sequence distribution as unwatermarked LLM generation, as formalized next. 
+
+Theorem 1 (Distortion-free generation) . Treat PRF as a random function and draw the key κ
+
+uniformly from S. Let Y1: n be the sequence emitted by (5) –(6) on prompt x carrying message 
+
+m ∈ { 0, 1}L. Then for every such m and x and every w ∈ V n,
+
+Pr 
+
+κ
+
+Y1: n = w =
+
+nY
+
+t=1 
+
+p wt | x, w <t 
+
+, (7) 4Preprint 
+
+which is the law of unwatermarked sampling and, in particular, does not depend on m.Proof. The proof can be found in Appendix K. The theorem shows that, over an unknown random key, CertMark generates the same sequence distribution as the unwatermarked LLM, independently of the encoded message. As a corollary, a reader without the key cannot distinguish the two distributions from the text alone. 
+
+Remark (Deployment model) . Theorem 1 is a single-generation guarantee. In our experiments, as is standard for PRF-seeded distortion-free samplers (Kuditipudi et al., 2024; Dathathri et al., 2024), we reuse one key. The encoder is therefore deterministic in the prompt and message: repeated prompts reproduce the same text, and shared contexts reuse the same uniforms. Each generation still has the exact unwatermarked marginal law, but generations need not be independent (Fu et al., 2024; Wu et al., 2025; Gloaguen et al., 2025). Theoretically, Theorem 8 in Appendix R resolves this by adding a fresh r-bit nonce to every encoder argument. We leave its evaluation to future work. 
+
+Model-Agnostic Decoder The decoder holds only the text and κ, the same access every baseline detector has. It re-tokenises the text and, with ct = yt−h:t−1 as in the encoder, visits the positions whose context occurs for the first time in that text ,
+
+T =  t ∈ { h + 1 , . . . , n } : ct̸ = cs for all h + 1 ≤ s < t , (8) recomputing it at each t ∈ T exactly as the encoder did. Positions t ≤ h have no full context and a repeated context was read under the tag fresh by (5), so neither carries a message and both are skipped. Writing Tc = {t ∈ T : it = c} for the positions so assigned to chunk c and nc = |T c|, it scores every candidate value m′ ∈ { 0, 1}kc of that chunk by 
+
+Sc(m′) = X
+
+> t∈T c
+
+− log  1 − u(m′) 
+
+> t
+
+(yt), u(m′) 
+
+> t
+
+(v) = ρ PRF κ(msg , c t, m ′, v ), (9) and outputs ˆmc = arg max m′ Sc(m′). This is a joint decision over the whole codebook of 2kc words. Chunking is what keeps this at C · 2kc rather than 2L. After decoding all C chunks, we concatenate 
+
+ˆm1, . . . , ˆmC to obtain the final message ˆm = ( ˆ m1, . . . , ˆmC ).
+
+Remark (Choice of the score) . We use our specific form for scores (9) , because it allows us to derive that the score for wrong messages follows a Gamma distribution. Alternatively, we might use the simpler score P 
+
+> t∈T c
+
+u(m′) 
+
+> t
+
+(yt), which would, however, result in harder to handle Irwin-Hall laws (Irwin, 1927; Hall, 1927). 
+
+3.2 CERTIFICATION AND THEORETICAL ANALYSIS 
+
+From this point through the end of Section 3.3, we use the random-function idealisation of PRF from Section 3 (Appendix I). We fix the deployed model, prompt x, sampling settings, embedded message 
+
+m, and a chunk c with kc ≥ 1. Unless stated otherwise, probabilities are over the idealised keyed randomness. For this fixed chunk, the decoder considers every candidate m′ ∈ { 0, 1}kc , calling mc
+
+the correct candidate and every m′̸ = mc a wrong candidate. The decoder returns the candidate with the largest score. To analyze this comparison, Theorem 2 gives the score distribution of every wrong candidate, while Theorem 3 gives the per-token distributions for both cases. Its full statement in Appendix M also gives their expected scores. 
+
+Theorem 2 (Score distribution for wrong candidates) . For a wrong candidate m′̸ = mc, conditional on the emitted text and the scored positions Tc selected by the chunk assignments, whenever nc =
+
+|T c| ≥ 1,
+
+Sc(m′) ∼ Γ( nc, 1) exactly, (10) 
+
+where Γ( nc, 1) has shape nc and rate 1. If nc = 0 , then Sc(m′) = 0 .Proof. The proof can be found in Appendix L. 
+
+Theorem 3 (Candidate distributions) . For t ∈ T c, condition on y<t and p = pt(yt) ∈ (0 , 1] , the sampler’s probability of the emitted token. For every candidate m′, its reconstructed value satisfies 
+
+u(m′) 
+
+> t
+
+(yt) ∼
+
+(Beta(1 /p, 1) , m′ = mc (correct candidate) ,U (0 , 1) , m′̸ = mc (wrong candidate) , (11) 
+
+where u(mc) 
+
+> t
+
+(yt) = ut(yt).
+
+5Preprint 
+
+Proof. The proof can be found in Appendix M. We now describe the certified decoder, which uses the null distribution from Theorem 2 to decide whether to return the predicted chunk or abstain. An abstention means that the decoder returns no value for a particular message chunk because its certificate does not meet the chosen confidence level. Theorem 4 shows that the probability of returning an incorrect chunk is at most the chosen level δ.
+
+Theorem 4 (Certified decoding) . For a level δ ∈ (0 , 1] , let ˆmc(y) = arg max m′ Sc(m′) and define 
+
+ˆδc(y) = min 
+
+n
+
+1,  2kc − 1 Pr Γ( nc, 1) ≥ Sc( ˆ mc(y)) o
+
+, (13) 
+
+with ˆδc(y) = 1 when nc = 0 . Let ⊥ denote abstention and define the certified decoder Dδ : V n →{0, 1}kc ∪ {⊥} by 
+
+Dδ (y) = 
+
+( ˆmc(y), ˆδc(y) ≤ δ, 
+
+⊥, ˆδc(y) > δ, (14) 
+
+where the scores are computed from the text y and the key. Then, for the text Y1: n emitted by (5) –(6) ,
+
+Pr 
+
+> κ
+
+Dδ (Y1: n) /∈ { mc, ⊥}  ≤ δ, (15) 
+
+Here the probability is over the idealised PRF randomness induced by the one-time draw of κ.Proof. The proof can be found in Appendix N. The theorem provides certified decoding because the probability of returning an incorrect chunk is at most δ, with abstention when the evidence is insufficient. As a corollary, decoding each of the C
+
+chunks at level δ/C bounds the probability of returning any incorrect chunk in the final message by 
+
+δ.Appendix O adds a payload-scaling bound, Theorem 7, under which the error of a chunk falls exponentially in the accumulated evidence and each additional bit costs about ln 2 of it. 3.3 MODEL -A WARE DECODER 
+
+A model-aware decoder also has access to the prompt and deployed model, allowing it to recompute 
+
+pt = pt(yt) for each scored token under the complete sampling procedure. By Theorem 3, the candidate distributions in (11) have densities fcorrect (u | p) = p−1u1/p −1 and fwrong (u) = 1 on 
+
+(0 , 1) . A single scored token therefore contributes the likelihood ratio 
+
+fp(u) = fcorrect (u | p)
+
+fwrong (u) = p−1u1/p −1
+
+1 = p−1u1/p −1, (16) which is identically 1 when p = 1 . A token, where the sampler was certain, carries no evidence. This happens for large for u near 1 when p < 1, so a large uniform at a token the sampler was unsure of is strong evidence for the candidate. For the results in this subsection, we additionally condition on the emitted text and the scored-position sets {T c}Cc=1 , which fixes pt = pt(yt) ∈ (0 , 1] for t ∈ T c. For a candidate m′ we test the hypothesis 
+
+H1 : mc = m′ against the alternative H0 : mc̸ = m′.
+
+Theorem 5 (Exact likelihood ratio) . For a fixed candidate m′, the log-likelihood ratio of H1 to H0
+
+based on its scored uniforms is 
+
+ℓc(m′) = X
+
+> t∈T c
+
+h  1 
+
+> pt
+
+− 1 log u(m′) 
+
+> t
+
+(yt) + log 1
+
+> pt
+
+i
+
+. (17) 
+
+Proof. The proof can be found in Appendix P. Operationally, the model-aware decoder keeps the same candidate enumeration, chunk assignments, and reconstructed uniforms as the model-agnostic decoder. Instead of maximizing the text-only score 
+
+Sc(m′) in (9), it maximizes the log-likelihood score in (17): 
+
+ˆmMA  
+
+> c
+
+= arg max 
+
+> m′∈{ 0,1}kc
+
+ℓc(m′). (18) 6Preprint Table 2: Main benchmark on Qwen3.5-4B: C4 text completion, CNN/DailyMail summarization and WritingPrompts story generation with L = 8 and token budgets T ∈ { 150 , 200 , 250 , 300 }. Perplexity is measured under Qwen3.5-9B; the distortion columns are defined in Section 4. The four CertMark rows are the model-agnostic and the model-aware decoder, each with one 8-bit chunk and with 2-bit chunks. Colours mark the best, second-best and third-best method in each column. 
+
+Method T = 150 T = 200 T = 250 T = 300 Avg. Distortion (avg. over T )BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ Top-1 ↑ Top-5 ↑ R-1 ↑ R-L ↑
+
+Text Completion 
+
+CycleShift 100.00 7.97 100.00 7.58 100.00 7.05 100.00 7.44 100.00 7.51 55.02 84.96 0.290 0.170 DepthW 95.75 7.40 100.00 6.96 100.00 6.52 97.25 6.68 98.25 6.89 57.39 85.87 0.290 0.168 StealthInk 89.75 6.15 90.50 5.79 95.25 5.73 94.25 5.61 92.44 5.82 62.81 89.16 0.308 0.179 MPAC 97.25 7.70 98.00 7.52 98.75 7.03 99.00 7.09 98.25 7.33 55.60 85.34 0.293 0.170 RSBH 96.00 7.11 97.25 6.88 97.75 7.03 97.00 7.03 97.00 7.01 56.21 86.33 0.289 0.167 XMark 100.00 6.93 100.00 7.07 100.00 6.78 100.00 6.81 100.00 6.90 56.66 86.86 0.301 0.173 CertMark model-agnostic 8-bit 100.00 5.65 100.00 5.23 100.00 5.29 100.00 5.11 100.00 5.32 65.48 90.08 0.311 0.184 CertMark model-agnostic 2-bit 99.75 5.63 100.00 5.55 100.00 5.34 99.75 5.20 99.88 5.43 65.59 89.89 0.316 0.184 CertMark model-aware 8-bit 100.00 5.69 100.00 5.20 100.00 5.35 100.00 5.09 100.00 5.33 65.42 90.03 0.312 0.185 CertMark model-aware 2-bit 100.00 5.64 100.00 5.52 100.00 5.36 100.00 5.24 100.00 5.44 65.43 89.94 0.316 0.184 
+
+Text Summarization 
+
+CycleShift 95.75 3.58 95.00 3.75 95.00 3.69 99.50 3.71 96.31 3.68 74.56 96.87 0.541 0.348 DepthW 74.75 3.21 75.50 3.43 85.00 3.51 87.00 3.57 80.56 3.43 76.72 97.33 0.551 0.357 StealthInk 75.25 2.95 80.75 3.10 82.25 3.11 88.00 3.14 81.56 3.08 80.59 98.14 0.562 0.372 MPAC 86.25 3.60 89.75 3.50 92.00 3.59 94.75 3.79 90.69 3.62 74.92 96.74 0.546 0.358 RSBH 78.75 3.56 88.75 3.58 96.25 3.80 93.00 3.72 89.19 3.67 74.54 97.09 0.542 0.352 XMark 91.25 3.49 93.75 3.53 97.75 3.64 99.00 3.63 95.44 3.57 74.96 97.45 0.544 0.349 CertMark model-agnostic 8-bit 97.75 3.05 98.75 3.05 98.50 3.06 100.00 3.08 98.75 3.06 81.62 98.25 0.575 0.393 CertMark model-agnostic 2-bit 87.25 2.99 94.50 3.10 95.00 3.13 97.50 3.09 93.56 3.08 81.57 98.17 0.563 0.381 CertMark model-aware 8-bit 100.00 3.03 100.00 3.07 100.00 3.10 100.00 3.10 100.00 3.07 81.50 98.24 0.574 0.392 CertMark model-aware 2-bit 98.75 3.00 99.25 3.12 99.75 3.11 99.75 3.11 99.38 3.08 81.62 98.20 0.564 0.382 
+
+Story Generation 
+
+CycleShift 95.00 4.90 100.00 4.85 100.00 4.98 100.00 5.17 98.75 4.97 66.89 92.44 0.349 0.221 DepthW 87.25 4.33 94.75 4.45 96.50 4.79 96.75 4.50 93.81 4.52 69.21 93.35 0.360 0.232 StealthInk 82.50 3.81 84.75 3.93 89.50 4.02 92.50 3.87 87.31 3.91 73.62 95.16 0.367 0.239 MPAC 92.50 4.90 94.50 5.07 94.50 5.24 96.25 4.98 94.44 5.05 66.69 92.65 0.350 0.217 RSBH 92.25 4.64 96.25 4.66 97.25 5.07 97.25 4.98 95.75 4.84 67.08 93.41 0.349 0.219 XMark 96.75 4.72 97.25 4.54 99.50 4.90 99.75 5.00 98.31 4.79 67.55 93.56 0.350 0.224 CertMark model-agnostic 8-bit 100.00 3.63 100.00 3.71 100.00 3.81 100.00 3.87 100.00 3.75 75.89 95.54 0.362 0.230 CertMark model-agnostic 2-bit 95.75 3.71 98.50 3.75 99.25 3.81 99.75 3.82 98.31 3.77 75.81 95.56 0.366 0.236 CertMark model-aware 8-bit 100.00 3.63 100.00 3.71 100.00 3.81 100.00 3.87 100.00 3.75 75.89 95.54 0.362 0.230 CertMark model-aware 2-bit 100.00 3.71 100.00 3.75 100.00 3.81 100.00 3.82 100.00 3.77 75.81 95.56 0.366 0.236 
+
+The decoded chunks are concatenated into the final message as before. Theorem 5 assumes that every scored token was generated by CertMark. This makes its likelihood-ratio decoder vulnerable to editing attacks that introduce foreign tokens. We therefore present the robust decoder in Theorem 6. 
+
+Theorem 6 (Robust decoding under contamination) . Fix ε ∈ (0 , 1) . At each scored position t,suppose independently that the true candidate’s uniform follows Beta(1 /p t, 1) with probability 
+
+1 − ε and U (0 , 1) with probability ε, while every wrong candidate’s uniform is U (0 , 1) . Score each candidate by 
+
+rc(m′) = X
+
+t∈T c
+
+log 
+
+h
+
+(1 − ε) fpt
+
+ u(m′)
+
+t (yt) + ε
+
+i
+
+, (19) 
+
+Under a wrong candidate this score has an exact upper-tail probability Qc,ε (s) = Pr[ rc(m′) ≥ s].The robust decoder and its certificate are 
+
+ˆmc = arg max 
+
+m′ rc(m′), ˆδc,ε = min 1, (2 kc − 1) Qc,ε 
+
+ rc( ˆ mc) . (20) 
+
+Returning ˆmc only when ˆδc,ε ≤ δ bounds the probability of returning an incorrect chunk by δ.Otherwise the decoder abstains. Proof. The proof can be found in Appendix Q. Appendix A derives and computes the null tail. Appendix H provides pseudocode for both decoders. 7Preprint 8 16 24 32              
+
+> L(bits)
+> 80 90 100
+> Bit accuracy (%) ↑  Text completion
+> 816 24 32
+> L(bits)
+> 60 80 100
+> Text summarization
+> Qwen3.5-4B
+> 816 24 32
+> L(bits)
+> 70 80 90 100
+> Bit accuracy (%) ↑  Text completion
+> 816 24 32
+> L(bits)
+> 60 80 100
+> Text summarization
+> Llama-3.1-8B
+> CertMark model-agnostic ≤16-bit CertMark model-agnostic 2-bit CertMark model-aware ≤16-bit CertMark model-aware 2-bit XMark MPAC RSBH StealthInk
+
+Figure 2: Bit accuracy versus message length L at T = 150 on text completion and summarization, one block per model. The default chunk width is the largest divisor of L that is at most 16 bits, hence 
+
+8, 12 , 16 , 10 , 12 , 16 for L = 8 , . . . , 32 . ±1 standard error shaded. Table 3: WMT14 German-to-English translation.                                                              
+
+> Qwen3.5-4B Llama-3.1-8B Method BA ↑PPL ↓BLEU ↑BA ↑PPL ↓BLEU ↑
+> RSBH 59.38 2.51 20.64 57.62 3.49 24.84 MPAC 70.00 2.58 20.98 64.62 3.50 26.80 XMark 74.38 2.49 20.32 71.25 3.46 25.99 StealthInk 64.88 2.22 23.00 55.75 3.19 27.08 CertMark model-agnostic 16-bit 61.50 2.18 23.15 48.88 3.08 26.34 CertMark model-agnostic 2-bit 69.88 2.22 22.41 64.00 3.24 26.82 CertMark model-aware 16-bit 85.75 2.18 23.15 88.38 3.08 26.34 CertMark model-aware 2-bit 80.50 2.22 22.41 84.75 3.24 26.82 unwatermarked –2.21 22.87 –3.12 26.70
+
+Table 4: Long C4 completion ( L = 64 ).                                                              
+
+> Qwen3.5-4B Llama-3.1-8B Method BA ↑PPL ↓BSc. ↑BA ↑PPL ↓BSc. ↑
+> RSBH 85.03 5.38 .8208 89.25 4.63 .8341 MPAC 87.28 5.46 .8170 88.38 4.94 .8279 XMark 93.38 5.48 .8199 96.00 4.74 .8351 StealthInk 79.81 4.52 .8222 80.69 3.75 .8392 CertMark model-agnostic 16-bit 99.75 4.29 .8262 99.44 3.66 .8365 CertMark model-agnostic 2-bit 96.53 4.30 .8266 94.62 3.63 .8371 CertMark model-aware 16-bit 99.75 4.31 .8246 100.00 3.66 .8365 CertMark model-aware 2-bit 98.84 4.28 .8292 99.25 3.63 .8371 unwatermarked –4.22 ––3.57 –
+
+## 4 EXPERIMENTS 
+
+Baselines We compare against the multi-bit watermarking baselines CycleShift (Fernandez et al., 2023), DepthW (Li et al., 2024), StealthInk (Jiang et al., 2025), MPAC (Yoo et al., 2024), RSBH 
+
+(Qu et al., 2025), and XMark (Xu et al., 2026). Appendix F adds BiMark (Feng et al., 2025) and 
+
+MirrorMark (Jiang et al., 2026) and compares the distortion-free schemes on Qwen3.5-4B. 
+
+Setup We evaluate on Qwen3.5-4B and Llama-3.1-8B. Full experimental settings and hyperparame-ters are provided in Appendix B, and a runtime comparison in Appendix D. 
+
+Metrics Bit accuracy (BA, %) is the percentage of correctly decoded message bits, averaged over users (chance is 50% ). Perplexity (PPL) is the exponentiated mean negative log-likelihood of the generated tokens under a separate oracle model of the same family; for a distortion-free scheme the reference is the unwatermarked row. BLEU (Papineni et al., 2002) scores translations against the WMT14 references. The distortion metrics compare the watermarked text with unwatermarked sampling: Top-1/Top-5 is the percentage of emitted tokens among the model’s 1 or 5 most likely next tokens, while R-1/R-L (ROUGE-1/ROUGE-L F-score, Lin, 2004) and BERTScore (BSc., Zhang et al., 2020) measure the similarity of each watermarked text to the unwatermarked sample from the same prompt and seed. Appendix C gives full definitions. 
+
+Main benchmark and message length. Across all three tasks, CertMark preserves unwatermarked text quality while reliably recovering payloads. Figure 2 shows that this remains true as payloads grow: the model-aware decoder is the most reliable, while smaller chunks mainly help on entropy-limited summarization. Appendix F compares other distortion-free schemes, and Appendix E confirms the same trends on Llama-3.1-8B. 
+
+Machine translation. Table 3 evaluates WMT14 German-to-English translation (Bojar et al., 2014). CertMark model-aware 16-bit gives the strongest payload recovery on both models while preserving translation quality. 2-bit chunks help the model-agnostic decoder in this low-entropy task but not the model-aware one. 
+
+Long messages and long texts. Table 4 shows that CertMark retains near-complete recovery on long C4 completions ( L = 64 , four 16-bit chunks) for both models without degrading quality. Model-aware decoding removes the remaining errors. Smaller chunks add little with ample evidence. 8Preprint 60 80 100                
+
+> Qwen3.5-4B
+> T= 150 T= 200 T= 250 T= 300
+> 10 20 30
+> Δ (%)
+> 60 80 100
+> Llama-3.1-8B
+> 10 20 30
+> Δ (%)
+> 10 20 30
+> Δ (%)
+> 10 20 30
+> Δ (%) Bit accuracy (%) ↑
+> StealthInk RSBH MPAC XMark CertMark model-agnostic 16-bit CertMark model-agnostic 2-bit CertMark model-aware 16-bit CertMark model-aware 2-bit
+
+Figure 3: Copy-paste robustness on text completion with L = 16 : bit accuracy after ∆% of each text is replaced by unwatermarked spans, one row per model and one column per token budget T .Table 5: Empirical check of the certificate (Theorem 4, and its model-aware form in Appendix A). Each column fixes a level δ: the decoder returns a chunk’s message only if ˆδc ≤ δ and abstains ( ⊥)otherwise. Both decoders read the same saved generations of the message-length sweep ( T = 150 ;
+
+L ∈ { 8, . . . , 32 } on completion and summarization, L = 8 on story generation; 50 users each), 950 
+
+watermarked chunks and 950 paired unwatermarked chunks per model. Every entry is a fraction of chunks. Cert. error : watermarked chunks on which a wrong message is returned; the theorem bounds its probability by δ, and with 950 chunks a single error is .0011 . Null cert. rate : unwatermarked chunks that are nevertheless certified, which should stay near δ. Abst. : watermarked chunks of each task on which the decoder abstains; lower means more messages recovered with a certificate. The model-aware decoder uses the robust score with ε = 0 .1. For every row, lower is better.                                                                                                                                                                
+
+> CertMark model-agnostic CertMark model-aware
+> δ10 −410 −30.01 0.05 0.10.20.510 −410 −30.01 0.05 0.10.20.5
+> Qwen3.5-4B
+> cert. error ( ≤δ).0000 .0000 .0063 .0221 .0305 .0537 .1168 .0000 .0011 .0074 .0147 .0168 .0274 .0474 null cert. rate ( ≈δ).0021 .0063 .0137 .0621 .1200 .2147 .4074 .0000 .0000 .0074 .0442 .1000 .1895 .3863 abst., completion .178 .129 .082 .056 .044 .027 .013 .040 .022 .009 .004 .004 .002 .000 abst., summarization .902 .840 .727 .627 .582 .498 .324 .604 .509 .387 .251 .207 .158 .069 abst., story .160 .060 .020 .000 .000 .000 .000 .000 .000 .000 .000 .000 .000 .000
+> Llama-3.1-8B
+> cert. error ( ≤δ).0000 .0000 .0032 .0211 .0463 .1053 .2126 .0000 .0011 .0042 .0116 .0189 .0411 .0821 null cert. rate ( ≈δ).0000 .0011 .0116 .0463 .0968 .1789 .3989 .0000 .0011 .0116 .0463 .0979 .1842 .3958 abst., completion .384 .296 .196 .124 .100 .080 .047 .009 .004 .000 .000 .000 .000 .000 abst., summarization 1.000 1.000 .993 .951 .889 .771 .569 .856 .776 .662 .536 .482 .371 .238 abst., story .980 .940 .800 .580 .500 .400 .160 .060 .000 .000 .000 .000 .000 .000
+
+Robustness to text-editing attacks. Figure 3 evaluates copy-paste attacks across both models and token budgets. CertMark remains robust and is the strongest method overall. Appendix G extends the comparison to token substitution and deletion. 
+
+Empirical check of the certificate. Table 5 checks Theorem 4, and its model-aware form in Appendix A, on saved watermarked chunks and paired unwatermarked chunks; its caption defines each row. The certified error stays within δ up to sampling noise, and the null certification rate tracks the selected level. Relaxing the level reduces abstention but permits more erroneous and null certifications, exhibiting the expected confidence–coverage trade-off. The model-aware decoder abstains less across tasks, particularly when the available evidence is weak, showing that access to the model probabilities improves coverage while retaining the certificate. 
+
+## 5 CONCLUSION 
+
+CertMark is, to our knowledge, the first distortion-free multi-bit watermark with certified recovery. It improves bit accuracy without increasing perplexity and remains fast to encode and decode. 9Preprint AI USE STATEMENT 
+
+Large language models were used for editorial support, including polishing the manuscript’s writing and presentation, and for drafting implementation code. The authors made all substantive research decisions and contributed all core technical ideas. ETHICS STATEMENT 
+
+This research adheres to the ICLR Code of Ethics. All experiments use publicly available bench-mark datasets and do not involve new data collection or human-subject experiments; no personally identifiable information is intentionally used. Our method is intended to support provenance and accountability by embedding recoverable metadata in language-model outputs. Multi-bit water-marking is nevertheless dual-use: it could facilitate covert user tracking, and a compromised key or forged payload could lead to false attribution. The certified decoder bounds the probability of an incorrect recovery only under the assumptions stated in the paper and does not eliminate these deployment risks. Responsible use therefore requires secure key management, appropriate notice and consent, access controls, clear communication of abstentions and uncertainty, and safeguards against treating watermark evidence alone as conclusive in high-stakes decisions. We report our assumptions, limitations, and robustness results transparently and have taken care to follow best practices for research integrity. REPRODUCIBILITY STATEMENT 
+
+Our code is available at https://github.com/Batorskq/CertMark . It contains the Cert-Mark encoder, both decoders and their certificates, integrated into the XMark evaluation harness, together with one script per reported CertMark experiment and the fixed key, random seeds and user messages. Appendix B provides details of the models, datasets, experimental protocol, evaluation metrics, and hyperparameters, while Appendix D describes the runtime evaluation. Additional model, baseline, and robustness results appear in Appendices E–G. Appendix H gives pseudocode for the encoder, both decoders, and the certification procedures, and Appendix I specifies the pseudorandom-function instantiation. Full derivations of the theoretical results are provided in Appendix A and Appendices J–R. To the best of our knowledge, the manuscript and accompanying artifacts contain the details necessary to reproduce our results. 
+
+## REFERENCES 
+
+Ondˇ rej Bojar, Christian Buck, Christian Federmann, Barry Haddow, Philipp Koehn, Johannes Level-ing, Christof Monz, Pavel Pecina, Matt Post, Herve Saint-Amand, Radu Soricut, Lucia Specia, and Aleš Tamchyna. Findings of the 2014 workshop on statistical machine translation. In Proceed-ings of the Ninth Workshop on Statistical Machine Translation , pp. 12–58, Baltimore, Maryland, USA, June 2014. Association for Computational Linguistics. doi: 10.3115/v1/W14-3302. URL 
+
+https://aclanthology.org/W14-3302/ .Massieh Kordi Boroujeny, Ya Jiang, Kai Zeng, and Brian Mark. Multi-bit distortion-free watermark-ing for large language models. arXiv preprint arXiv:2402.16578 , 2024. Yapei Chang, Kalpesh Krishna, Amir Houmansadr, John Frederick Wieting, and Mohit Iyyer. Post-Mark: A robust blackbox watermark for large language models. In Proceedings of the 2024 Con-ference on Empirical Methods in Natural Language Processing , pp. 8969–8987, Miami, Florida, USA, 2024. Association for Computational Linguistics. doi: 10.18653/v1/2024.emnlp-main.506. Ruibo Chen, Yihan Wu, Junfeng Guo, and Heng Huang. Improved unbiased watermark for large language models. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025. URL https://aclanthology.org/2025. acl-long.1005/ .Miranda Christ, Sam Gunn, and Or Zamir. Undetectable watermarks for language models. In The Thirty Seventh Annual Conference on Learning Theory , pp. 1125–1139. PMLR, 2024. 10 Preprint Sumanth Dathathri, Abigail See, Sumedh Ghaisas, Po-Sen Huang, Rob McAdam, Johannes Welbl, Vandana Bachani, Alex Kaskasoli, Robert Stanforth, Tatiana Matejovicova, et al. Scalable water-marking for identifying large language model outputs. Nature , 634(8035):818–823, 2024. doi: 10.1038/s41586-024-08025-4. Angela Fan, Mike Lewis, and Yann Dauphin. Hierarchical neural story generation. In Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) ,pp. 889–898. Association for Computational Linguistics, 2018. doi: 10.18653/v1/P18-1082. URL 
+
+https://aclanthology.org/P18-1082/ .Xiaoyan Feng, He Zhang, Yanjun Zhang, Leo Yu Zhang, and Shirui Pan. BiMark: Unbiased multilayer watermarking for large language models. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pp. 17049–17067. PMLR, 2025. Pierre Fernandez, Antoine Chaffin, Karim Tit, Vivien Chappelier, and Teddy Furon. Three bricks to consolidate watermarks for large language models. In 2023 IEEE International Workshop on Information Forensics and Security (WIFS) , pp. 1–6. IEEE, 2023. Jiayi Fu, Xuandong Zhao, Ruihan Yang, Yuansen Zhang, Jiangjie Chen, and Yanghua Xiao. Gumbel-Soft: Diversified language model watermarking via the GumbelMax-trick. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) ,pp. 5791–5808, 2024. URL https://aclanthology.org/2024.acl-long.315/ .Eva Giboulot and Teddy Furon. WaterMax: Breaking the LLM watermark detectability-robustness-quality trade-off. In Advances in Neural Information Processing Systems , volume 37, 2024. Thibaud Gloaguen, Nikola Jovanovi´ c, Robin Staab, and Martin Vechev. Black-box detection of lan-guage model watermarks. In The Thirteenth International Conference on Learning Representations ,2025. Oded Goldreich, Shafi Goldwasser, and Silvio Micali. How to construct random functions. Journal of the ACM , 33(4):792–807, 1986. doi: 10.1145/6490.6503. Noah Golowich and Ankur Moitra. Edit distance robust watermarks via indexing pseudorandom codes. In Advances in Neural Information Processing Systems , volume 37, 2024. Emil J. Gumbel. Statistical Theory of Extreme Values and Some Practical Applications , volume 33 of National Bureau of Standards Applied Mathematics Series . U.S. Government Printing Office, 1954. Philip Hall. The distribution of means for samples of size N drawn from a population in which the variate takes values between 0 and 1, all such values being equally probable. Biometrika , 19(3/4): 240–245, 1927. Haiyun He, Yepeng Liu, Ziqiao Wang, Yongyi Mao, and Yuheng Bu. Theoretically grounded framework for LLM watermarking: A distribution-adaptive approach. In Advances in Neural Information Processing Systems , volume 38, 2025. Karl Moritz Hermann, Tomáš Koˇ ciský, Edward Grefenstette, Lasse Espeholt, Will Kay, Mustafa Suleyman, and Phil Blunsom. Teaching machines to read and comprehend. In Advances in Neural Information Processing Systems , volume 28, 2015. URL https://papers.nips. cc/paper/5945-teaching-machines-to-read-and-comprehend .Zhengmian Hu, Lichang Chen, Xidong Wu, Yihan Wu, Hongyang Zhang, and Heng Huang. Unbiased watermark for large language models. In The Twelfth International Conference on Learning Representations , 2024. URL https://openreview.net/forum?id=7w4RGjzd81 .Joseph O. Irwin. On the frequency distribution of the means of samples from a population having any law of frequency with finite moments, with special reference to Pearson’s Type II. Biometrika ,19(3/4):225–239, 1927. 11 Preprint Ya Jiang, Chuxiong Wu, Massieh Kordi Boroujeny, Brian Mark, and Kai Zeng. StealthInk: A multi-bit and stealthy watermark for large language models. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pp. 27685–27709. PMLR, 2025. Ya Jiang, Massieh Kordi Boroujeny, Surender Suresh Kumar, and Kai Zeng. MirrorMark: Gener-alizable mirrored sampling for multi-bit LLM watermarking. arXiv preprint arXiv:2601.22246 ,2026. Nikola Jovanovi´ c, Robin Staab, and Martin Vechev. Watermark stealing in large language models. In 
+
+Proceedings of the 41st International Conference on Machine Learning , 2024. Joeun Kim, HoEun Kim, Dongsup Jin, and Young-Sik Kim. Block-wise codeword embedding for reliable multi-bit text watermarking. In Proceedings of the 43rd International Conference on Machine Learning , 2026. John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein. A watermark for large language models. In Proceedings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research , pp. 17061–17084. PMLR, 2023. John Kirchenbauer, Jonas Geiping, Yuxin Wen, Manli Shu, Khalid Saifullah, Kezhi Kong, Kasun Fernando, Aniruddha Saha, Micah Goldblum, and Tom Goldstein. On the reliability of watermarks for large language models. In The Twelfth International Conference on Learning Representations ,2024. URL https://openreview.net/forum?id=DEJIDCmWOz .Kalpesh Krishna, Yixiao Song, Marzena Karpinska, John Wieting, and Mohit Iyyer. Paraphrasing evades detectors of AI-generated text, but retrieval is an effective defense. In Advances in Neural Information Processing Systems , volume 36, 2023. Rohith Kuditipudi, John Thickstun, Tatsunori Hashimoto, and Percy Liang. Robust distortion-free watermarks for language models. Transactions on Machine Learning Research , 2024. Taehyun Lee, Seokhee Hong, Jaewoo Ahn, Ilgee Hong, Hwaran Lee, Sangdoo Yun, Jamin Shin, and Gunhee Kim. Who wrote this code? Watermarking for code generation. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) ,pp. 4890–4911, 2024. URL https://aclanthology.org/2024.acl-long.268/ .Liying Li, Yihan Bai, and Minhao Cheng. Where am I from? identifying origin of LLM-generated content. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pp. 12218–12229. Association for Computational Linguistics, 2024. Chin-Yew Lin. ROUGE: A package for automatic evaluation of summaries. In Text Summarization Branches Out , pp. 74–81, Barcelona, Spain, July 2004. Association for Computational Linguistics. URL https://aclanthology.org/W04-1013/ .Aiwei Liu, Leyi Pan, Xuming Hu, Shuang Li, Lijie Wen, Irwin King, and Philip S. Yu. An unforgeable publicly verifiable watermark for large language models. In The Twelfth International Conference on Learning Representations , 2024a. Aiwei Liu, Leyi Pan, Xuming Hu, Shiao Meng, and Lijie Wen. A semantic invariant robust watermark for large language models. In The Twelfth International Conference on Learning Representations ,2024b. URL https://openreview.net/forum?id=6p8lpe4MNf .Yepeng Liu and Yuheng Bu. Adaptive text watermark for large language models. In Proceedings of the 41st International Conference on Machine Learning , 2024. Yijian Lu, Aiwei Liu, Dianzhi Yu, Jingjing Li, and Irwin King. An entropy-based text watermarking detection method. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 11724–11735, 2024. URL https://aclanthology. org/2024.acl-long.630/ .Chris J. Maddison, Daniel Tarlow, and Tom Minka. A* sampling. In Advances in Neural Information Processing Systems , volume 27, 2014. 12 Preprint Qi Pang, Shengyuan Hu, Wenting Zheng, and Virginia Smith. No free lunch in LLM watermarking: Trade-offs in watermarking design choices. In Advances in Neural Information Processing Systems ,volume 37, 2024. Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu. Bleu: a method for automatic evaluation of machine translation. In Proceedings of the 40th Annual Meeting of the Association for Computational Linguistics , pp. 311–318, Philadelphia, Pennsylvania, USA, July 2002. Association for Computational Linguistics. URL https://aclanthology.org/P02-1040/ .Matt Post. A call for clarity in reporting BLEU scores. In Proceedings of the Third Conference on Ma-chine Translation: Research Papers , pp. 186–191, Brussels, Belgium, October 2018. Association for Computational Linguistics. URL https://aclanthology.org/W18-6319/ .Wenjie Qu, Wengrui Zheng, Tianyang Tao, Dong Yin, Yanze Jiang, Zhihua Tian, Wei Zou, Jinyuan Jia, and Jiaheng Zhang. Provably robust multi-bit watermarking for AI-generated text. In 34th USENIX Security Symposium , pp. 201–220. USENIX Association, 2025. Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. Journal of Machine Learning Research , 21(140):1–67, 2020. URL 
+
+https://www.jmlr.org/papers/v21/20-074.html .Guy L. Steele Jr., Doug Lea, and Christine H. Flood. Fast splittable pseudorandom number generators. In Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages & Applications (OOPSLA) , pp. 453–472. ACM, 2014. Lean Wang, Wenkai Yang, Deli Chen, Hao Zhou, Yankai Lin, Fandong Meng, Jie Zhou, and Xu Sun. Towards codable watermarking for injecting multi-bits information to LLMs. In The Twelfth International Conference on Learning Representations , 2024. URL https://openreview. net/forum?id=JYu5Flqm9D .Yihan Wu, Zhengmian Hu, Junfeng Guo, Hongyang Zhang, and Heng Huang. A resilient and accessible distribution-preserving watermark for large language models. In Proceedings of the 41st International Conference on Machine Learning , volume 235 of Proceedings of Machine Learning Research , pp. 53443–53470. PMLR, 2024. Yihan Wu, Ruibo Chen, Zhengmian Hu, Yanshuo Chen, Junfeng Guo, Hongyang Zhang, and Heng Huang. Distortion-free watermarks are not truly distortion-free under watermark key collisions. In 
+
+The Thirteenth International Conference on Learning Representations , 2025. Jiahao Xu, Rui Hu, and Zikai Zhang. Majority bit-aware watermarking for large language models. 
+
+arXiv preprint arXiv:2508.03829 , 2025a. Jiahao Xu, Rui Hu, Olivera Kotevska, and Zikai Zhang. XMark: Reliable multi-bit water-marking for LLM-generated texts. In Proceedings of the 64th Annual Meeting of the As-sociation for Computational Linguistics (Volume 1: Long Papers) , pp. 14747–14763, San Diego, California, United States, July 2026. Association for Computational Linguistics. URL 
+
+https://aclanthology.org/2026.acl-long.672/ .Xiaojun Xu, Jinghan Jia, Yuanshun Yao, Yang Liu, and Hang Li. Robust multi-bit text watermark with LLM-based paraphrasers. In Proceedings of the 42nd International Conference on Machine Learning , 2025b. KiYoon Yoo, Wonhyuk Ahn, and Nojun Kwak. Advancing beyond identification: Multi-bit watermark for large language models. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pp. 4031–4055, Mexico City, Mexico, June 2024. Association for Computational Linguistics. Hanlin Zhang, Benjamin L. Edelman, Danilo Francati, Daniele Venturi, Giuseppe Ateniese, and Boaz Barak. Watermarks in the sand: Impossibility of strong watermarking for generative models. In 
+
+Proceedings of the 41st International Conference on Machine Learning , 2024. 13 Preprint Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q. Weinberger, and Yoav Artzi. BERTScore: Evaluating text generation with BERT. In International Conference on Learning Representations ,2020. URL https://openreview.net/forum?id=SkeHuCVFDr .Xuandong Zhao, Prabhanjan Ananth, Lei Li, and Yu-Xiang Wang. Provable robust watermarking for AI-generated text. In The Twelfth International Conference on Learning Representations , 2024. Xuandong Zhao, Lei Li, and Yu-Xiang Wang. Permute-and-flip: An optimally stable and watermark-able decoder for LLMs. In The Thirteenth International Conference on Learning Representations ,2025. 
+
+## A THE CERTIFICATE OF THE MODEL -AWARE DECODER 
+
+The certificate of Theorem 4 rests on one fact: under a wrong candidate the scored uniforms are independent U (0 , 1) variables whatever the text, so the text-only score has the null law Γ( nc, 1) and the certificate is the number of wrong candidates times the Gamma tail at the observed score. The model-aware decoder changes the per-token score, not this fact. Its certificate therefore has the same form, with the Gamma tail replaced by the null tail of the new score, and it needs the same two extra inputs as the decoder itself, the prompt and the deployed sampler. This appendix spells the construction out in equations; Appendices P and Q hold the proofs. Throughout, fix a chunk c and condition on the text y, the scored-position sets T, the prompt x and the model. This fixes pt = p(yt | x, y <t ) ∈ (0 , 1] for t ∈ Tc and, with it, the per-token likelihood ratio fp(u) = p−1u1/p −1 of (16). 
+
+Score. The model-aware score (17) splits into a candidate-independent constant and a weighted sum of log-uniforms, 
+
+ℓc(m′) = Ac + Rc,w (m′), wt = 1
+
+pt
+
+− 1 ≥ 0,Ac = X
+
+> t∈Tc
+
+log 1
+
+pt
+
+, Rc,w (m′) = X
+
+> t∈Tc
+
+wt log u(m′) 
+
+> t
+
+(yt).
+
+(21) Since Ac is the same for every candidate, ˆmc = arg max m′ ℓc(m′) = arg max m′ Rc,w (m′), and the certificate is built from Rc,w alone. A token the sampler was certain of, pt = 1 , has wt = 0 and drops out; write T + 
+
+> c
+
+= {t ∈ Tc : wt > 0}.
+
+Null law. For a wrong candidate m′̸ = mc, the uniforms u(m′) 
+
+> t
+
+(yt), t ∈ Tc, are read at PRF inputs the encoder never queried, so they are independent U (0 , 1) variables conditional on (y, T), exactly as in Theorem 2; conditioning on x and the model adds nothing, because pt is a function of the text and the prompt. With Et = − log u(m′) 
+
+> t
+
+(yt) ∼ Exp(1) independent, 
+
+Zc,w := −Rc,w (m′) = X 
+
+> t∈T+
+> c
+
+wtEt, Fc,w (z) = Pr[ Zc,w ≤ z],
+
+Ee−sZ c,w  = Y 
+
+> t∈T+
+> c
+
+11 + sw t
+
+(s ≥ 0) ,
+
+(22) a weighted sum of independent unit exponentials whose law depends on the text only through the weights. Its mean is P 
+
+> t
+
+wt = P
+
+> t
+
+(1 − pt)/p t. For the correct candidate, ut(yt) ∼ Beta(1 /p t, 1) 
+
+by Theorem 3, so − log ut(yt) ∼ Exp(1 /p t) and −Rc,w (mc) has mean P 
+
+> t
+
+wtpt = P
+
+> t
+
+(1 − pt),smaller by the factor pt at every token: the less likely the emitted token, the wider the gap the score opens between the correct candidate and every wrong one. 
+
+Certificate and decision. A large score is a small Zc,w , so the upper tail of the score is the lower tail of the null law, Pr[ Rc,w (m′) ≥ r] = Fc,w (−r). The certificate and the certified decoder are 
+
+ˆδc,w = min 
+
+n
+
+1, (2 kc − 1) Fc,w 
+
+ −Rc,w ( ˆ mc)o
+
+= min 
+
+n
+
+1, (2 kc − 1) Fc,w 
+
+ Ac − ℓc( ˆ mc)o
+
+,Dδ (y) = 
+
+( ˆmc, ˆδc,w ≤ δ, 
+
+⊥, ˆδc,w > δ, 
+
+(23) 14 Preprint with ˆδc,w = 1 when T + 
+
+> c
+
+= ∅. This is (13)–(14) with the Gamma tail replaced by Fc,w , and the guarantee is the same: 
+
+Pr 
+
+> κ
+
+Dδ (Y1: n) /∈ { mc, ⊥}  ≤ δ. (24) The argument is that of Theorem 4. For δ < 1 let zδ solve Fc,w (zδ ) = δ/ (2 kc − 1) ; then ˆδc,w ≤ δ
+
+exactly when −Rc,w ( ˆ mc) ≤ zδ , a wrong candidate can be accepted only if its own −Rc,w is at most 
+
+zδ , and the union bound over the 2kc − 1 wrong candidates gives (2 kc − 1) Fc,w (zδ ) = δ. Decoding every chunk at level δ/C bounds the probability of any wrong chunk in the message by δ.
+
+Computing the tail. Fc,w is the distribution function of a sum of up to a few hundred independent exponentials with distinct rates. Its closed form, an alternating sum of exponentials, is numerically un-usable at this size, and the convolution recursion of Appendix P is exact but slow. The implementation evaluates it through the cumulant generating function of the null score, 
+
+K(λ) = log EeλR c,w (m′) = − X 
+
+> t∈T+
+> c
+
+log(1 + λw t),K′(λ) = − X 
+
+> t∈T+
+> c
+
+wt
+
+1 + λw t
+
+, K′′ (λ) = X 
+
+> t∈T+
+> c
+
+w2
+
+> t
+
+(1 + λw t)2 ,
+
+(25) by the Lugannani–Rice saddlepoint approximation. For the observed score r = Rc,w ( ˆ mc) above the null mean, let ˆλ > 0 solve K′(ˆλ) = r; then 
+
+Fc,w (−r) = Pr[ Rc,w (m′) ≥ r] ≈ 1 − Φ( ˆ w) − ϕ( ˆ w)
+
+ 1ˆw − 1ˆu
+
+
+
+,
+
+ˆw =
+
+q
+
+2 ˆλr − K(ˆλ), ˆu = ˆλ
+
+q
+
+K′′ (ˆλ),
+
+(26) with Φ and ϕ the standard normal distribution function and density. The approximation is of an exactly known law, not of a modelling assumption, and it is most accurate in the far tail, where certificates are decided; the exact recursion remains available when an exact value is required. 
+
+The robust decoder. With ε > 0 the decoder scores rc(m′) = P 
+
+> t∈Tc
+
+spt,ε 
+
+ u(m′) 
+
+> t
+
+(yt) with 
+
+sp,ε (u) = log[(1 − ε)fp(u) + ε], the score (19). The wrong-candidate uniforms are U (0 , 1) whatever was done to the text, so the null law, its upper tail and the certificate are 
+
+Zc,ε = X
+
+> t∈Tc
+
+spt,ε (Ut), Ut i.i.d. U (0 , 1) , Qc,ε (s) = Pr[ Zc,ε ≥ s],
+
+ˆδc,ε = min 
+
+n
+
+1, (2 kc − 1) Qc,ε 
+
+ rc( ˆ mc)o
+
+,
+
+(27) and Dδ returns ˆmc when ˆδc,ε ≤ δ, with the guarantee (24) by the same union bound. Each summand is bounded, log ε ≤ sp,ε (u) ≤ log  ε + (1 − ε)/p , and for p < 1 has the explicit distribution function 
+
+Pr sp,ε (U ) ≤ x =
+
+ p (ex − ε)1 − ε
+
+p/ (1 −p)
+
+, log ε < x < log 
+
+
+
+ε + 1 − εp
+
+
+
+, (28) so Qc,ε follows from the convolution recursion of Appendix Q. The implementation carries that recursion out on a lattice of step ∆ = 0 .002 : the mass that (28) assigns to each cell (( k − 1)∆ , k ∆] 
+
+is placed at the cell’s upper end, the lattice masses of the summands are convolved by the fast Fourier transform, and the tail is summed from the first lattice point at or above the observed score. Rounding every summand upwards makes the computed tail an upper bound on Qc,ε , so the certificate stays valid and is at most slightly conservative; it agrees with a 2 × 10 6-draw Monte Carlo estimate to within a few percent and, unlike Monte Carlo, has no resolution floor, which matters for 216 − 1
+
+wrong candidates. The contamination model of Theorem 6 shapes the score, not the guarantee: the null law in (27) holds for every wrong candidate on every text, so the certificate of the robust decoder remains valid on edited text, and the floor log ε on every summand is what keeps a single pasted low-probability token from deciding the chunk. All model-aware results in this paper use the robust score with ε = 0 .1.15 Preprint 
+
+## B EXPERIMENTAL SETUP AND HYPERPARAMETERS 
+
+We evaluate Qwen3.5-4B and Llama-3.1-8B, using their instruction variants when required by the task. Following the XMark protocol, we test text completion on C4 (Raffel et al., 2020), text summarization on CNN/DailyMail (Hermann et al., 2015), and story generation on WritingPrompts (Fan et al., 2018), with 50 users, 8-bit messages, and token budgets T ∈ { 150 , 200 , 250 , 300 }. We use temperature 0.7,top-p sampling with p = 0 .9, δ = 2 for biased baselines, and a separate model from the same family to measure perplexity. Appendix C defines every reported metric. Every experiment reports the same four CertMark variants, always in this order: CertMark model-agnostic, the decoder of Section 3, and CertMark model-aware, the decoder of Section 3.3, each with the default chunking, whose label gives the chunk width in bits, and with 2-bit chunks. The default chunk width is the largest divisor of 
+
+L that is at most 16 , so one chunk carries the whole message for L ≤ 16 . The two decoders read the generations of the same encoder. 
+
+## C EVALUATION METRICS 
+
+Every number in the paper is computed by the harness of Xu et al. (2026), or offline from the generations it saves, with one recipe for all methods. A run has 50 users. User i holds an L-bit message mi and two prompts, each answered with exactly T / 2 tokens, so T is the number of watermarked tokens from which the decoder recovers one message. Each watermarked text is paired with an unwatermarked sample of the same model from the same prompt under the same generation seed and decoding settings. Unless stated otherwise, a reported value is the mean over users, and shaded bands and error bars are ±1 standard error over users. 
+
+Bit accuracy (BA). The decoder reads the two texts of user i and returns an L-bit message ˆmi, for CertMark the concatenation of the chunk decisions of Section 3. Bit accuracy is the percentage of correctly recovered bits, 
+
+BA = 100 50 L
+
+> 50
+
+X
+
+> i=1
+> L
+
+X
+
+> j=1
+
+1 ˆmi,j = mi,j 
+
+,
+
+so chance is 50% and 100% means that every user’s message was recovered exactly. Everywhere except in Table 5 the decoders always return a message, that is level δ = 1 without abstention. The “Avg.” columns and the distortion columns of Table 2 average over the four token budgets. Under an attack (Figures 3 and 4) BA is computed on the edited texts and additionally averaged over three random draws of the edit. 
+
+Perplexity (PPL). Fluency is scored by an oracle model of the same family that did not generate the text: Qwen3.5-9B for Qwen3.5-4B, and for Llama-3.1-8B the other 8B sibling, so Llama-3.1-8B-Instruct scores the completions of the base model and the base model scores the two chat tasks. The oracle is run on prompt and response with the prompt tokens masked, and the perplexity of a user is exp of the mean negative log-likelihood of the generated tokens, pooled over the user’s two texts; PPL is the mean over users. Lower is better, but the reference for a distortion-free scheme is the “unwatermarked” row, the same quantity on the paired unwatermarked samples, rather than the smallest attainable value. The two decoders of CertMark read the same generations, so they share PPL and every distortion measure below. 
+
+Top-k agreement. At every step of watermarked generation the harness records the k most likely next tokens under the model’s own distribution for the current watermarked prefix, before the watermark acts on the logits. Top-k is the percentage of emitted tokens that lie in this set, for k ∈ { 1, 5, 10 },averaged over texts and users. It measures how far the watermark pulls the sampler away from the model’s preferences. Since the unwatermarked sampler at temperature 0.7 emits its top token only part of the time, a distortion-free scheme matches the rate of unwatermarked sampling rather than 
+
+100% .
+
+BERTScore (BSc.). BERTScore F1 (Zhang et al., 2020) between each watermarked text and its paired unwatermarked sample, with the package’s default English backbone (RoBERTa-large, layer 17), averaged over the texts of a user and then over users. It measures semantic agreement with the untouched sampler’s output, not quality against a human reference. 16 Preprint 
+
+ROUGE. ROUGE-1, ROUGE-2, ROUGE-L and ROUGE-Lsum F-measures (Lin, 2004) with Porter stemming, computed with the rouge-score package, the watermarked text as prediction and the paired unwatermarked sample as reference. The harness re-downloads the metric on every call, which fails on our compute nodes and logs NaN, so ROUGE is recomputed offline from the saved generations with the harness’s own recipe: the package’s bootstrap aggregate over the texts of a user, then the mean over users. Like Top-k and BERTScore, ROUGE here measures agreement with unwatermarked text, so a distortion-free scheme scores like two independent samples of the model rather than 1.
+
+BLEU. Only the translation task has references. BLEU (Papineni et al., 2002) is corpus BLEU computed with sacrebleu (Post, 2018) at its defaults ( 13a tokenization, up to four-grams, exponential smoothing) over all watermarked translations of all users against the English references of WMT14 newstest2014, each translation matched to its reference through the German source in its prompt. The “unwatermarked” row is the same computation on the paired unwatermarked translations. BLEU is therefore the one text metric that scores quality against a human reference. 
+
+Certificate metrics. For Table 5 the certified decoder at level δ returns its message only if ˆδc ≤ δ
+
+and ⊥ otherwise. Certified error is the fraction of watermarked chunks on which it returns a wrong message; null certification rate is the fraction of paired unwatermarked chunks on which it returns any message; abstention is the fraction of watermarked chunks of a task on which it returns ⊥.
+
+## D RUNTIME COMPARISON 
+
+Table 6: Runtime on one H100. Gen.: ms/token; Dec.: s/user.                                                  
+
+> Qwen3.5-4B Llama-3.1-8B Method Gen. Dec. Gen. Dec. CycleShift 19.6 .15 15.0 .07 DepthW 19.0 11.56 14.9 12.03 StealthInk 20.0 .18 15.3 .10 MPAC 18.9 .03 14.8 .03 RSBH 19.7 2.18 15.1 1.18 XMark 54.9 .28 27.6 .15 CertMark model-agnostic 8-bit 20.1 .01 15.5 .01 CertMark model-agnostic 2-bit 20.2 .01 15.5 .01 CertMark model-aware 8-bit 20.1 .42 15.5 .20 CertMark model-aware 2-bit 20.2 .35 15.5 .19 unwatermarked 19.1 –14.1 –
+
+Table 6 measures generation time per emitted token and decoding time per user for two 75 -token completions, averaged over 20 users. CertMark generates near the unwatermarked speed, and CertMark model-agnostic 8-bit is the fastest decoder tested. CertMark model-aware adds a model pass but remains faster than the heavier baselines. 
+
+## E MAIN BENCHMARK ON LLAMA -3.1-8B 
+
+Table 7 gives the large three-task benchmark table for Llama-3.1-8B (completion) and Llama-3.1-8B-Instruct (chat tasks). Its main findings and all other experiments on this model are discussed in Section 4. 
+
+## F COMPARISON TO OTHER DISTORTION -FREE METHODS 
+
+CertMark is not the first distortion-free watermark. Zero-bit schemes have preserved the sampling law for some time (Kuditipudi et al., 2024; Christ et al., 2024; Hu et al., 2024; Wu et al., 2024; Dathathri et al., 2024), and StealthInk (Jiang et al., 2025), BiMark (Feng et al., 2025), DISC (Boroujeny et al., 2024) and MirrorMark (Jiang et al., 2026) carry a multi-bit payload without altering it, the first two by a keyed reweighting whose mean over the key is the original law, the last two by moving the message into the sampling randomness. To the best of our knowledge, CertMark is the only method that is distortion-free and also returns a certificate on the decoded message. Table 8 compares the multi-bit schemes on Qwen3.5-4B under the protocol of Table 2: StealthInk repeats its rows of that 17 Preprint Table 7: Table 2 repeated with Llama-3.1-8B (completion) and Llama-3.1-8B-Instruct (chat tasks) as the generating model, with perplexity under the other 8B sibling of the family since the 70B oracle does not fit one GPU. Every number is measured in our harness; layout and colours follow the main table. 
+
+Method T = 150 T = 200 T = 250 T = 300 Avg. Distortion (avg. over T )BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ Top-1 ↑ Top-5 ↑ R-1 ↑ R-L ↑
+
+Text Completion 
+
+CycleShift 100.00 5.63 100.00 5.75 100.00 5.59 100.00 5.51 100.00 5.62 57.62 88.55 0.321 0.186 DepthW 98.25 5.28 99.50 5.12 99.00 5.12 100.00 5.19 99.19 5.18 60.75 89.56 0.337 0.195 StealthInk 90.00 4.61 91.00 4.35 94.25 4.58 96.25 4.28 92.88 4.46 64.98 92.37 0.347 0.202 MPAC 96.75 5.84 98.00 5.48 99.25 5.45 99.00 5.67 98.25 5.61 57.66 88.34 0.329 0.188 RSBH 94.50 5.29 96.25 5.23 95.75 5.35 97.50 5.39 96.00 5.31 58.31 90.17 0.331 0.188 XMark 98.75 5.63 100.00 5.15 100.00 5.04 100.00 5.05 99.69 5.22 59.31 90.27 0.333 0.191 CertMark model-agnostic 8-bit 100.00 4.29 100.00 4.16 100.00 4.09 100.00 4.08 100.00 4.15 68.06 93.58 0.358 0.215 CertMark model-agnostic 2-bit 99.00 4.28 99.75 4.20 100.00 4.11 100.00 3.99 99.69 4.14 67.80 93.47 0.359 0.206 CertMark model-aware 8-bit 100.00 4.29 100.00 4.16 100.00 4.09 100.00 4.08 100.00 4.15 68.06 93.58 0.358 0.215 CertMark model-aware 2-bit 100.00 4.28 100.00 4.20 100.00 4.11 100.00 3.99 100.00 4.14 67.80 93.47 0.359 0.206 
+
+Text Summarization 
+
+CycleShift 66.50 4.31 83.00 4.50 88.00 4.58 91.75 4.80 82.31 4.55 82.77 99.08 0.613 0.453 DepthW 57.00 4.31 61.00 4.37 68.50 4.47 68.00 4.65 63.62 4.45 84.29 99.28 0.621 0.460 StealthInk 61.25 4.14 74.00 4.26 73.50 4.26 77.00 4.35 71.44 4.25 87.26 99.74 0.631 0.477 MPAC 78.00 4.57 83.50 4.51 84.00 4.53 91.25 4.74 84.19 4.59 82.53 98.99 0.611 0.451 RSBH 63.00 4.65 72.25 4.52 77.50 4.59 85.25 4.76 74.50 4.63 81.84 99.19 0.608 0.446 XMark 81.25 4.47 81.50 4.52 89.00 4.51 95.50 4.69 86.81 4.55 82.58 99.40 0.619 0.454 CertMark model-agnostic 8-bit 66.50 4.10 73.75 4.10 77.00 4.19 87.50 4.24 76.19 4.16 88.25 99.78 0.633 0.486 CertMark model-agnostic 2-bit 74.50 4.19 78.75 4.19 84.00 4.28 87.25 4.30 81.12 4.24 87.59 99.74 0.636 0.490 CertMark model-aware 8-bit 97.75 4.10 100.00 4.10 100.00 4.19 100.00 4.24 99.44 4.16 88.25 99.78 0.633 0.486 CertMark model-aware 2-bit 95.00 4.19 98.75 4.19 100.00 4.28 99.75 4.30 98.38 4.24 87.59 99.74 0.636 0.490 
+
+Story Generation 
+
+CycleShift 85.50 9.04 95.00 8.03 94.75 7.33 97.00 6.72 93.06 7.78 77.56 98.16 0.406 0.264 DepthW 65.25 8.57 77.50 7.87 83.00 7.45 81.75 6.47 76.88 7.59 79.24 98.45 0.410 0.259 StealthInk 72.50 7.86 76.00 7.52 79.50 6.28 80.00 6.03 77.00 6.92 83.28 99.37 0.425 0.281 MPAC 84.00 9.06 86.00 8.10 89.75 7.16 94.25 6.66 88.50 7.75 77.14 97.94 0.400 0.253 RSBH 73.75 8.85 78.75 8.25 87.25 7.47 93.00 6.80 83.19 7.84 76.72 98.55 0.402 0.253 XMark 90.50 8.68 92.50 7.73 97.25 7.20 97.00 6.76 94.31 7.59 77.42 98.68 0.404 0.254 CertMark model-agnostic 8-bit 80.25 7.90 88.50 7.03 93.25 6.35 93.75 5.91 88.94 6.80 85.19 99.48 0.426 0.281 CertMark model-agnostic 2-bit 82.75 8.32 86.75 7.18 89.75 6.51 92.00 6.04 87.81 7.01 85.04 99.42 0.430 0.288 CertMark model-aware 8-bit 100.00 7.90 100.00 7.03 100.00 6.35 100.00 5.91 100.00 6.80 85.19 99.48 0.426 0.281 CertMark model-aware 2-bit 99.00 8.32 99.75 7.18 100.00 6.51 100.00 6.04 99.69 7.01 85.04 99.42 0.430 0.288 
+
+table, BiMark runs the authors’ code with the paper’s defaults, ten layers and δ = 1 , and MirrorMark, which has no public code, is our reimplementation from the paper’s description with its defaults, carrying L = 8 as four 2-bit symbols. Since all of these schemes leave the sampling law unchanged, the perplexity columns agree to within the noise of the 50 -user sample and the differences fall on either side, StealthInk sitting slightly higher on completion and story generation. Bit accuracy is what separates them: CertMark model-agnostic 8-bit matches or exceeds every baseline in every cell, with the largest lead on summarization, 98 .8 on average against 93 .3 for BiMark, 92 .7 for MirrorMark and 81 .6 for StealthInk, and CertMark model-aware recovers every message on all three tasks. Appendix G includes the three baselines in the attack comparison. 
+
+## G FURTHER ATTACKS ON QWEN 3.5-4B 
+
+Figure 4 extends Figure 3 on Qwen3.5-4B to two token-level edits, for every method of Table 2 except DepthW, whose decoder enumerates all 2L codes and needs about an hour per user at L = 16 ,and for BiMark and MirrorMark (Appendix F). CycleShift, BiMark and MirrorMark, absent from Figure 3, are added, with their copy-paste results in the first row. The protocol is that of Figure 3: text completion, L = 16 , 50 users with two texts each, every method decoded by its own text-only detector on the same edited texts, and three random draws of each edit per text; the model-aware CertMark decoder also reads the prompt. 
+
+Token edits. The two edits act alike, because each destroys the contexts that overlap the edited position: about four scored positions per edit for the three-token context of CertMark, two for the one-token contexts of CycleShift and MPAC. Accordingly, CertMark model-aware 16-bit and CertMark model-agnostic 16-bit are the most robust methods at r = 10% , between 96 .5 and 99 .7 at every budget, where MPAC stays below 93 and XMark below 96 ; at 20% they still match or exceed 18 Preprint Table 8: Distortion-free multi-bit schemes on Qwen3.5-4B: StealthInk, BiMark, MirrorMark and the four CertMark rows of Table 2, under the same protocol, tasks and budgets, with perplexity under Qwen3.5-9B; every number is measured in our harness. Red marks the best value in each column. 
+
+Method T = 150 T = 200 T = 250 T = 300 Avg. BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓ BA ↑ PPL ↓
+
+Text Completion 
+
+StealthInk 89.75 6.15 90.50 5.79 95.25 5.73 94.25 5.61 92.44 5.82 BiMark 98.25 5.79 99.75 5.81 99.75 5.40 99.25 5.26 99.25 5.56 MirrorMark 100.00 5.83 100.00 5.66 100.00 5.12 100.00 5.27 100.00 5.47 CertMark model-agnostic 8-bit 100.00 5.65 100.00 5.23 100.00 5.29 100.00 5.11 100.00 5.32 CertMark model-agnostic 2-bit 99.75 5.63 100.00 5.55 100.00 5.34 99.75 5.20 99.88 5.43 CertMark model-aware 8-bit 100.00 5.69 100.00 5.20 100.00 5.35 100.00 5.09 100.00 5.33 CertMark model-aware 2-bit 100.00 5.64 100.00 5.52 100.00 5.36 100.00 5.24 100.00 5.44 
+
+Text Summarization 
+
+StealthInk 75.25 2.95 80.75 3.10 82.25 3.11 88.00 3.14 81.56 3.08 BiMark 89.50 2.93 92.00 3.05 95.75 3.07 96.00 3.09 93.31 3.04 MirrorMark 86.25 2.91 90.00 2.99 97.25 3.11 97.25 3.11 92.69 3.03 CertMark model-agnostic 8-bit 97.75 3.05 98.75 3.05 98.50 3.06 100.00 3.08 98.75 3.06 CertMark model-agnostic 2-bit 87.25 2.99 94.50 3.10 95.00 3.13 97.50 3.09 93.56 3.08 CertMark model-aware 8-bit 100.00 3.03 100.00 3.07 100.00 3.10 100.00 3.10 100.00 3.07 CertMark model-aware 2-bit 98.75 3.00 99.25 3.12 99.75 3.11 99.75 3.11 99.38 3.08 
+
+Story Generation 
+
+StealthInk 82.50 3.81 84.75 3.93 89.50 4.02 92.50 3.87 87.31 3.91 BiMark 95.25 3.52 97.75 3.75 98.00 3.71 98.75 3.88 97.44 3.71 MirrorMark 98.50 3.52 98.75 3.57 99.25 3.63 99.50 3.70 99.00 3.60 CertMark model-agnostic 8-bit 100.00 3.63 100.00 3.71 100.00 3.81 100.00 3.87 100.00 3.75 CertMark model-agnostic 2-bit 95.75 3.71 98.50 3.75 99.25 3.81 99.75 3.82 98.31 3.77 CertMark model-aware 8-bit 100.00 3.63 100.00 3.71 100.00 3.81 100.00 3.87 100.00 3.75 CertMark model-aware 2-bit 100.00 3.71 100.00 3.75 100.00 3.81 100.00 3.82 100.00 3.77 
+
+19 Preprint 50 60 70 80 90 100 
+
+> Copy-paste
+
+T = 150 T = 200 T = 250 T = 300   
+
+> 50 60 70 80 90 100
+> Substitution
+> 10 20 30
+
+edited fraction r (%)   
+
+> 50 60 70 80 90 100
+> Deletion
+> 10 20 30
+
+edited fraction r (%)   
+
+> 10 20 30
+
+edited fraction r (%)   
+
+> 10 20 30
+
+edited fraction r (%) Bit accuracy (%) ↑ 
+
+> CycleShift StealthInk RSBH MPAC XMark BiMark MirrorMark CertMark model-agnostic 16-bit CertMark model-agnostic 2-bit CertMark model-aware 16-bit CertMark model-aware 2-bit
+
+Figure 4: Robustness to token edits on Qwen3.5-4B, text completion, L = 16 : bit accuracy after a fraction r of the tokens of each watermarked text is replaced by spans of unwatermarked text (copy-paste, as in Figure 3), replaced by random vocabulary tokens, or deleted; one row per attack, one column per token budget T . Colours and markers as in Figure 3; the dashed line is chance. Means over 50 users and three random draws of the edit, ±1 standard error. 20 Preprint XMark, and MPAC from T = 200 on, but trail CycleShift; and at 30% , where a text keeps roughly a quarter of its scored positions, the 16-bit codebook runs out of evidence and they fall below all three, to between 57 and 74 . The 2-bit chunks degrade more gracefully, since each chunk needs far less evidence, and keep 69 to 77 at 30% . The model-aware decoder brings no advantage under these edits, because the damage is a loss of contexts rather than a contamination of scored tokens, which is what Theorem 6 addresses. CycleShift, the most robust method under heavy editing, pays for it with a bias on every token and the highest perplexity of Table 2. Of the distortion-free baselines, BiMark degrades like MPAC, from 87 to 94 at 10% to 72 to 80 at 30% , since its two-token context loses few positions per edit and each bit is a majority over its own votes, at the price of never reaching full recovery on clean text. MirrorMark is the least robust: its scheduler assigns positions inside context-anchored frames, so one edit shifts every position up to the next anchor, and it drops to 75 to 
+
+85 at 10% and to between 53 and 59 at 30% , close to chance. 
+
+## H PSEUDOCODE 
+
+Algorithms 1–4 restate the method as pseudocode, in the notation of Table 1. There is one encoder: both decoders read its generations and differ only in the per-token score. Each decoder first decodes 
+
+without certification, returning the highest-scoring candidate of every chunk; this is the decoder behind every benchmark table and figure. Given a level δ, it then decodes with certification by handing its scores to C ERTIFY (Algorithm 2), which keeps the candidate or abstains; this is the decoder of Table 5. Every argument tuple of PRF κ is encoded by ⟨·⟩ of (29), ρ is the map (30), and the loops over the 2kc candidates are vectorised over the codebook in the implementation. 
+
+Algorithm 1 CertMark encoder, one generation, shared by both decoders; Eqs. (4)–(6). 
+
+Input: 
+
+key κ
+
+message m = ( m1, . . . , m C ) with mc ∈ { 0, 1}kc
+
+prompt x and the deployed sampler p(· | x, ·), after temperature and truncation length n and context width h
+
+Output: 
+
+text y1: n, distributed exactly as unwatermarked sampling (Theorem 1)  
+
+> 1:
+
+C ← ∅ ▷ contexts used so far in this generation  
+
+> 2:
+
+for t = 1 , . . . , n do  
+
+> 3:
+
+pt(·) ← p(· | x, y <t ) ▷ after temperature and truncation  
+
+> 4:
+
+ct ← yt−h:t−1 ▷ the available prefix when t ≤ h 
+
+> 5:
+
+if t ≤ h or ct ∈ C then  
+
+> 6:
+
+at ← (fresh , c t, t ) ▷ carries no message; the position makes the argument new  
+
+> 7:
+
+else  
+
+> 8:
+
+C ← C ∪ { ct}; it ← PRF κ(chunk , c t) mod C; at ← (msg , c t, m it ) 
+
+> 9:
+
+end if  
+
+> 10:
+
+ut(v) ← ρ PRF κ(at, v ) for every v ∈ V 
+
+> 11:
+
+yt ← arg max v∈V
+
+log pt(v) − log( − log ut(v))  ▷ Gumbel-max, Lemma 1  
+
+> 12:
+
+end for  
+
+> 13:
+
+return y1: n
+
+21 Preprint 
+
+Algorithm 2 CERTIFY : certified decision for one chunk, used by Algorithms 3 and 4; Eqs. (13)–(14). 
+
+Input: 
+
+scores S(m′), m′ ∈ { 0, 1}k, and their maximiser ˆm
+
+number of scored tokens n
+
+level δ ∈ (0 , 1] 
+
+upper tail Q(s) = Pr[ S(m′) ≥ s] of the score under a wrong candidate 
+
+Output: 
+
+ˆm when it is certified at level δ, else ⊥; then Pr[ output /∈ { mc, ⊥} ] ≤ δ (Theorem 4)  
+
+> 1:
+
+if n = 0 , or every scored token has pt = 1 in Algorithm 4 then ˆδ ← 1 
+
+> 2:
+
+else ˆδ ← min 1, (2 k − 1) Q S( ˆ m) ▷ union bound over the 2k − 1 wrong candidates  
+
+> 3:
+
+end if  
+
+> 4:
+
+return ˆm if ˆδ ≤ δ, else ⊥ ▷ level δ/C per chunk bounds the whole-message error by δ
+
+Algorithm 3 CertMark model-agnostic decoder, from the text and the key alone; Eqs. (8)–(9). 
+
+Input: 
+
+key κ
+
+text y1: n
+
+chunk widths k1, . . . , k C and context width h
+
+for certified decoding, a level δ ∈ (0 , 1] 
+
+Output: 
+
+decoded message ˆm = ( ˆ m1, . . . , ˆmC )
+
+with certification, each ˆmc ∈ { 0, 1}kc ∪ {⊥}  
+
+> 1:
+
+Sc(m′) ← 0 for all c and m′ ∈ { 0, 1}kc ; nc ← 0; T ← ∅ 
+
+> 2:
+
+for t = h + 1 , . . . , n do  
+
+> 3:
+
+ct ← yt−h:t−1; if ct = cs for some s ∈ T then continue ▷ repeated context  
+
+> 4:
+
+T ← T ∪ { t}; c ← PRF κ(chunk , c t) mod C; nc ← nc + 1  
+
+> 5:
+
+for m′ ∈ { 0, 1}kc do  
+
+> 6:
+
+u ← ρ PRF κ(msg , c t, m ′, y t); Sc(m′) ← Sc(m′) − log(1 − u) 
+
+> 7:
+
+end for  
+
+> 8:
+
+end for  
+
+> 9:
+
+for c = 1 , . . . , C do  
+
+> 10:
+
+ˆmc ← arg max m′ Sc(m′) ▷ without certification: the decoder of every benchmark table  
+
+> 11:
+
+if certifying then ˆmc ← CERTIFY 
+
+ Sc(·), ˆmc, n c, δ, Q c
+
+ with Qc(s) = Pr[Γ( nc, 1) ≥ s]
+
+(Theorem 2)  
+
+> 12:
+
+end for  
+
+> 13:
+
+return ˆm
+
+22 Preprint 
+
+Algorithm 4 CertMark model-aware decoder, from the text, the key, the prompt and the model; Eqs. (17) and (19). 
+
+Input: 
+
+as in Algorithm 3 prompt x and the deployed sampler p
+
+contamination rate ε ∈ [0 , 1) 
+
+Output: 
+
+decoded message ˆm = ( ˆ m1, . . . , ˆmC )
+
+with certification, each ˆmc ∈ { 0, 1}kc ∪ {⊥}  
+
+> 1:
+
+pt ← p(yt | x, y <t ) for t = 1 , . . . , n ▷ one forward pass over prompt and text  
+
+> 2:
+
+rc(m′) ← 0 for all c and m′; Tc ← ∅; T ← ∅ 
+
+> 3:
+
+for t = h + 1 , . . . , n do  
+
+> 4:
+
+ct ← yt−h:t−1; if ct = cs for some s ∈ T then continue  
+
+> 5:
+
+T ← T ∪ { t}; c ← PRF κ(chunk , c t) mod C; Tc ← T c ∪ { t} 
+
+> 6:
+
+for m′ ∈ { 0, 1}kc do  
+
+> 7:
+
+u ← ρ PRF κ(msg , c t, m ′, y t); rc(m′) ← rc(m′) + log (1 − ε) p−1 
+
+> t
+
+u1/p t−1 + ε 
+
+> 8:
+
+end for  
+
+> 9:
+
+end for 
+
+ε = 0 gives the log-likelihood ratio ℓc of (17); ε > 0 gives the robust score rc of (19).  
+
+> 10:
+
+for c = 1 , . . . , C do  
+
+> 11:
+
+ˆmc ← arg max m′ rc(m′) ▷ without certification  
+
+> 12:
+
+if certifying then ˆmc ← CERTIFY 
+
+ rc(·), ˆmc, |T c|, δ, Q c
+
+, where Qc(s) = Fc,w (Ac − s)
+
+with wt = 1 /p t − 1 and Ac = P 
+
+> t∈T c
+
+log(1 /p t) if ε = 0 (Theorem 5), and Qc = Qc,ε if ε > 0
+
+(Theorem 6)  
+
+> 13:
+
+end for  
+
+> 14:
+
+return ˆm
+
+## I THE PSEUDORANDOM FUNCTION 
+
+This appendix gives the details of the pseudorandom function that Section 3 uses. Let PRF κ :
+
+{0, 1}∗ → S , S = {0, 1}64 , be a pseudorandom function keyed by κ (Goldreich et al., 1986), where {0, 1}∗ = S∞
+
+> n=0
+
+{0, 1}n is the set of all finite binary strings. Its values at distinct inputs are computationally indistinguishable from independent uniform elements of S. To pass structured arguments to the PRF, let X contain the typed tags, token sequences and integers used in the method, and fix an injective, prefix-free encoding 
+
+⟨·⟩ :
+
+> ∞
+
+[
+
+> r=1
+
+X r → { 0, 1}∗,
+
+PRF κ(x1, . . . , x r ) := PRF κ(⟨x1, . . . , x r ⟩) .
+
+(29) Thus each tuple becomes one finite binary string, and the three tags chunk , msg and fresh domain-separate the three uses of the PRF. Interpreting z ∈ S as an unsigned integer, we convert its output to 
+
+ρ(z) =  ⌊z/ 211 ⌋ + 12
+
+2−53 , (30) which is uniform on the 53 -bit midpoint grid in (0 , 1) when z is uniform. Throughout the analysis we use the standard random-function idealisation, treating ρ(PRF κ(a)) at distinct inputs a as independent U (0 , 1) variables. 
+
+Instantiation. Our implementation realises PRF κ with 64 -bit integer arithmetic. Let ϕ be the SplitMix64 finaliser (Steele Jr. et al., 2014), a bijection of {0, 1}64 made of three xor-shifts and two multiplications by fixed odd constants. A context ct = ( yt−h, . . . , y t−1) is hashed to a seed by starting from ϕ(κ · g1 ⊕ g2) and absorbing one token at a time, s ← ϕ s ⊕ (y + 1) g3
+
+, with fixed odd constants g1, g 2, g 3. The three uses of the PRF are separated by fixed salts: the chunk index is 
+
+ϕ(s ⊕ salt chunk ) mod C, a message tuple (msg , c t, m ) maps to ϕ s ⊕ ϕ(( m + 1) g2 ⊕ salt msg ), and a fresh tuple (fresh , c t, t ) maps to ϕ s ⊕ salt fresh ⊕ ϕ(t g 3). The uniform of token v under a seed 
+
+σ is ρ ϕ(σ + ( v + 1) g1) with ρ as in (30), so the whole vocabulary is scored with one vectorised 23 Preprint pass and the decoder recomputes any single entry from the text and the key. All arithmetic is modulo 
+
+264 . This is a fast non-cryptographic hash, chosen for speed; a keyed cryptographic PRF, such as a block cipher in counter mode or HMAC, can be substituted without any change to the method or the analysis, at a higher cost per token. 
+
+## J PROOF OF LEMMA 1
+
+Lemma 1 (Gumbel-max sampling) . Fix a step t and recall that pt is the sampler’s law over V at that step, redrawn at every step. Draw u(v) ∼ U (0 , 1) i.i.d. over v ∈ V , form the Gumbel variates and the scores 
+
+S(v) = log pt(v) − log  − log u(v), (2) 
+
+and emit y = arg max v∈V S(v). Then Pr[ y = v] = pt(v) for every v ∈ V .Proof. Fix the step t and its probability distribution pt on the finite vocabulary V . Thus pt(v) ≥ 0
+
+for every v and P 
+
+> v∈V
+
+pt(v) = 1 . Throughout the proof, pt is fixed and all probabilities are taken over the independent draws u(v) ∼ U (0 , 1) .
+
+Restricting to tokens with positive probability. Let V+ = {v ∈ V : pt(v) > 0}. This set is nonempty because the probabilities sum to one. With the convention log 0 = −∞ , a token v / ∈ V+
+
+has S(v) = −∞ . In contrast, S(v) is finite for every v ∈ V+, since 0 < u (v) < 1 implies 
+
+0 < − log u(v) < ∞. Consequently, the maximiser must belong to V+, and Pr[ y = v] = 0 = pt(v)
+
+for every v / ∈ V+. All divisions by pt(v) below are restricted to v ∈ V+.
+
+Transforming the uniforms. For v ∈ V+, define E(v) = − log u(v). For every s ≥ 0,
+
+Pr[ E(v) > s ] = Pr[ − log u(v) > s ]= Pr[ u(v) < e −s] = e−s. (31) The last equality uses e−s ∈ (0 , 1] and the distribution function of U (0 , 1) . Thus E(v) is exponential with rate 1. The variables E(v) remain independent, since each is a deterministic function of its own independent uniform draw. This transformation also verifies the Gumbel terminology in the lemma. For G(v) = − log E(v) and every z ∈ R,
+
+Pr[ G(v) ≤ z] = Pr[ E(v) ≥ e−z ] = exp( −e−z ), (32) where replacing > by ≥ does not change the probability because E(v) has a continuous distribution. Hence the G(v) are independent standard Gumbel variables and S(v) = log pt(v) + G(v).
+
+Expressing the maximiser through exponential variables. Define 
+
+T (v) = E(v)
+
+pt(v) , v ∈ V+. (33) These variables are independent because the denominators are fixed. For s ≥ 0, their survival functions and densities are 
+
+Pr[ T (v) > s ] = Pr[ E(v) > p t(v)s] = e−pt(v)s,fT (v)(s) = dds
+
+ 1 − e−pt(v)s = pt(v)e−pt(v)s, s > 0. (34) In particular, T (v) is exponential with rate pt(v). On V+ the score can be rewritten as 
+
+S(v) = log pt(v) − log E(v) = − log 
+
+ E(v)
+
+pt(v)
+
+
+
+= − log T (v). (35) Since r 7 → − log r is strictly decreasing on (0 , ∞), the token with the largest score is exactly the token with the smallest value of T (v):
+
+y = arg max 
+
+> v∈V+
+
+S(v) = arg min 
+
+> v∈V+
+
+T (v). (36) 24 Preprint This minimiser is unique with probability one. Indeed, for two distinct tokens v, w ∈ V+, inde-pendence implies that conditioning on T (w) leaves T (v) with its continuous distribution. The conditional probability that T (v) equals that particular value of T (w) is therefore zero. Averaging gives Pr[ T (v) = T (w)] = 0 , and taking the union over the finitely many pairs shows that the probability of any tie is zero. 
+
+Computing the probability of selecting each token. Fix v ∈ V+. Conditional on T (v) = s,the token v is selected exactly when T (w) > s for every w ∈ V+ \ { v}, apart from the probability-zero ties just considered. Independence gives the conditional probability of this event as Q 
+
+> w∈V+\{ v}
+
+Pr[ T (w) > s ]. Integrating over the density of T (v) therefore yields 
+
+Pr[ y = v] = 
+
+Z ∞
+
+> 0
+
+fT (v)(s) Y
+
+> w∈V+\{ v}
+
+Pr[ T (w) > s ] d s
+
+=
+
+Z ∞
+
+> 0
+
+pt(v)e−pt(v)s Y
+
+> w∈V+\{ v}
+
+e−pt(w)s ds
+
+= pt(v)
+
+Z ∞
+
+> 0
+
+exp 
+
+−s X
+
+> w∈V+
+
+pt(w)
+
+ ds
+
+= pt(v)
+
+Z ∞
+
+> 0
+
+e−s ds = pt(v).
+
+(37) Here the third line combines the exponential factors, the fourth uses P 
+
+> w∈V+
+
+pt(w) = 1 , and the final equality uses R ∞ 
+
+> 0
+
+e−s ds = [ −e−s]∞ 
+
+> 0
+
+= 1 .If V+ contains only v, the product over competing tokens is an empty product, equal to 1, and 
+
+pt(v) = 1 , so the same calculation covers deterministic sampling. Together with the zero-probability case above, this proves Pr[ y = v] = pt(v) for every v ∈ V .
+
+Equivalence to the implemented score. For each v ∈ V+, the implementation uses 
+
+log u(v)
+
+pt(v) = − E(v)
+
+pt(v) = −T (v). (38) Maximising this quantity is again equivalent to minimising T (v), and therefore selects the same token as maximising S(v). Assigning score −∞ to tokens outside V+ gives the same exclusion as in the original rule. This equivalence is an algebraic identity for the draws in (0 , 1) when the scores are evaluated in exact arithmetic. 
+
+## K PROOF OF THEOREM 1
+
+Theorem 1 (Distortion-free generation) . Treat PRF as a random function and draw the key κ
+
+uniformly from S. Let Y1: n be the sequence emitted by (5) –(6) on prompt x carrying message 
+
+m ∈ { 0, 1}L. Then for every such m and x and every w ∈ V n,
+
+Pr 
+
+> κ
+
+Y1: n = w =
+
+> n
+
+Y
+
+> t=1
+
+p wt | x, w <t 
+
+, (7) 
+
+which is the law of unwatermarked sampling and, in particular, does not depend on m.Proof. Fix the prompt x, message m, generation length n, model and sampling settings. We consider one generation, with the seen-context set initially empty and the encoder’s context initialization fixed. We work under the continuous random-function idealisation stated after (30): values at distinct token-sampling inputs are independent U (0 , 1) variables. All probabilities below are over this idealised keyed randomness, denoted by Pr κ as in the theorem. We first establish the conditional law of a single token and then derive the law of the entire sequence. 
+
+Step 1: condition on the information available before sampling. Fix a step t ∈ { 1, . . . , n }. Let Ht
+
+denote the information generated by the emitted prefix Y<t , all earlier PRF queries and their answers, 25 Preprint and the current chunk-selection query (4) together with its answer, before any sampling uniforms for step t are read. Including this last query is necessary because it depends on the PRF and need not be determined by the prefix alone. Conditional on Ht, the following are fixed: 
+
+pt(·) = p(· | x, Y <t ), ct, Ct−1, it, at. (39) In particular, at is chosen using only information already revealed. At t = 1 , the earlier query transcript and emitted prefix are empty; the same conditioning includes the first chunk-selection query. 
+
+Step 2: verify that every sampling input is new. For each v ∈ V , write bt,v = ⟨at, v ⟩ for the encoded input used to obtain ut(v). We check both branches of (5). 
+
+First occurrence of the context. If ct /∈ C t−1, then at = ( msg , c t, m it ). Every earlier message-carrying input has the form ⟨msg , c s, m is , w ⟩ for some s < t . Because ct has not appeared before, 
+
+cs̸ = ct, so none of these inputs equals bt,v .
+
+Repeated context. If ct ∈ C t−1, then at = ( fresh , c t, t ). Every earlier input with the tag fresh contains an earlier position s < t . Its position field therefore differs from t, even when its context equals ct.In either branch, the tags msg and fresh distinguish the two families of sampling inputs from each other, and both differ from the tag chunk used for chunk selection. Thus bt,v also differs from every chunk-selection input, including the current one. Finally, for distinct tokens v̸ = w, the inputs bt,v 
+
+and bt,w differ in their token field. The injective encoding in (29) preserves all these distinctions. Hence the inputs used at step t are pairwise distinct and have never been queried earlier in this generation. 
+
+Step 3: obtain independent uniforms conditional on the history. A random function can be revealed one query at a time: at a previously unqueried input, draw an independent value from its prescribed distribution and store it; at a repeated input, return the stored value. This produces the same law as sampling the whole random function in advance. It also shows why choosing a new input from earlier query answers does not change the law of its unrevealed value. By Step 2, every input bt,v is new. Under the continuous idealisation, for any numbers rv ∈ [0 , 1] ,
+
+v ∈ V ,
+
+Pr  
+
+> κ
+
+[ut(v) ≤ rv for all v ∈ V | H t] = Y
+
+> v∈V
+
+rv . (40) This is the joint distribution function of independent U (0 , 1) variables. Consequently, conditional on 
+
+Ht, the entire vector ut(·) has exactly the distribution required by Lemma 1. 
+
+Step 4: identify the next-token distribution. Given Ht, the vector pt is a fixed probability distribution by Step 1, and the sampling uniforms are independent U (0 , 1) variables by Step 3. Applying Lemma 1 to the encoder’s rule (6) therefore gives, for every v ∈ V ,
+
+Pr  
+
+> κ
+
+[Yt = v | H t] = pt(v) = p(v | x, Y <t ). (41) Tokens with pt(v) = 0 have score −∞ and are never emitted; among tokens with positive probability, ties occur with probability zero. Thus the equality includes zero-probability tokens as well. The prefix Y<t is part of Ht. Averaging over the additional query information by the law of iterated conditional expectation gives 
+
+Pr  
+
+> κ
+
+[Yt = v | Y<t ] = Eκ
+
+h
+
+Pr  
+
+> κ
+
+[Yt = v | H t] Y<t 
+
+i
+
+= Eκ[p(v | x, Y <t ) | Y<t ]= p(v | x, Y <t ),
+
+(42) where the last equality holds because the prompt and prefix already determine the deployed sampling distribution. This is precisely the conditional next-token law of ordinary, unwatermarked generation. 
+
+Step 5: derive the sequence distribution. Fix any w ∈ V n, and write qt = Pr κ[Y1: t = w1: t], with 
+
+q0 = 1 for the empty prefix. If qt−1 > 0, the multiplication rule and Step 4 give 
+
+qt = qt−1 Pr  
+
+> κ
+
+[Yt = wt | Y<t = w<t ]= qt−1 p(wt | x, w <t ). (43) 26 Preprint If qt−1 = 0 , then qt = 0 because the event {Y1: t = w1: t} is contained in {Y<t = w<t }, so the same recurrence still holds. Starting from q0 = 1 and applying this recurrence successively for 
+
+t = 1 , . . . , n yields 
+
+Pr  
+
+> κ
+
+[Y1: n = w] = qn =
+
+> n
+
+Y
+
+> t=1
+
+p(wt | x, w <t ), (44) which proves (7), including sequences with zero probability. The right-hand side is the sequence law of the unwatermarked sampler. It does not depend on m, since the message changes the sampling inputs but leaves p(· | x, w <t ) unchanged. As x and m were arbitrary, the result holds for every prompt and message. 
+
+## L PROOF OF THEOREM 2
+
+Theorem 2 (Score distribution for wrong candidates) . For a wrong candidate m′̸ = mc, conditional on the emitted text and the scored positions Tc selected by the chunk assignments, whenever nc =
+
+|T c| ≥ 1,
+
+Sc(m′) ∼ Γ( nc, 1) exactly, (10) 
+
+where Γ( nc, 1) has shape nc and rate 1. If nc = 0 , then Sc(m′) = 0 .Proof. Fix the prompt, model, sampling settings and embedded message m. Also fix a chunk c and a candidate m′̸ = mc. We use the continuous random-function idealisation stated after (30), and take all probabilities over the idealised keyed randomness. We will first show that the values reconstructed for m′ are independent uniforms even after conditioning on the information used to generate the text. We then derive the distribution of their score contributions and their sum. 
+
+Fixing the text and the scored positions. Let H denote the information in the complete encoder query transcript: all PRF inputs queried during the generation and all their answers. Include also the chunk-selection queries used by the decoder, before it evaluates any candidate scores. The generated text is determined by the encoder transcript and the fixed prompt and model. Consequently, conditional on H, the text y, its contexts, the visited positions T , their chunk assignments it, and the set Tc are all fixed. This extra conditioning matters because Tc depends on the chunk-selection PRF values as well as on the text. If Tc = ∅, the sum in (9) is empty and therefore Sc(m′) = 0 . This proves the assertion for nc = 0 .In what follows, assume nc ≥ 1 and, for every t ∈ T c, write 
+
+bt = ⟨msg , c t, m ′, y t⟩, Ut = ρ PRF κ(bt) = u(m′) 
+
+> t
+
+(yt). (45) The inputs bt are determined by H; their PRF values will be the randomness used to score the wrong candidate. 
+
+Showing that the candidate inputs are distinct and unqueried. The decoder retains only the first occurrence of each context in (8). Thus ct̸ = cs for distinct t, s ∈ T c, and the injective encoding in (29) implies bt̸ = bs.Now fix t ∈ T c and compare bt with every type of query in H. A chunk-selection query has tag chunk ,and a fresh-sampling query has tag fresh ; each differs from the tag msg in bt. A message-carrying encoder query at any position s has the form 
+
+⟨msg , c s, m is , v ⟩, v ∈ V. (46) If cs̸ = ct, its context field differs from that of bt. If cs = ct, the context-based assignment (4) gives 
+
+is = it = c. The encoder therefore uses mis = mc, which differs from m′, so the message field differs. This comparison covers every position in the generation, including positions after t, and every token queried by the encoder. Hence none of the bt was queried in forming H. The conclusion also holds if m′ happens to equal the value carried by another chunk, since an identical context always selects the same chunk. 
+
+Obtaining independent uniforms under the conditioning. As in Appendix K, a random function can be revealed by drawing and storing an independent value when an input is first queried. Condi-tional on a complete query transcript, values at all unqueried inputs retain their original independent 27 Preprint distributions. Here the bt are distinct unqueried inputs chosen from the transcript, so their values can still be drawn independently after that transcript has been fixed. In particular, for any rt ∈ [0 , 1] ,
+
+t ∈ T c,
+
+Pr  
+
+> κ
+
+[Ut ≤ rt for all t ∈ T c | H ] = Y
+
+> t∈T c
+
+rt. (47) Thus the Ut are conditionally independent U (0 , 1) variables. Conditioning on the generated text does not bias them: the entire generation used other PRF inputs, and its outcome is already part of H.
+
+Deriving the distribution of one score contribution. Set Xt = − log(1 − Ut). Since 0 < U t < 1,each Xt is positive. For z ≥ 0, the conditional survival function is 
+
+Pr  
+
+> κ
+
+[Xt > z | H ] = Pr  
+
+> κ
+
+[− log(1 − Ut) > z | H ]= Pr  
+
+> κ
+
+[1 − Ut < e −z | H ]= Pr  
+
+> κ
+
+[Ut > 1 − e−z | H ]= 1 − (1 − e−z ) = e−z .
+
+(48) The last line uses 1 − e−z ∈ [0 , 1) and the uniform law of Ut. For z < 0, the survival probability is 1.Therefore each Xt has the exponential distribution with rate 1, with density e−z for z > 0 and zero density for z < 0. The Xt remain conditionally independent because each is a function of a different 
+
+Ut.
+
+Deriving the distribution of the sum. Enumerate Tc = {t1, . . . , t nc }, and let Zr = Prj=1 Xtj .Conditional on H, we claim that for each integer 1 ≤ r ≤ nc, its density is 
+
+fr (z) = zr−1e−z
+
+(r − 1)! , z > 0, (49) and is zero for z < 0. For r = 1 , this is exactly the exponential density derived above. Suppose it holds for some r < n c. Since Zr and Xtr+1 are independent and nonnegative, the density of their sum is the convolution of their densities. For z > 0,
+
+fr+1 (z) = 
+
+Z z
+
+> 0
+
+fr (s)e−(z−s) ds
+
+=
+
+Z z
+
+> 0
+
+sr−1e−s
+
+(r − 1)! e−(z−s) ds
+
+= e−z
+
+(r − 1)! 
+
+Z z
+
+> 0
+
+sr−1 ds
+
+= e−z
+
+(r − 1)! 
+
+zr
+
+r = zr e−z
+
+r! .
+
+(50) This proves the claim by induction. Taking r = nc and recalling Sc(m′) = Znc identifies its conditional density as that of Γ( nc, 1) , with shape nc and rate 1.
+
+Returning to conditioning only on the text and scored positions. Let Fr be the distribution function of Γ( r, 1) for r ≥ 1, and set F0(z) = 1{z ≥ 0} for the empty score. The preceding argument gives Pr κ[Sc(m′) ≤ z | H ] = Fnc (z). Since H determines both Y1: n and Tc, iterated conditional expectation yields, for every z ∈ R,
+
+Pr  
+
+> κ
+
+[Sc(m′) ≤ z | Y1: n, Tc] = Eκ
+
+h
+
+Pr  
+
+> κ
+
+[Sc(m′) ≤ z | H ] Y1: n, Tc
+
+i
+
+= Eκ[Fnc (z) | Y1: n, Tc]= Fnc (z).
+
+(51) The last equality holds because nc = |T c| is fixed by the conditioning. This proves (10) for every possible emitted text and scored set, with the empty case handled separately. The resulting law depends on them only through nc; no model probabilities, prompt, sampling temperature or message values enter its parameters. The same calculation also applies to a text fixed independently of the PRF. In that case, condition on that text and its chunk-selection queries; the candidate inputs are again distinct and unqueried, so the uniform, exponential and Gamma calculations above apply unchanged. 28 Preprint 
+
+## M PROOF OF THEOREM 3
+
+The main text states the candidate distributions. The full statement below additionally gives their expected scores; it keeps the theorem’s number and the equation numbers reserved in the main text. 
+
+Theorem 3 (Candidate distributions and expected scores, full statement) . Treat PRF as a random function. Fix the deployed model, prompt x, sampling settings, embedded message m, and a chunk c
+
+with kc ≥ 1. For t ∈ T c, condition on y<t and p = pt(yt) ∈ (0 , 1] , the sampler’s probability of the emitted token. For every candidate m′, its reconstructed value and expected per-token score satisfy 
+
+u(m′) 
+
+> t
+
+(yt) ∼
+
+(Beta(1 /p, 1) , m′ = mc (correct candidate) ,U (0 , 1) , m′̸ = mc (wrong candidate) , (11) 
+
+E
+
+h
+
+− log  1 − u(m′) 
+
+> t
+
+(yt) y<t , p 
+
+i
+
+=
+
+(g(p) := ψ(1 /p + 1) + γE , m′ = mc,
+
+1, m′̸ = mc, (12) 
+
+where u(mc) 
+
+> t
+
+(yt) = ut(yt), ψ is the digamma function and γE is the Euler–Mascheroni constant; 
+
+g(1) = 1 and g is strictly decreasing on (0 , 1] .Proof. Fix the prompt, model, sampling settings and embedded message. Fix a chunk c and a position 
+
+t, and throughout the proof restrict to the event t ∈ T c, as in the theorem. This event says that the context first occurs at t and that its chunk assignment is c; both facts are determined before the token 
+
+Yt is sampled. All probabilities are over the continuous random-function idealisation stated after (30). 
+
+Conditioning before the token is drawn. Let Ht be the information available just before reading the sampling uniforms at step t, including the prefix, all earlier PRF queries and their answers, and the current chunk-selection query and its answer, as in Appendix K. Conditional on Ht, the distribution 
+
+pt, context ct and assignment it = c are fixed. Since this is the first occurrence of the context, the encoder uses the tuple (msg , c t, m c), which is exactly the tuple reconstructed by the correct candidate. Hence 
+
+u(mc) 
+
+> t
+
+(v) = ut(v), v ∈ V. (52) Appendix K establishes that this vector has independent U (0 , 1) entries conditional on Ht. This is the point at which the fresh-input rule is used. Let V+ = {v ∈ V : pt(v) > 0}. Tokens outside V+
+
+cannot be emitted, as shown in Appendix J, so p = pt(Yt) belongs to (0 , 1] with probability one. 
+
+The joint law of the emitted token and its uniform. Appendix J shows that maximising the Gumbel score is equivalent to maximising log ut(v)/p t(v). Exponentiation is strictly increasing, so 
+
+Yt = arg max 
+
+> v∈V+
+
+log ut(v)
+
+pt(v) = arg max 
+
+> v∈V+
+
+ut(v)1/p t(v). (53) Fix v ∈ V+ and write q = pt(v) > 0. If ut(v) = s ∈ (0 , 1) , then this token is selected precisely when, for every competing token w ∈ V+ \ { v},
+
+ut(w)1/p t(w) ≤ s1/q ⇐⇒ ut(w) ≤ spt(w)/q . (54) The probability-zero ties can be ignored by Appendix J. Given Ht and ut(v) = s, the other coordinates remain independent uniforms. Their joint probability of satisfying these inequalities is therefore 
+
+Pr  
+
+> κ
+
+[Yt = v | H t, u t(v) = s] = Y
+
+> w∈V+\{ v}
+
+spt(w)/q 
+
+= s  
+
+> P
+> w∈V+\{ v}pt(w)
+> 
+> /q
+
+= s(1 −q)/q .
+
+(55) The final equality uses P 
+
+> w∈V+
+
+pt(w) = 1 . When q = 1 , there are no positive-probability competitors and the empty product is 1, in agreement with the same formula. 29 Preprint The conditional density of ut(v) is 1 on (0 , 1) . Integrating over its value thus gives, for 0 < x ≤ 1,
+
+Pr  
+
+> κ
+
+[ut(v) ≤ x, Y t = v | H t] = 
+
+Z x
+
+> 0
+
+Pr  
+
+> κ
+
+[Yt = v | H t, u t(v) = s] d s
+
+=
+
+Z x
+
+> 0
+
+s1/q −1 ds
+
+= q s 1/q s=xs=0 = q x 1/q .
+
+(56) Taking x = 1 recovers Pr κ[Yt = v | H t] = q. Since q > 0, division by this probability is valid and yields 
+
+Pr  
+
+> κ
+
+[ut(Yt) ≤ x | H t, Y t = v] = Pr κ[ut(v) ≤ x, Y t = v | H t]Pr κ[Yt = v | H t]= q x 1/q 
+
+q = x1/q , 0 < x < 1.
+
+(57) 
+
+Conditioning on the emitted token’s probability. The preceding conditional law depends on the token v only through its probability q = pt(v). Write p = pt(Yt) for the probability assigned to the token that was actually emitted. The pair (Ht, Y t) determines both Y<t and p, so iterated conditional expectation gives, for 0 < x < 1,
+
+Pr  
+
+> κ
+
+[ut(Yt) ≤ x | Y<t , p ] = Eκ
+
+h
+
+Pr  
+
+> κ
+
+[ut(Yt) ≤ x | H t, Y t] Y<t , p 
+
+i
+
+= Eκ
+
+h
+
+x1/p t(Yt) Y<t , p 
+
+i
+
+= x1/p .
+
+(58) Thus averaging over the additional query information, or over several tokens with the same probability 
+
+p, leaves this distribution unchanged. Its distribution function is 0 for x ≤ 0 and 1 for x ≥ 1, and its density on (0 , 1) is 
+
+ddx x1/p = 1
+
+p x1/p −1. (59) This is the density of Beta(1 /p, 1) , proving the correct-candidate case of (11). 
+
+The wrong-candidate distribution. Fix m′̸ = mc. Appendix L proves that the input 
+
+⟨msg , c t, m ′, Y t⟩ is never queried by the encoder: an encoder query with that context uses mc,and the other query families have different tags. Moreover, the value at this input remains uni-form conditional on the complete generation transcript and the chunk-selection queries. Denote that information by H, as in Appendix L. It determines the emitted text and hence also Y<t and p.Consequently, 
+
+Pr  
+
+> κ
+
+[u(m′) 
+
+> t
+
+(Yt) ≤ x | Y<t , p ] = Eκ
+
+h
+
+Pr  
+
+> κ
+
+[u(m′) 
+
+> t
+
+(Yt) ≤ x | H ] Y<t , p 
+
+i
+
+= Eκ[x | Y<t , p ] = x, 0 < x < 1.
+
+(60) Together with the endpoint values 0 and 1, this is the distribution function of U (0 , 1) , proving the second case of (11). 
+
+Computing the expected score from the Beta density. Let B ∼ Beta( a, 1) with a > 0, so that its density is a x a−1 on (0 , 1) . For every integer j ≥ 1, its jth moment is 
+
+E[Bj ] = 
+
+Z 10
+
+xj a x a−1 dx
+
+= a
+
+ xa+j
+
+a + j
+
+x=1 
+
+> x=0
+
+= aa + j .
+
+(61) Integrating the geometric series for 1/(1 −x) on [0 , b ] gives − log(1 −b) = P∞ 
+
+> j=1
+
+bj /j for 0 ≤ b < 1.30 Preprint In particular, the nonnegative partial sums LN = PNj=1 Bj /j increase to − log(1 − B) with probability one. The monotone convergence theorem therefore justifies interchanging expectation and this infinite sum: E[− log(1 − B)] = lim   
+
+> N→∞
+
+E[LN ]= lim  
+
+> N→∞
+> N
+
+X
+
+> j=1
+
+E[Bj ]
+
+j
+
+=
+
+> ∞
+
+X
+
+> j=1
+
+aj(a + j)=
+
+> ∞
+
+X
+
+> j=1
+
+ 1
+
+j − 1
+
+j + a
+
+
+
+.
+
+(62) This expectation is finite, since 0 ≤ a/ [j(a + j)] ≤ a/j 2 and P∞ 
+
+> j=1
+
+j−2 converges. For the digamma function ψ(z) = Γ ′(z)/Γ( z), its series representation gives 
+
+ψ(a + 1) = −γE +
+
+> ∞
+
+X
+
+> j=1
+
+ 1
+
+j − 1
+
+j + a
+
+
+
+, a > 0. (63) Combining these two identities yields E[− log(1 − B)] = ψ(a + 1) + γE . Applying this identity to the correct candidate’s conditional law, with a = 1 /p , gives 
+
+E− log  1 − ut(Yt) Y<t , p  = ψ(1 /p + 1) + γE = g(p). (64) For a wrong candidate, U (0 , 1) = Beta(1 , 1) , so a = 1 . The corresponding series telescopes: 
+
+> ∞
+
+X
+
+> j=1
+
+ 1
+
+j − 1
+
+j + 1 
+
+
+
+= lim  
+
+> N→∞
+
+
+
+1 − 1
+
+N + 1 
+
+
+
+= 1 . (65) This proves the wrong-candidate mean in (12) and also shows that g(1) = 1 . At p = 1 , the correct-candidate Beta law is itself U (0 , 1) , so the two distributions and their expected scores coincide. 
+
+Strict decrease of the expected score. Substituting a = 1 /p into the convergent series above gives the equivalent expression 
+
+g(p) = 
+
+> ∞
+
+X
+
+> j=1
+
+1
+
+j(1 + jp ) , p > 0. (66) For 0 < p 1 < p 2 ≤ 1, subtracting the two convergent series yields 
+
+g(p1) − g(p2) = 
+
+> ∞
+
+X
+
+> j=1
+
+ 1
+
+j(1 + jp 1) − 1
+
+j(1 + jp 2)
+
+
+
+= ( p2 − p1)
+
+> ∞
+
+X
+
+> j=1
+
+1(1 + jp 1)(1 + jp 2) > 0.
+
+(67) The last inequality holds because p2 − p1 > 0 and every summand is positive. Hence g is strictly decreasing on (0 , 1] . Together with g(1) = 1 , this also gives g(p) > 1 whenever p < 1, completing the proof. 
+
+## N PROOF OF THEOREM 4
+
+Theorem 4 (Certified decoding) . For a level δ ∈ (0 , 1] , let ˆmc(y) = arg max m′ Sc(m′) and define 
+
+ˆδc(y) = min 
+
+n
+
+1,  2kc − 1 Pr Γ( nc, 1) ≥ Sc( ˆ mc(y)) o
+
+, (13) 
+
+with ˆδc(y) = 1 when nc = 0 . Let ⊥ denote abstention and define the certified decoder Dδ : V n →{0, 1}kc ∪ {⊥} by 
+
+Dδ (y) = 
+
+( ˆmc(y), ˆδc(y) ≤ δ, 
+
+⊥, ˆδc(y) > δ, (14) 31 Preprint 
+
+where the scores are computed from the text y and the key. Then, for the text Y1: n emitted by (5) –(6) ,
+
+Pr 
+
+> κ
+
+Dδ (Y1: n) /∈ { mc, ⊥}  ≤ δ, (15) 
+
+Here the probability is over the idealised PRF randomness induced by the one-time draw of κ.Proof. Fix the model, prompt, sampling settings and embedded message m. Also fix the chunk c
+
+and the level δ ∈ (0 , 1] , before observing the scores. All probabilities are over the idealised keyed randomness. Write 
+
+Mc = {0, 1}kc , K = |M c| = 2 kc , Wc = Mc \ { mc}. (68) Thus Wc contains exactly K − 1 wrong candidates. Choose any fixed rule for breaking ties in the maximisation defining ˆmc. The event whose probability we must bound is 
+
+Ec = Dδ (Y1: n) /∈ { mc, ⊥} , (69) namely, the event that the decoder accepts an incorrect chunk. 
+
+Boundary cases and conditioning. If δ = 1 , then Pr κ[Ec] ≤ 1 = δ simply because Ec is an event. If K = 1 , there are no wrong candidates, so Ec is empty. We may therefore assume 0 < δ < 1 and 
+
+K ≥ 2.Condition on any pair Y1: n = y and Tc = τ with positive probability, and put r = |τ |. To keep the notation readable, write 
+
+Pr  
+
+> y,τ
+
+[ · ] := Pr  
+
+> κ
+
+[ · | Y1: n = y, Tc = τ ]. (70) Under this conditioning, the number of scored positions is fixed at nc = r. Conditioning on Tc as well as on the text is necessary because the scored positions also depend on the chunk-selection PRF values. The candidate scores themselves remain random under this conditioning. If r = 0 , the definition gives ˆδc(y) = 1 > δ , and the decoder abstains. Hence Pr y,τ [Ec] = 0 . In the remainder of the conditional argument, assume r ≥ 1.
+
+The conditional null tail and its threshold. Let Gr have the Gamma distribution with shape r and rate 1, and denote its survival function by 
+
+Qr (s) := Pr[ Gr ≥ s] = 
+
+Z ∞
+
+> s
+
+zr−1e−z
+
+(r − 1)! dz, s ≥ 0. (71) Theorem 2 states precisely that every fixed wrong candidate has this conditional score distribution. Consequently, 
+
+Pr  
+
+> y,τ
+
+[Sc(m′) ≥ s] = Qr (s) for every m′ ∈ W c and s ≥ 0. (72) Here Qr is a deterministic function once r has been fixed; it does not depend on any realised candidate score. The integral defining Qr shows that it is continuous, with Qr (0) = 1 and Qr (s) → 0 as s → ∞ . It is also strictly decreasing: whenever 0 ≤ a < b ,
+
+Qr (a) − Qr (b) = 
+
+Z ba
+
+zr−1e−z
+
+(r − 1)! dz > 0, (73) because the integrand is positive for every z > 0. Since 0 < δ/ (K − 1) < 1, continuity and strict monotonicity imply that there is exactly one sδ > 0 satisfying 
+
+Qr (sδ ) = δK − 1 , or equivalently (K − 1) Qr (sδ ) = δ. (74) This threshold depends on r, K and δ, all of which are fixed in the conditional argument. 
+
+Rewriting the acceptance rule as a score threshold. Abbreviate ˆm = ˆ mc(y). Since r ≥ 1, the certificate in (13) becomes 
+
+ˆδc(y) = min {1, (K − 1) Qr (Sc( ˆ m)) }. (75) 32 Preprint For any a ≥ 0 and δ < 1, the inequality min {1, a } ≤ δ holds if and only if a ≤ δ: if a ≥ 1, the minimum equals 1 > δ , and if a < 1, the minimum equals a. Applying this observation and then the strict decrease of Qr gives 
+
+ˆδc(y) ≤ δ ⇐⇒ (K − 1) Qr (Sc( ˆ m)) ≤ δ
+
+⇐⇒ Qr (Sc( ˆ m)) ≤ Qr (sδ )
+
+⇐⇒ Sc( ˆ m) ≥ sδ .
+
+(76) All scores are nonnegative because their summands are − log(1 − u) with u ∈ (0 , 1) , so the survival function above is being evaluated on its stated domain. 
+
+Controlling an incorrectly selected candidate. Under the current conditioning, the decoder makes a certified error exactly when its selected candidate is wrong and its score meets the threshold. Therefore Ec = { ˆm ∈ W c} ∩ { Sc( ˆ m) ≥ sδ }
+
+= [
+
+> m′∈W c
+
+ { ˆm = m′} ∩ { Sc(m′) ≥ sδ }
+
+⊆ [
+
+> m′∈W c
+
+{Sc(m′) ≥ sδ }.
+
+(77) The second line separates the error event according to which wrong candidate is selected. The inclusion then drops the selection condition: accepting a wrong candidate requires at least one wrong candidate to cross the threshold. This step avoids assigning a Gamma law to the selected maximum; Theorem 2 is applied only to each fixed wrong candidate. By the conditional union bound, the conditional null law, and the definition of sδ , respectively, 
+
+Pr  
+
+> y,τ
+
+[Ec] ≤ X
+
+> m′∈W c
+
+Pr  
+
+> y,τ
+
+[Sc(m′) ≥ sδ ]= X
+
+> m′∈W c
+
+Qr (sδ )= ( K − 1) Qr (sδ )= ( K − 1) δK − 1 = δ. 
+
+(78) The union bound requires no independence among candidate scores. Nor does the argument require the distribution of the correct candidate’s score: that score affects which candidate is selected, but the event inclusion already accounts for the selection. This also shows that the bound holds for the chosen tie-breaking rule. 
+
+Removing the conditioning. We have proved Pr y,τ [Ec] ≤ δ for every pair (y, τ ) with positive probability, including τ = ∅. Averaging over both the emitted text and the scored positions, the law of total probability gives 
+
+Pr  
+
+> κ
+
+[Ec] = Eκ
+
+h
+
+Pr  
+
+> κ
+
+[Ec | Y1: n, Tc]
+
+i
+
+≤ Eκ[δ] = δ. 
+
+(79) Together with the boundary cases, this proves (15) for every δ ∈ (0 , 1] . The model, prompt, sampling settings and message were fixed throughout; the averaging is only over the idealised key and the text and scored positions it determines. 
+
+The whole-message corollary. For clarity, write Dα,c for the decoder applied to chunk c at level α,and set 
+
+Emsg  
+
+> c
+
+= Dδ/C,c (Y1: n) /∈ { mc, ⊥} . (80) The chunkwise result gives Pr κ[Emsg  
+
+> c
+
+] ≤ δ/C for each c = 1 , . . . , C . Returning any incorrect chunk is exactly the event SCc=1 Emsg  
+
+> c
+
+. A second union bound yields 
+
+Pr 
+
+> κ
+
+" C[
+
+> c=1
+
+Emsg 
+
+> c
+
+#
+
+≤
+
+> C
+
+X
+
+> c=1
+
+Pr  
+
+> κ
+
+[Emsg  
+
+> c
+
+] ≤
+
+> C
+
+X
+
+> c=1
+
+δC = δ. (81) This conclusion does not require independence between chunks. 33 Preprint 
+
+## O PAYLOAD SCALING 
+
+The following theorem describes how decoding changes as the number of encoded message bits increases; its exponent Λc is reused by Theorem 8. 
+
+Theorem 7 (Payload scaling) . For p ∈ (0 , 1] and λ ∈ (0 , 1) , define 
+
+ηp(λ) = log(1 − λ) − log Γ(1 /p + 1) Γ( λ + 1) Γ(1 /p + λ + 1) , (82) 
+
+ηp(λ) is nonincreasing in p and η1(λ) = log(1 − λ2) < 0. Condition on the emitted text Y1: n = y
+
+and the scored-position sets {T c}Cc=1 selected by the chunk assignments. This fixes nc and pt = pt(yt)
+
+for t ∈ T c. Then 
+
+Pr 
+
+> κ
+
+ ˆmc̸ = mc Y1: n = y, {T c}Cc=1 
+
+ ≤  2kc − 1e−Λc < exp  kc ln 2 − Λc
+
+,
+
+Λc = sup 
+
+> λ∈(0 ,1)
+
+X
+
+> t∈T c
+
+ηpt (λ). (83) 
+
+An empty scored set has Λc = 0 . For the whole message ˆm = ( ˆ m1, . . . , ˆmC ),
+
+Pr  
+
+> κ
+
+[ ˆ m̸ = m | Y1: n = y, {T c}Cc=1 ] ≤
+
+> C
+
+X
+
+> c=1
+
+(2 kc − 1) e−Λc . (84) 
+
+Proof. Fix the model, prompt x, sampling settings and embedded message m. We work under the continuous random-function idealisation stated after (30). Throughout the conditional error calculation, fix a realisation of the emitted text Y1: n = y and the scored-position sets {T c}Cc=1 with positive probability. Write Pr ∗ and E∗ for probability and expectation conditional on this pair. The sets Tc, their sizes nc, and the probabilities pt = p(yt | x, y <t ) are then fixed. Each pt is positive, since a token with zero sampling probability cannot appear in a text of positive probability. Theorem 3 gives the correct candidate’s law at one step. Here we need its joint law across scored positions after conditioning on the entire text and its chunk assignments. We establish that law first, and then compare the correct score with each wrong score. 
+
+The joint law of a token and the maximum used to select it. Let A denote the complete context-to-chunk assignment table determined by the PRF inputs tagged chunk . These inputs are disjoint from all token-sampling inputs, so conditioning on A leaves the random functions used for token sampling independent with their original laws. For this part of the proof, condition on A before generating the text. At step t, let Ht include A and the full query history before the sampling uniforms for that step are read. As proved in Appendix K, these sampling inputs are distinct and have never been queried: the first occurrence of a context uses its message tuple, while a repeated context uses a tuple containing the new position t. Thus the coordinates of ut(·) are independent U (0 , 1) variables conditional on 
+
+Ht, and pt(·) is fixed by that history. Put Vt, + = {v : pt(v) > 0} and, for v ∈ Vt, +, define 
+
+Zt(v) = ut(v)1/p t(v), Mt = max 
+
+> v∈Vt, +
+
+Zt(v). (85) The equivalent sampling rule in Appendix J gives Yt = arg max v∈Vt, + Zt(v). For 0 < z < 1,
+
+Pr  
+
+> κ
+
+[Zt(v) ≤ z | H t] = zpt(v), fZt(v)|H t (z) = pt(v)zpt(v)−1. (86) These variables are conditionally independent, being functions of distinct uniform coordinates, and ties have probability zero. The event {Mt ≤ z, Y t = v} occurs when Zt(v) has some value s ≤ z
+
+and every competitor is at most s. Integrating over s gives 
+
+Pr  
+
+> κ
+
+[Mt ≤ z, Y t = v | H t] = 
+
+Z z
+
+> 0
+
+pt(v)spt(v)−1 Y
+
+> w∈Vt, +\{ v}
+
+spt(w) ds
+
+= pt(v)
+
+Z z
+
+> 0
+
+s  
+
+> P
+> w∈Vt, +pt(w)−1
+
+ds
+
+= pt(v)
+
+Z z
+
+> 0
+
+1 d s = z p t(v).
+
+(87) 34 Preprint The third line uses P 
+
+> w∈Vt, +
+
+pt(w) = 1 . The same identity holds at z = 0 , 1 by continuity, and for 
+
+pt(v) = 0 both sides vanish. If there is only one possible token, the product over competitors is empty and equals 1, so this case is included. 
+
+Extending this law to the entire generated text. Fix numbers z1, . . . , z n ∈ [0 , 1] and let 
+
+Ej = {Y1: j = y1: j , M t ≤ zt for 1 ≤ t ≤ j}, E0 = Ω . (88) The event Ej−1 is determined by Hj . On this event the prefix is y<j , so the preceding single-step identity and iterated conditional expectation yield 
+
+Pr  
+
+> κ
+
+[Ej | A ] = Eκ
+
+h
+
+1Ej−1 Pr  
+
+> κ
+
+[Mj ≤ zj , Y j = yj | H j ] A
+
+i
+
+= zj p(yj | x, y <j ) Pr  
+
+> κ
+
+[Ej−1 | A ]. (89) Applying this recurrence for j = 1 , . . . , n gives 
+
+Pr  
+
+> κ
+
+[Y1: n = y, M t ≤ zt for all t | A ] = 
+
+> n
+
+Y
+
+> t=1
+
+ztp(yt | x, y <t ). (90) Setting every zt = 1 shows that Pr κ[Y1: n = y | A ] = Qnt=1 p(yt | x, y <t ). Dividing by this positive probability therefore gives 
+
+Pr  
+
+> κ
+
+[Mt ≤ zt for all t | Y1: n = y, A] = 
+
+> n
+
+Y
+
+> t=1
+
+zt. (91) This is the joint distribution function of independent uniforms. It proves independence after condi-tioning on the full text, including its future tokens, rather than only on each preceding prefix. The pair (y, A) determines all the scored sets {T c}Cc=1 . For a fixed chunk c, set zt = 1 outside Tc in the last identity and average over assignment tables consistent with (y, {T c}Cc=1 ). The product over 
+
+Tc is fixed under this conditioning, so 
+
+Pr  
+
+> ∗
+
+[Mt ≤ zt for all t ∈ T c] = E∗
+
+" Y
+
+> t∈T c
+
+zt
+
+#
+
+= Y
+
+> t∈T c
+
+zt. (92) Thus the selected Mt, t ∈ T c, remain independent U (0 , 1) variables under Pr ∗.At every scored position, the correct candidate reconstructs the uniforms actually used by the encoder. Since Yt maximises Zt,
+
+Bt := u(mc) 
+
+> t
+
+(Yt) = ut(Yt) = M pt 
+
+> t
+
+. (93) Consequently, for 0 < b < 1,
+
+Pr  
+
+> ∗
+
+[Bt ≤ b] = Pr  
+
+> ∗
+
+[Mt ≤ b1/p t ] = b1/p t . (94) Writing αt = 1 /p t, the variables Bt are therefore independent Beta( αt, 1) variables with densities 
+
+αtbαt−1 on (0 , 1) . In particular, the correct score has the representation 
+
+S := Sc(mc) = X
+
+> t∈T c
+
+Xt, Xt = − log(1 − Bt), (95) where the Xt are conditionally independent. 
+
+Independence of the wrong scores from the correct score. Write Wc = {0, 1}kc \ { mc} for the wrong candidates. Let H be the complete encoder query transcript together with the decoder’s chunk-selection queries, as in Appendix L. This information determines (Y1: n, {T c}Cc=1 ) and the correct score S.For t ∈ T c and m′ ∈ W c, the wrong candidate uses the input 
+
+bt,m ′ = ⟨msg , c t, m ′, Y t⟩. (96) These inputs are distinct over all pairs (t, m ′): scored positions have distinct contexts, and distinct candidates have distinct message fields. None is queried by the encoder. Indeed, a message query 35 Preprint with context ct uses the true value mc, while a query with another context has a different context field; the remaining query families use different tags. This also rules out collisions with encoder queries for other chunks, even if their true values happen to equal m′.Let W be the vector of all reconstructed wrong-candidate uniforms u(m′) 
+
+> t
+
+(Yt), indexed by these pairs. By the random-function argument in Appendix L, conditional on H its entries are independent uniforms. Hence for any vector w with entries wt,m ′ ∈ [0 , 1] ,
+
+Pr  
+
+> κ
+
+[W ≤ w | H ] = Y
+
+> t∈T c
+
+Y
+
+> m′∈W c
+
+wt,m ′ , (97) where W ≤ w is interpreted coordinatewise. The right-hand side is constant once the scored sets have been fixed. Since S is determined by H, iterated conditional expectation gives 
+
+Pr  
+
+> ∗
+
+[S ≤ s, W ≤ w] = E∗
+
+h
+
+1{S≤s} Pr  
+
+> κ
+
+[W ≤ w | H ]
+
+i
+
+= Pr  
+
+> ∗
+
+[S ≤ s] Y
+
+> t∈T c
+
+Y
+
+> m′∈W c
+
+wt,m ′ . (98) This factorisation proves that W is independent of S under Pr ∗, and that all its coordinates remain independent uniforms. Each wrong score is a function of its own coordinates of W . Thus, when 
+
+nc ≥ 1, each Sc(m′) is independent of S and has the Γ( nc, 1) law derived in Appendix L. The wrong scores are also mutually independent, although the union bound below does not require that additional fact. 
+
+Computing the two exponential moments. Assume for now that nc ≥ 1, and fix λ ∈ (0 , 1) . For a wrong candidate, integrate against its Gamma density: 
+
+E∗[eλS c(m′)] = 1(nc − 1)! 
+
+Z ∞
+
+> 0
+
+snc−1e−(1 −λ)s ds
+
+= (1 − λ)−nc
+
+(nc − 1)! 
+
+Z ∞
+
+> 0
+
+qnc−1e−q dq
+
+= (1 − λ)−nc .
+
+(99) The second line substitutes q = (1 − λ)s, and the last integral is Γ( nc) = ( nc − 1)! . The restriction 
+
+λ < 1 ensures convergence. This is the moment-generating function of the wrong score, evaluated at the positive argument λ.For a correct-score contribution with a = 1 /p , define 
+
+Lp(λ) := E[(1 − B)λ], B ∼ Beta( a, 1) ,Lp(λ) = a
+
+Z 10
+
+ba−1(1 − b)λ db
+
+= a Γ( a)Γ( λ + 1) Γ( a + λ + 1) = Γ( a + 1)Γ( λ + 1) Γ( a + λ + 1) .
+
+(100) Here the integral is Euler’s beta integral, and the last equality uses Γ( a + 1) = aΓ( a). For complete-ness, the beta identity for a, b > 0 follows from the Gamma integrals by the substitution u = rz ,
+
+v = r(1 − z), whose Jacobian is r:
+
+Γ( a)Γ( b) = 
+
+Z ∞
+
+> 0
+
+Z ∞
+
+> 0
+
+ua−1vb−1e−(u+v) du dv
+
+=
+
+Z ∞
+
+> 0
+
+ra+b−1e−r dr
+
+ Z 10
+
+za−1(1 − z)b−1 dz
+
+
+
+= Γ( a + b)
+
+Z 10
+
+za−1(1 − z)b−1 dz. 
+
+(101) All integrands are nonnegative, which justifies separating these integrals; division by Γ( a + b) > 0
+
+gives the identity used above with b = λ + 1 . Since e−λX t = (1 − Bt)λ, we have established 
+
+E∗[e−λX t ] = Lpt (λ), ηp(λ) = log(1 − λ) − log Lp(λ). (102) 36 Preprint 
+
+Bounding the probability that one wrong score wins. For a fixed m′ ∈ W c, the positivity of λ
+
+gives 
+
+{Sc(m′) ≥ S} = {eλ(Sc(m′)−S) ≥ 1}. (103) Markov’s inequality applies to this nonnegative exponential. Using independence of Sc(m′) and S,and then independence of the correct-score contributions, yields 
+
+Pr  
+
+> ∗
+
+[Sc(m′) ≥ S] ≤ E∗[eλ(Sc(m′)−S)]= E∗[eλS c(m′)]E∗[e−λS ]= (1 − λ)−nc
+
+Y
+
+> t∈T c
+
+E∗[e−λX t ]= (1 − λ)−nc
+
+Y
+
+> t∈T c
+
+Lpt (λ)= exp − X
+
+> t∈T c
+
+[log(1 − λ) − log Lpt (λ)] 
+
+!
+
+= exp − X
+
+> t∈T c
+
+ηpt (λ)
+
+!
+
+.
+
+(104) The fifth line uses |T c| = nc, placing one factor (1 − λ)−1 with each term of the product. 
+
+Optimising the exponent. Write Fc(λ) = P 
+
+> t∈T c
+
+ηpt (λ). For each fixed p > 0, dominated convergence in the definition of Lp gives 
+
+lim  
+
+> λ↓0
+
+Lp(λ) = 1 , lim  
+
+> λ↑1
+
+Lp(λ) = E[1 − B] = 11/p + 1 > 0. (105) The integrands are bounded by 1, and the last value also follows by setting λ = 1 in the Gamma ratio above. Thus Fc is continuous on (0 , 1) , tends to 0 at the left endpoint, and, when nc ≥ 1, tends to −∞ at the right endpoint. Continuity on each compact subinterval, together with these endpoint limits, shows that 
+
+0 ≤ Λc := sup 
+
+> 0<λ< 1
+
+Fc(λ) < ∞. (106) The pairwise error bound holds for every λ ∈ (0 , 1) . Taking the infimum of its right-hand side, and using continuity and monotonicity of the exponential, therefore gives 
+
+Pr  
+
+> ∗
+
+[Sc(m′) ≥ S] ≤ inf  
+
+> 0<λ< 1
+
+e−Fc(λ) = e− sup 0<λ< 1 Fc(λ) = e−Λc . (107) No maximiser inside (0 , 1) is required: a sequence of values approaching the supremum gives the same bound. 
+
+From pairwise comparisons to chunk and message errors. Fix any rule for breaking ties in the decoder’s maximisation. If ˆmc̸ = mc, the selected wrong candidate has a score at least as large as 
+
+Sc(mc) = S. Hence 
+
+{ ˆmc̸ = mc} ⊆ [
+
+> m′∈W c
+
+{Sc(m′) ≥ S}. (108) This inclusion remains valid even if a tie occurs. The conditional union bound and |W c| = 2 kc − 1
+
+now give 
+
+Pr  
+
+> ∗
+
+[ ˆ mc̸ = mc] ≤ X
+
+> m′∈W c
+
+Pr  
+
+> ∗
+
+[Sc(m′) ≥ S]
+
+≤ (2 kc − 1) e−Λc
+
+< 2kc e−Λc = exp( kc ln 2 − Λc).
+
+(109) The strict inequality uses 2kc − 1 < 2kc and e−Λc > 0, the latter following from finiteness of Λc.This proves (83) when nc ≥ 1.37 Preprint If nc = 0 , every candidate score is the empty sum 0, and Λc = sup 0<λ< 1 0 = 0 . If there is at least one wrong candidate, the claimed bound is valid because 
+
+Pr  
+
+> ∗
+
+[ ˆ mc̸ = mc] ≤ 1 ≤ 2kc − 1 = (2 kc − 1) e−Λc . (110) If there are no wrong candidates, the decoder can only select mc, and both the error probability and the first bound are 0, for any value of nc. These observations cover all degenerate cases. All chunks were analysed under the same conditioning on (Y1: n, {T c}Cc=1 ). Since the decoded concatenation differs from m precisely when at least one chunk differs, a second conditional union bound yields 
+
+Pr  
+
+> ∗
+
+[ ˆ m̸ = m] = Pr 
+
+> ∗
+
+" C[
+
+> c=1
+
+{ ˆmc̸ = mc}
+
+#
+
+≤
+
+> C
+
+X
+
+> c=1
+
+Pr  
+
+> ∗
+
+[ ˆ mc̸ = mc]
+
+≤
+
+> C
+
+X
+
+> c=1
+
+(2 kc − 1) e−Λc .
+
+(111) No independence between chunks is needed. If one conditions only on the text, the scored sets are still random, so the corresponding bound is obtained by averaging their right-hand side: 
+
+Pr  
+
+> κ
+
+[ ˆ m̸ = m | Y1: n = y] ≤ Eκ
+
+" CX
+
+> c=1
+
+(2 kc − 1) e−Λc Y1: n = y
+
+#
+
+. (112) 
+
+Monotonicity of ηp(λ) in the token probability. Fix λ ∈ (0 , 1) and let U ∼ U (0 , 1) . The variable 
+
+Bp = U p has distribution function b1/p on (0 , 1) , so Bp ∼ Beta(1 /p, 1) and 
+
+Lp(λ) = E[(1 − U p)λ]. (113) This represents the distributions for different p using the same uniform variable. If 0 < p 1 < p 2 ≤ 1,then for every U ∈ (0 , 1) ,
+
+U p1 > U p2 , 1 − U p1 < 1 − U p2 , (1 − U p1 )λ < (1 − U p2 )λ. (114) Taking expectations gives Lp1 (λ) < L p2 (λ). Since the logarithm is strictly increasing, subtracting these logarithms from the same value log(1 − λ) gives ηp1 (λ) > η p2 (λ). In particular, ηp(λ) is nonincreasing in p, as claimed. 
+
+The endpoint p = 1 . When p = 1 , the Beta variable is uniform and 
+
+L1(λ) = 
+
+Z 10
+
+(1 − u)λ du =
+
+
+
+− (1 − u)λ+1 
+
+λ + 1 
+
+10
+
+= 1
+
+λ + 1 . (115) Substitution into the definition of η yields 
+
+η1(λ) = log(1 − λ) + log(1 + λ) = log(1 − λ2) < 0, (116) because 0 < 1 − λ2 < 1. For example, if every scored token has pt = 1 , then Fc(λ) = nc log(1 − λ2)
+
+and Λc = 0 , approached as λ ↓ 0 when nc > 0. This also illustrates why the supremum in the theorem need not be attained inside the open interval. 38 Preprint 
+
+## P PROOF OF THEOREM 5
+
+The main text states only the final log-likelihood ratio. The full statement below additionally gives the conditional candidate laws, the product likelihood, the maximum-likelihood and most-powerful-test conclusions, and the certified weighted decoder; it keeps the theorem’s number and the main log-likelihood equation number. 
+
+Theorem 5 (Exact likelihood ratio, full statement) . Treat PRF as a random function. Fix a chunk c
+
+with kc ≥ 1 and condition on the emitted text and the scored-position sets {T c}Cc=1 , fixing pt = pt(yt)
+
+for t ∈ T c. All scored uniforms u(m′) 
+
+> t
+
+(yt) are conditionally independent across positions and candidates, with density fcorrect (· | pt) when m′ = mc and density fwrong ≡ 1 otherwise. For a fixed candidate m′, the likelihood ratio of H1 : mc = m′ to H0 : mc̸ = m′, based on that candidate’s scored uniforms, is 
+
+Lc(m′) = Y
+
+> t∈T c
+
+fcorrect 
+
+ u(m′) 
+
+> t
+
+(yt) | pt
+
+
+
+fwrong 
+
+ u(m′) 
+
+> t
+
+(yt) = Y
+
+> t∈T c
+
+fpt
+
+ u(m′) 
+
+> t
+
+(yt), (117) 
+
+and its logarithm, the quantity the decoder computes, is the sum 
+
+ℓc(m′) = log Lc(m′) = X
+
+> t∈T c
+
+log fpt
+
+ u(m′) 
+
+> t
+
+(yt)
+
+= X
+
+> t∈T c
+
+h  1 
+
+> pt
+
+− 1 log u(m′) 
+
+> t
+
+(yt) + log 1
+
+> pt
+
+i
+
+.
+
+(17) 
+
+The decoder arg max m′ ℓc(m′) is the conditional maximum-likelihood decoder based on all candi-dates’ scored uniforms. For distinct m′, m ′′ , the test of H0 : mc = m′′ against H1 : mc = m′ that rejects for large ℓc(m′) − ℓc(m′′ ) is most powerful at its conditional level, with randomisation at the threshold if needed. More generally, let wt ≥ 0 be finite weights determined by the text, prompt and model, and write 
+
+Rc,w (m′) = X
+
+> t∈T c
+
+wt log u(m′) 
+
+> t
+
+(yt), ˆmc,w = arg max  
+
+> m′
+
+Rc,w (m′). (118) 
+
+Under a wrong candidate, −Rc,w (m′) has the law of Zc,w = P 
+
+> t∈T c:wt>0
+
+wtEt, where the Et
+
+are independent Exp(1) variables; zero weights contribute 0. Let Fc,w (z) = Pr[ Zc,w ≤ z]. The certificate ˆδc,w (y) = min 1, (2 kc − 1) Fc,w 
+
+ −Rc,w ( ˆ mc,w ) , (119) 
+
+set to 1 if all weights are zero, gives the guarantee (15) when the decoder returns ˆmc,w if ˆδc,w ≤ δ
+
+and abstains otherwise. Proof. Fix the model, prompt, sampling settings and the values carried by all chunks other than c.Let Mc = {0, 1}kc and K = |M c| ≥ 2. To compare the possible values of chunk c, write Ha for the hypothesis that mc = a, where a ∈ M c. This comparison does not require a prior distribution on the message. Condition on a realised text Y1: n = y and scored-position sets {T c}Cc=1 with positive probability. These fix Tc, nc and pt = p(yt | x, y <t ) ∈ (0 , 1] . Appendix O shows that the text law conditional on the chunk-assignment table is Q 
+
+> t
+
+p(yt | x, y <t ), independently of the message. The assignment table itself is also independent of the message. Hence (Y1: n, {T c}Cc=1 ) has the same law under every Ha,and the same conditioning is valid for all candidates. Denote conditional probability and expectation under Ha by Pr a and Ea.
+
+The joint observation and its conditional density. For t ∈ T c and b ∈ M c, put 
+
+Ut,b = u(b) 
+
+> t
+
+(yt), Ub = ( Ut,b )t∈T c , U = ( Ub)b∈M c . (120) Thus Ub is the column of scored uniforms for candidate b, and U is the array used to compare all candidates. 39 Preprint Under Ha, Appendix O proves that the coordinates of Ua are independent, with distribution functions 
+
+u1/p t on (0 , 1) . Differentiation gives their densities: 
+
+ddu u1/p t = 1
+
+pt
+
+u1/p t−1 = fpt (u). (121) The other columns consist of independent uniforms and are also independent of Ua. To justify this last joint assertion, let H contain the complete generation transcript and the decoder’s chunk-selection queries, as in Appendix L. It determines both the conditioning information and the correct column 
+
+Ua. Every entry in the remaining columns is read at a distinct input that was never queried during generation: at context ct, the encoder uses a, while a wrong column uses b̸ = a. Distinct retained contexts and the domain-separating tags rule out the other possible input collisions. Consequently, conditional on H, the array U−a = ( Ub)b̸=a has the product uniform law, denoted by ν,independently of the values in that transcript. For any measurable sets A and B, iterated conditional expectation gives 
+
+Pr  
+
+> a
+
+[Ua ∈ A, U −a ∈ B] = Ea
+
+h
+
+1{Ua∈A} Pr  
+
+> a
+
+[U−a ∈ B | H ]
+
+i
+
+= Ea
+
+1{Ua∈A}ν(B)
+
+= Pr  
+
+> a
+
+[Ua ∈ A] ν(B).
+
+(122) This factorisation establishes the required independence. In particular, for nc ≥ 1, the conditional density of the whole array at u = ( ut,b ) ∈ (0 , 1) ncK under Ha is 
+
+qa(u) = Y
+
+> t∈T c
+
+fpt (ut,a )
+
+!  Y
+
+> b∈M c\{ a}
+
+Y
+
+> t∈T c
+
+1
+
+
+
+= Y
+
+> t∈T c
+
+fpt (ut,a ).
+
+(123) All these densities are positive on the same observation space. 
+
+The likelihood ratio for one candidate. Fix a candidate b and consider only its column Ub. Under 
+
+H1 : mc = b, its density at z = ( zt)t∈T c is 
+
+h1(z) = Y
+
+> t∈T c
+
+fpt (zt). (124) Under any hypothesis Ha with a̸ = b, this column instead has density 
+
+h0(z) = Y
+
+> t∈T c
+
+1 = 1 . (125) Although H0 : mc̸ = b contains several possible messages, all of them give exactly this same distribution for Ub. Thus this candidate-specific likelihood ratio is unambiguous without choosing a distribution over the wrong messages. Evaluating h1/h 0 at the observed column gives 
+
+h1(Ub)
+
+h0(Ub) = Y
+
+> t∈T c
+
+fcorrect (Ut,b | pt)
+
+fwrong (Ut,b ) = Y
+
+> t∈T c
+
+fpt (Ut,b ) = Lc(b), (126) which proves (117). Every factor is positive and finite because pt > 0 and 0 < U t,b < 1. Taking logarithms is therefore valid, and gives 
+
+ℓc(b) = log Y
+
+> t∈T c
+
+h
+
+p−1 
+
+> t
+
+U 1/p t−1
+
+> t,b
+
+i
+
+= X
+
+> t∈T c
+
+h
+
+log p−1 
+
+> t
+
++ log U 1/p t−1
+
+> t,b
+
+i
+
+= X
+
+> t∈T c
+
+ 1
+
+pt
+
+− 1
+
+
+
+log Ut,b + log 1
+
+pt
+
+
+
+.
+
+(127) 40 Preprint The second line uses the logarithm of a finite product, and the third uses log uβ = β log u for u > 0.This proves (17). If pt = 1 , both coefficients in that token’s contribution vanish, so its log-likelihood contribution is 0. If Tc is empty, the product is 1 and the sum is 0 for every candidate. 
+
+Maximum likelihood from the full array of scored uniforms. The preceding candidate-specific ratio uses one column at a time. To justify comparing candidates, we use the density of the same full observation U under each hypothesis. The joint density already derived satisfies 
+
+qa(U) = Y
+
+> t∈T c
+
+fpt (Ut,a ) = Lc(a). (128) Hence, as sets of maximisers, 
+
+arg max 
+
+> a∈M c
+
+qa(U) = arg max 
+
+> a∈M c
+
+Lc(a) = arg max 
+
+> a∈M c
+
+ℓc(a). (129) The last equality holds because the logarithm is strictly increasing. Choosing any fixed rule among tied maximisers thus gives a conditional maximum-likelihood decoder for this observation. The observation here consists of the scored uniforms for all candidates, together with the fixed text, scored sets and model probabilities. 
+
+The pairwise test and its rejection direction. Fix two distinct candidates b, d . For the simple hypotheses 
+
+H0 : mc = d, H1 : mc = b, (130) the likelihood ratio based on U is 
+
+R(U) = qb(U)
+
+qd(U) = Lc(b)
+
+Lc(d) = exp  ℓc(b) − ℓc(d). (131) A large value therefore favours H1, so the rejection region for H0 uses a large value of ℓc(b) − ℓc(d).For completeness, we prove the most-powerful assertion. Let α ∈ (0 , 1) be the prescribed conditional test level. Choose a threshold τ > 0 satisfying 
+
+Pr  
+
+> d
+
+[R > τ ] ≤ α ≤ Pr  
+
+> d
+
+[R ≥ τ ]. (132) Such a threshold is a quantile of the positive, finite random variable R. Define the rejection probability 
+
+ϕ∗(u) = 
+
+
+
+1, R(u) > τ, γ, R(u) = τ, 
+
+0, R(u) < τ, 
+
+(133) where γ ∈ [0 , 1] is chosen so that 
+
+Ed[ϕ∗] = Pr  
+
+> d
+
+[R > τ ] + γ Pr  
+
+> d
+
+[R = τ ] = α. (134) If the boundary has positive probability, take γ = ( α − Pr d[R > τ ]) / Pr d[R = τ ]; the quantile inequalities place this number in [0 , 1] . If the boundary has probability zero, the tail probability already equals α and any γ works. Let ϕ(u) ∈ [0 , 1] be any other test using this observation with Ed[ϕ] ≤ α. At every u,
+
+(ϕ∗(u) − ϕ(u))( qb(u) − τ q d(u)) ≥ 0. (135) Indeed, above the threshold both factors are nonnegative, below it both are nonpositive, and on the boundary the second factor is zero. Integrating this inequality over the observation space yields 
+
+Eb[ϕ∗] − Eb[ϕ] ≥ τ  Ed[ϕ∗] − Ed[ϕ]
+
+= τ  α − Ed[ϕ] ≥ 0. (136) Thus ϕ∗ has at least as much power as every competing level-α test. This is the Neyman–Pearson argument in the present conditional experiment. The endpoint levels α = 0 , 1 are handled by never rejecting and always rejecting, respectively; positivity of both densities ensures that a level-zero test also has zero power. 41 Preprint If Tc = ∅, the observation is an empty array and all likelihoods are 1. The same decision problem then consists only of randomisation. Likewise, if every scored token has pt = 1 , all hypotheses induce the same product uniform law, ℓc(b) − ℓc(d) = 0 , and a size-α test has power α. Boundary randomisation includes these cases. 
+
+The exact null distribution of a weighted log score. Return to a fixed true message mc, and let the finite weights wt ≥ 0 be as in the theorem. Their dependence only on the text, prompt and model makes them fixed under our conditioning. For a wrong candidate b̸ = mc, define 
+
+Xt,w = −wt log Ut,b , Zb = X
+
+> t∈T c
+
+Xt,w = −Rc,w (b). (137) If wt > 0, then for z ≥ 0 the uniform null law gives 
+
+Pr 
+
+> mc
+
+[Xt,w > z ] = Pr 
+
+> mc
+
+[−wt log Ut,b > z ]= Pr 
+
+> mc
+
+[log Ut,b < −z/w t]= Pr 
+
+> mc
+
+[Ut,b < e −z/w t ]= e−z/w t .
+
+(138) Thus Xt,w is exponential with rate 1/w t and density w−1 
+
+> t
+
+e−z/w t for z > 0. If wt = 0 , then Xt,w = 0 
+
+deterministically; no exponential rate is assigned to that term. The summands are independent because the Ut,b are independent and the weights are fixed. Equivalently, 
+
+Zbd
+
+= Zc,w = X
+
+> t∈T c:wt>0
+
+wtEt, Et independent Exp(1) . (139) This distribution is specified exactly even when positive weights repeat. To make its computation explicit, enumerate the active positions as t1, . . . , t r and put λj = 1 /w tj . For r ≥ 1, let gj be the density of the sum of its first j exponential terms. Independence gives the convolution recursion, for 
+
+z > 0,
+
+g1(z) = λ1e−λ1z , gj (z) = 
+
+Z z
+
+> 0
+
+gj−1(v)λj e−λj (z−v) dv (2 ≤ j ≤ r). (140) Consequently, 
+
+Fc,w (z) = 
+
+
+
+0, z < 0,Z z
+
+> 0
+
+gr (v) d v, z ≥ 0. (141) Each gj is positive on (0 , ∞): this holds for g1, and the recursion integrates a positive integrand over 
+
+(0 , z ). Hence Fc,w is continuous and strictly increasing on [0 , ∞), with Fc,w (0) = 0 and limit 1 at infinity. An equivalent expression for the Laplace transform is 
+
+E[e−sZ c,w ] = 
+
+> r
+
+Y
+
+> j=1
+
+Z ∞
+
+> 0
+
+λj e−(λj +s)z dz =
+
+> r
+
+Y
+
+> j=1
+
+λj
+
+λj + s =
+
+> r
+
+Y
+
+> j=1
+
+(1 + sw tj )−1, s ≥ 0. (142) If all active weights equal w > 0, then Zc,w /w ∼ Γ( r, 1) ; unequal weights are covered by the same convolution recursion. If r = 0 , the sum is zero with probability one. 42 Preprint 
+
+The appropriate tail and the certification bound. The weighted decoder maximises Rc,w , whereas its known nonnegative null variable is Zc,w = −Rc,w . For any fixed score value s ≤ 0,
+
+Pr[ −Zc,w ≥ s] = Pr[ Zc,w ≤ − s] = Fc,w (−s). (143) Thus the upper tail of the score corresponds to the lower tail of its negation. Substituting the selected score into this null tail and multiplying by the number of wrong candidates gives exactly 
+
+ˆδc,w = min {1, (K − 1) Fc,w (−Rc,w ( ˆ mc,w )) }. (144) We now verify its error guarantee, including the selection of ˆmc,w . At level δ = 1 the claim is immediate because every error probability is at most 1. For 0 < δ < 1, if there are no positive weights, the certificate is defined to be 1 and the decoder always abstains. It remains to consider 
+
+r ≥ 1.Set qδ = δ/ (K − 1) ∈ (0 , 1) . The continuity and strict increase of Fc,w give a unique zδ > 0 such that 
+
+Fc,w (zδ ) = qδ . (145) Since δ < 1, clipping the certificate at 1 does not change its acceptance event. Therefore 
+
+ˆδc,w ≤ δ ⇐⇒ Fc,w (−Rc,w ( ˆ mc,w )) ≤ qδ
+
+⇐⇒ −Rc,w ( ˆ mc,w ) ≤ zδ . (146) Let Dδ,w denote the decoder that returns ˆmc,w on this event and returns ⊥ otherwise. If it accepts a wrong candidate, that candidate’s negated score must meet the last inequality. Hence, under the current conditioning, 
+
+{Dδ,w (y) /∈ { mc, ⊥}} ⊆ [
+
+> b̸=mc
+
+{Zb ≤ zδ }. (147) Every fixed wrong candidate has the same null distribution Fc,w . Applying the union bound thus gives 
+
+Pr 
+
+> mc
+
+[Dδ,w (y) /∈ { mc, ⊥} ] ≤ X
+
+> b̸=mc
+
+Pr 
+
+> mc
+
+[Zb ≤ zδ ]= ( K − 1) Fc,w (zδ )= ( K − 1) δK − 1 = δ. 
+
+(148) This step needs no independence between candidate scores and works with any fixed tie-breaking rule. The bound holds for every conditioning pair of positive probability, so averaging over both the text and the scored sets gives 
+
+Pr  
+
+> κ
+
+[Dδ,w (Y1: n) /∈ { mc, ⊥} ]= Eκ
+
+h
+
+Pr  
+
+> κ
+
+[Dδ,w (Y1: n) /∈ { mc, ⊥} | Y1: n, {T c}Cc=1 ]
+
+i
+
+≤ δ. (149) This is the guarantee (15) for the weighted decoder. 43 Preprint 
+
+Applying the certificate to the model-aware score. Finally, define 
+
+w∗ 
+
+> t
+
+= 1
+
+pt
+
+− 1 ≥ 0, Ac = X
+
+> t∈T c
+
+log 1
+
+pt
+
+. (150) The log-likelihood formula proved above becomes 
+
+ℓc(b) = Ac + Rc,w ∗ (b). (151) The term Ac does not depend on the candidate, so maximising ℓc is equivalent to maximising Rc,w ∗ .For the selected candidate ˆmℓ = arg max b ℓc(b), its negated weighted score is 
+
+−Rc,w ∗ ( ˆ mℓ) = Ac − ℓc( ˆ mℓ). (152) The corresponding certificate is therefore 
+
+min 1, (K − 1) Fc,w ∗
+
+ Ac − ℓc( ˆ mℓ) , (153) with value 1 when all w∗ 
+
+> t
+
+vanish. In particular, tokens with pt = 1 have zero weight and contribute neither to the likelihood score nor to its null sum. If all scored tokens are deterministic, or if there are no scored positions, the decoder abstains at every level δ < 1. This completes both the likelihood and certification claims. 
+
+## Q PROOF OF THEOREM 6
+
+The main text states the contamination model, the robust score and its guarantees in brief. The full statement, which the proof below establishes, follows; it keeps the theorem’s number and equation number. 
+
+Theorem 6 (Robust decoding under contamination, full statement) . Fix ε ∈ (0 , 1) and a chunk c with 
+
+kc ≥ 1. Condition on the text and scored-position sets {T c}Cc=1 , and assume pt = pt(yt) ∈ (0 , 1] 
+
+for every t ∈ T c. In the contamination model, the labels of scored tokens are independent, with probabilities 1 − ε of being watermarked and ε of being foreign . Conditional on these labels, the scored uniforms for each fixed candidate are independent across positions. For the true candidate, their laws are Beta(1 /p t, 1) at watermarked positions and U (0 , 1) at foreign positions; for every wrong candidate they are U (0 , 1) at all positions, regardless of the labels. Then the log-likelihood ratio of H1 : mc = m′ to H0 : mc̸ = m′, based on candidate m′’s scored uniforms, is 
+
+rc(m′) = X
+
+> t∈T c
+
+log 
+
+h
+
+(1 − ε) fpt
+
+ u(m′) 
+
+> t
+
+(yt) + ε
+
+i
+
+, (19) 
+
+and (i) each summand lies between log ε and log  ε + (1 − ε)/p t
+
+; (ii) a token with pt = 1 contributes exactly 0; and (iii) every wrong candidate’s score has the exact null law 
+
+Zc,ε = X
+
+> t∈T c
+
+log ε + (1 − ε)fpt (Ut), Ut i.i.d. U (0 , 1) . (154) 
+
+Write Qc,ε (s) = Pr[ Zc,ε ≥ s] and ˆmc,ε = arg max m′ rc(m′). The certificate 
+
+ˆδc,ε = min 1, (2 kc − 1) Qc,ε 
+
+ rc( ˆ mc,ε ) (155) 
+
+gives the error bound of Theorem 4 under this model: returning ˆmc,ε only when ˆδc,ε ≤ δ and abstaining otherwise has probability at most δ of returning an incorrect chunk. If Tc is empty or every pt = 1 , this certificate equals 1.Proof. Fix the chunk c, the contamination parameter ε ∈ (0 , 1) , the prompt, model and sampling settings. Condition on the text Y1: n = y and scored-position sets {T c}Cc=1 . Thus Tc, nc and all 
+
+pt = pt(yt) ∈ (0 , 1] are fixed. Write Mc = {0, 1}kc and K = |M c| ≥ 2. The parameter ε is fixed before observing the candidate uniforms. All conditional distributions below are those of the contamination model stated in the theorem. 
+
+Marginalising the contamination labels. Fix a candidate a ∈ M c and abbreviate Ut = u(a) 
+
+> t
+
+(yt) for 
+
+t ∈ T c. Let Bt = 1 mean that position t is watermarked and Bt = 0 mean that it is foreign. Under the model, the Bt are independent, with 
+
+Pr[ Bt = 1] = 1 − ε, Pr[ Bt = 0] = ε. (156) 44 Preprint For the hypothesis H1 : mc = a, the conditional density of Ut is fpt (u) when Bt = 1 and 1 when 
+
+Bt = 0 . The law of total probability therefore gives the marginal density 
+
+hpt,ε (u) = (1 − ε)fpt (u) + ε = 1 − εpt
+
+u1/p t−1 + ε, 0 < u < 1. (157) This is a probability density: both component densities integrate to 1, so 
+
+Z 10
+
+hpt,ε (u) d u = (1 − ε)
+
+Z 10
+
+fpt (u) d u + ε
+
+Z 10
+
+1 d u = (1 − ε) + ε = 1 . (158) We also need the joint density across scored positions. Independence of the labels and independence of the uniforms conditional on those labels are both used here. For a label vector b = ( bt)t∈T c ∈ { 0, 1}Tc ,its probability is Q
+
+> t
+
+(1 −ε)bt ε1−bt . Conditional on this vector and H1, the uniforms have joint density Q 
+
+> t
+
+fpt (ut)bt . Summing over all label vectors yields 
+
+q1(( ut)t∈T c ) = X
+
+> b∈{ 0,1}Tc
+
+Y
+
+> t∈T c
+
+(1 − ε)bt ε1−bt fpt (ut)bt 
+
+= Y
+
+> t∈T c
+
+ X
+
+> bt∈{ 0,1}
+
+(1 − ε)bt ε1−bt fpt (ut)bt
+
+
+
+= Y
+
+> t∈T c
+
+[ε + (1 − ε)fpt (ut)] = Y
+
+> t∈T c
+
+hpt,ε (ut).
+
+(159) The second equality distributes the finite sum over all binary label choices into one two-term sum per position. It shows explicitly that independence across positions survives marginalisation over the unobserved labels. Under H0 : mc̸ = a, every Ut is uniform even conditional on the labels, and these uniforms are independent across positions by assumption. Their conditional joint density is therefore 1 for every label vector. Averaging over the labels leaves 
+
+q0(( ut)t∈T c ) = X
+
+> b∈{ 0,1}Tc
+
+Y
+
+> t∈T c
+
+(1 − ε)bt ε1−bt = Y
+
+> t∈T c
+
+(1 − ε) + ε = 1 . (160) This is the same density for every possible true value other than a. Hence the composite hypothesis 
+
+mc̸ = a induces one common null law for this candidate’s observed uniforms; no prior over the other message values is required. 
+
+The likelihood ratio and the robust score. Since hp,ε (u) ≥ ε > 0 on (0 , 1) , the likelihood ratio is positive and its logarithm is defined. Evaluating the two densities at the candidate’s observed uniforms gives 
+
+log q1(( Ut)t∈T c )
+
+q0(( Ut)t∈T c ) = log Y
+
+> t∈T c
+
+hpt,ε (Ut)= X
+
+> t∈T c
+
+log hpt,ε (Ut)= X
+
+> t∈T c
+
+log ε + (1 − ε)fpt (Ut)
+
+= rc(a).
+
+(161) This proves (19). If Tc = ∅, the joint likelihoods are both the empty product 1, their ratio is 1, and the robust score is the empty sum 0.
+
+Bounds on a token’s score contribution. For p ∈ (0 , 1] , the exponent 1/p − 1 is nonnegative. Consequently, for 0 < u < 1,
+
+0 ≤ u1/p −1 ≤ 1, 0 ≤ fp(u) = 1
+
+p u1/p −1 ≤ 1
+
+p . (162) 45 Preprint Multiplication by 1 − ε > 0 and addition of ε preserve these inequalities: 
+
+ε ≤ hp,ε (u) ≤ ε + 1 − εp . (163) The logarithm is increasing on (0 , ∞), so the per-token score 
+
+sp,ε (u) := log hp,ε (u) (164) satisfies 
+
+log ε ≤ sp,ε (u) ≤ log 
+
+
+
+ε + 1 − εp
+
+
+
+. (165) Both endpoints are finite under the stated assumptions. These bounds are algebraic and therefore hold for every candidate and for either contamination label. To state the negative-contribution bound precisely, let rc, −t(a) be the sum of all the other fixed contributions. Then 
+
+rc(a) = rc, −t(a) + spt,ε (Ut) ≥ rc, −t(a) + log ε = rc, −t(a) − log(1 /ε ). (166) Thus adding this summand can lower the existing sum by at most log(1 /ε ). This proves claim (i) and the stated bound on a token’s additive negative contribution. If p = 1 , then f1(u) = u0 = 1 for every u ∈ (0 , 1) . In this case 
+
+h1,ε (u) = (1 − ε) + ε = 1 , s1,ε (u) = log 1 = 0 . (167) This proves claim (ii), for watermarked and foreign tokens alike. 
+
+The exact null law of one summand. For a wrong candidate, the preceding joint-density calculation shows that its Ut are independent U (0 , 1) variables. Applying the fixed function spt,ε separately to each coordinate preserves independence. Thus its score has exactly the law 
+
+Zc,ε = X
+
+> t∈T c
+
+spt,ε (Ut), Ut independent U (0 , 1) . (168) This already identifies the null distribution using only the fixed probabilities pt and ε. We now derive its component distributions and an explicit recursion for their sum. Let U ∼ U (0 , 1) and first suppose 0 < p < 1. Put 
+
+aε = log ε, bp,ε = log 
+
+
+
+ε + 1 − εp
+
+
+
+. (169) Because (1 − p)/p > 0, the function 
+
+u 7 −→ sp,ε (u) = log 
+
+
+
+ε + 1 − εp u(1 −p)/p 
+
+
+
+(170) is continuous and strictly increasing on (0 , 1) , with endpoint limits aε and bp,ε . For aε < x < b p,ε ,inversion gives 
+
+sp,ε (U ) ≤ x ⇐⇒ ε + 1 − εp U (1 −p)/p ≤ ex
+
+⇐⇒ U (1 −p)/p ≤ p(ex − ε)1 − ε
+
+⇐⇒ U ≤
+
+ p(ex − ε)1 − ε
+
+p/ (1 −p)
+
+.
+
+(171) On this interval, the last threshold lies in (0 , 1) . Using the uniform distribution function therefore yields the exact null distribution function 
+
+Fp,ε (x) = 
+
+
+
+0, x ≤ aε,
+
+ p(ex − ε)1 − ε
+
+p/ (1 −p)
+
+, aε < x < b p,ε ,
+
+1, x ≥ bp,ε .
+
+(172) 46 Preprint Its endpoint limits are 0 and 1, so this distribution is continuous. On the open support interval its density is 
+
+dp,ε (x) = p
+
+1 − p
+
+ p
+
+1 − ε
+
+p/ (1 −p)
+
+ex(ex − ε)p/ (1 −p)−1 > 0. (173) This expression follows by differentiating the interior formula with the chain rule. When p = 1 , the summand is instead identically zero, and its distribution function is F1,ε (x) = 1{x ≥ 0}.
+
+Obtaining the null distribution of the sum. Enumerate Tc = {t1, . . . , t nc } and let Gj be the distribution function of the sum of its first j null contributions. The initial empty sum gives G0(x) = 
+
+1{x ≥ 0}. Independence of the next uniform and the previous sum gives, for j = 1 , . . . , n c,
+
+Gj (x) = 
+
+Z 10
+
+Gj−1
+
+ x − sptj ,ε (u) du. (174) Indeed, conditional on Utj = u, the sum is at most x exactly when the previous sum is at most 
+
+x − sptj ,ε (u); integration averages over the uniform density 1. Thus Fc,ε := Gnc is the exact null distribution function. A position with pt = 1 leaves the recursion unchanged because its score contribution is zero. The inclusive upper tail used in the certificate is 
+
+Qc,ε (x) = Pr[ Zc,ε ≥ x] = 1 − Fc,ε (x−), (175) where F (x−) = lim z↑x F (z). The left limit makes this identity valid even for a point mass. For use in the error bound, let Jc = {t ∈ T c : pt < 1} be the positions with nonconstant score contributions. If Jc = ∅, the null sum is identically zero. Otherwise its support endpoints are 
+
+sc = |Jc| log ε, sc = X
+
+> t∈Jc
+
+log 
+
+
+
+ε + 1 − εpt
+
+
+
+. (176) The sum has a continuous distribution and a density positive on (sc, s c). To see positivity, each component has the positive density derived above. If two densities are positive on intervals (A1, B 1)
+
+and (A2, B 2), then at any x ∈ (A1 + A2, B 1 + B2) their convolution integrates a positive function over  max {A1, x − B2}, min {B1, x − A2}, (177) which is a nonempty interval. Repeating this argument proves the assertion for every finite number of active positions. The density also shows there are no point masses. Consequently Qc,ε is continuous, equals 1 at sc, equals 0 at sc, and is strictly decreasing between them. 
+
+Certification after selecting the largest robust score. Fix the actual true chunk mc. Let Pr ∗ denote probability in the contamination model conditional on the text and scored sets fixed at the beginning of the proof. Choose any fixed tie-breaking rule, and write 
+
+ˆm = arg max 
+
+> a∈M c
+
+rc(a), ˆδ = min {1, (K − 1) Qc,ε (rc( ˆ m)) }. (178) The certified decoder Dδ,ε returns ˆm when ˆδ ≤ δ and returns ⊥ otherwise. We must bound the event that it accepts a wrong candidate. If δ = 1 , the claim follows because every event has probability at most 1. Suppose 0 < δ < 1. If 
+
+Jc = ∅, every candidate’s score is 0, including the case Tc = ∅. The inclusive tail gives 
+
+Qc,ε (0) = 1 , ˆδ = min {1, K − 1} = 1 . (179) Since K ≥ 2, the decoder therefore abstains and its error probability is zero. Using an inclusive tail is essential here: the null law assigns all its mass to the observed score 0.Now assume Jc̸ = ∅. Since 0 < δ/ (K − 1) < 1, continuity and strict decrease of the null tail give a unique sδ ∈ (sc, s c) such that 
+
+Qc,ε (sδ ) = δK − 1 . (180) 47 Preprint For δ < 1, clipping at 1 does not change whether the certificate is at most δ. Monotonicity of the tail then gives 
+
+ˆδ ≤ δ ⇐⇒ (K − 1) Qc,ε (rc( ˆ m)) ≤ δ
+
+⇐⇒ Qc,ε (rc( ˆ m)) ≤ Qc,ε (sδ )
+
+⇐⇒ rc( ˆ m) ≥ sδ .
+
+(181) Therefore, under the fixed conditioning, 
+
+{Dδ,ε (y) /∈ { mc, ⊥}} = { ˆm̸ = mc} ∩ { rc( ˆ m) ≥ sδ }⊆ [
+
+> a̸=mc
+
+{rc(a) ≥ sδ }. (182) The inclusion holds because an accepted wrong candidate is itself one of the wrong candidates whose score crosses the threshold. It does not assign the null law to the selected maximum. 
+
+Bounding and averaging the error probability. For each fixed wrong candidate, the null calculation gives 
+
+Pr  
+
+> ∗
+
+[rc(a) ≥ sδ ] = Qc,ε (sδ ) = δK − 1 . (183) Applying the conditional union bound over the K − 1 wrong candidates yields 
+
+Pr  
+
+> ∗
+
+[Dδ,ε (y) /∈ { mc, ⊥} ] ≤ X
+
+> a̸=mc
+
+Pr  
+
+> ∗
+
+[rc(a) ≥ sδ ]= ( K − 1) δK − 1 = δ. 
+
+(184) Independence between different candidates is not needed. The mixture law of the correct candidate identifies the score as a likelihood ratio; the certification bound uses only the independent-uniform law within each wrong candidate. The preceding bound holds for every conditioning pair satisfying the theorem’s assumptions. Averag-ing over the text and scored sets, whenever they are random in the contamination model, gives 
+
+Pr[ Dδ,ε (Y1: n) /∈ { mc, ⊥} ]= EPr[ Dδ,ε (Y1: n) /∈ { mc, ⊥} | Y1: n, {T c}Cc=1 ] ≤ δ. (185) The probability here is taken in the stated contamination model. This establishes the certified error guarantee and completes claim (iii), together with the likelihood formula, the score bounds, and all degenerate cases. 
+
+## R ADDITIONAL THEOREMS 
+
+Theorem 1 concerns a single generation. With a fixed key, repeating the same prompt and message produces the same text, and two generations can read the same sampling uniforms whenever their contexts and active message values agree. To separate their sampling randomness, draw a nonce 
+
+ν uniformly from {0, 1}r for every generation, independently of the key and of all other nonces. Replace (5) by 
+
+at =
+
+((fresh , ν, c t, t ), ct ∈ C t−1,
+
+(msg , ν, c t, m it ), ct /∈ C t−1,ut(v) = ρ PRF κ(at, v ), Ct = Ct−1 ∪ { ct}.
+
+(186) The seen-context set starts empty in each generation. Chunk selection (4) and token emission (6) are unchanged. The decoder treats the nonce as part of each candidate. For chunk c, it enumerates 
+
+Pc = {0, 1}r × { 0, 1}kc , Kc = |P c| = 2 r+kc , (187) and computes 
+
+u(ν′,m ′) 
+
+> t
+
+(v) = ρ PRF κ(msg , ν ′, c t, m ′, v ),Sc(ν′, m ′) = X
+
+> t∈T c
+
+− log  1 − u(ν′,m ′) 
+
+> t
+
+(yt). (188) 48 Preprint Choose a fixed rule for breaking ties and write (ˆ νc, ˆmc) = arg max (ν′,m ′)∈P c Sc(ν′, m ′). The returned chunk is the message component ˆmc. When r = 0 , there is a single possible nonce, so this construction reduces to the original scheme up to the fixed extra field in the PRF arguments. 
+
+Theorem 8 (Distortion-free generation under one deployed key) . Treat PRF κ as one random function shared by all generations. Fix a nonnegative integer r, an integer N ≥ 1, the model and sampling settings, and prompts x(j), messages m(j) ∈ { 0, 1}L and lengths nj for j = 1 , . . . , N . Let Y (j) be generated by (186) and (6) , using independent uniform nonces νj ∈ { 0, 1}r that are independent of the random function. Write Pr κ,ν for probability over that function and the nonces, and define 
+
+Pj (w) = 
+
+> nj
+
+Y
+
+> t=1
+
+p(wt | x(j), w <t ), D = {ν1, . . . , ν N are pairwise distinct }. (189) 
+
+Then the following hold. (i) Single-generation law. For every j and w ∈ V nj , Pr κ,ν [Y (j) = w] = Pj (w).(ii) Joint law for distinct nonces. If N ≤ 2r , then Pr κ,ν [D] > 0 and, for all w(j) ∈ V nj ,
+
+Pr 
+
+> κ,ν
+
+
+
+> N
+
+\
+
+> j=1
+
+{Y (j) = w(j)} D
+
+ =
+
+> N
+
+Y
+
+> j=1
+
+Pj (w(j)). (190) 
+
+Thus, conditional on distinct nonces, the generations are independent unwatermarked samples, even when their fixed prompts or messages coincide. (iii) Collision and total variation bounds. Let P be the joint law of (Y (1) , . . . , Y (N )) and 
+
+Q = NNj=1 Pj . Then 
+
+dTV (P, Q ) ≤ Pr 
+
+> κ,ν
+
+[Dc] ≤ min 
+
+
+
+1, N (N − 1) 2r+1 
+
+
+
+. (191) 
+
+This holds for every N , including N > 2r .(iv) Decoding and certification for one generation. Fix one generation and a chunk c with 
+
+kc ≥ 1, and write ν for its actual nonce. Conditional on its text, its scored-position sets 
+
+{T c}Cc=1 and ν, every pair (ν′, m ′)̸ = ( ν, m c) has score law Γ( nc, 1) when nc ≥ 1, and score 0 when nc = 0 .Let Gn ∼ Γ( n, 1) for n ≥ 1, let G0 = 0 almost surely, and put Qn(s) = Pr[ Gn ≥ s]. The certificate ˆδc = min 1, (Kc − 1) Qnc
+
+ Sc(ˆ νc, ˆmc) (192) 
+
+has the guarantee of (15) : returning ˆmc when ˆδc ≤ δ and abstaining otherwise has probability at most δ of returning an incorrect chunk, for δ ∈ (0 , 1] . Moreover, for Λc
+
+defined in (83) ,
+
+Pr 
+
+> κ,ν
+
+[ ˆ mc̸ = mc | Y1: n = y, {T c}Cc=1 ] ≤ (Kc − 1) e−Λc < exp  (kc + r) ln 2 − Λc
+
+. (193) 
+
+The corresponding whole-message bound is PCc=1 (2 kc+r − 1) e−Λc . An empty scored set has ˆδc = 1 and Λc = 0 .
+
+The nonce separates the sampling inputs of generations whose nonces differ. The decoder searches 
+
+2r times as many candidates, so its certificate and error bound have the same candidate-count factor as a message with r additional bits. As in Theorem 7, about r ln 2 additional accumulated evidence offsets this factor. The decoder searches for the nonce jointly with the message using the text and key. Our experiments use r = 0 .
+
+Proof. Keep the model, sampling settings, prompts, messages and lengths fixed as in the theorem. Throughout the proof, Pr and E denote probability and expectation over the single shared random function and the independent nonces. The function is drawn once and reused; it is not redrawn between generations. 49 Preprint Let A be the complete context-to-chunk assignment table determined by the inputs tagged chunk .These inputs are disjoint from all sampling inputs, whose tags are msg or fresh . Under the continuous random-function idealisation following (30), conditioning on A therefore leaves the sampling values independent U (0 , 1) variables. The nonces are also independent of A and of those values. We first work with A fixed, and later average over it. This conditioning is useful because the assignment table is shared even when the nonces differ. 
+
+Step 1: the law of one generation with its nonce fixed. Fix j and a nonce value a ∈ { 0, 1}r, and condition on (A, ν j = a). Let H(j) 
+
+> t
+
+contain this information and all queries and answers in generation 
+
+j before its step-t sampling vector is read. It determines the prefix, the context, the seen-context set, the active chunk and the next-token law. Every sampling input at step t is new within this generation. To verify this, consider the two cases in (186). On a first occurrence of the context, the input for token v is ⟨msg , a, c t, m it , v ⟩. Its context field differs from that of every earlier message input. On a repeated context, the input is 
+
+⟨fresh , a, c t, t, v ⟩; its position field differs from that of every earlier fresh input. The tags separate these two families from each other and from chunk-selection inputs. Finally, distinct tokens v give distinct inputs because the tuple encoding is injective. A random function can be exposed as queries arrive: an unqueried input receives an independent value, and a repeated input returns its stored value. The step-t input is chosen from the preceding history, so adaptively choosing it introduces no conditioning on its as-yet unobserved value. Thus, conditional on H(j) 
+
+> t
+
+, the sampling vector consists of independent uniforms. Lemma 1 gives 
+
+Pr[ Y (j) 
+
+> t
+
+= v | H (j) 
+
+> t
+
+] = p(v | x(j), Y (j) 
+
+> <t
+
+). (194) For a fixed text w ∈ V nj , put Et = {Y (j)1: t = w1: t} and E0 = Ω . Iterated conditional expectation gives 
+
+Pr[ Et | A , ν j = a] = E
+
+h
+
+1Et−1 Pr[ Y (j) 
+
+> t
+
+= wt | H (j) 
+
+> t
+
+] A, ν j = a
+
+i
+
+= p(wt | x(j), w <t ) Pr[ Et−1 | A , ν j = a].
+
+(195) On Et−1 the prefix is w<t , which justifies the second equality. This recursion also covers zero-probability prefixes without conditioning on such a prefix. Starting at t = 1 yields 
+
+Pr[ Y (j) = w | A , ν j = a] = 
+
+> nj
+
+Y
+
+> t=1
+
+p(wt | x(j), w <t ) = Pj (w). (196) The right-hand side depends on neither the table nor the nonce. Consequently, 
+
+Pr[ Y (j) = w] = E
+
+h
+
+Pr[ Y (j) = w | A , ν j ]
+
+i
+
+= Pj (w), (197) which proves (i). This is a marginal calculation for generation j; it does not condition on the outputs or queries of other generations. 
+
+Step 2: independence when the nonces are distinct. For a nonce value a, let I(a) be the set of all sampling inputs of the forms 
+
+⟨msg , a, c, b, v ⟩, ⟨fresh , a, c, t, v ⟩, (198) with admissible contexts, message values, positions and tokens. Injectivity of the tuple encoding implies I(a) ∩ I (a′) = ∅ when a̸ = a′: their nonce fields differ. All these sets are also disjoint from the chunk-selection inputs. Given A and νj = aj , the text Y (j) is a deterministic function of the random-function values on I(aj )
+
+and the fixed prompt, message and sampling settings. Although the queried inputs depend on previous tokens, all of them stay within this fixed set. For pairwise distinct a1, . . . , a N , the restrictions of the random function to these sets are independent, even conditional on A. Their resulting texts are 50 Preprint therefore independent under that conditioning. With Ew = TNj=1 {Y (j) = w(j)}, (196) gives 
+
+Pr[ Ew | A , ν 1 = a1, . . . , ν N = aN ] = 
+
+> N
+
+Y
+
+> j=1
+
+Pr[ Y (j) = w(j) | A , ν j = aj ]=
+
+> N
+
+Y
+
+> j=1
+
+Pj (w(j)).
+
+(199) Conditional independence alone would not in general imply independence after averaging over a shared table. Here it does, because this product does not depend on A or on the particular distinct nonce values. When N ≤ 2r, at least one distinct nonce tuple exists and has positive probability, so Pr[ D] > 0.Averaging the preceding identity conditional on D yields 
+
+Pr[ Ew | D] = E[Pr[ Ew | A , ν 1, . . . , ν N ] | D]=
+
+> N
+
+Y
+
+> j=1
+
+Pj (w(j)), (200) proving (ii). When N > 2r , distinct nonces are impossible, so no conditional law given D is asserted. 
+
+Step 3: bounding nonce collisions. For any two distinct generations j < j ′,
+
+Pr[ νj = νj′ ] = X
+
+> a∈{ 0,1}r
+
+Pr[ νj = a, ν j′ = a]= 2 r · 2−r · 2−r = 2 −r .
+
+(201) The second equality uses independence and uniformity of the two nonces. Since Dc occurs exactly when at least one pair agrees, the union bound gives 
+
+Pr[ Dc] ≤ X
+
+> 1≤j<j ′≤N
+
+Pr[ νj = νj′ ] = 
+
+N
+
+2
+
+
+
+2−r = N (N − 1) 2r+1 . (202) Combining this with Pr[ Dc] ≤ 1 gives the stated collision bound. Independence between the pairwise collision events is not needed. For N = 1 the union is empty and its probability is zero; for N > 2r
+
+the collision probability is one. 
+
+Step 4: converting the collision bound to total variation. Write Y = ( Y (1) , . . . , Y (N )) and 
+
+q = Pr[ Dc]. We use the convention 
+
+dTV (P, Q ) = sup   
+
+> E⊆QNj=1 Vnj
+
+|P (E) − Q(E)|. (203) If q = 1 , then dTV (P, Q ) ≤ 1 = q, since P (E) and Q(E) are probabilities. Now suppose q < 1, so 
+
+D has positive probability. By (ii), for every set E of text tuples, 
+
+Pr[ Y ∈ E, D ] = (1 − q) Q(E). (204) Decomposing according to D and Dc therefore gives 
+
+P (E) − Q(E) = (1 − q)Q(E) + Pr[ Y ∈ E, D c] − Q(E)= Pr[ Y ∈ E, D c] − qQ (E). (205) Both terms in the last difference lie in [0 , q ], so its absolute value is at most q. Taking the supremum over E gives dTV (P, Q ) ≤ q. Step 3 completes (iii), including the case in which conditioning on distinct nonces is impossible. 51 Preprint 
+
+Step 5: the null law for every wrong nonce–message pair. Fix one generation and drop its superscript j. Fix its true nonce ν = a, a chunk c with kc ≥ 1, and write 
+
+K = 2 r+kc , θ∗ = ( a, m c), Wc = Pc \ { θ∗}. (206) For the remainder of the proof, let Pr ∗ and E∗ denote conditioning on (Y1: n = y, {T c}Cc=1 , ν = a),for a realisation of positive probability. This fixes Tc, nc and pt = p(yt | x, y <t ) > 0 at each scored position. Let H contain ν, the complete query transcript of this generation, and the decoder’s chunk-selection queries before candidate scoring. It determines the text, the scored sets and the correct pair’s sampling values. For θ = ( a′, b ) ∈ W c and t ∈ T c, the decoder reads the input 
+
+dt,θ = ⟨msg , a ′, c t, b, y t⟩. (207) These inputs are distinct over all (t, θ ). Different scored positions have different contexts, and different candidate pairs differ in their nonce or message field. None of these inputs appears in H. A chunk or fresh query has a different tag. An encoder message query with context different from ct differs in its context field. A message query with context ct
+
+uses chunk c, since the chunk assignment is determined by that context, and therefore has the form 
+
+⟨msg , a, c t, m c, v ⟩. It differs from dt,θ in the nonce field if a′̸ = a, and in the message field if a′ = a
+
+and b̸ = mc. This comparison covers all encoder positions and tokens, including queries after t.Conditional on H, the values at these distinct, unqueried inputs are independent uniforms. More explicitly, set Wt,θ = uθt (yt). For numbers zt,θ ∈ [0 , 1] , the random-function argument gives 
+
+Pr[ Wt,θ ≤ zt,θ for all t, θ | H ] = Y
+
+> t∈T c
+
+Y
+
+> θ∈W c
+
+zt,θ . (208) The right-hand side is fixed under Pr ∗, so averaging over H proves the same factorisation under Pr ∗.Thus every wrong pair has independent uniform scored values. Other generations may have queried some of these inputs, but their transcripts and outputs are not part of this conditioning. Reading a random-function value does not change it, and integrating out those other generations leaves the marginal law just derived. For U ∼ U (0 , 1) and s ≥ 0,
+
+Pr[ − log(1 − U ) ≥ s] = Pr[ U ≥ 1 − e−s] = e−s. (209) Hence each wrong-pair score is a sum of nc independent Exp(1) variables. It has law Γ( nc, 1) for 
+
+nc ≥ 1, by the convolution calculation in Appendix L. When nc = 0 , it is the empty sum 0. This proves the null-law assertion in (iv). 
+
+Step 6: the correct score and its independence from wrong scores. For the scaling bound we also need the correct pair’s joint law after conditioning on the full text. The reasoning in Appendix O continues to apply with the fixed nonce field; we give the factorisation explicitly. First condition on A and ν = a before generation. Write Ht for the single-generation history from Step 1, with the generation superscript omitted. At each step define 
+
+Mt = max  
+
+> v:pt(v)>0
+
+ut(v)1/p t(v). (210) The maximiser is the emitted token, because this is an equivalent form of the Gumbel-max rule. For a token v with pt(v) > 0 and z ∈ [0 , 1] , independence of the fresh uniforms in Step 1 gives 
+
+Pr[ Yt = v, M t ≤ z | H t] = 
+
+Z z
+
+> 0
+
+pt(v)spt(v)−1 Y 
+
+> w̸=vpt(w)>0
+
+spt(w) ds
+
+= pt(v)
+
+Z z
+
+> 0
+
+sP  
+
+> w:pt(w)>0pt(w)−1
+
+ds
+
+= z p t(v).
+
+(211) The integrand fixes the winning transformed uniform at s and requires every competitor to be at most 
+
+s. Ties have probability zero. The last equality uses P 
+
+> w
+
+pt(w) = 1 ; for pt(v) = 0 , both sides of the identity are zero. 52 Preprint Apply the prefix recursion from Step 1, now also requiring Mt ≤ zt at each step. At step t its multiplier is ztp(yt | x, y <t ), so 
+
+Pr[ Y1: n = y, M t ≤ zt for all t | A , ν = a] = 
+
+> n
+
+Y
+
+> t=1
+
+ztp(yt | x, y <t ). (212) Dividing by the positive text probability from (196) gives 
+
+Pr[ Mt ≤ zt for all t | Y1: n = y, A, ν = a] = 
+
+> n
+
+Y
+
+> t=1
+
+zt. (213) For fixed y, the table determines {T c}Cc=1 . Set zt = 1 outside Tc and average over the tables consistent with (y, {T c}Cc=1 , a ). The remaining product is unchanged, proving that (Mt)t∈T c are independent uniforms under Pr ∗.At a scored position, the correct pair reconstructs the encoder’s uniform and satisfies 
+
+Bt := uθ∗ 
+
+> t
+
+(yt) = M pt 
+
+> t
+
+, Pr  
+
+> ∗
+
+[Bt ≤ b] = b1/p t (0 < b < 1) . (214) Consequently the Bt are independent Beta(1 /p t, 1) variables under Pr ∗, and the correct score is 
+
+S∗ = Sc(θ∗) = P 
+
+> t∈T c
+
+− log(1 − Bt).The complete transcript H determines S∗. Combining this fact with the conditional uniform factori-sation from Step 5 yields, for any real s,
+
+Pr  
+
+> ∗
+
+[S∗ ≤ s, W ≤ z] = E∗
+
+1{S∗≤s} Pr[ W ≤ z | H ]
+
+= Pr  
+
+> ∗
+
+[S∗ ≤ s] Y
+
+> t∈T c
+
+Y
+
+> θ∈W c
+
+zt,θ . (215) Here inequalities between vectors are coordinatewise. This factorisation proves that the entire array of wrong-pair uniforms is independent of the correct score under Pr ∗. In particular, each wrong score is independent of S∗.
+
+Step 7: the certificate after selecting a candidate pair. Write ˆθ = (ˆ νc, ˆmc) and let Dpair  
+
+> δ
+
+return ˆθ if 
+
+ˆδc ≤ δ, and ⊥ otherwise. We first bound acceptance of a wrong pair. If δ = 1 , the claimed bound is automatic. Suppose 0 < δ < 1.If nc = 0 , every score is zero and Q0(0) = 1 , so ˆδc = min {1, K − 1} = 1 because K ≥ 2. The decoder therefore abstains. If nc ≥ 1, the Gamma density is positive on (0 , ∞), so its upper tail Qnc
+
+is continuous and strictly decreasing there, from 1 to 0. Since 0 < δ/ (K − 1) < 1, there is a unique 
+
+sδ > 0 with 
+
+Qnc (sδ ) = δK − 1 . (216) For δ < 1, clipping the certificate at 1 does not change its acceptance event. Monotonicity of the tail gives 
+
+ˆδc ≤ δ ⇐⇒ Qnc (Sc(ˆθ)) ≤ δK − 1
+
+⇐⇒ Sc(ˆθ) ≥ sδ .
+
+(217) Thus an accepted wrong pair must be one of the K − 1 wrong pairs whose score crosses this fixed threshold: 
+
+{Dpair  
+
+> δ
+
+/∈ { θ∗, ⊥}} ⊆ [
+
+> θ∈W c
+
+{Sc(θ) ≥ sδ }. (218) Each fixed wrong pair has the null law from Step 5, so 
+
+Pr  
+
+> ∗
+
+[Dpair  
+
+> δ
+
+/∈ { θ∗, ⊥} ] ≤ X
+
+> θ∈W c
+
+Pr  
+
+> ∗
+
+[Sc(θ) ≥ sδ ]= ( K − 1) Qnc (sδ ) = δ. 
+
+(219) The union bound is applied to the fixed candidates, rather than assigning the Gamma law to their selected maximum. 53 Preprint Returning a wrong message requires accepting a wrong pair; a pair with an incorrect nonce but the correct message is not a message error. Hence the certified message decoder Dδ satisfies the same conditional bound. Averaging over this generation’s text, scored sets and nonce gives 
+
+Pr[ Dδ (Y1: n) /∈ { mc, ⊥} ] = EPr[ Dδ (Y1: n) /∈ { mc, ⊥} | Y1: n, {T c}Cc=1 , ν ] ≤ δ. (220) This is the guarantee in (15). 
+
+Step 8: the payload-scaling bound for pair candidates. Assume first that nc ≥ 1, fix θ ∈ W c, and choose 0 < λ < 1. The exponential moment of a wrong score is 
+
+E∗[eλS c(θ)] = Y
+
+> t∈T c
+
+Z 10
+
+(1 − u)−λ du = (1 − λ)−nc . (221) For a correct contribution, put αt = 1 /p t. Its negative exponential moment is 
+
+E∗[(1 − Bt)λ] = αt
+
+Z 10
+
+bαt−1(1 − b)λ db
+
+= Γ( αt + 1)Γ( λ + 1) Γ( αt + λ + 1) .
+
+(222) The last equality is the beta integral proved in Appendix O. Step 6 gives the independence needed to multiply these moments. Since {Sc(θ) ≥ S∗} = {eλ(Sc(θ)−S∗) ≥ 1}, Markov’s inequality gives 
+
+Pr  
+
+> ∗
+
+[Sc(θ) ≥ S∗] ≤ E∗[eλ(Sc(θ)−S∗)]= E∗[eλS c(θ)] E∗[e−λS ∗ ]= (1 − λ)−nc
+
+Y
+
+> t∈T c
+
+Γ(1 /p t + 1)Γ( λ + 1) Γ(1 /p t + λ + 1) = exp − X
+
+> t∈T c
+
+ηpt (λ)
+
+!
+
+.
+
+(223) The last line is precisely the definition of ηp in (82). Taking the infimum over 0 < λ < 1 yields 
+
+Pr  
+
+> ∗
+
+[Sc(θ) ≥ S∗] ≤ exp − sup 
+
+> 0<λ< 1
+
+X
+
+> t∈T c
+
+ηpt (λ)
+
+!
+
+= e−Λc . (224) No maximiser is required: values approaching the supremum give the same bound. Finiteness of Λc
+
+follows from the endpoint and continuity argument in Appendix O. If the maximising pair is wrong, some wrong pair has score at least S∗. This implication also holds for a tie, whatever the fixed tie-breaking rule. Therefore 
+
+Pr  
+
+> ∗
+
+[ ˆ mc̸ = mc] ≤ Pr  
+
+> ∗
+
+[ˆθ̸ = θ∗]
+
+≤ X
+
+> θ∈W c
+
+Pr  
+
+> ∗
+
+[Sc(θ) ≥ S∗]
+
+≤ (K − 1) e−Λc < exp  (kc + r) ln 2 − Λc
+
+.
+
+(225) The strict inequality uses K − 1 < K = 2 kc+r and e−Λc > 0.If nc = 0 , then Λc = 0 and every score is zero. The same bound holds because the error probability is at most 1 ≤ K − 1. Thus all scored-set sizes are covered. The right-hand side depends on the text and scored sets but not on the actual nonce. Averaging over ν conditional on (Y1: n = y, {T c}Cc=1 )
+
+proves the conditional bound stated in (iv). Finally, an error in the concatenated message requires an error in at least one chunk. A union bound under this same conditioning gives 
+
+Pr[ ˆ m̸ = m | Y1: n = y, {T c}Cc=1 ] ≤
+
+> C
+
+X
+
+> c=1
+
+Pr[ ˆ mc̸ = mc | Y1: n = y, {T c}Cc=1 ] ≤
+
+> C
+
+X
+
+> c=1
+
+(2 kc+r − 1) e−Λc .
+
+(226) This completes (iv) and the proof. 54

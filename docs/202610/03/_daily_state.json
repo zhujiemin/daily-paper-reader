@@ -1,0 +1,89 @@
+{
+  "date": "20261003",
+  "date_label": "",
+  "generated_at": "2026-10-03 22:07:08 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.01544v1",
+      "route": "202610/03/2610.01544v1-revisiting-cross-reconstruction-for-generalizable-deepfake-detection",
+      "title": "Revisiting Cross-Reconstruction for Generalizable Deepfake Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "基于交叉重建的可泛化图像伪造检测",
+      "first_seen_at": "2026-10-03 22:07:08 UTC",
+      "updated_at": "2026-10-03 22:07:08 UTC"
+    },
+    {
+      "paper_id": "2609.32362v1",
+      "route": "202610/03/2609.32362v1-steggnn-learning-graphical-representation-for-image-steganography",
+      "title": "StegGNN: Learning Graphical Representation for Image Steganography",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "通过图表示在图像中嵌入不可感知信息，属隐写与不可见水印范畴",
+      "first_seen_at": "2026-10-03 22:07:08 UTC",
+      "updated_at": "2026-10-03 22:07:08 UTC"
+    },
+    {
+      "paper_id": "2609.33332v1",
+      "route": "202610/03/2609.33332v1-certmark-distortion-free-multi-bit-watermarking-with-certified-decoding",
+      "title": "CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "生成式语言模型中的多比特水印嵌入与认证解码",
+      "first_seen_at": "2026-10-03 22:07:08 UTC",
+      "updated_at": "2026-10-03 22:07:08 UTC"
+    },
+    {
+      "paper_id": "2609.36372v1",
+      "route": "202610/03/2609.36372v1-ttmark-pairwise-distortion-free-watermarking-beyond-single-token-entropy",
+      "title": "TTMark: Pairwise Distortion-Free Watermarking Beyond Single-Token Entropy",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向机器生成内容归因的无失真水印",
+      "first_seen_at": "2026-10-03 22:07:08 UTC",
+      "updated_at": "2026-10-03 22:07:08 UTC"
+    },
+    {
+      "paper_id": "2609.38391v1",
+      "route": "202610/03/2609.38391v1-team-msu-gentext-forensics-challenge-2026-technical-report",
+      "title": "Team MSU GenText-Forensics Challenge 2026 Technical Report",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "文档篡改检测与篡改位置定位",
+      "first_seen_at": "2026-10-03 22:07:08 UTC",
+      "updated_at": "2026-10-03 22:07:08 UTC"
+    }
+  ]
+}

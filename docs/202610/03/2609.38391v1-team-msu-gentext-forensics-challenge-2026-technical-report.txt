@@ -1,0 +1,276 @@
+Title: Team MSU GenText-Forensics Challenge 2026 Technical Report
+
+URL Source: https://arxiv.org/pdf/2609.38391v1
+
+Published Time: Thu, 01 Oct 2026 00:13:24 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Team MSU GenText-Forensics Challenge 2026 Technical Report 
+
+# Kirill Koltsov 
+
+kirill.e.koltsov@mail.ru Lomonosov Moscow State University Moscow, Russia 
+
+# Aleksandr Gushchin 
+
+alexander.gushchin@graphics.cs.msu.ru MSU Institute for Artificial Intelligence Moscow, Russia 
+
+# Dmitriy Vatolin 
+
+dmitriy@graphics.cs.msu.ru MSU Institute for Artificial Intelligence Moscow, Russia 
+
+# Anastasia Antsiferova 
+
+aantsiferova@graphics.cs.msu.ru MSU Institute for Artificial Intelligence Moscow, Russia 
+
+## Abstract 
+
+Document text forgery has evolved beyond simple pixel-level ma-nipulation: modern attacks alter not only the appearance of a docu-ment but also its meaning, and increasingly target the OCR →LLM pipelines that consume such documents. The ACM MM 2026 GenText-Forensics challenge therefore requires systems that not only decide whether a multilingual text image is forged, but also localize the point of manipulation, identify the attack type, and pro-duce a human-readable forensic report with supporting evidence. We present our solution, a decomposed chain-of-thought (CoT) pipeline that combines a document tampering detector (DTD) with two Qwen3-VL-32B vision–language models, each LoRA-adapted to a distinct sub-task. DTD produces tampering probability maps that are converted into numbered candidate regions; a first model (the 
+
+Filterer ) validates these regions and assigns a preliminary forgery type, while a second model (the Semantic Detective ) merges and re-grounds the surviving regions, searches for purely semantic anomalies that are invisible to pixel-level detectors, and writes the final report. Both models are trained by distilling chain-of-thought traces from a privileged Qwen3-VL-235B teacher that has access to ground-truth masks and reports. Our approach secured third place in the ACM MM 2026 GenText-Forensics challenge. We describe the data preparation, test-time augmentation, region rendering, distillation protocol, and training configuration in detail, and report ablations over detector thresholds, prompt designs, and pipeline decompositions. 
+
+## CCS Concepts 
+
+• Security and privacy → Document forensics ; • Computing methodologies → Scene understanding ; Optical character recog-nition .
+
+## Keywords 
+
+document forgery detection, tampered text localization, forensic report generation, vision–language models, multimodal forensics 
+
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> MM ’26, Rio de Janeiro, Brazil
+> © 2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2213-4/2026/11 https://doi.org/10.1145/3767308.3837700
+
+ACM Reference Format: 
+
+Kirill Koltsov, Aleksandr Gushchin, Dmitriy Vatolin, and Anastasia Antsif-erova. 2026. Team MSU GenText-Forensics Challenge 2026 Technical Report. In Proceedings of the 34th ACM International Conference on Multimedia (MM ’26), November 10–14, 2026, Rio de Janeiro, Brazil. ACM, New York, NY, USA, 7 pages. https://doi.org/10.1145/3767308.3837700 
+
+## 1 Introduction 
+
+Text-rich document images—identity documents, invoices, con-tracts, medical reports, bank statements—underpin countless ad-ministrative and financial processes. As these processes are in-creasingly automated through optical character recognition (OCR) followed by large-language-model (LLM) reasoning, the integrity of the underlying image becomes a security concern: a forger who alters a single digit, swaps one clean word for another, or splices in a redaction block can make downstream pipelines act on false information while leaving little visible trace. The ACM MM 2026 GenText-Forensics challenge formalizes this threat. Beyond the binary “is this document forged?”, a system must (i) detect tampering in a multilingual text image, (ii) localize 
+
+the manipulated region, (iii) classify the attack type, and (iv) ex-plain the finding in a structured forensic report. Submissions are scored by a detection metric ( 𝑆 Det ), a pixel-level localization metric (𝑆 Loc ), an explanation-quality metric ( 𝑆 Exp ), and an LLM-judged report-quality metric ( 𝑆 Rep ). The difficulty is compounded by multi-linguality and by two very different attack families: visual forgeries that leave low-level statistical artifacts, and semantic forgeries that are visually perfect yet logically inconsistent. 
+
+Related work. Two complementary lines of work address these families. On the visual side, the Document Tampering Detector (DTD) of Qu et al. [1] fuses a Frequency Perception Head with a Multi-view Iterative Decoder to predict dense pixel-probability maps of tampering; such detectors flag visual edits well but are blind to semantic manipulations and produce no natural-language explanation. We use the ForensicHub [2] implementation of DTD as our visual front-end. On the language side, multimodal LLMs yield interpretable outputs: ForgeryGPT [3] adds a localization pathway to an MLLM, and document-centric systems such as LogicLens [4] structure the analysis as explicit multi-stage reasoning. Our method builds directly on this multi-stage reasoning philosophy. arXiv:2609.38391v1 [cs.CV] 29 Sep 2026 MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Kirill Koltsov, Aleksandr Gushchin, Dmitriy Vatolin, & Anastasia Antsiferova 
+
+Our approach. We combine the strengths of both families and 
+
+decompose the language model’s workload across specialized com-ponents. Building on the multi-stage reasoning philosophy of Logi-cLens [4], our pipeline (i) extracts visual artifact regions from DTD, (ii) delegates region validation and preliminary typing to one LoRA-adapted Qwen3-VL-32B model, and (iii) delegates semantic discov-ery and report generation to a second, differently LoRA-adapted Qwen3-VL-32B model. Both language models are trained by distill-ing chain-of-thought traces from a Qwen3-VL-235B teacher that, during data generation only, has access to the ground-truth mask and report. This separation lets each component be trained and tuned for one well-defined objective; the resulting system reached third place in the challenge. Our contributions are: (1) a decom-posed DTD +dual-VLM pipeline for joint detection, localization, typing and explanation; (2) a privileged-teacher CoT distillation protocol that ties detector regions to ground-truth anomalies and splits the resulting trace across two students; (3) a practical study of detector thresholding, test-time augmentation, region rendering, and prompt design, with ablations isolating the contribution of each choice. 
+
+Code and data. Our code and prompt templates are released on GitHub and the accompanying data on Hugging Face. The data release includes the distilled chains of thought for the training images and, for the test set, the marked-up images together with the rendered prompts and the technical artifacts from our runs (PP-OCRv5 OCR output and DTD detection results). 
+
+## 2 Method 2.1 Overview 
+
+Our system follows the multi-stage reasoning structure of Logi-cLens [4], but replaces its single network with a third-party tam-pering detector and two separately specialized language models. The end-to-end flow for one document is as follows (depicted in the Figure 1): (1) The document image is processed by DTD [1, 2] (Document Tampering Detector)—an external, pre-existing detector that we use off-the-shelf—which searches for statistical deviations in the image space (font mismatches, pixelation, blurring, redaction blocks, kerning and baseline anomalies, and JPEG discontinuities). Because DTD operates on 512 × 512 inputs, the image is tiled into overlapping patches, each scored by the detector, and the per-patch probabilities are stitched back into a full-resolution map. (2) The probability map is thresholded and converted into connected-region bounding boxes. Each region is numbered, and a numbered red box is drawn on the original image at the corresponding location. (3) The annotated image, together with an augmented textual prompt listing the numbered regions, is passed to the Qwen Filterer , a LoRA-adapted [8] Qwen3-VL-32B [5]. It validates each DTD region and labels it KEEP or DROP , attaching a preliminary forgery type to the kept regions. Every DROP 
+
+region is then discarded. (4) The Filterer’s output is post-processed and handed to the 
+
+Qwen Semantic Detective , a second LoRA-adapted Qwen3-VL-32B. It additionally receives the full output of the PP-OCRv5 OCR engine [7]—word-level triplets 
+
+(⟨ text ⟩, ⟨bbox ⟩, ⟨conf ⟩) plus the whole text from the docu-ment in reading order. (5) The Semantic Detective re-evaluates regions that were marked as KEEP, merges those belonging to the same semantic span, searches for semantic anomalies that DTD cannot see, grounds every finding against the OCR coordinates, and produces the final forensic report. The remainder of this section describes each component in turn. 
+
+## 2.2 Visual Tampering Detection with DTD 
+
+The DTD component clearly isolates the obvious visual artifacts before any language model is invoked. DTD was introduced by Qu et al. [1] for tampered-text detection in document images; it predicts a dense pixel-level tampering probability map by fusing a spatial (visual) stream with a frequency stream that captures compression and typographic irregularities. We adopt the ForensicHub [2] re-implementation, with a ConvNeXt-Small spatial backbone and a Swin Transformer V2-Small backbone, and a DCT quantization table supplying the frequency input. 
+
+Training configuration. We fine-tune DTD on the challenge data. Inputs are resized to 512 × 512 with ImageNet normalization, and the model predicts a tampering mask only (no image-level label head). Optimization uses AdamW with a weight decay of 0 .05, a base learning rate of 1 × 10 −4 decaying to a minimum of 5 × 10 −7,and one warm-up epoch, run for 20 epochs with mixed precision, a per-GPU batch size of 16, and synchronous data-parallel training across eight GPUs (random seed 42). Pixel-F1 and Image-F1 are tracked on a held-out split during training. 
+
+Patch construction. Because DTD requires 512 × 512 inputs whereas challenge documents are of arbitrary size, each image is tiled into a grid of 512 × 512 patches. Patches at the right and bottom borders are not cropped to a smaller size; instead they are taken overlapped slightly with the preceding patches, so that every output pixel is covered by a complete-resolution prediction. We reserved 8 ,000 training images for DTD; tiling them produced a total of 53 ,751 patches, on which DTD was trained. A further 4 ,000 images (disjoint from the 8 ,000) together with 500 images set aside for local testing were tiled in the same way and used for validation during DTD training. 
+
+Probability thresholding. DTD produces a per-pixel probability map in which higher values indicate a higher likelihood of tamper-ing. Converting this map into discrete candidate regions requires a decision threshold, which directly trades false positives against missed detections. Sweeping the threshold from 0 .20 to 0 .90 on the forged subset of our 500 held-out test images, localization quality peaks at 0 .40 (mIoU = 0.5792, mF1 = 0.6855) and degrades gradually on either side (mIoU = 0.5613 at 0 .20 and 0 .5477 at 0 .90); we there-fore adopt 0 .40 for all subsequent stages. Connected components below a minimum area are discarded, and a light morphological opening is applied before box extraction. Team MSU GenText-Forensics Challenge 2026 Technical Report MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Input
+document 
+
+# Input
+document 
+
+# DTD model 
+
+> Region 1: [40, 145, 50, 300]
+> +
+
+# txt 
+
+Discarded options:  
+
+> ++
+
+# txt 
+
+> +
+
+# txt 
+
+# Qwen Filterer 
+
+# STAGE 1 
+
+<Knowledge Preparation>
+“This document is about...”  txt 
+
+> +
+> +
+> OCR
+
+# Qwen Semantic Detective 
+
+# STAGE 3 
+
+<Rethinking>
+<Semantic Anomalies Search>
+Missed 1: Semantic Subtle... 
+
+# Final Report 
+
+<Region Filtering>
+Region 1: KEEP Region 2: DROP
+
+
+only KEEP 
+
+# STAGE 2 
+
+# txt 
+
+<Grounding>
+<Aggregating> 
+
+# STAGE 4 
+
+> Region 2: [170, 12, 197, 30]
+
+... 
+
+Figure 1: Overview of the decomposed chain-of-thought pipeline. Document icons labeled "txt" denote the natural-language prompts supplied to the Qwen models. These prompts are not fixed: a distinct template is used at each stage, and each template is populated dynamically with stage-specific evidence before generation. Prior to the Qwen Filterer, the prompt is augmented with the numbered DTD candidate regions (each index matching a red box on the annotated image). Prior to the Qwen Semantic Detective, the prompt is augmented with only the regions the Filterer marked KEEP, together with the full output of the OCR model—the recognized text of every word and its bounding-box coordinates in the source document—so that the model can ground its findings on observed token positions. 
+
+Test-time augmentation. A systematic failure mode arises from the patch grid itself: where the tiling boundary cuts a word in two, DTD frequently raises a false alarm on the truncated fragment. To suppress these boundary artifacts we apply test-time augmenta-tion (TTA). Each image is processed four times with different tiling origins: the original grid, the grid shifted 256 pixels to the right, the grid shifted 256 pixels down, and the grid shifted 256 pixels in both directions. The four probability maps are combined conser-vatively (pixel-wise minimum), so that only regions flagged in all four passes survive; a spurious detection caused by one particular cut disappears under the shifted grids and is therefore discarded. This suppresses boundary false alarms without removing genuine tampering, and yields roughly a 0 .04 increase in the final score. 
+
+Training data composition. We observed that training DTD only on forged documents yielded weaker results than training on a mixture of forged and pristine documents, most plausibly because the latter exposes the detector to more data and to a wider range of benign document content, sharpening its discrimination of genuine artifacts from ordinary layout. When training only on forged mIoU drops from 0.5792 to 0.4992. 
+
+Region-splitting limitations. When two distinct tampered regions touch, the bounding-box extraction occasionally encloses them in a single box instead of the two separate boxes. We experimented with a geometric splitting heuristic that tries to break such a merged box apart: if the flagged pixels fill only a small fraction of their bounding rectangle (a sign that the box actually spans two separate blobs with empty space between them), the box is split in two at the widest empty band—the largest run of background rows or columns inside it—and the procedure is applied again to each half. On the test split this did not improve results, and we therefore do not rely on it for the reported configuration. 
+
+## 2.3 Qwen Filterer 
+
+The Filterer’s task is to remove false DTD regions and retain only those that genuinely cover tampered content. We use Qwen3-VL-32B model LoRA-adapted on specially distilled chains of thought (Section 2.5). 
+
+Choice of visual–textual input. A central design question is how to present the DTD regions to the model. In every case the prompt lists the numbered DTD regions together with their pixel coordi-nates; what we vary is only the visual input that accompanies this text. We compared three visual formats: (1) Clean image. The unmodified image is provided, so the num-bered regions exist only as coordinates in the prompt. This works poorly: the model struggles to map the textual pixel coordinates onto the image and to localize the regions reli-ably. (2) Clean image + heatmap overlay. A second image, onto which the DTD activation heatmap is projected, is provided along-side the original. This also works poorly: the model is over-whelmed by the volume of visual information and loses track of the relevant regions. (3) Image with numbered red boxes. The original image is anno-tated with numbered red bounding boxes drawn at the DTD regions, matching the numbering used in the prompt. This is the most effective format: the visual anchor lets the model navigate directly to each region. To keep the region indices legible across document scales, each index is rendered at a font size proportional to the height of its box (the desired glyph height is set to a fixed fraction of the box height in pixels). A by-product is that larger, more prominent regions naturally carry larger labels, focusing attention where arti-facts are most salient. According to the results shown in Table 1 we adopt the third for-mat. Alongside the annotated image, the Filterer receives a prompt that enumerates the DTD regions and states the rules by which MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Kirill Koltsov, Aleksandr Gushchin, Dmitriy Vatolin, & Anastasia Antsiferova 
+
+Table 1: Choice of visual–textual input, measured on all 500 held-out test images with Two-Stage pipeline 
+
+Filtering of DTD regions Final Score Clean image 0.659 Clean Image + heatmap overlay 0.751 Image with numbered red boxes 0.794 
+
+Table 2: Effect of the Qwen Filterer on downstream localiza-tion, measured on all 500 held-out test images (forged and pristine). 
+
+Filtering of DTD regions mIoU mF1 None (raw DTD regions) 0.6402 0.7058 ResNet / U-Net filter 0.6113 0.6510 Qwen Filterer (ours) 0.6672 0.7404 
+
+they are to be filtered. The prompt enforces an explicit two-stage format: in Stage 1 (Knowledge Preparation) the model forms a global understanding of the document, following the LogicLens [4] protocol; in Stage 2 (Per-Region Walk-Through) it inspects each region and assigns it a KEEP or DROP label. Each decision must be justified against the rules in the prompt—which we refined em-pirically during development—and each KEEP region is given a preliminary forgery type (Visual Clumsy, Logical Fraud, or Seman-tic Subtle). Concrete prompt templates are released alongside the code on Hugging Face. 
+
+Why a language model. We also experimented with filtering DTD regions using purely visual classifiers (a ResNet and a U-Net). These did not yield competitive results, which we attribute to their lack of the document-level semantic understanding that a large vision– language model provides: deciding whether a flagged region is a genuine forgery often requires reading the surrounding text and reasoning about its plausibility according to the context of the document, not merely inspecting local pixels. Table 2 reports the contribution of the Filtering stage. 
+
+## 2.4 Qwen Semantic Detective 
+
+The Semantic Detective, the second LoRA-adapted Qwen3-VL-32B, has three responsibilities: (1) Re-think the kept DTD regions: merge regions that clearly be-long to the same semantic span of text into a single anomaly. (2) Find purely semantic anomalies: because DTD detects only visual forgeries, semantic manipulations that are visually flawless (e.g. a clean word substituted for another clean word) leave no trace for the detector; the Detective must find these from the text relying on the surrounding context. (3) Prepare the final report: produce concise descriptions of every confirmed anomaly and synthesize them into the required report format. 
+
+Inputs. The Filterer’s output is first post-processed algorithmi-cally: regions marked DROP are removed, and only KEEP regions are propagated. The Semantic Detective then receives the document image together with a prompt containing (i) the Filterer’s Stage 1 and Stage 2 blocks, where Stage 2 has been reduced to the KEEP re-gions only; (ii) the complete PP-OCRv5 output as word-level triplets 
+
+(⟨ text ⟩, ⟨bbox ⟩, ⟨conf ⟩) for localizing individual tokens; and (iii) the full document text in reading order. 
+
+Reasoning and report. The prompt mandates a clear structure. Inside a <think> . . . </think> section, the model performs Stage 3 (Independent Semantic and Logical Search, and Rethinking) ,where it both re-examines and merges the kept regions and indepen-dently searches for semantic/logical inconsistencies, and Stage 4 (Final Naming, Ordering, Grounding, and Bridging) , where it finalizes each anomaly and grounds it using the OCR coordinates. The grounding step therefore anchors every reported region to concrete OCR bounding boxes rather than to free-hand estimates. 
+
+Bridging is the explicit final step that connects all of the preceding reasoning to the generation of the report: it consolidates the kept regions, the newly found semantic anomalies, their assigned types and their grounded coordinates into a single coherent thread, so that the report follows from the chain of thought rather than be-ing produced independently of it. Inside a <report> . . . </report> 
+
+section, the model then transcribes this bridged reasoning into the final forensic report. This two-stage organization relieves a single model from having to do everything at once—locate visual artifacts, reason about them, and immediately write a report. By decomposing the task we can also train two specialized models, one per half of the reasoning trace. The effectiveness of this decomposition relative to single-pass alternatives is studied in Section 3. 
+
+## 2.5 Chain-of-Thought Distillation 
+
+Realizing the multi-stage CoT pipeline requires supervision in ex-actly the target format, which we obtain by distillation from a Qwen3-VL-235B-A22B-Instruct teacher on 4 ,000 images. 
+
+Privileged teacher. During distillation only, the teacher is given ground-truth information the students never see. Each ground-truth (GT) mask is converted into precise tampering boxes (connected components), and every DTD region is labelled TP or FP by an intersection-over-minimum-area match against these boxes (suf-ficient overlap ⇒ keep). A teacher prompt then lists, per image, the TP /FP regions, what DTD missed , and the GT report, with an instruction to remain faithful to it; a separate variant handles pris-tine documents, where every DTD region is a false positive and the verdict is authentic. 
+
+Coordinate refinement. To make the supervision spatially precise, each GT anomaly’s coordinates are refined before the report reaches the teacher: a GT box is matched against the DTD regions and OCR word boxes, preferring the DTD box (tighter localization), falling back to OCR, and otherwise keeping the original GT box. The refined coordinates are written back into the report, so the teacher reasons over the actual DTD/OCR boxes the student can reproduce at inference time. As an upper bound, replacing every GT region by its best-matching DTD or OCR box yields mIoU = 0.7187 and mF1 = 0.7974—the maximum “data purity” from these two sources; each match is the individual box or union with the highest IoU among all boxes overlapping the GT region (IoU > 0.1). Team MSU GenText-Forensics Challenge 2026 Technical Report MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil 
+
+Generation and validation. Given the image, the labelled DTD re-gions, and the refined report, the teacher generates the full Stage 1– 4 chain of thought in one pass, served with vLLM [6] in bfloat16 (tensor-parallel over eight GPUs, greedy decoding, up to 8 ,192 to-kens, two images per prompt). Every trace is validated automatically— it must contain a <think> and a <report> block, expose at least four stages, reproduce the augmented GT report, and avoid a black-list of phrases that would leak the ground truth (e.g. “the mask shows”)—and failing traces are excluded, keeping the training data free of leakage and format drift. 
+
+## 2.6 Chain-of-Thought Training 
+
+Once distilled, each chain-of-thought trace is split into two parts that serve as targets for the two students: 
+
+• The first half contains only Stage 1 and Stage 2; it is used as the target for LoRA fine-tuning of the Qwen Filterer .
+
+• The second half contains only Stage 3 and Stage 4 (and the final report); all DROP regions are algorithmically removed from Stage 3 to match inference, where only KEEP regions remain. This half is used as the target for the Qwen Semantic Detective .In other words, each CoT block is divided into two segments, and each segment trains the corresponding student. Both students start from Qwen3-VL-32B-Instruct and are trained with QLoRA [9]. We use QLoRA—rather than plain LoRA—purely for memory reasons: quantizing the 32B base model to 4-bit NF4 with double quantiza-tion lets the frozen weights, the LoRA adapter, and the activations fit on our GPUs, while the small LoRA adapter on the attention pro-jection matrices carries the actual adaptation in a bfloat16 compute dtype. The vision tower is kept frozen. Table 3 lists the training con-figuration; the two students differ only in their target segment of the CoT trace (and the Filterer additionally consumes the annotated image, whereas the Detective’s stage runs without the heatmap). At inference time, both LoRA-adapted students are served with vLLM [6]—the same serving stack used for the teacher during dis-tillation. 
+
+## 3 Experiments 3.1 Evaluation protocol 
+
+The challenge score is a weighted combination of four components: a detection F1 ( 𝑆 Det ), a pixel-level grounding score ( 𝑆 Loc = 12 mIoU + 
+
+> 12
+
+mF1), an explanation score ( 𝑆 Exp , BERTScore-F1 [10] with an XLM-RoBERTa-Large backbone), and a report-quality score ( 𝑆 Rep ,the mean of factuality, reasoning and completeness ratings from a Qwen3-VL-32B LLM judge). We report all four components and the final weighted score. 
+
+## 3.2 Prompt configurations 
+
+We evaluated four prompt/pipeline configurations, each run both as a zero-shot prompt on the base Qwen3-VL-32B and as a LoRA-fine-tuned model. To isolate the effect of the configuration itself, all of them are fed the same input form—the stage prompt together with the original image annotated with numbered red boxes—and differ only in how the DTD regions are treated, whether intermediate reasoning is produced, and what the training target is: 
+
+Table 3: QLoRA fine-tuning configuration for the two stu-dents. 
+
+Setting Value Base model Qwen3-VL-32B-Instruct Quantization 4-bit NF4, double quant., bf16 compute LoRA rank 𝑟 16 LoRA 𝛼 32 LoRA dropout 0.05 Target modules q,k,v,o_proj 
+
+Vision tower frozen Learning rate 1 × 10 −4
+
+LR schedule cosine, warm-up ratio 0 .03 Weight decay 0.0Optimizer AdamW Per-device batch size 1Gradient accumulation 8Max gradient norm 1.0Gradient checkpointing enabled Precision bf16 (tf32 enabled) Seed 42 
+
+strong-direct. The model emits the final report immedi-ately, without any intermediate reasoning , and is required to keep every DTD region: none may be dropped. 
+
+direct. As strong-direct, the model emits the report di-rectly without reasoning, but here it is permitted to drop DTD regions that the prompt’s rules identify as false posi-tives. 
+
+all-in-one. The full multi-stage reasoning of our pipeline, but performed by a single Qwen that produces the entire Stage 1–4 trace and the report in one pass. It is trained on exactly the same distilled CoTs as two-stage, only without splitting the work across two specialized models. 
+
+two-stage (final, best). Our full decomposed pipeline: a Fil-terer (Stage 1–2, KEEP/DROP + type) followed by a Semantic Detective (Stage 3–4 + report), executed by two separately LoRA-adapted models. The configurations also differ in their training targets. For the two direct configurations (strong-direct and direct), which emit no reasoning, the LoRA target is the ground-truth report itself. For all-in-one and two-stage, the target is the distilled chain of thought concatenated with the ground-truth report, so the model learns to reason before it reports. Table 4 compares these configurations. The two-stage decompo-sition is our final submission and attains the best overall score. 
+
+## 3.3 Ablations 
+
+We ablate each component of the pipeline. The detector-threshold sweep, the four-pass test-time augmentation, and the forged-vs-pristine training comparison were reported inline in the DTD methodology above; the contribution of language-model region filtering is quantified in Table 2, and the effect of decomposing the reasoning across two specialized students in Table 4. Together these MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Kirill Koltsov, Aleksandr Gushchin, Dmitriy Vatolin, & Anastasia Antsiferova 
+
+Table 4: Comparison of prompt / pipeline configurations on the 𝑁 =100 -document evaluation set. “Trained” indicates LoRA fine-tuning on the corresponding targets, as opposed to zero-shot prompting of the base model. 𝑆 Det , 𝑆 Loc and 𝑆 Exp 
+
+lie in [0, 1]; the LLM-judge column ( 𝑆 Rep ) is on a 0–100 scale. The final submission is in bold.                                                       
+
+> Configuration Trained 𝑆 Det 𝑆 Loc 𝑆 Exp 𝑆 Rep Final strong-direct No 1.00 0.55 0.86 61 .20.764 direct No 1.00 0.55 0.86 61 .60.768 all-in-one No 0.82 0.22 0.86 51 .60.566 two-stage No 0.92 0.51 0.86 56 .80.721 strong-direct Yes 0.97 0.62 0.88 68 .40.798 direct Yes 0.95 0.48 0.88 64 .10.748 all-in-one Yes 0.93 0.58 0.88 69 .80.782
+> two-stage Yes 0.98 0.62 0.88 70 .50.810
+
+results show that each design choice—thresholding at 0 .40, four-pass TTA, mixing pristine documents into DTD training, language-model region filtering, and splitting the reasoning across two students— contributes positively to the final score. 
+
+## 4 Discussion 
+
+Taken together, our experiments suggest several conclusions. 
+
+Reasoning supervision and decomposition are the biggest levers. 
+
+Across every configuration, LoRA fine-tuning on distilled chains of thought dominates zero-shot prompting: for the two-stage pipeline the final score rises from 0 .721 to 0 .810 and the LLM-judge report quality jumps from 56 .8 to 70 .5, and the unstable zero-shot all-in-one prompt (0 .566, with 𝑆 Loc = 0.22 and no usable explanation) is rescued to 0 .782 once trained. Teaching the model how to reason, in the exact target format, matters more than any prompt-wording choice. Decomposition is a second lever in the same direction: given identical distilled CoTs, splitting the work across two specialized models (two-stage, 0 .810) beats a single model that produces the whole trace and report (all-in-one, 0 .782), because each model specializes and errors do not propagate across sub-tasks. A third, easily overlooked lever is the form in which the DTD regions are presented: as our input-format comparison shows, overloading the model with extra visual input (a second heatmap image) hurts, whereas a single image annotated with numbered red boxes—paired with the same regions and coordinates in the prompt text—lets the model localize each region directly. How the evidence is presented is as consequential as what evidence is presented. 
+
+Filtering needs semantics and context. The Qwen Filterer im-proves localization over raw DTD regions (mIoU 0 .6402 → 0.6672), whereas purely visual filters (ResNet/U-Net) actually degrade it (0 .6113). Deciding whether a flagged region is genuine requires read-ing the surrounding text, not just inspecting local pixels—which is why the pipeline first, in Stage 1, builds a small “knowledge base” about the document (its type, domain, language, and layout constraints) before any region is judged. This context is decisive for semantic regions in particular: a clean word substitution or an altered value is detectable only relative to what the rest of the document claims, so such a region can be confirmed or rejected only once the model knows what the document is supposed to say. 
+
+Dataset-driven prompt design. A substantial part of our effort went into studying the kinds of tampering present in the challenge data and encoding what we learned into the prompts. Three forgery families recur: Visual Clumsy (a visible editing artefact—blur, pixe-lation, a redaction block, overpainting), Logical Fraud (a value such as a number, date, ID, or name altered so that it contradicts the document’s own logic, even though the glyphs render cleanly), and 
+
+Semantic Subtle (a clean word substituted for another, creating a contextual contradiction with no visual trace). We also catalogued DTD’s systematic false positives—dense mathematical formulas, blank margins, and logos, stamps and seals—and turned them into explicit drop rules, so the Filterer does not blindly trust every detec-tor region. Finally, because purely-semantic forgeries are invisible to DTD, we gave the Semantic Detective an explicit checklist to scan for: numerical inconsistencies (totals that do not match their parts, contradictory dates), impossible values (a future birth date, a wrong-length ID), internal contradictions (a name spelled two ways), semantic oxymora (“for-profit charity”), domain-impossible values (a malformed IBAN for the stated country), and unexpected mixed scripts. This taxonomy, distilled from manual inspection of the data, is what the two models’ prompts and chains of thought are built around. 
+
+## 5 Conclusion 
+
+We presented Team MSU’s third-place solution to the ACM MM 2026 GenText-Forensics challenge: a decomposed chain-of-thought pipeline that pairs an external document tampering detector (DTD) with two LoRA-adapted Qwen3-VL-32B models—a Filterer that validates and types detector regions, and a Semantic Detective that merges and re-grounds them, finds purely semantic anomalies, and writes the final report—both supervised by chains of thought distilled from a privileged Qwen3-VL-235B teacher. Delegating localization to a dedicated detector, grounding every finding on DTD and OCR coordinates, and splitting the reasoning across two specialized models each contributed to the result. Code and prompts are released for reproduction. During the competition our team appeared on the public leaderboard under the alias great_britain .
+
+## Acknowledgments 
+
+The research was carried out using the MSU-270 supercomputer of Lomonosov Moscow State University. We thank the GenText-Forensics challenge organizers for hosting the task and providing the RealText-V2 benchmark. 
+
+## Ethics and Privacy Statement 
+
+This work develops methods for detecting and explaining forgeries in document images, a defensive capability intended to protect administrative, financial and medical document pipelines against manipulation. The same techniques that locate and describe tamper-ing could in principle inform an adversary about which artifacts a detector is sensitive to; we mitigate this by reporting methodology rather than attack recipes, and by using only the challenge-provided RealText-V2 data under its research licence. Team MSU GenText-Forensics Challenge 2026 Technical Report MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil 
+
+## References 
+
+[1] Chenfan Qu, Chongyu Liu, Yuliang Liu, Xinhong Chen, Dezhi Peng, Fengjun Guo, and Lianwen Jin. 2023. Towards Robust Tampered Text Detection in Document Image: New Dataset and New Solution. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 5937–5946. [2] Bo Du, Xuekang Zhu, Xiaochen Ma, Chenfan Qu, Kaiwen Feng, Zhe Yang, Chi-Man Pun, Jian Liu, and Jizhe Zhou. 2025. ForensicHub: A Unified Benchmark and Codebase for All-Domain Fake Image Detection and Localization. arXiv preprint arXiv:2505.11003 (2025). [3] Fanrui Zhang, Jiawei Li, Jiaying Zhu, Esther Sun, Dong Li, Qiang Zhang, and Zheng-Jun Zha. 2024. ForgeryGPT: Multimodal Large Language Model for Explainable Image Forgery Detection and Localization. arXiv preprint arXiv:2410.10238 (2024). [4] Fanwei Zeng, Changtao Miao, Jing Huang, Zhiya Tan, Shutao Gong, Xiaom-ing Yu, Yang Wang, Huazhe Tan, Weibin Yao, and Jianshu Li. 2025. LogicLens: Visual-Logical Co-Reasoning for Text-Centric Forgery Analysis. arXiv preprint arXiv:2512.21482 (2025). [5] Qwen Team. 2025. Qwen3-VL Technical Report. arXiv preprint arXiv:2511.21631 
+
+(2025). [6] Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, and Ion Stoica. 2023. Efficient Memory Management for Large Language Model Serving with PagedAttention. arXiv preprint arXiv:2309.06180 (2023). [7] PaddleOCR Team. 2025. Introduction to PP-OCRv5. PaddleOCR Documentation 
+
+(2025). [8] Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. 2022. LoRA: Low-Rank Adaptation of Large Language Models. In International Conference on Learning Representations (ICLR) .[9] Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer. 2023. QLoRA: Efficient Finetuning of Quantized LLMs. In Advances in Neural Information Processing Systems (NeurIPS) .[10] Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q. Weinberger, and Yoav Artzi. 2020. BERTScore: Evaluating Text Generation with BERT. In International Confer-ence on Learning Representations (ICLR) .

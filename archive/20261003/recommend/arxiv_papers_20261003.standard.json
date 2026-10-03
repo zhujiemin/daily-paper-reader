@@ -1,0 +1,221 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-03T22:06:20.377008+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 5,
+    "quick_skim_target": 12,
+    "quick_selected": 5
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2610.01544v1",
+      "source": "arxiv",
+      "title": "Revisiting Cross-Reconstruction for Generalizable Deepfake Detection",
+      "abstract": "Existing image forgery detectors often suffer from generalization to unseen manipulation methods due to the limited ability to capture transferable forensic cues. Recent cross-reconstruction based methods attempt to improve generalization through semantic-artifact disentanglement, but typically align heterogeneous artifacts across generators and exclude artifact representations during reconstruction, which may overlook the inherent diversity and visual cues of manipulation artifacts. In this work, we revisit cross-reconstruction and introduce an artifact-oriented disentanglement framework for robust image forgery detection. We argue that \\textbf{artifact diversity}, i.e., the intrinsic variations of manipulation artifacts introduced by different generation processes, contains complementary forensic cues rather than undesirable domain variations. Instead of enforcing explicit artifact alignment, our framework preserves diverse artifact characteristics through semantically aligned cross-generator reconstruction. Furthermore, we incorporate artifact representations into the reconstruction process and introduce a masked frequency-aware reconstruction strategy to emphasize manipulation-related residuals while reducing semantic interference. This design enables the model to learn transferable forensic representations from diverse artifacts. Extensive experiments on multiple benchmark datasets demonstrate improvements under both cross-dataset and cross-generator evaluation settings. Further analysis and ablation studies validate the effectiveness of artifact diversity preservation and artifact-aware cross-reconstruction.",
+      "authors": [
+        "Bingjian Yang",
+        "Shilei Zhao",
+        "Zheng Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-01T12:12:46+00:00",
+      "link": "https://arxiv.org/pdf/2610.01544v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "generalizable image forgery detection via cross-reconstruction",
+      "llm_evidence_cn": "基于交叉重建的可泛化图像伪造检测",
+      "llm_evidence": "基于交叉重建的可泛化图像伪造检测",
+      "canonical_evidence": "基于交叉重建的可泛化图像伪造检测",
+      "llm_tldr_en": "This paper revisits cross-reconstruction and introduces an artifact-oriented disentanglement framework for robust image forgery detection, arguing that preserving manipulation artifact diversity improves generalization to unseen manipulations.",
+      "llm_tldr_cn": "现有图像伪造检测器因难以捕捉可迁移的取证线索，面对未见篡改方法时泛化能力不足。已有交叉重建方法试图通过语义-伪影解耦提升泛化，但往往跨生成器对齐异质伪影并在重建中排除伪影表示，忽视了篡改伪影的固有多样性与视觉线索。作者重新审视交叉重建，提出面向伪影的解耦框架，强调保留伪影多样性，从而在鲁棒图像伪造检测上取得更好的泛化表现。",
+      "llm_tldr": "现有图像伪造检测器因难以捕捉可迁移的取证线索，面对未见篡改方法时泛化能力不足。已有交叉重建方法试图通过语义-伪影解耦提升泛化，但往往跨生成器对齐异质伪影并在重建中排除伪影表示，忽视了篡改伪影的固有多样性与视觉线索。作者重新审视交叉重建，提出面向伪影的解耦框架，强调保留伪影多样性，从而在鲁棒图像伪造检测上取得更好的泛化表现。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.32362v1",
+      "source": "arxiv",
+      "title": "StegGNN: Learning Graphical Representation for Image Steganography",
+      "abstract": "Image steganography refers to embedding secret messages within cover images while maintaining imperceptibility. Recent advances in deep learning - primarily driven by Convolutional Neural Networks (CNNs) and architectures such as inverse neural networks, autoencoders, and generative adversarial networks - have led to notable progress. However, these frameworks are primarily built on CNN architectures, which treat images as regular grids and are limited by their receptive field size and a bias toward spatial locality. In parallel, Graph Neural Networks (GNNs) have recently demonstrated strong adaptability in several computer vision tasks, achieving state-of-the-art performance with architectures such as Vision GNN (ViG). This work moves in that direction and introduces StegGNN - a novel autoencoder-based, cover-agnostic image steganography framework based on GNNs. By modeling images as graph structures, our approach leverages the representational flexibility of GNNs over the grid-based rigidity of conventional CNNs. We conduct extensive experiments on standard benchmark datasets to evaluate visual quality and imperceptibility. Our results show that our GNN-based method performs comparably to existing CNN benchmarks. These findings suggest that GNNs provide a promising alternative representation for steganographic embedding and open the field of deep learning-based steganography to further exploration of GNN-based architectures.",
+      "authors": [
+        "Abhinav Kumar",
+        "Shorya Singhal",
+        "Agam Pandey",
+        "Tushar Kumar",
+        "Sukrit Jindal"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-26T08:40:38+00:00",
+      "link": "https://arxiv.org/pdf/2609.32362v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "imperceptible message embedding in images via graph representation for steganography",
+      "llm_evidence_cn": "通过图表示在图像中嵌入不可感知信息，属隐写与不可见水印范畴",
+      "llm_evidence": "通过图表示在图像中嵌入不可感知信息，属隐写与不可见水印范畴",
+      "canonical_evidence": "通过图表示在图像中嵌入不可感知信息，属隐写与不可见水印范畴",
+      "llm_tldr_en": "StegGNN models images as graphs and applies graph neural networks to learn richer representations for imperceptible image steganography.",
+      "llm_tldr_cn": "图像隐写要求在保持视觉不可察觉的前提下在载体图像中嵌入秘密信息，但现有深度方法多基于CNN，受限于感受野与空间局部性偏置。本文提出StegGNN，将图像建模为图结构并借助图神经网络学习更具表达力的表示，以突破卷积架构的局限。实验表明图表示方法在容量与隐蔽性等指标上优于CNN基线，为不可见信息嵌入与图像认证相关任务提供了新思路。",
+      "llm_tldr": "图像隐写要求在保持视觉不可察觉的前提下在载体图像中嵌入秘密信息，但现有深度方法多基于CNN，受限于感受野与空间局部性偏置。本文提出StegGNN，将图像建模为图结构并借助图神经网络学习更具表达力的表示，以突破卷积架构的局限。实验表明图表示方法在容量与隐蔽性等指标上优于CNN基线，为不可见信息嵌入与图像认证相关任务提供了新思路。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "embedding imperceptible watermarks for image authentication and recovery",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.33332v1",
+      "source": "arxiv",
+      "title": "CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding",
+      "abstract": "Leading multi-bit watermarking methods for language models encode messages by biasing the model's next-token probabilities, creating a trade-off between message recovery and text quality. Their decoders typically return the highest-scoring candidate from accumulated token-level evidence, without a certified abstention rule that bounds the probability of outputting an incorrect message. We introduce CertMark, a distribution-preserving multi-bit watermark with certified decoding. Rather than modifying probabilities, CertMark uses the embedded message to seed an exact Gumbel-max sampler, thereby preserving the model's original sampling distribution. We propose two scalable decoders: a model-agnostic, text-only decoder and a model-aware variant that leverages the original next-token distributions for stronger recovery. Both support certified abstention with mathematical bounds on the probability of returning an incorrect message. Across text completion, summarization, and story generation, CertMark matches the perplexity of unwatermarked text while reliably recovering multi-bit messages. The model-aware decoder further achieves higher bit accuracy than probability-biasing baselines. Our code is publicly available at https://github.com/Batorskq/CertMark.",
+      "authors": [
+        "Paweł Batorski",
+        "Przemysław Spurek",
+        "Paul Swoboda"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-09-27T08:02:03+00:00",
+      "link": "https://arxiv.org/pdf/2609.33332v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "multi-bit watermark embedding and certified decoding in generative language models",
+      "llm_evidence_cn": "生成式语言模型中的多比特水印嵌入与认证解码",
+      "llm_evidence": "生成式语言模型中的多比特水印嵌入与认证解码",
+      "canonical_evidence": "生成式语言模型中的多比特水印嵌入与认证解码",
+      "llm_tldr_en": "Existing multi-bit LLM watermarking biases next-token probabilities, trading recovery for text quality and lacking certified abstention. CertMark seeds an exact Gumbel-max sampler with the message to preserve the distribution and offers two scalable decoders.",
+      "llm_tldr_cn": "现有多比特水印通过偏置语言模型下一词概率来编码消息，在消息恢复与文本质量之间形成权衡，且解码器缺乏可认证的弃权规则。本文提出CertMark，用嵌入消息为精确Gumbel-max采样器播种，从而保持模型原始采样分布，并设计模型无关与模型感知两类可扩展解码器。实验表明该方法在保持生成分布的同时实现多比特水印嵌入与带认证的解码。该工作为生成模型水印提供了分布保持且可认证解码的新方案。",
+      "llm_tldr": "现有多比特水印通过偏置语言模型下一词概率来编码消息，在消息恢复与文本质量之间形成权衡，且解码器缺乏可认证的弃权规则。本文提出CertMark，用嵌入消息为精确Gumbel-max采样器播种，从而保持模型原始采样分布，并设计模型无关与模型感知两类可扩展解码器。实验表明该方法在保持生成分布的同时实现多比特水印嵌入与带认证的解码。该工作为生成模型水印提供了分布保持且可认证解码的新方案。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.36372v1",
+      "source": "arxiv",
+      "title": "TTMark: Pairwise Distortion-Free Watermarking Beyond Single-Token Entropy",
+      "abstract": "Distortion-free watermarking enables reliable attribution of machine-generated text while preserving output distribution. However, existing methods operate independently on each generated token, making their detection capability fundamentally constrained by the entropy of the next-token distribution. We present Tandem Token WaterMark (TTMARK), a general pairwise watermarking framework that extends distortion-free watermarking from individual tokens to adjacent token pairs. By watermarking the joint distribution of consecutive tokens, TTMARK enlarges the effective watermarking alphabet from V to $V^2$, allowing the detector to exploit both token entropy and conditional entropy while preserving distortion-freeness over the joint distribution. We further introduce a branch-isolating concatenated tandem generation algorithm that efficiently constructs the joint distribution in a single forward pass. Theoretically, we show that pairwise watermarking achieves better expected detection strength in low-entropy regimes. Extensive experiments across multiple language models, datasets, and three representative distortion-free watermarking schemes demonstrate that TTMARK consistently improves detectability without degrading generation quality, while also improving robustness to edits and substantially enhancing localized watermark detection.",
+      "authors": [
+        "Ruibo Chen",
+        "Zhengmian Hu",
+        "Donghang Lu",
+        "Xuehao Cui",
+        "Georgios Milis",
+        "Yihan Wu",
+        "Jian Du",
+        "Heng Huang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CL"
+      ],
+      "published": "2026-09-28T23:04:53+00:00",
+      "link": "https://arxiv.org/pdf/2609.36372v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "distortion-free watermarking for machine-generated content attribution",
+      "llm_evidence_cn": "面向机器生成内容归因的无失真水印",
+      "llm_evidence": "面向机器生成内容归因的无失真水印",
+      "canonical_evidence": "面向机器生成内容归因的无失真水印",
+      "llm_tldr_en": "TTMark extends distortion-free watermarking from single tokens to adjacent token pairs, enlarging the watermark alphabet and improving detection.",
+      "llm_tldr_cn": "无失真水印可在保持输出分布的同时实现机器生成文本的可靠归因，但现有方法逐token独立操作，检测能力受限于下一token分布的熵。本文提出TTMark，将水印从单个token扩展到相邻token对，对联合分布加水印，使有效水印字母表由V扩大到V²，同时利用token熵与条件熵并保持联合分布无失真。该框架提升了水印检测能力，为生成文本的来源认证提供更可靠的嵌入与检测方案。",
+      "llm_tldr": "无失真水印可在保持输出分布的同时实现机器生成文本的可靠归因，但现有方法逐token独立操作，检测能力受限于下一token分布的熵。本文提出TTMark，将水印从单个token扩展到相邻token对，对联合分布加水印，使有效水印字母表由V扩大到V²，同时利用token熵与条件熵并保持联合分布无失真。该框架提升了水印检测能力，为生成文本的来源认证提供更可靠的嵌入与检测方案。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.38391v1",
+      "source": "arxiv",
+      "title": "Team MSU GenText-Forensics Challenge 2026 Technical Report",
+      "abstract": "Document text forgery has evolved beyond simple pixel-level manipulation: modern attacks alter not only the appearance of a document but also its meaning, and increasingly target the OCR & LLM pipelines that consume such documents. The ACM MM 2026 GenText-Forensics challenge therefore requires systems that not only decide whether a multilingual text image is forged, but also localize the point of manipulation, identify the attack type, and produce a human-readable forensic report with supporting evidence. We present our solution, a decomposed chain-of-thought (CoT) pipeline that combines a document tampering detector (DTD) with two Qwen3-VL-32B vision-language models, each LoRA-adapted to a distinct sub-task. DTD produces tampering probability maps that are converted into numbered candidate regions; a first model (the Filterer) validates these regions and assigns a preliminary forgery type, while a second model (the Semantic Detective) merges and re-grounds the surviving regions, searches for purely semantic anomalies that are invisible to pixel-level detectors, and writes the final report. Both models are trained by distilling chain-of-thought traces from a privileged Qwen3-VL-235B teacher that has access to ground-truth masks and reports. Our approach secured third place in the ACM MM 2026 GenText-Forensics challenge. We describe the data preparation, test-time augmentation, region rendering, distillation protocol, and training configuration in detail, and report ablations over detector thresholds, prompt designs, and pipeline decompositions.",
+      "authors": [
+        "Kirill Koltsov",
+        "Aleksandr Gushchin",
+        "Dmitriy Vatolin",
+        "Anastasia Antsiferova"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-29T18:49:01+00:00",
+      "link": "https://arxiv.org/pdf/2609.38391v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "document tampering detection and manipulation localization",
+      "llm_evidence_cn": "文档篡改检测与篡改位置定位",
+      "llm_evidence": "文档篡改检测与篡改位置定位",
+      "canonical_evidence": "文档篡改检测与篡改位置定位",
+      "llm_tldr_en": "This technical report presents a decomposed chain-of-thought pipeline combining a document tampering detector with two LoRA-adapted vision-language models to detect, localize, and explain forgery in multilingual text images.",
+      "llm_tldr_cn": "文档文本伪造已从简单像素级篡改演变为改变语义并攻击OCR与LLM处理流程的复杂攻击，竞赛要求系统不仅判定多语言文本图像是否伪造，还需定位篡改点、识别攻击类型并生成可读取证报告。作者提出分解式思维链流水线，将文档篡改检测器与两个分别经LoRA适配、承担不同子任务的Qwen3-VL-32B视觉语言模型结合。检测器输出篡改概率图，为定位与解释提供支撑。",
+      "llm_tldr": "文档文本伪造已从简单像素级篡改演变为改变语义并攻击OCR与LLM处理流程的复杂攻击，竞赛要求系统不仅判定多语言文本图像是否伪造，还需定位篡改点、识别攻击类型并生成可读取证报告。作者提出分解式思维链流水线，将文档篡改检测器与两个分别经LoRA适配、承担不同子任务的Qwen3-VL-32B视觉语言模型结合。检测器输出篡改概率图，为定位与解释提供支撑。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

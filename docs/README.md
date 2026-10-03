@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-02</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-03</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 12 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>7</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-02 23:22:39 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-03 22:07:08 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,7 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今天精读7篇、速读5篇，主攻图像水印、伪造定位与AI生成图检测。最值得看的是满分工作《Persistent Watermarking of Text-to-Image Models》和9分的《Forensic-Aware Continual Adaptation for Image Forgery Localization》，前者关注水印持久性，后者强调持续适应下的取证定位。普通读者可优先了解这两篇的核心思路，再按需扫读速读列表中弱监督伪造定位与可解释检测方向。</p>
+<p>今日速读 5 篇，精读 0 篇，重点关注深度伪造检测、图像隐写与多比特水印三个方向。</p>
+<p>最值得看的是 7.0 分的《Revisiting Cross-Reconstruction for Generalizable Deepfake Detection》，以及 6.0 分的《StegGNN》和《CertMark》，分别对应可泛化检测、图表示隐写与无失真认证水印。</p>
+<p>普通读者可优先了解深度伪造检测的泛化能力，再关注水印和隐写如何兼顾容量、失真与可认证解码。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -78,12 +80,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">7 篇</strong>
+    <strong class="dpr-home-dashboard-count">0 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Persistent Watermarking of Text-to-Image Models">Persistent Watermarking of Text-to-Image Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Forensic-Aware Continual Adaptation for Image Forgery Localization">Forensic-Aware Continual Adaptation for Image Forgery Localization</span></li><li><span class="dpr-home-dashboard-paper-title" title="Semantic Watermarking for Malicious Image Manipulation Detection">Semantic Watermarking for Malicious Image Manipulation Detection</span></li></ul>
+<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>4</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>3</strong></span></div>
+
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -94,9 +96,9 @@
     <strong class="dpr-home-dashboard-count">5 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Less Supervision, Better Generalization: Weakly Supervised Fake Region Localization in Diffusion-Edited Images">Less Supervision, Better Generalization: Weakly Supervised Fake Region Localization in Diffusion-Edited Images</span></li><li><span class="dpr-home-dashboard-paper-title" title="Agentic Tool-Augmented Reasoning for Explainable Image Forgery Detection">Agentic Tool-Augmented Reasoning for Explainable Image Forgery Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="RED: Reconstruction Evolution Dynamics for Generalizable AI-Generated Image Detection">RED: Reconstruction Evolution Dynamics for Generalizable AI-Generated Image Detection</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Revisiting Cross-Reconstruction for Generalizable Deepfake Detection">Revisiting Cross-Reconstruction for Generalizable Deepfake Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="StegGNN: Learning Graphical Representation for Image Steganography">StegGNN: Learning Graphical Representation for Image Steganography</span></li><li><span class="dpr-home-dashboard-paper-title" title="CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding">CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>5</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>3</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
 </section>
 </div>
 
