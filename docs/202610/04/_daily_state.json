@@ -1,0 +1,25 @@
+{
+  "date": "20261004",
+  "date_label": "",
+  "generated_at": "2026-10-04 22:42:16 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.36145v1",
+      "route": "202610/04/2609.36145v1-from-sharp-eyes-to-expert-mind-internalizing-expert-knowledge-in-mllms-for-tampered-text-detection",
+      "title": "From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "检测并定位篡改文本区域",
+      "first_seen_at": "2026-10-04 22:42:16 UTC",
+      "updated_at": "2026-10-04 22:42:16 UTC"
+    }
+  ]
+}

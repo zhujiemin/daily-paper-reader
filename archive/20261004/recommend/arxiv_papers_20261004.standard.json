@@ -1,0 +1,64 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-04T22:41:57.177890+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.36145v1",
+      "source": "arxiv",
+      "title": "From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection",
+      "abstract": "Tampered Text Detection (TTD) is essential for safeguarding document authenticity in security-critical workflows. Existing expert models are effective at capturing subtle manipulation traces but often generalize poorly across diverse document domains, while Multimodal Large Language Models (MLLMs) offer stronger semantic understanding and transferability yet remain insensitive to fine-grained forensic artifacts. This complementarity motivates us to investigate how expert forensic perception can be internalized into an MLLM rather than merely accessed through an external module. We identify a fundamental Double Mismatch that hinders this goal: a Spatial Precision Mismatch between coarse visual tokens and tiny tampered regions, and a Perceptual Granularity Mismatch between semantics-oriented pre-training and low-level forensic perception. To address these challenges, we propose Expert Knowledge Internalization (EKI), a progressive two-stage framework that transfers forensic expertise into the MLLM itself. In Stage 1, Text-Focused and Image-Focused strategies establish precise spatial focus on small text regions. In Stage 2, the proposed Forensic-General Representation Alignment (FGRA) loss aligns shallow LLM representations with those of a pre-trained forensic expert, enabling the model to acquire fine-grained artifact perception before such cues are diluted by deeper semantic abstraction. Extensive experiments on multiple in-domain and cross-domain benchmarks demonstrate that EKI achieves state-of-the-art performance and stronger generalization than existing expert-model-based and MLLM-based methods. Moreover, the expert is required only during training, allowing the resulting MLLM to maintain inference efficiency nearly identical to the vanilla model without relying on any external expert at inference.",
+      "authors": [
+        "Kaiqing Lin",
+        "Songze Li",
+        "Shen Chen",
+        "Yunfei Guo",
+        "Xiaoye Qiu",
+        "Haodong Li",
+        "Taiping Yao",
+        "Bo Wang",
+        "Youchang Xiao",
+        "Bin Li",
+        "Shouhong Ding"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-28T19:20:22+00:00",
+      "link": "https://arxiv.org/pdf/2609.36145v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "detecting and localizing tampered text regions",
+      "llm_evidence_cn": "检测并定位篡改文本区域",
+      "llm_evidence": "检测并定位篡改文本区域",
+      "canonical_evidence": "检测并定位篡改文本区域",
+      "llm_tldr_en": "This work internalizes expert forensic perception into MLLMs for tampered text detection, addressing a spatial precision mismatch between coarse visual tokens and tiny tampered regions.",
+      "llm_tldr_cn": "篡改文本检测对文档真实性至关重要，专家模型擅长捕捉细微篡改痕迹但跨域泛化差，而多模态大模型语义理解强却对细粒度取证痕迹不敏感。本文研究如何将专家取证感知内化到MLLM中，而非仅通过外部模块调用，并识别出粗粒度视觉词元与微小篡改区域之间的空间精度失配这一双重错配问题。该工作提升了模型对篡改区域的检测与定位能力，属图像篡改检测与定位范畴。",
+      "llm_tldr": "篡改文本检测对文档真实性至关重要，专家模型擅长捕捉细微篡改痕迹但跨域泛化差，而多模态大模型语义理解强却对细粒度取证痕迹不敏感。本文研究如何将专家取证感知内化到MLLM中，而非仅通过外部模块调用，并识别出粗粒度视觉词元与微小篡改区域之间的空间精度失配这一双重错配问题。该工作提升了模型对篡改区域的检测与定位能力，属图像篡改检测与定位范畴。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-03</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-04</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 1 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-03 22:07:08 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-04 22:42:16 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,9 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日速读 5 篇，精读 0 篇，重点关注深度伪造检测、图像隐写与多比特水印三个方向。</p>
-<p>最值得看的是 7.0 分的《Revisiting Cross-Reconstruction for Generalizable Deepfake Detection》，以及 6.0 分的《StegGNN》和《CertMark》，分别对应可泛化检测、图表示隐写与无失真认证水印。</p>
-<p>普通读者可优先了解深度伪造检测的泛化能力，再关注水印和隐写如何兼顾容量、失真与可认证解码。</p>
+<p>今日仅速读1篇、精读0篇，聚焦多模态大模型篡改文本检测这一细分方向。</p>
+<p>最值得看的是《From Sharp Eyes to Expert Mind》提出的思路：把专家知识内化进MLLM，让模型从&quot;看得清&quot;走向&quot;判得准&quot;，但6.0分属中等，结论仍需更多验证。</p>
+<p>普通读者可先当作趋势信号留意，等有复现或后续高分行作再深入，暂不必据此下判断。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -93,12 +93,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">5 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Revisiting Cross-Reconstruction for Generalizable Deepfake Detection">Revisiting Cross-Reconstruction for Generalizable Deepfake Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="StegGNN: Learning Graphical Representation for Image Steganography">StegGNN: Learning Graphical Representation for Image Steganography</span></li><li><span class="dpr-home-dashboard-paper-title" title="CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding">CertMark: Distortion-Free Multi-Bit Watermarking with Certified Decoding</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection">From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>3</strong></span><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 

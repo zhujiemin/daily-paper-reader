@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-10-04 <!--dpr-date:20261004-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/04/2609.36145v1-from-sharp-eyes-to-expert-mind-internalizing-expert-knowledge-in-mllms-for-tampered-text-detection" data-sidebar-item="{&quot;title&quot;: &quot;From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.36145v1-from-sharp-eyes-to-expert-mind-internalizing-expert-knowledge-in-mllms-for-tampered-text-detection&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;image-tamper&quot;}], &quot;evidence&quot;: &quot;检测并定位篡改文本区域&quot;}">From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection</a>
   * 2026-10-03 <!--dpr-date:20261003-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/03/2610.01544v1-revisiting-cross-reconstruction-for-generalizable-deepfake-detection" data-sidebar-item="{&quot;title&quot;: &quot;Revisiting Cross-Reconstruction for Generalizable Deepfake Detection&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2610.01544v1-revisiting-cross-reconstruction-for-generalizable-deepfake-detection&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;image-tamper&quot;}], &quot;evidence&quot;: &quot;基于交叉重建的可泛化图像伪造检测&quot;}">Revisiting Cross-Reconstruction for Generalizable Deepfake Detection</a>

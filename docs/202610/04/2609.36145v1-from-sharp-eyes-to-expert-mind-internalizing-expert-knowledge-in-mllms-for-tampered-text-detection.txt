@@ -1,0 +1,2127 @@
+1
+From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge
+in MLLMs for Tampered Text Detection
+Kaiqing Lin†, Songze Li†, Shen Chen†, Yunfei Guo, Xiaoye Qiu, Haodong Li, Member, IEEE, Taiping Yao, Bo
+Wang, Youchang Xiao, Bin Li∗, Senior Member, IEEE, and Shouhong Ding
+Abstract—Tampered Text Detection (TTD) is essential for
+safeguarding document authenticity in security-critical work-
+flows. Existing expert models are effective at capturing subtle
+manipulation traces but often generalize poorly across diverse
+document domains, while Multimodal Large Language Models
+(MLLMs) offer stronger semantic understanding and transfer-
+ability yet remain insensitive to fine-grained forensic artifacts.
+This complementarity motivates us to investigate how expert
+forensic perception can be internalized into an MLLM rather
+than merely accessed through an external module. We identify a
+fundamental Double Mismatch that hinders this goal: a Spatial
+Precision Mismatch between coarse visual tokens and tiny tam-
+pered regions, and a Perceptual Granularity Mismatch between
+semantics-oriented pre-training and low-level forensic perception.
+To address these challenges, we propose Expert Knowledge
+Internalization (EKI), a progressive two-stage framework that
+transfers forensic expertise into the MLLM itself. In Stage
+1, Text-Focused and Image-Focused strategies establish precise
+spatial focus on small text regions. In Stage 2, the proposed
+Forensic-General Representation Alignment (FGRA) loss aligns
+shallow LLM representations with those of a pre-trained foren-
+sic expert, enabling the model to acquire fine-grained artifact
+perception before such cues are diluted by deeper semantic
+abstraction. Extensive experiments on multiple in-domain and
+cross-domain benchmarks demonstrate that EKI achieves state-
+of-the-art performance and stronger generalization than existing
+expert-model-based and MLLM-based methods. Moreover, the
+expert is required only during training, allowing the resulting
+MLLM to maintain inference efficiency nearly identical to the
+vanilla model without relying on any external expert at inference.
+Index Terms—Tampered Text Detection, Document Images,
+Multimodal Large Language Models, Knowledge Distillation.
+I. INTRODUCTION
+D
+OCUMENT images are widely used in financial, govern-
+mental, and legal workflows, where textual content sup-
+ports critical decisions. However, increasingly accessible ma-
+nipulation techniques enable attackers to alter critical textual
+information while preserving a visually plausible appearance,
+posing serious threats to document authenticity and infor-
+mation integrity. Detection of such manipulation is therefore
+essential for document forensics. Tampered Text Detection
+†
+Equal Contribution.
+∗
+Corresponding author: Bin Li (email: li-
+bin@szu.edu.cn).
+Kaiqing Lin, Songze Li, Xiaoye Qiu, Haodong Li, and Bin Li are with
+Guangdong Provincial Key Laboratory of Intelligent Information Processing,
+Shenzhen Key Laboratory of Media Security, and SZU-AFS Joint Innovation
+Center for AI Technology, Shenzhen University, Shenzhen 518060, China.
+(e-mails: linkaiqing2021@email.szu.edu.cn; 2310433002@email.szu.edu.cn;
+libin@szu.edu.cn). Shen Chen, Yunfei Guo, Taiping Yao, Bo Wang, Youchang
+Xiao, and Shouhong Ding are with Tencent Youtu Lab, Shanghai, China.
+(TTD) aims to identify manipulated content and accurately
+localize corresponding regions in document images.
+Existing TTD methods predominantly rely on visual back-
+bones to build expert models, i.e., specialized forensic mod-
+els, for detecting subtle traces left by manipulation opera-
+tions. Representative architectures span CNN-based and hybrid
+spatial-frequency networks [1]–[3], Vision Transformer (ViT)-
+based models [4], and more recent Mamba-based architectures
+[5]. These methods typically formulate TTD as binary classi-
+fication or pixel-level segmentation and train their models on
+task-specific collections of authentic and tampered document
+images. Such training enables expert models to learn effective
+low-level forensic cues and achieve strong in-domain perfor-
+mance. However, existing training datasets often cover only a
+limited range of document distributions. Consequently, expert
+models may overfit to domain-specific visual characteristics,
+limiting their generalization to unseen domains [4].
+Recently, Multimodal Large Language Models (MLLMs)
+have emerged as a promising foundation for generalizable doc-
+ument forensics. Benefiting from large-scale vision-language
+pre-training, MLLMs exhibit strong transferability across di-
+verse visual domains and can better adapt to variations in doc-
+ument content, layout, and appearance [6]–[8]. Beyond cross-
+domain generalization, MLLMs also provide visual content
+understanding and multimodal reasoning capabilities. Recent
+studies have begun to explore these advantages for tampered
+text analysis. TextSleuth [9] introduces natural-language ex-
+planations for tampering evidence and improves fine-grained
+analysis through a two-stage paradigm that focuses on sus-
+pected regions. TVSIP [10] further integrates visual local-
+ization with semantic interpretation, enabling joint tampering
+detection and explainable forensic analysis within an MLLM-
+driven framework. These studies demonstrate the potential of
+MLLMs to extend conventional forensic localization toward
+more comprehensive visual-semantic analysis. However, ex-
+isting MLLM-based methods still lag behind expert models in
+detecting and localizing subtle, fine-grained tampering.
+Expert models and MLLMs thus exhibit strikingly comple-
+mentary strengths: the former perceive the subtle manipulation
+traces that the latter miss, while the latter provide the docu-
+ment understanding and cross-domain generalization that the
+former lack. This contrast raises the central question of this
+paper: how can an MLLM be equipped with the expert’s
+forensic perception, such that a single model perceives
+like a specialist while understanding and generalizing
+like a large foundation model? A natural way to exploit
+this complementarity is to integrate an expert model into the
+arXiv:2609.36145v1  [cs.CV]  28 Sep 2026
+
+
+2
+Fig. 1.
+(a) Unlike external-reliance methods, ours internalizes forensic
+knowledge for intrinsic authenticity detection without extra modules. (b)
+Performance of Baseline (standard fine-tuned MLLM), Expert Model [4], ER
+(External Reliance), and our EKI (Expert Knowledge Internalization). Notably,
+EKI significantly outperforms other paradigms, demonstrating the superiority
+of intrinsic forensic capabilities.
+MLLM pipeline. Existing approaches commonly follow such
+an external-reliance paradigm [11]–[13], keeping the expert
+as a separate module and coupling it with the MLLM via late
+fusion or prediction concatenation (Fig. 1(a), top). However,
+our comparative study reveals a notable limitation of this
+paradigm: as shown in Fig. 1(b), the externally coupled system
+fails to surpass the standalone expert, despite requiring a more
+complex and costly inference pipeline. In other words, external
+access to expert predictions does not translate into intrinsic
+forensic perception within the MLLM.
+Why does the coupling fall short? Under external reliance,
+the expert’s predictions or features are directly inserted into
+the pipeline, while the MLLM has limited opportunity to
+learn the underlying forensic representations itself. As a re-
+sult, the coupled system largely inherits the expert’s forensic
+capability and its limited cross-domain generalization, without
+fully integrating the MLLM’s semantic understanding and
+generalization strengths into forensic representation learning.
+Nor can the MLLM acquire such perception through standard
+fine-tuning alone: the fine-tuned Baseline in Fig. 1(b) lags
+far behind the expert. We attribute this learning difficulty to
+a fundamental Double Mismatch (Fig. 2). First, a Spatial
+Precision Mismatch: character-level tampered regions occupy
+only a tiny fraction of the visual token sequence, making
+the relevant evidence both spatially under-resolved and eas-
+ily overwhelmed by irrelevant background during optimiza-
+tion. Second, a Perceptual Granularity Mismatch: MLLM
+representations are optimized for high-level vision-language
+semantics through objectives such as contrastive image-text
+alignment and autoregressive prediction [6], [14], [15], while
+recent studies in image forensics show that such semantics-
+oriented representations are often insufficiently sensitive to
+low-level forensic signals [16], [17]. Hence, neither borrowed
+predictions nor standard fine-tuning suffices; what the MLLM
+needs is guidance: expert knowledge that steers its own
+representation learning.
+To this end, we propose Expert Knowledge Internalization
+(EKI) (Fig. 1(a), bottom): rather than feeding the expert’s
+predictions to the MLLM in textual or visual form, or attaching
+the expert as an additional visual encoder to inject its features,
+EKI employs it as a teacher that guides the MLLM to
+Fig. 2. General MLLMs suffer from the Double Mismatch: Spatial Precision
+Mismatch (difficulty in precisely localizing tiny regions) and Perceptual
+Granularity Mismatch (understanding semantics but remaining blind to fine-
+grained artifacts).
+learn forensic perception within its own representations, via
+a progressive two-stage framework targeting the two mis-
+matches. Stage 1 (Precise Spatial Focus) tackles the spatial
+mismatch, teaching the model where to look: Text-Focused
+and Image-Focused strategies force attention onto tiny text
+regions, so that subsequent learning concentrates on the true
+evidence. Stage 2 (Forensic Artifact Perception) tackles the
+perceptual mismatch, teaching the model how to discern: the
+proposed Forensic-General Representation Alignment (FGRA)
+loss aligns the LLM’s shallow-layer representations with those
+of a pre-trained forensic expert, where fine-grained forensic
+cues are better preserved. Since the forensic capability is
+internalized into the MLLM itself, the expert is discarded
+after training, introducing no additional inference overhead. As
+shown in Fig. 1(b), the resulting model outperforms both the
+external-reliance paradigm and the standalone expert, while
+exhibiting stronger cross-domain generalization.
+Our contributions are summarized as follows:
+• We reveal the limitations of existing expert–MLLM in-
+tegration paradigms and identify the Double Mismatch
+that prevents general MLLMs from acquiring fine-grained
+forensic perception, motivating a shift from external
+reliance to intrinsic expert knowledge internalization.
+• We propose the Expert Knowledge Internalization
+(EKI) paradigm, a progressive two-stage framework that
+first establishes precise spatial focus and then transfers
+fine-grained forensic perception from a pre-trained expert
+into the MLLM.
+• Extensive experiments demonstrate state-of-the-art per-
+formance and superior cross-domain generalization over
+existing expert-model-based and MLLM-based methods,
+while maintaining efficiency nearly identical to the vanilla
+MLLM and requiring no external expert at inference.
+
+
+3
+II. RELATED WORK
+A. Document Text Tampering
+Document images in financial, governmental, and legal
+workflows carry security-sensitive text such as amounts, dates,
+and names, making them prime targets for manipulation.
+Following representative TTD datasets [1], [18], document text
+tampering comprises five representative types (Table I): Copy-
+move duplicates text within the same image, so the forged
+region shares font, illumination, and compression statistics
+with its surroundings; Splicing pastes text from a different
+image, introducing cross-image inconsistencies in noise or
+compression history; Removal erases text and inpaints the
+background, hiding information without adding new content;
+Insertion renders new text into blank regions; and Replace-
+ment erases the original text and inserts new content in place,
+which is the most prevalent and harmful type in practice.
+Detecting such tampering is challenging: manipulated regions
+are often as tiny as individual characters, their traces become
+visually imperceptible after post-processing such as blurring,
+noise addition, and recompression [18], and forgery styles vary
+widely across document domains [19], [20]. Consequently,
+most existing detection methods resort to fine-grained, low-
+level forensic features for detection, as reviewed below.
+B. General Image Manipulation Localization
+Recent years have witnessed rapid advancements in gen-
+eral image manipulation localization [21]–[32]. To capture
+diverse tampering artifacts, various architectures have been
+explored. For instance, PSCC-Net [21] introduces bidirectional
+pathways to effectively aggregate multi-scale features, while
+IML-ViT [22] focuses on high-resolution modeling to improve
+boundary awareness. TruFor [24] employs a transformer-based
+framework to fuse high-level semantics from RGB images
+with low-level traces derived from learned noise-sensitive
+fingerprints. EAN [25] formulates the task as a boundary-
+aware segmentation problem, utilizing an edge interaction
+mechanism to refine both implicit and explicit contour fea-
+tures. To better isolate manipulation traces from normal image
+content, SparseViT [27] decouples semantic and non-semantic
+features, adaptively concentrating on the non-semantic cues
+that are crucial for forensics. Similarly, Mesorch [28] cap-
+tures local tampering traces and global inconsistencies by
+integrating distinct frequency components and hierarchical
+features through an adaptive weighting scheme. Despite their
+remarkable success, these methods are fundamentally tailored
+for natural scene images. Consequently, they often exhibit
+suboptimal performance when directly applied to document
+images due to the lack of domain-specific text priors and the
+inability to handle dense textual interference.
+C. Tampered Text Detection (TTD)
+1) Expert Models: Traditional TTD methods have evolved
+from handcrafted feature-based approaches to deep learning
+frameworks. To capture subtle low-level forensic traces, re-
+searchers have explored complementary forensic cues beyond
+raw RGB information. For instance, DTD [1] and FFDN
+[2] leverage frequency-domain analysis to mine spectral in-
+consistencies that are difficult to perceive directly in RGB
+images, while ADCD-Net [3] combines adaptive DCT features
+with OCR-guided [33], [34] content disentanglement. BOIL
+[35] further explores frequency-aware data augmentation to
+improve the robustness of forensic feature learning. Beyond
+spectral cues, dual-branch architectures such as TIFDM [36]
+fuse RGB information with hand-crafted residuals (e.g., SRM
+[37], [38]) to capture statistical forgery traces at the noise
+level. Rather than introducing auxiliary modalities, DCL-Net
+[39] incorporates contrastive learning to enhance feature dis-
+criminability. From a data and pre-training perspective, DITL2
+[4] improves cross-domain generalization by pre-training on
+diverse images to learn domain-invariant representations trans-
+ferable to document forensics. Despite these advances, expert
+models remain largely task-specific, with limited adaptability
+to diverse and unseen document distributions and limited
+capability to exploit the rich textual and structural information
+inherent in documents. These limitations motivate the explo-
+ration of MLLM-based approaches.
+2) MLLM-based Approaches: Benefiting from large-scale
+vision-language pre-training, MLLMs exhibit strong trans-
+ferability across diverse visual domains and provide visual-
+semantic understanding and multimodal reasoning capabilities,
+offering a promising foundation for document forensics [6]–
+[8]. Motivated by this potential, recent studies have begun
+to explore MLLMs for tampered text analysis, progressively
+extending their role from forensic interpretation to tampering
+localization. TextSleuth [9] employs an external expert model
+to first localize suspicious regions and then guides the MLLM
+to explain the corresponding tampering evidence, leaving the
+MLLM itself largely uninvolved in detection and localization.
+TVSIP [10] goes a step further by introducing an MLLM-
+based semantic branch for localization and fusing its pre-
+dictions with those of an external forensic expert. However,
+TVSIP performs only prediction-level fusion between inde-
+pendently modeled branches, without feature-level interaction
+or joint representation learning. Consequently, current methods
+do not internalize the expert’s fine-grained forensic perception,
+and the external expert remains necessary during inference.
+More broadly, existing MLLMs remain insensitive to subtle
+forensic artifacts [16], [17], which expert models are better
+specialized to capture. This complementarity motivates us to
+internalize the expert’s forensic perception into the MLLM.
+D. Integrating MLLMs with Expert Models
+1) External Reliance Strategies: Vanilla MLLMs remain
+ineffective at detecting subtle image forgeries due to their
+limited sensitivity to fine-grained forensic artifacts [40]. To
+mitigate the perceptual limitations of MLLMs, many studies
+integrate external experts. FFAA [41] employs a decision
+system to select responses based on matching scores, while
+X 2-DFD [42] calls external detectors when encountering
+ambiguous features. AIGI-Holmes [13] incorporates an NPR-
+based [43] visual expert to extract artifacts. While improving
+performance, these approaches rely heavily on external mod-
+ules, reducing the MLLM to a passive reasoning interface.
+
+
+4
+2) Knowledge Internalization Strategies: A more efficient
+direction empowers MLLMs intrinsically via distillation. Re-
+cent works like SF [44] and VIRAL [45] demonstrate that
+aligning the MLLM’s feature space with a teacher expert
+injects domain knowledge without architectural changes. In-
+spired by this, we propose internalizing forensic knowledge
+into MLLMs. Unlike general visual alignment, our method
+specifically targets the fine-grained artifact features essential
+for TTD.
+III. PRELIMINARIES
+A. Task Reformulation
+Traditionally, tampered text detection has been formulated
+as a dense semantic segmentation task, where expert models
+aim to generate a binary mask classifying each pixel as authen-
+tic or manipulated. However, in practical forensic scenarios,
+the primary goal is often to identify which specific object
+or text region has been manipulated, rather than delineating
+its exact pixel boundaries. Motivated by this, and recognizing
+the remarkable proficiency of MLLMs in visual grounding,
+we reframe the objective from pixel-level segmentation to
+coordinate-based bounding box (bbox) regression. Specifi-
+cally, the ground-truth bboxes are derived directly from the
+pixel-level masks provided by existing datasets: for each
+tampered region, we take the minimum enclosing rectangle
+defined by the leftmost, topmost, rightmost, and bottommost
+points of its mask, represented as [x1, y1, x2, y2], requiring no
+additional annotation. Compared with dense masks, bounding
+box coordinates can be naturally serialized into a short se-
+quence of discrete tokens, making the output format inherently
+compatible with the autoregressive decoding paradigm of
+language models.
+B. Problem Definition
+Formally, given a potentially tampered document image
+I ∈RH×W ×3 and a user text instruction T (e.g., “Detect and
+localize the tampered text in this image”), our goal is to gen-
+erate a text response Y. Unlike traditional masks, Y contains
+the sequence of bounding box coordinates [x1, y1, x2, y2] cor-
+responding to the manipulated regions, along with authenticity
+judgments.
+IV. METHODOLOGY
+A. Overview
+General MLLMs lack the fine-grained forensic perception
+required for TTD, yet neither externally coupling an expert
+model nor standard fine-tuning, which is hindered by the
+Double Mismatch, can effectively equip them with such capa-
+bility. To address this problem, we propose Expert Knowledge
+Internalization (EKI), which employs a pre-trained forensic
+expert as a teacher to steer the MLLM’s own representation
+learning. Specifically, EKI adopts a progressive two-stage
+training framework, as illustrated in Fig. 3, dismantling the two
+mismatches in turn: the model first learns where to look (Stage
+1) and then how to discern (Stage 2). The design rationale is
+twofold:
+Stage 1: Precise Spatial Focus. General MLLMs struggle
+to resolve tiny tampered regions due to coarse patch process-
+ing. Therefore, we dedicate this stage to forcing the model
+to localize precisely via explicit Text-Focused and Image-
+Focused strategies.
+Stage 2: Forensic Artifact Perception. To overcome the in-
+sensitivity of the MLLM’s semantics-oriented representations
+to subtle forensic artifacts, we introduce the Forensic-General
+Representation Alignment (FGRA) loss. This distills forensic
+capabilities from a pre-trained expert directly into the MLLM.
+Crucially, the expert serves solely as a teacher during training
+and it is discarded at inference, ensuring the MLLM operates
+without additional overhead.
+B. Stage 1: Precise Spatial Focus
+The primary obstacle in the first stage is the Spatial Preci-
+sion Mismatch. To equip the model with fine-grained spatial
+attention capability, we choose to fine-tune the vision encoder
+and the projector in this stage, while keeping the LLM frozen.
+Since document tampering often occurs at the character level,
+the tampered regions occupy a negligible portion of the image.
+Consequently, under coarse-grained visual tokenization, the
+overwhelming background semantics create significant noise
+interference, making direct regression difficult for standard
+MLLMs. To address this, we employ a two-pronged strategy
+operating at both the data processing level (via Text-Focused)
+and the training paradigm level (via Image-Focused) to en-
+hance the model’s grounding capability.
+1) Text-Focused: To address the ambiguity of visual lo-
+calization in complex documents, we construct a specialized
+instruction dataset (see Fig. 4(a)). By using OCR-detected
+regions as coarse spatial anchors in the prompt and supervising
+the model to predict the precise bounding boxes [x1, y1, x2, y2]
+aligned with ground-truth annotations, we force the MLLM
+to attend to the specific spatial tokens associated with text
+regions, rather than relying on general semantic contexts.
+This enables the model to perform a coarse-to-fine attention
+refinement, establishing the spatial foundation required for the
+subsequent forensic analysis.
+The data construction process is as follows:
+• OCR Pre-processing. We utilize an off-the-shelf OCR
+tool [34] to extract semantic and spatial information
+from the document. The tool processes the image and
+outputs a set of detected text instances. For each instance,
+it provides three key components: the bounding box
+coordinates bocr, the recognized text content tcontent,
+and a confidence score sconf.
+• High-Confidence Filtering. The confidence score sconf,
+generated by the OCR tool, represents the model’s pre-
+dicted probability that the detected region contains valid
+text and that the recognition result is correct. To en-
+sure the reliability of textual focus and suppress OCR
+noise, we empirically set a strict confidence threshold
+of sconf
+> 0.9 based on preliminary analysis, and
+retain only high-confidence OCR instances for instruction
+construction. We then randomly sample from this filtered
+pool to generate instructions.
+
+
+5
+Fig. 3. Overview of our proposed Expert Knowledge Internalization (EKI) framework. Stage 1: Precise Spatial Focus. We enhance spatial precision using
+Text-Focused and Image-Focused strategies. Stage 2: Forensic Artifact Perception. The proposed FGRA Loss distills forensic knowledge from a pre-trained
+expert into the LLM’s shallow layers, enabling intrinsic artifact perception. Note that the expert is discarded during inference.
+• Instruction Generation. We construct the input instruc-
+tion T by binding the content with its coarse location:
+“Is the text ‘tcontent’ located at bocr real or tampered?”
+• Target Formulation. The ground-truth response Y de-
+pends on the intersection between the queried OCR
+region and actual tampering annotations:
+– If real: “Real.”
+– If tampered: “Tampered. bgt.”
+Crucially,
+bgt
+denotes
+the
+precise
+coordinates
+[x1, y1, x2, y2] of the actual manipulated area (e.g.,
+a specific modified digit) within the queried region,
+distinct from the coarse input bocr.
+2) Image-Focused: General MLLMs typically struggle to
+resolve fine-grained details in dense documents, making direct
+localization of tiny tampered regions (e.g., < 1% of the
+image area) a formidable challenge. Nevertheless, existing
+training paradigms directly supervise the model with the full
+localization objective, overlooking this inherent task difficulty;
+as a result, hard samples contribute little effective learning
+signal. To mitigate this Spatial Precision Mismatch, we pro-
+pose a divide-and-conquer task decomposition strategy (as
+illustrated in Fig. 4(b)): we augment the hard samples with
+an easier classification sub-task on magnified local patches,
+thereby lowering the learning difficulty. The core intuition is to
+simplify the learning problem: the model learns to distinguish
+tampering in isolated, magnified views, and this discriminative
+capability in turn facilitates localizing the same targets within
+the cluttered global context. To achieve this, we design a
+three-step pipeline involving hard sample filtering and task
+decomposition:
+• Hard Sample Filtering. Rather than relying on static
+heuristics, we define “hard samples” in a data-driven
+manner based on the learning difficulty. Specifically, we
+first conduct a preliminary training round on the entire
+dataset using the standard MLLM baseline (fine-tuned
+for the global localization task) to obtain a temporary
+mining model, denoted as Mpre. We then evaluate this
+model Mpre on the training set. Samples where the
+Intersection-over-Union (IoU) between the predicted and
+ground-truth boxes remains below a threshold of 0.7
+are identified as hard samples. These samples typically
+feature extremely tiny tampering regions or highly subtle
+manipulation traces that are easily overwhelmed by back-
+ground semantic noise, making them persistent failure
+cases for standard training paradigms. These are then
+flagged for our specific decomposition training.
+• Local Classification (Sub-task 1). For these identified
+
+
+6
+Fig. 4. Details of Precise Spatial Focus. We construct text-focused instruc-
+tions using OCR results and employ a task decomposition strategy (Local
+Classification + Global Localization) to mine hard samples.
+hard samples, we dynamically crop both the tampered re-
+gions and random authentic regions to generate localized
+patches. Crucially, these patches are resized to the same
+resolution as the original full images (e.g., 512 × 512)
+before being fed into the MLLM. With the simplified
+instruction “Is this image patch real or tampered?”,
+the model can focus on discerning manipulation traces
+in these zoomed-in views without the interference of
+complex global backgrounds.
+• Global Localization (Sub-task 2). Concurrently, we
+retain the original full-image localization task. By jointly
+training on these augmented local patches (Sub-task 1)
+and the original full images (Sub-task 2), the discrim-
+inative features learned from the magnified local views
+significantly enhance the model’s ability to localize these
+difficult regions in the global view.
+This decomposition strategy allows the two sub-tasks to re-
+inforce each other: the easier local classification task provides
+a strong and direct learning signal for discerning manipulation
+traces, which in turn benefits the harder task of localizing them
+in cluttered full-page views.
+3) Training Objectives (Stage 1): To unify the learning
+of both sub-tasks, we employ the standard auto-regressive
+language modeling objective. Given the input instruction T
+and image I, the model maximizes the likelihood of the
+target response sequence Y = {y1, . . . , yL}. The standard text
+generation loss function LLM is defined as:
+LLM = −
+L
+X
+t=1
+log P(yt|I, T, y<t)
+(1)
+where L is the length of the target sequence Y, and y<t
+represents the preceding tokens.
+Our training strategy involves jointly optimizing the model
+on both hard-mined local patches Dlocal and global local-
+ization samples Dglobal. The total objective for Stage 1 is
+formulated as:
+LStage1 = Llocal
+LM + Lglobal
+LM
+(2)
+where Llocal
+LM
+and Lglobal
+LM
+represent the standard language
+modeling loss computed on the local and global datasets,
+respectively. Crucially, the format of the target Y adapts to
+the sub-task:
+For Global Localization (Dglobal): Y contains both the
+judgment and coordinates (e.g., “Tampered. [x1, y1, x2, y2]”).
+For Local Classification (Dlocal): Y contains only the
+binary label (e.g., “Tampered” or “Real”).
+By minimizing this unified LStage1, the Vision Encoder
+and Projector are updated to capture the fine-grained spatial
+features required for precise spatial focus.
+C. Stage 2: Forensic Artifact Perception
+With precise spatial focus established, the model has ef-
+fectively learned to isolate the “suspected” regions from the
+overwhelming background noise, zooming in from the full
+image to character-level precision. However, mere localization
+is insufficient; the remaining challenge is the Perceptual Gran-
+ularity Mismatch—confirming whether these localized regions
+contain genuine tampering traces. In this stage, we freeze
+the Vision Encoder to preserve the spatial features learned in
+Stage 1, and instead fine-tune the LLM and the projector. This
+strategy facilitates the semantic alignment of forensic features
+within the language model’s latent space.
+1) Pre-trained Forensic Expert: The choice of the expert
+model is pivotal for effective knowledge distillation. Inspired
+by recent advances in document forensics [4], we employ
+DINOv2 [46] as our external forensic expert, as it is adept
+at capturing subtle low-level tampering traces, complementing
+the perceptual capability that general MLLMs lack. To adapt
+this general-purpose backbone to the specific nuances of docu-
+ment forgery, we first fine-tune DINOv2 on our forensic train-
+ing dataset. Once trained, we freeze its parameters throughout
+the subsequent internalization stage. Given an input image I,
+this pre-trained expert E extracts visual feature representations,
+denoted as Fexp ∈RM×Dexp, where M represents the number
+of patches and Dexp is the feature dimension. These features
+encode rich, generalized forensic representations, serving as a
+stable and high-quality supervision signal for the MLLM.
+2) Forensic-General Representation Alignment (FGRA):
+General MLLMs rely solely on the text generation loss LLM
+to update visual representations. However, this textual supervi-
+sion is indirect and sparse, failing to provide the explicit, dense
+feedback required to capture subtle tampering traces. This
+deficiency is a primary cause of the model’s poor performance
+in fine-grained forensics. What the MLLM needs, therefore,
+is expert guidance that directly steers its own representation
+learning. To provide such guidance, we introduce the FGRA
+loss, which provides direct supervision by distilling forensic
+knowledge into the LLM’s representations. Our rationale for
+targeting shallow layers lies in the hierarchical information
+processing of deep networks: while deep layers in LLMs
+evolve into highly abstract, semantically dominant representa-
+tions, shallow layers act as the initial processing stage, retain-
+ing more structural and textural details (e.g., local patterns,
+high-frequency cues). These details, while less semantically
+meaningful, are strongly correlated with forensic artifacts.
+
+
+7
+Therefore, the core idea is to align the shallow tokens of the
+LLM with the robust feature embeddings from the pre-trained
+DINOv2 expert, explicitly forcing these early layers to capture
+manipulation traces before they are diluted by subsequent
+semantic abstraction. Specifically, to align with the expert
+features Fexp, we extract the hidden states H(l) ∈RN×Dllm
+from the l-th layer of the LLM, which correspond to the
+visual input tokens. Since the LLM and the expert operate
+in different semantic and dimensional spaces (Dllm̸ = Dexp),
+we introduce a learnable projection head ϕ(·) to map H(l) into
+the expert’s feature space. For the spatial correspondence, the
+inputs of the two branches are unified in the preprocessing
+pipeline such that the MLLM’s visual-token grid and the
+expert’s patch grid share the same spatial sequence length (i.e.,
+N = M = K). The alignment is thus a deterministic one-to-
+one, patch-wise pairing, where the i-th projected visual token
+is matched with the i-th expert patch feature. The FGRA loss
+is formulated as the negative cosine similarity between the
+projected LLM tokens and the expert features:
+LF GRA = −1
+K
+K
+X
+i=1
+cos(ϕ(h(l)
+i ), fexp,i)
+(3)
+where h(l)
+i
+and fexp,i denote the i-th token-feature pair, and K
+is the shared spatial sequence length defined above. By min-
+imizing LF GRA, we force the aligned LLM layer to encode
+artifacts discernible by DINOv2, effectively “internalizing” the
+expert’s eye for forgery.
+3) Training Objectives (Stage 2): The final training objec-
+tive in the second stage combines the text generation loss
+with our proposed alignment loss. The total loss LStage2 is
+formulated as:
+LStage2 = LLM + LF GRA
+(4)
+where LLM ensures the preservation of instruction-following,
+while LF GRA injects the forensic discriminative power into
+the LLM’s latent space.
+V. EXPERIMENTS
+A. Experimental Setup
+1) Datasets: To comprehensively evaluate the generaliza-
+tion capability of our method, we conduct experiments under
+both in-domain and cross-domain settings. As summarized
+in Table I, we employ two distinct datasets for training:
+DocTamper-TrainingSet [1] and FSTS-T [18]. This dual-
+source training strategy allows us to verify the adaptability
+of our method to different data distributions. We utilize a
+diverse array of seven datasets for evaluation. Specifically,
+DocTamper-TestingSet serves as the in-domain test set for
+models trained on DocTamper-TrainingSet, while FSTS-S
+serves as the in-domain test set for FSTS-T. The remain-
+ing five datasets—DocTamper-FCD, DocTamper-SCD, FSTS-
+1.5K, SACP [19], and RIFLC [20]—are used as cross-domain
+benchmarks to rigorously assess out-of-distribution general-
+ization performance.
+TABLE I
+SUMMARY OF DATASETS USED IN OUR EXPERIMENTS. COM, SPL, REM,
+INS, AND REP DENOTE COPY-MOVE, SPLICING, REMOVAL, INSERTION,
+AND REPLACEMENT, RESPECTIVELY.
+Dataset
+Sample Count
+Tampering Type
+Training Sets
+DocTamper-TrainingSet [1]
+120,000
+Com, Spl, Rep
+FSTS-T [18]
+50,000
+Com, Spl, Rem, Ins, Rep
+Testing Sets
+DocTamper-TestingSet [1]
+30,000
+Com, Spl, Rep
+DocTamper-FCD [1]
+2,000
+Com, Spl, Rep
+DocTamper-SCD [1]
+18,000
+Com, Spl, Rep
+FSTS-S [18]
+5,705
+Com, Spl, Rem, Ins, Rep
+FSTS-1.5K [18]
+1,488
+Com, Spl, Rem, Ins, Rep
+SACP [19]
+2,005
+Com, Spl, Rem, Rep
+RIFLC [20]
+4,000
+Com, Spl, Rem
+2) Setting of the Expert Model: We construct the forensic
+expert following DITL2 [4], using DINOv2-ViT-L [46] as the
+backbone and Mask2Former as the segmentation head for
+pixel-level tampering localization. The expert is supervised
+with a combination of Binary Cross-Entropy (BCE) and Dice
+losses, and is trained on the same forensic training set as
+the corresponding MLLM, i.e., DocTamper-TrainingSet or
+FSTS-T, without introducing any additional training data.
+Once trained, only the DINOv2 backbone is retained as the
+frozen knowledge source in Stage 2: the Mask2Former head
+is discarded, and no decoder is involved in the internalization
+process, where the FGRA loss aligns the LLM’s shallow
+representations with the backbone’s feature embeddings.
+3) Setting of the EKI: We adopt Qwen2.5-VL-7B [6] as our
+base MLLM. To ensure training efficiency, we employ LoRA
+[47] for fine-tuning, with the rank set to r = 32 and α = 64.
+During inference, the model directly takes the document image
+and the plain detection instruction (i.e., “Detect and localize
+the tampered text in this image”) as input, and generates the
+authenticity judgment together with the bounding boxes of
+tampered regions via greedy decoding. Notably, neither OCR
+pre-processing nor the external expert model is involved at
+inference time.
+4) Optimization Details: Both the expert model and the
+MLLM are trained for 10 epochs using the AdamW [48]
+optimizer (β1 = 0.9, β2 = 0.999) with a learning rate of
+1e−4 and a batch size of 8. For the comparison methods, to
+ensure a fair evaluation, we re-train all models leveraging the
+unified frameworks of ForensicHub [49] and IMDL-BenCo
+[50] under the same optimization settings, except for a batch
+size of 32. Note that all input images are resized to 512×512
+pixels for all methods during both training and testing.
+5) Evaluation Metrics: Following established evaluation
+protocols [1], [4], we adopt the Intersection over Union (IoU)
+and the F1-score as our quantitative metrics. In line with
+our task reformulation (Sec. III-A), our model outputs the
+bounding boxes of tampered regions, and both metrics are
+computed at the pixel level within each image, measuring
+the spatial overlap between the regions covered by the pre-
+dicted and ground-truth boxes. The per-image scores are then
+averaged over all images in the test set to obtain the final
+reported results. Both metrics range from 0 to 1, where higher
+
+
+8
+values indicate more accurate localization of the tampered
+regions. For a fair comparison, the compared methods that
+output segmentation masks are evaluated in the same manner:
+each connected component of the predicted mask is converted
+into its minimum enclosing rectangle, and the resulting boxes
+are compared against the ground-truth boxes. All compared
+methods are evaluated under the same protocol.
+B. Comparisons with SOTA Methods
+1) Competitors: We evaluate our method against a compre-
+hensive set of state-of-the-art competitors, including general
+image manipulation localization methods [22], [24], [27], [28],
+expert TTD models [1]–[4], [36], [51]–[53], and the recent
+MLLM-based approach TVSIP [10]. All comparison models
+were re-trained on DocTamper-TrainingSet and FSTS-T under
+identical settings.
+2) Quantitative Analysis: As shown in Tables II and III,
+our method consistently achieves the best average performance
+across all test sets, surpassing competitors by significant
+margins in both IoU and F1 metrics. On the in-domain
+benchmarks, our method achieves strong localization perfor-
+mance, attaining the best IoU on both Doc-Test and FSTS-S
+while remaining highly competitive in F1. More importantly,
+our approach exhibits superior robustness on cross-domain
+datasets (SACP, RIFLC), whereas traditional methods suffer
+severe degradation. Although the absolute performance on
+SACP and RIFLC remains relatively low due to the substantial
+domain gap between the script-generated forgeries in the
+training data and the manually crafted forgeries in these two
+benchmarks, our method consistently ranks at or near the
+top across these settings, demonstrating stronger robustness
+to substantially different forgery distributions. This indicates
+that our model successfully internalizes intrinsic forgery traces
+rather than overfitting to specific artifacts. In contrast, gen-
+eral image methods perform poorly due to the lack of text
+priors. Regarding MLLM-based approaches, the competitor
+TVSIP primarily focuses on leveraging models to provide
+interpretability for forensic results. Consequently, both TVSIP
+and the vanilla Qwen2.5-VL baseline struggle with the Double
+Mismatch, confirming the necessity of our training strategy.
+3) Qualitative Analysis: To further demonstrate the su-
+periority of our proposed method, we present a qualitative
+comparison of models trained on DocTamper-TrainingSet, as
+illustrated in Fig. 5. As can be clearly observed, general
+image manipulation localization methods often exhibit large
+blind spots due to the lack of document-specific priors. Expert
+TTD models, when confronted with complex backgrounds,
+frequently output blurry and fragmented prediction masks or
+trigger severe regional false positives. Meanwhile, the standard
+MLLM baseline frequently suffers from semantic halluci-
+nations, resulting in misaligned or coarse bounding boxes.
+In stark contrast, our proposed EKI algorithm consistently
+generates extremely compact and precise bounding boxes,
+fully demonstrating its superior spatial grounding and artifact
+perception capabilities.
+4) Inference Efficiency Analysis: In Table IV, we report the
+inference time per image for our method and various state-of-
+the-art competitors. As expected, expert models (e.g., CAFTB,
+DTD, FFDN) exhibit lower latency due to their significantly
+smaller parameter counts (typically in the range of millions).
+In contrast, MLLM-based approaches inherently require more
+processing time due to their massive architectures. However,
+compared to the recent MLLM competitor TVSIP, our method
+is notably more efficient. While the inference time is naturally
+higher than that of compact experts, it remains within a prac-
+tical range for high-precision document forensic applications
+where accuracy and visual reasoning are prioritized over real-
+time processing. Crucially, our EKI paradigm directly inter-
+nalizes the expert model’s capabilities into the MLLM’s own
+parameters. Because the external expert model is completely
+discarded after the training stage, our method operates with
+an inference speed nearly identical to that of the vanilla
+Qwen2.5-VL baseline, introducing absolutely no additional
+computational overhead during inference. The increased la-
+tency compared to expert models is a necessary and acceptable
+trade-off for the significantly superior detection precision and
+cross-domain generalization capabilities demonstrated in our
+experiments.
+C. Ablation Studies
+We conduct ablation studies on DocTamper-TrainingSet to
+investigate the contribution of each component.
+1) Component Analysis: As reported in Table V, the vanilla
+baseline yields suboptimal results, confirming the inherent lim-
+itations of general MLLMs in fine-grained forensics. Strategies
+designed for Spatial Precision Enhancement—Text-Focused
+and Image-Focused—individually lead to noticeable improve-
+ments, with their combination further enhancing localization
+quality. However, the most critical driver is the FGRA loss.
+Even without Stage 1 strategies, adding FGRA results in
+a dramatic performance leap, confirming that Forensic Arti-
+fact Perception is paramount for distinguishing genuine from
+forged content. In this FGRA-only setting, the model is trained
+in a single stage: the vision encoder is kept frozen at its pre-
+trained weights, and the LLM and projector are fine-tuned
+with LLM + LF GRA, which is equivalent to applying Stage 2
+directly without the Stage 1 spatial-focus training. Notably, the
+FGRA-only variant already surpasses the combination of both
+Stage 1 strategies, indicating that the Perceptual Granularity
+Mismatch is the dominant bottleneck, while precise spatial
+focus acts as an amplifier of the internalized perception.
+The full model achieves the best results, demonstrating the
+mutually reinforcing effect: precise spatial focus lays the spa-
+tial foundation, while internalized forensic knowledge enables
+accurate discrimination.
+2) Analysis of the Alignment Layer Depth: To validate
+the design of the FGRA loss, we explore the impact of
+alignment layer l selection. As illustrated in Fig. 6, we
+observe a clear declining trend in detection performance as
+the alignment layer moves deeper. Specifically, aligning with
+the first layer yields the optimal performance, while deeper
+layers lead to significant degradation. This phenomenon can
+be attributed to the hierarchical nature of LLMs: shallow
+layers act as the initial visual-linguistic interface, retaining
+more structural and textural details essential for forensics; in
+
+
+9
+TABLE II
+EXPERIMENTAL RESULTS WHEN TRAINED ON DOCTAMPER-TRAININGSET. DOC-TEST, FCD, AND SCD DENOTE DOCTAMPER-TESTINGSET,
+DOCTAMPER-FCD, AND DOCTAMPER-SCD, RESPECTIVELY. BOLD INDICATES THE BEST RESULT, AND UNDERLINE INDICATES THE SECOND BEST.
+Method
+Doc-Test
+FCD
+SCD
+FSTS-S
+FSTS-1.5K
+SACP
+RIFLC
+Average
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IML-ViT [22]
+0.372
+0.430
+0.421
+0.502
+0.383
+0.455
+0.159
+0.232
+0.238
+0.295
+0.057
+0.090
+0.052
+0.079
+0.240
+0.297
+TruFor [24]
+0.173
+0.208
+0.164
+0.239
+0.194
+0.249
+0.030
+0.047
+0.142
+0.190
+0.025
+0.039
+0.025
+0.039
+0.108
+0.144
+SparseViT [27]
+0.636
+0.714
+0.437
+0.500
+0.495
+0.601
+0.082
+0.114
+0.378
+0.459
+0.028
+0.044
+0.033
+0.047
+0.298
+0.354
+Mesorch [28]
+0.463
+0.526
+0.462
+0.523
+0.356
+0.433
+0.167
+0.221
+0.178
+0.223
+0.032
+0.046
+0.018
+0.030
+0.239
+0.286
+TIFDM [36]
+0.496
+0.556
+0.368
+0.427
+0.387
+0.467
+0.113
+0.167
+0.074
+0.104
+0.018
+0.032
+0.025
+0.039
+0.212
+0.256
+CAFTB [51]
+0.685
+0.746
+0.542
+0.599
+0.544
+0.643
+0.286
+0.364
+0.241
+0.294
+0.056
+0.085
+0.077
+0.110
+0.347
+0.406
+ASCFormer [52]
+0.810
+0.744
+0.670
+0.750
+0.608
+0.670
+0.280
+0.311
+0.172
+0.266
+0.111
+0.112
+0.057
+0.099
+0.387
+0.422
+DTD [1]
+0.826
+0.875
+0.784
+0.833
+0.749
+0.822
+0.066
+0.097
+0.346
+0.405
+0.021
+0.034
+0.035
+0.054
+0.404
+0.446
+FFDN [2]
+0.877
+0.917
+0.833
+0.880
+0.789
+0.858
+0.141
+0.193
+0.393
+0.465
+0.028
+0.045
+0.040
+0.062
+0.443
+0.488
+DAF [53]
+0.657
+0.720
+0.492
+0.543
+0.235
+0.296
+0.128
+0.185
+0.193
+0.246
+0.042
+0.057
+0.034
+0.054
+0.254
+0.300
+ADCD-Net [3]
+0.835
+0.814
+0.739
+0.821
+0.641
+0.733
+0.282
+0.353
+0.268
+0.426
+0.125
+0.135
+0.089
+0.111
+0.426
+0.485
+DITL2 [4]
+0.839
+0.883
+0.817
+0.876
+0.680
+0.774
+0.368
+0.474
+0.361
+0.452
+0.034
+0.060
+0.049
+0.079
+0.450
+0.514
+Qwen2.5-VL [6]
+0.696
+0.702
+0.313
+0.616
+0.411
+0.606
+0.146
+0.313
+0.106
+0.216
+0.018
+0.021
+0.019
+0.030
+0.244
+0.358
+TVSIP [10]
+0.726
+0.768
+0.258
+0.583
+0.542
+0.669
+0.089
+0.164
+0.069
+0.193
+0.056
+0.106
+0.053
+0.101
+0.256
+0.369
+Ours
+0.890
+0.900
+0.875
+0.921
+0.822
+0.893
+0.317
+0.392
+0.400
+0.584
+0.131
+0.151
+0.101
+0.123
+0.505
+0.566
+TABLE III
+EXPERIMENTAL RESULTS WHEN TRAINED ON FSTS-T. DOC-TEST, FCD, AND SCD DENOTE DOCTAMPER-TESTINGSET, DOCTAMPER-FCD, AND
+DOCTAMPER-SCD, RESPECTIVELY. BOLD INDICATES THE BEST RESULT, AND UNDERLINE INDICATES THE SECOND BEST.
+Method
+FSTS-S
+FSTS-1.5K
+Doc-Test
+FCD
+SCD
+SACP
+RIFLC
+Average
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IML-ViT [22]
+0.358
+0.464
+0.069
+0.107
+0.071
+0.106
+0.114
+0.169
+0.111
+0.160
+0.056
+0.096
+0.060
+0.098
+0.120
+0.171
+TruFor [24]
+0.341
+0.431
+0.199
+0.270
+0.109
+0.142
+0.088
+0.129
+0.086
+0.118
+0.100
+0.157
+0.086
+0.131
+0.144
+0.197
+SparseViT [27]
+0.211
+0.285
+0.454
+0.526
+0.139
+0.173
+0.042
+0.057
+0.118
+0.160
+0.048
+0.077
+0.060
+0.090
+0.153
+0.195
+Mesorch [28]
+0.572
+0.675
+0.443
+0.529
+0.211
+0.248
+0.202
+0.263
+0.185
+0.230
+0.084
+0.131
+0.102
+0.146
+0.257
+0.317
+TIFDM [36]
+0.486
+0.592
+0.140
+0.196
+0.105
+0.142
+0.057
+0.090
+0.094
+0.133
+0.048
+0.080
+0.057
+0.090
+0.141
+0.189
+CAFTB [51]
+0.687
+0.781
+0.391
+0.459
+0.266
+0.311
+0.350
+0.423
+0.275
+0.337
+0.091
+0.137
+0.109
+0.153
+0.310
+0.371
+ASCFormer [52]
+0.690
+0.761
+0.513
+0.547
+0.451
+0.375
+0.492
+0.594
+0.309
+0.400
+0.108
+0.133
+0.062
+0.080
+0.375
+0.413
+DTD [1]
+0.227
+0.284
+0.566
+0.634
+0.519
+0.589
+0.571
+0.642
+0.471
+0.567
+0.055
+0.086
+0.067
+0.097
+0.354
+0.414
+FFDN [2]
+0.142
+0.186
+0.537
+0.609
+0.478
+0.550
+0.532
+0.612
+0.417
+0.512
+0.069
+0.108
+0.072
+0.107
+0.321
+0.383
+DAF [53]
+0.440
+0.531
+0.515
+0.567
+0.471
+0.517
+0.542
+0.627
+0.128
+0.227
+0.124
+0.139
+0.101
+0.136
+0.331
+0.392
+ADCD-Net [3]
+0.742
+0.812
+0.426
+0.528
+0.373
+0.342
+0.598
+0.671
+0.328
+0.446
+0.083
+0.091
+0.103
+0.127
+0.379
+0.431
+DITL2 [4]
+0.662
+0.745
+0.653
+0.790
+0.469
+0.461
+0.483
+0.592
+0.361
+0.457
+0.122
+0.128
+0.105
+0.115
+0.408
+0.470
+Qwen2.5-VL [6]
+0.658
+0.760
+0.199
+0.368
+0.215
+0.292
+0.283
+0.441
+0.141
+0.353
+0.029
+0.060
+0.038
+0.063
+0.223
+0.334
+TVSIP [10]
+0.687
+0.753
+0.202
+0.402
+0.318
+0.389
+0.224
+0.320
+0.117
+0.301
+0.072
+0.124
+0.069
+0.114
+0.241
+0.343
+Ours
+0.753
+0.838
+0.648
+0.741
+0.529
+0.541
+0.612
+0.776
+0.435
+0.633
+0.128
+0.147
+0.108
+0.150
+0.459
+0.547
+contrast, deep layers evolve into highly abstract, semantic-
+dominant representations where subtle tampering traces are
+diluted. To qualitatively verify this, we visualize the layer-
+wise visual-token representations following the PCA-based
+feature visualization protocol of DINOv2 [46], which has
+also been adopted in recent MLLM representation alignment
+studies [45]. Specifically, for each LLM layer, we project the
+hidden states of the visual tokens onto their top three principal
+components, which are min-max normalized and rendered as
+RGB channels over the visual-token grid. Unlike DINOv2,
+PCA is applied to all visual tokens without foreground separa-
+tion, since tampering evidence in document images may reside
+in any region rather than a salient foreground. Tokens with
+similar representations thus share similar colors, and a color
+boundary indicates that the layer separates the corresponding
+regions in its feature space. This finding is further corroborated
+by the visualizations in Fig. 7. Fig. 7(a) shows that forensic
+signals are distinct in shallow feature maps but fade in deeper
+layers, justifying our choice of l = 1. Furthermore, Fig.
+7(b) demonstrates the efficacy of this alignment: while the
+original Qwen2.5-VL and standard Supervised Fine-Tuning
+(SFT) models show noisy or blind activation patterns, our
+method exhibits distinctive feature responses precisely on the
+manipulated regions, confirming the successful internalization
+of the expert’s discriminative capability.
+3) Analysis of Different Fusion Strategies: To investigate
+how forensic expertise can be most effectively incorporated
+into MLLMs, we compare four representative paradigms:
+(i) Baseline, a standard fine-tuned MLLM without forensic
+priors; (ii) Expert Model, a DINOv2-ViT-L forensic detector
+trained following DITL2 [4]; (iii) ER (External Reliance),
+which retains the expert during inference and combines its
+prediction with the MLLM through late fusion; and (iv) our
+EKI (Expert Knowledge Internalization), which transfers the
+
+
+10
+Fig. 5. Qualitative comparison of different methods trained on DocTamper-TrainingSet. Compared to the blind spots of general image methods, the fragmented
+masks/false positives of expert TTD models, and the coarse bounding boxes of the standard MLLM baseline, our EKI method generates highly precise and
+compact localization results.
+TABLE IV
+COMPARISON OF INFERENCE TIME PER IMAGE. DURING THE
+EVALUATION, EACH INPUT IMAGE IS RESIZED TO A FIXED RESOLUTION OF
+512 × 512.
+Method
+Publication / Year
+Inference Time (ms)
+IML-ViT [22]
+arXiv 2023
+247.3
+TruFor [24]
+CVPR 2023
+314.9
+SparseViT [27]
+AAAI 2025
+122.7
+Mesorch [28]
+AAAI 2025
+55.7
+TIFDM [36]
+IEEE TCE 2024
+282.1
+CAFTB [51]
+ACM TOMM 2025
+36.1
+ASCFormer [52]
+PR 2025
+146.0
+DTD [1]
+CVPR 2023
+52.4
+FFDN [2]
+ECCV 2024
+77.6
+DAF [53]
+AAAI 2025
+248.5
+ADCD-Net [3]
+ICCV 2025
+135.2
+DITL2 [4]
+ACM MM 2025
+350.4
+Qwen2.5-VL [6]
+arXiv 2025
+823.8
+TVSIP [10]
+ACM MM 2025
+1063.6
+Ours
+-
+828.6
+expert’s forensic perception into the MLLM and removes the
+expert at inference. For a fair comparison, the same fine-tuned
+DINOv2-ViT-L expert is used in paradigms (ii)–(iv). As shown
+in Table VI, the Baseline performs the worst, highlighting
+the limited sensitivity of a generic MLLM to subtle foren-
+sic artifacts. The standalone Expert Model provides a clear
+Fig. 6. Ablation study on the selection of LLM layers in FGRA. Aligning
+with the shallowest layer (l = 1) yields optimal performance, whereas deeper
+layers show a clear declining trend.
+improvement, confirming the benefit of specialized forensic
+representations. However, ER still fails to outperform the
+expert itself, suggesting that simply exposing the MLLM to
+external expert predictions does not effectively integrate the
+complementary strengths of the two models. In contrast, EKI
+achieves the best overall performance, reaching an average
+IoU/F1 of 0.505/0.566, while requiring no external expert
+at inference. These results indicate that transferring forensic
+knowledge into the MLLM’s own representations is more
+
+
+11
+TABLE V
+ABLATION STUDY OF DIFFERENT COMPONENTS ON DOCTAMPER-TRAININGSET. “TF”, “IF”, AND “FGRA” REPRESENT THE TEXT-FOCUSED,
+IMAGE-FOCUSED, AND FORENSIC-GENERAL REPRESENTATION ALIGNMENT, RESPECTIVELY. DOC-TEST, FCD, AND SCD DENOTE
+DOCTAMPER-TESTINGSET, DOCTAMPER-FCD, AND DOCTAMPER-SCD. BOLD INDICATES THE BEST RESULT, AND UNDERLINE INDICATES THE
+SECOND BEST.
+Method
+Doc-Test
+FCD
+SCD
+FSTS-S
+FSTS-1.5K
+SACP
+RIFLC
+Average
+TF
+IF
+FGRA
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+×
+×
+×
+0.696
+0.702
+0.313
+0.616
+0.411
+0.606
+0.146
+0.313
+0.106
+0.216
+0.018
+0.021
+0.019
+0.030
+0.244
+0.358
+✓
+×
+×
+0.776
+0.783
+0.367
+0.648
+0.485
+0.659
+0.150
+0.303
+0.148
+0.266
+0.021
+0.029
+0.022
+0.039
+0.281
+0.389
+×
+✓
+×
+0.837
+0.822
+0.471
+0.673
+0.616
+0.772
+0.161
+0.316
+0.150
+0.275
+0.041
+0.075
+0.034
+0.062
+0.330
+0.428
+✓
+✓
+×
+0.870
+0.860
+0.517
+0.710
+0.635
+0.781
+0.180
+0.326
+0.195
+0.325
+0.058
+0.086
+0.043
+0.071
+0.357
+0.451
+×
+×
+✓
+0.827
+0.829
+0.861
+0.914
+0.722
+0.843
+0.242
+0.329
+0.351
+0.534
+0.093
+0.144
+0.090
+0.118
+0.455
+0.530
+✓
+✓
+✓
+0.890
+0.900
+0.875
+0.921
+0.822
+0.893
+0.317
+0.392
+0.400
+0.584
+0.131
+0.151
+0.101
+0.123
+0.505
+0.566
+Fig. 7. Visualization results. (a) Visualizations of outputs from different layers
+of the LLM; (b) Visualizations of the first layer outputs from the original
+Qwen2.5-VL-7B, after supervised fine-tuning, and our proposed method.
+TABLE VI
+COMPARISON OF DIFFERENT PARADIGMS FOR INTEGRATING FORENSIC
+EXPERTISE INTO THE MLLM. ALL METRICS ARE AVERAGED OVER THE
+TEST SETS. “ER” AND “EKI” DENOTE EXTERNAL RELIANCE AND OUR
+EXPERT KNOWLEDGE INTERNALIZATION, RESPECTIVELY. BOLD
+INDICATES THE BEST RESULT, AND UNDERLINE THE SECOND BEST.
+Paradigm
+IoU
+F1
+Baseline (fine-tuned MLLM)
+0.244
+0.358
+Expert Model
+0.450
+0.514
+ER (External Reliance)
+0.428
+0.501
+EKI (Ours)
+0.505
+0.566
+effective than relying on an externally coupled expert, and
+further supports the motivation of our internalization paradigm.
+4) Analysis of the Base MLLM: To verify the versatility
+of our proposed method, we conduct an ablation study across
+different base MLLM architectures. We compare the perfor-
+mance of standard fine-tuning versus our EKI framework using
+three different models: LLaVA-1.5-7B [54], Qwen2.5-VL 7B
+[6], and the more recent Qwen3-VL 8B [55]. All models are
+trained on DocTamper-TrainingSet. As shown in Table VII,
+the Double Mismatch is a universal bottleneck for general
+MLLMs. Regardless of the base model’s inherent capacity,
+standard fine-tuning invariably yields suboptimal forensic lo-
+calization, particularly exhibiting poor generalization in cross-
+domain scenarios. While advancing the base architecture from
+LLaVA-1.5 to Qwen3-VL naturally yields a slight baseline
+improvement due to enhanced general vision-language capa-
+bilities, the inherent blindness to fine-grained forensic artifacts
+remains largely unresolved. Crucially, the application of our
+EKI framework brings substantial and consistent performance
+leaps across all tested architectures. Furthermore, adopting
+a stronger base model under our paradigm establishes a
+new state-of-the-art performance ceiling, confirming that our
+internalization process can synergize with the model’s intrin-
+sic reasoning power. These consistent improvements clearly
+demonstrate that our strategy is model-agnostic. By systemat-
+ically internalizing external expert knowledge, EKI effectively
+bridges the granularity mismatch, serving as a plug-and-play
+forensic capability booster for broad MLLM families.
+VI. LIMITATIONS
+Since existing MLLM-based TTD methods still fall short
+in detection performance, our work first focuses on improving
+the model’s ability to detect and localize tampered text. Con-
+sequently, it does not advance the human-readable explanation
+of tampering evidence emphasized by prior MLLM-based
+methods [9], [10]. We believe this capability is promising
+for improving the reliability and trustworthiness of forensic
+systems, and leave its integration into our framework for future
+work. Moreover, our bounding-box formulation is sufficient
+for the primary objective considered in this work, i.e., iden-
+tifying which text region has been manipulated, while being
+naturally compatible with the autoregressive output paradigm
+of MLLMs. Nevertheless, bounding boxes do not delineate
+the exact shape of irregular tampered regions, and our current
+formulation is therefore not intended for applications that
+explicitly require pixel-accurate boundary localization.
+VII. CONCLUSION
+In this paper, we investigate how to equip MLLMs with
+expert forensic perception for tampered text detection. Our
+experiments show that simply coupling an MLLM with an
+external forensic expert does not fully exploit their comple-
+mentary strengths and can even underperform the standalone
+expert. We further identify the Double Mismatch that limits
+direct adaptation of MLLMs to fine-grained forensics: the Spa-
+tial Precision Mismatch between coarse visual tokens and tiny
+tampered regions, and the Perceptual Granularity Mismatch
+
+
+12
+TABLE VII
+ABLATION STUDY ON THE CHOICE OF DIFFERENT BASE MLLMS. ALL MODELS ARE TRAINED ON DOCTAMPER-TRAININGSET. “BASELINE” REFERS TO
+STANDARD FINE-TUNING, AND “OURS” INDICATES THE APPLICATION OF THE PROPOSED EKI FRAMEWORK. BOLD INDICATES THE BEST RESULT, AND
+UNDERLINE INDICATES THE SECOND BEST.
+Base MLLM
+Method
+Doc-Test
+FCD
+SCD
+FSTS-S
+FSTS-1.5K
+SACP
+RIFLC
+Average
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+LLaVA-1.5-7B
+Baseline
+0.648
+0.674
+0.264
+0.517
+0.360
+0.513
+0.074
+0.198
+0.207
+0.347
+0.011
+0.020
+0.011
+0.031
+0.225
+0.328
+Ours
+0.817
+0.861
+0.788
+0.878
+0.814
+0.891
+0.319
+0.399
+0.363
+0.540
+0.122
+0.140
+0.115
+0.128
+0.477
+0.548
+Qwen2.5-VL 7B
+Baseline
+0.696
+0.702
+0.313
+0.616
+0.411
+0.606
+0.146
+0.313
+0.106
+0.216
+0.018
+0.021
+0.019
+0.030
+0.244
+0.358
+Ours
+0.890
+0.900
+0.875
+0.921
+0.822
+0.893
+0.317
+0.392
+0.400
+0.584
+0.131
+0.151
+0.101
+0.123
+0.505
+0.566
+Qwen3-VL 8B
+Baseline
+0.724
+0.730
+0.323
+0.627
+0.425
+0.617
+0.150
+0.316
+0.118
+0.226
+0.019
+0.039
+0.019
+0.032
+0.254
+0.370
+Ours
+0.870
+0.888
+0.871
+0.909
+0.806
+0.865
+0.369
+0.479
+0.463
+0.600
+0.152
+0.160
+0.135
+0.138
+0.524
+0.577
+between semantics-oriented representations and subtle forensic
+artifacts. To address these challenges, we propose Expert
+Knowledge Internalization (EKI), which uses the forensic
+expert as a teacher to guide the MLLM’s own representation
+learning. EKI follows a progressive two-stage design: Stage
+1 improves spatial focus through Text-Focused and Image-
+Focused training, while Stage 2 transfers fine-grained forensic
+perception through the proposed FGRA loss. The expert is
+used only during training and is removed at inference, so
+no external expert is required during deployment. Extensive
+experiments show that EKI achieves state-of-the-art perfor-
+mance across diverse document benchmarks and consistently
+improves different base MLLMs. Compared with external
+reliance, EKI provides stronger cross-domain generalization
+by integrating forensic perception into the MLLM itself. These
+results suggest that expert-guided representation learning is
+a promising way to equip general-purpose MLLMs with
+specialized perceptual capabilities for forensic tasks.
+REFERENCES
+[1] C. Qu, C. Liu, Y. Liu, X. Chen, D. Peng, F. Guo, and L. Jin, “Towards
+robust tampered text detection in document image: New dataset and new
+solution,” in Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, 2023, pp. 5937–5946.
+[2] Z. Chen, S. Chen, T. Yao, K. Sun, S. Ding, X. Lin, L. Cao, and R. Ji,
+“Enhancing tampered text detection through frequency feature fusion
+and decomposition,” in European Conference on Computer Vision.
+Springer, 2024, pp. 200–217.
+[3] K. Wong, J. Zhou, H. Wu, Y.-W. Si, and J. Zhou, “Adcd-net: Robust
+document image forgery localization via adaptive dct feature and hi-
+erarchical content disentanglement,” in Proceedings of the IEEE/CVF
+International Conference on Computer Vision, 2025, pp. 19 280–19 289.
+[4] S. Li, Y. Guo, S. Chen, B. Li, K. Lin, C. Chen, H. Li, T. Yao, and
+S. Ding, “Ditl2: Dual-stage invariance transfer learning for generalizable
+document image tampering localization,” in Proceedings of the 33rd
+ACM International Conference on Multimedia, 2025, pp. 82–91.
+[5] J. Duan, H. Sun, F. Ji, K. Zhou, Z. Wang, H. Huang, and L. Jin,
+“Realdtt: Towards a comprehensive real-world dataset for tampered text
+detection,” International Journal of Computer Vision, vol. 133, no. 10,
+pp. 6993–7011, 2025.
+[6] S. Bai, K. Chen, X. Liu, J. Wang, W. Ge, S. Song, K. Dang, P. Wang,
+S. Wang, J. Tang et al., “Qwen2.5-vl technical report,” arXiv preprint
+arXiv:2502.13923, 2025.
+[7] J. Ye, A. Hu, H. Xu, Q. Ye, M. Yan, G. Xu, C. Li, J. Tian,
+Q. Qian, J. Zhang, Q. Jin, L. He, X. Lin, and F. Huang, “UReader:
+Universal OCR-free visually-situated language understanding with
+multimodal large language model,” in Findings of the Association
+for Computational Linguistics: EMNLP 2023, H. Bouamor, J. Pino,
+and
+K.
+Bali,
+Eds.
+Singapore:
+Association
+for
+Computational
+Linguistics, Dec. 2023, pp. 2841–2858. [Online]. Available: https:
+//aclanthology.org/2023.findings-emnlp.187/
+[8] M. Fujitake, “LayoutLLM: Large language model instruction tuning
+for visually rich document understanding,” in Proceedings of the 2024
+Joint International Conference on Computational Linguistics, Language
+Resources and Evaluation (LREC-COLING 2024), N. Calzolari, M.-Y.
+Kan, V. Hoste, A. Lenci, S. Sakti, and N. Xue, Eds.
+Torino, Italia:
+ELRA and ICCL, May 2024, pp. 10 219–10 224. [Online]. Available:
+https://aclanthology.org/2024.lrec-main.892/
+[9] C. Qu, J. Liu, H. Chen, B. Yu, J. Liu, W. Wang, and L. Jin,
+“Textsleuth: Towards explainable tampered text detection,” arXiv
+preprint arXiv:2412.14816, 2024.
+[10] G. Xu, Z. Yi, P. Zhang, J. Cao, S. Wu, and L. Jin, “From pixels to
+semantics: A novel mllm-driven approach for explainable tampered text
+detection,” in Proceedings of the 33rd ACM International Conference
+on Multimedia, 2025, pp. 757–766.
+[11] Y. Zhang, B. Colman, X. Guo, A. Shahriyari, and G. Bharaj, “Common
+sense reasoning for deepfake detection,” in European conference on
+computer vision.
+Springer, 2024, pp. 399–415.
+[12] A. Chaubey, X. Guan, and M. Soleymani, “Face-llava: Facial expression
+and attribute understanding through instruction tuning,” arXiv preprint
+arXiv:2504.07198, 2025.
+[13] Z. Zhou, Y. Luo, Y. Wu, K. Sun, J. Ji, K. Yan, S. Ding, X. Sun,
+Y. Wu, and R. Ji, “Aigi-holmes: Towards explainable and generalizable
+ai-generated image detection via multimodal large language models,”
+arXiv preprint arXiv:2507.02664, 2025.
+[14] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal,
+G. Sastry, A. Askell, P. Mishkin, J. Clark et al., “Learning transferable
+visual models from natural language supervision,” in International
+conference on machine learning.
+PmLR, 2021, pp. 8748–8763.
+[15] X. Zhai, B. Mustafa, A. Kolesnikov, and L. Beyer, “Sigmoid loss
+for language image pre-training,” in Proceedings of the IEEE/CVF
+international conference on computer vision, 2023, pp. 11 975–11 986.
+[16] K. Lin, Z. Yan, R. Chen, J. Ye, K.-Y. Zhang, Y. Zhou, P. Jin, B. Li,
+T. Yao, and S. Ding, “Seeing before reasoning: A unified framework
+for generalizable and explainable fake image detection,” 2025. [Online].
+Available: https://arxiv.org/abs/2509.25502
+[17] K. Lin, Z. Yan, R. Chen, K.-Y. Zhang, Y. Zhou, C. Piao, B. Li,
+T. Yao, B. Wang, Y. Xiao, and S. Ding, “Deep residual injection for
+full-spectrum forensic signal perception in multimodal large language
+models,” in Forty-third International Conference on Machine Learning,
+2026. [Online]. Available: https://openreview.net/forum?id=S2ilvpV9du
+[18] Z. Yu, H. Xie, J. Zhang, J. Ni, W. Su, and J. Huang, “Toward real-
+world text image forgery localization: Structured and interpretable data
+synthesis,” arXiv preprint arXiv:2511.12658, 2025.
+[19] Tianchi, “Security ai challenger program,” https://tianchi.aliyun.com/
+competition/entrance/531812/introduction, 2020, accessed on: Jan. 28,
+2026.
+[20] ——, “Real-world image forgery localization challenge,” https://tianchi.
+aliyun.com/competition/entrance/531945/introduction, 2022, accessed
+on: Jan. 28, 2026.
+[21] X. Liu, Y. Liu, J. Chen, and X. Liu, “Pscc-net: Progressive spatio-
+channel correlation network for image manipulation detection and
+localization,” IEEE Transactions on Circuits and Systems for Video
+Technology, vol. 32, no. 11, pp. 7505–7517, 2022.
+[22] X. Ma, B. Du, Z. Jiang, X. Du, A. Y. Al Hammadi, and J. Zhou, “Iml-vit:
+Benchmarking image manipulation localization by vision transformer,”
+2024. [Online]. Available: https://arxiv.org/abs/2307.14863
+
+
+13
+[23] Y. Zeng, B. Zhao, S. Qiu, T. Dai, and S.-T. Xia, “Toward effective
+image manipulation detection with proposal contrastive learning,” IEEE
+Transactions on Circuits and Systems for Video Technology, vol. 33,
+no. 9, pp. 4703–4714, 2023.
+[24] F. Guillaro, D. Cozzolino, A. Sud, N. Dufour, and L. Verdoliva, “Trufor:
+Leveraging all-round clues for trustworthy image forgery detection and
+localization,” in Proceedings of the IEEE/CVF conference on computer
+vision and pattern recognition, 2023, pp. 20 606–20 615.
+[25] Y. Chen, H. Cheng, H. Wang, X. Liu, F. Chen, F. Li, X. Zhang,
+and M. Wang, “Ean: Edge-aware network for image manipulation
+localization,” IEEE Transactions on Circuits and Systems for Video
+Technology, vol. 35, no. 2, pp. 1591–1601, 2025.
+[26] M. Liu, X. Di, and M. Liao, “Image inpainting detection via dual
+guidance of uncertainty and precise boundary information,” IEEE Trans-
+actions on Circuits and Systems for Video Technology, 2025.
+[27] L. Su, X. Ma, X. Zhu, C. Niu, Z. Lei, and J.-Z. Zhou, “Can we
+get rid of handcrafted feature extractors? sparsevit: Nonsemantics-
+centered, parameter-efficient image manipulation localization through
+spare-coding transformer,” in Proceedings of the AAAI Conference on
+Artificial Intelligence, vol. 39, no. 7, 2025, pp. 7024–7032.
+[28] X. Zhu, X. Ma, L. Su, Z. Jiang, B. Du, X. Wang, Z. Lei, W. Feng, C.-M.
+Pun, and J.-Z. Zhou, “Mesoscopic insights: orchestrating multi-scale &
+hybrid architecture for image manipulation localization,” in Proceedings
+of the AAAI Conference on Artificial Intelligence, vol. 39, no. 10, 2025,
+pp. 11 022–11 030.
+[29] Y. Huang, W. Luo, X. Cao, and J. Huang, “A forensic framework with
+diverse data generation for generalizable forgery localization,” IEEE
+Transactions on Information Forensics and Security, vol. 20, pp. 9732–
+9745, 2025.
+[30] P. Zhuang, H. Li, S. Tan, B. Li, and J. Huang, “Image tampering local-
+ization using a dense fully convolutional network,” IEEE Transactions
+on Information Forensics and Security, vol. 16, pp. 2986–2999, 2021.
+[31] P. Zhuang, H. Li, R. Yang, and J. Huang, “Reloc: A restoration-assisted
+framework for robust image tampering localization,” IEEE Transactions
+on Information Forensics and Security, vol. 18, pp. 5243–5257, 2023.
+[32] X. Fu, G. Zhu, H. Zhang, J. Huang, T. Xiang, Y. Zhou, and L. Wu,
+“Shl-net: Semantics-enhanced network for localizing harmonized image
+splicing,” IEEE Transactions on Information Forensics and Security,
+vol. 21, pp. 5960–5973, 2026.
+[33] Y. Baek, B. Lee, D. Han, S. Yun, and H. Lee, “Character region aware-
+ness for text detection,” in 2019 IEEE/CVF Conference on Computer
+Vision and Pattern Recognition (CVPR), 2019, pp. 9357–9366.
+[34] C. Cui, T. Sun, M. Lin, T. Gao, Y. Zhang, J. Liu, X. Wang, Z. Zhang,
+C. Zhou, H. Liu et al., “Paddleocr 3.0 technical report,” arXiv preprint
+arXiv:2507.05595, 2025.
+[35] C. Chen, B. Li, R. Cai, J. Zeng, and J. Huang, “Distortion model-based
+spectral augmentation for generalized recaptured document detection,”
+IEEE Transactions on Information Forensics and Security, vol. 19, pp.
+1283–1298, 2024.
+[36] L. Dong, W. Liang, and R. Wang, “Robust text image tampering
+localization via forgery traces enhancement and multiscale attention,”
+IEEE Transactions on Consumer Electronics, vol. 70, no. 1, pp. 3495–
+3507, 2024.
+[37] P. Zhou, X. Han, V. I. Morariu, and L. S. Davis, “Learning rich
+features for image manipulation detection,” in Proceedings of the IEEE
+conference on computer vision and pattern recognition, 2018, pp. 1053–
+1061.
+[38] J. Fridrich and J. Kodovsky, “Rich models for steganalysis of digital
+images,” IEEE Transactions on Information Forensics and Security,
+vol. 7, no. 3, pp. 868–882, 2012.
+[39] W. Li, B. Li, K. Zheng, S. Li, and H. Li, “Document image forgery de-
+tection and localization in desensitization scenarios,” Signal Processing,
+vol. 238, p. 110123, 2026.
+[40] Y. Li, X. Liu, X. Wang, B. S. Lee, S. Wang, A. Rocha, and W. Lin,
+“Fakebench: Probing explainable fake image detection via large mul-
+timodal models,” IEEE Transactions on Information Forensics and
+Security, vol. 20, pp. 8730–8745, 2025.
+[41] Z. Huang, B. Xia, Z. Lin, Z. Mou, W. Yang, and J. Jia, “Ffaa: Multimodal
+large language model based explainable open-world face forgery analysis
+assistant,” arXiv preprint arXiv:2408.10072, 2024.
+[42] Y. Chen, Z. Yan, G. Cheng, K. Zhao, S. Lyu, and B. Wu, “X2-dfd:
+A framework for explainable and extendable deepfake detection,” arXiv
+preprint arXiv:2410.06126, 2024.
+[43] C. Tan, Y. Zhao, S. Wei, G. Gu, P. Liu, and Y. Wei, “Rethinking the up-
+sampling operations in cnn-based generative network for generalizable
+deepfake detection,” in Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition, 2024, pp. 28 130–28 139.
+[44] F. Li, W. Song, H. Zhao, J. Wang, P. Ding, D. Wang, L. Zeng, and H. Li,
+“Spatial forcing: Implicit spatial representation alignment for vision-
+language-action model,” arXiv preprint arXiv:2510.12276, 2025.
+[45] H. Yoon, J. Jung, J. Kim, H. Choi, H. Shin, S. Lim, H. An, C. Kim,
+J. Han, D. Kim et al., “Visual representation alignment for multimodal
+large language models,” arXiv preprint arXiv:2509.07979, 2025.
+[46] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khalidov,
+P. Fernandez, D. Haziza, F. Massa, A. El-Nouby et al., “Dinov2:
+Learning robust visual features without supervision,” arXiv preprint
+arXiv:2304.07193, 2023.
+[47] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang,
+and W. Chen, “LoRA: Low-rank adaptation of large language models,”
+in International Conference on Learning Representations, 2022.
+[48] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,”
+arXiv preprint arXiv:1711.05101, 2017.
+[49] B. Du, X. Zhu, X. Ma, C. Qu, K. Feng, Z. Yang, C.-M. Pun, J. Liu, and
+J. Zhou, “Forensichub: A unified benchmark & codebase for all-domain
+fake image detection and localization,” arXiv preprint arXiv:2505.11003,
+2025.
+[50] X. Ma, X. Zhu, L. Su, B. Du, Z. Jiang, B. Tong, Z. Lei, X. Yang,
+C.-M. Pun, J. Lv et al., “Imdl-benco: A comprehensive benchmark and
+codebase for image manipulation detection & localization,” Advances in
+Neural Information Processing Systems, vol. 37, pp. 134 591–134 613,
+2024.
+[51] Y. Song, W. Jiang, X. Chai, Z. Gan, M. Zhou, and L. Chen, “Cross-
+attention based two-branch networks for document image forgery local-
+ization in the metaverse,” ACM Transactions on Multimedia Computing,
+Communications and Applications, vol. 21, no. 2, pp. 1–24, 2025.
+[52] D. Luo, Y. Liu, R. Yang, X. Liu, J. Zeng, Y. Zhou, and X. Bai, “Toward
+real text manipulation detection: New dataset and new solution,” Pattern
+Recognition, vol. 157, p. 110828, 2025.
+[53] C. Qu, Y. Zhong, F. Guo, and L. Jin, “Revisiting tampered scene text
+detection in the era of generative ai,” in Proceedings of the AAAI
+Conference on Artificial Intelligence, vol. 39, no. 1, 2025, pp. 694–702.
+[54] H. Liu, C. Li, Y. Li, and Y. J. Lee, “Improved baselines with visual
+instruction tuning,” in Proceedings of the IEEE/CVF conference on
+computer vision and pattern recognition, 2024, pp. 26 296–26 306.
+[55] S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng,
+W. Ding, C. Gao, C. Ge et al., “Qwen3-vl technical report,” arXiv
+preprint arXiv:2511.21631, 2025.
