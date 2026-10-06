@@ -1,0 +1,61 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-06T01:03:39.207410+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 0,
+    "quick_skim_target": 12,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2610.03166v1",
+      "source": "arxiv",
+      "title": "LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization",
+      "abstract": "Digital watermarking supports source attribution for AI-generated images, but its reliability depends on resistance to removal attacks. Some attacks attempt to remove watermarks by forcing the decoded watermark to differ from the original. However, this can produce an inverted watermark that remains detectable, causing removal to fail, while further attempts to alter the watermark may unnecessarily degrade image quality. To address these limitations, we present LiBRA (Latent In-band Bidirectional Removal Attack), which aims to make watermarks undetectable while preserving image quality. Instead of continually pushing the watermark toward inversion, LiBRA adjusts the image to conceal the watermark without encouraging further changes that could degrade image quality. Some attacks keep pushing decoded bits away from the original watermark, even when further changes preserve detectability and damage image quality. With access to the watermark key and decoder, LiBRA makes bounded changes in a public autoencoder's latent space. Unlike inversion-driven objectives that cannot correct excessive inversion, LiBRA guides average decoding confidence toward random guessing from either direction. This helps avoid an inverted but detectable watermark. Leaving individual bits flexible allows image-quality constraints to favor less damaging changes, while an optional frequency-guided mask limits their location. We verify removal using an exact two-sided binomial test rather than assuming the confidence target guarantees success.",
+      "authors": [
+        "Saibo Ye",
+        "Huajie Chen",
+        "Xin Guo",
+        "Le Yang",
+        "Chi Liu",
+        "Xiangyu Hu",
+        "Jingjing Guo",
+        "Tianqing Zhu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-10-02T11:44:09+00:00",
+      "link": "https://arxiv.org/pdf/2610.03166v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "removal attack that makes image watermarks undetectable while preserving quality",
+      "llm_evidence_cn": "在保持图像质量的同时使水印不可检测的移除攻击",
+      "llm_evidence": "在保持图像质量的同时使水印不可检测的移除攻击",
+      "canonical_evidence": "在保持图像质量的同时使水印不可检测的移除攻击",
+      "llm_tldr_en": "LiBRA is a detection-aware image watermark removal attack that adjusts the image in latent space to make watermarks undetectable while preserving image quality.",
+      "llm_tldr_cn": "数字水印支撑AI生成图像的来源溯源，但其可靠性取决于抗移除攻击能力，现有攻击强行反转水印仍可被检测或损害图像质量。作者提出LiBRA，一种检测感知的双向潜空间移除攻击，通过调整图像隐藏水印而非持续推向反转，在使水印不可检测的同时保持图像质量。该工作揭示了水印移除攻击的新方向，对水印鲁棒性评估与防御具有重要参考价值。",
+      "llm_tldr": "数字水印支撑AI生成图像的来源溯源，但其可靠性取决于抗移除攻击能力，现有攻击强行反转水印仍可被检测或损害图像质量。作者提出LiBRA，一种检测感知的双向潜空间移除攻击，通过调整图像隐藏水印而非持续推向反转，在使水印不可检测的同时保持图像质量。该工作揭示了水印移除攻击的新方向，对水印鲁棒性评估与防御具有重要参考价值。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

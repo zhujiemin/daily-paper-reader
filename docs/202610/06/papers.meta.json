@@ -1,0 +1,24 @@
+{
+  "label": "2026-10-06",
+  "date": "2026-10-06",
+  "generated_at": "2026-10-06T01:04:27",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202610/06/2610.03166v1-libra-detection-aware-image-watermark-removal-via-bidirectional-latent-optimization",
+      "section": "deep",
+      "title_en": "LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization",
+      "authors": "Saibo Ye, Huajie Chen, Xin Guo, Le Yang, Chi Liu, Xiangyu Hu, Jingjing Guo, Tianqing Zhu",
+      "date": "2026-10-02",
+      "pdf": "https://arxiv.org/pdf/2610.03166v1",
+      "score": "9.0",
+      "evidence": "在保持图像质量的同时使水印不可检测的移除攻击",
+      "tldr": "数字水印用于AI生成图像溯源，但现有移除攻击常把解码比特推向原水印的反面，反而产生仍可检测的“反转水印”，继续修改还会损害画质。LiBRA利用水印密钥和解码器，在公开自编码器潜空间做有界修改，将平均解码置信度从两个方向推向随机猜测，而非一味反转。方法保留比特灵活性以让画质约束选择低损伤改动，并可用频率引导掩码限制修改区域；最终用精确双侧二项检验验证去除。该检测感知思路避免过度反转，兼顾水印不可检测与图像质量。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Digital watermarking supports source attribution for AI-generated images, but its reliability depends on resistance to removal attacks. Some attacks attempt to remove watermarks by forcing the decoded watermark to differ from the original. However, this can produce an inverted watermark that remains detectable, causing removal to fail, while further attempts to alter the watermark may unnecessarily degrade image quality. To address these limitations, we present LiBRA (Latent In-band Bidirectional Removal Attack), which aims to make watermarks undetectable while preserving image quality. Instead of continually pushing the watermark toward inversion, LiBRA adjusts the image to conceal the watermark without encouraging further changes that could degrade image quality. Some attacks keep pushing decoded bits away from the original watermark, even when further changes preserve detectability and damage image quality. With access to the watermark key and decoder, LiBRA makes bounded changes in a public autoencoder's latent space. Unlike inversion-driven objectives that cannot correct excessive inversion, LiBRA guides average decoding confidence toward random guessing from either direction. This helps avoid an inverted but detectable watermark. Leaving individual bits flexible allows image-quality constraints to favor less damaging changes, while an optional frequency-guided mask limits their location. We verify removal using an exact two-sided binomial test rather than assuming the confidence target guarantees success.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

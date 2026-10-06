@@ -1,0 +1,986 @@
+Title: LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization
+
+URL Source: https://arxiv.org/pdf/2610.03166v1
+
+Published Time: Mon, 05 Oct 2026 01:05:32 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+> 1
+
+# LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization 
+
+Saibo Ye ♠,†, Huajie Chen ♠,♢,†, Xin Guo †, Le Yang ♢,‡, Chi Liu †, Xiangyu Hu §, Jingjing Guo ¶, and Tianqing Zhu †
+
+Abstract —Digital watermarking supports source attribution for AI-generated images, but its reliability depends on resistance to removal attacks. Some attacks attempt to remove watermarks by forcing the decoded watermark to differ from the original. However, this can produce an inverted watermark that remains detectable, causing removal to fail, while further attempts to alter the watermark may unnecessarily degrade image quality. To address these limitations, we present LiBRA (Latent In-band Bidirectional Removal Attack), which aims to make wa-termarks undetectable while preserving image quality. Instead of continually pushing the watermark toward inversion, LiBRA adjusts the image to conceal the watermark without encouraging further changes that could degrade image quality. Some attacks keep pushing decoded bits away from the original watermark, even when further changes preserve detectability and damage image quality. With access to the watermark key and decoder, LiBRA makes bounded changes in a public autoencoder’s latent space. Unlike inversion-driven objectives that cannot correct excessive inversion, LiBRA guides average decoding confidence toward random guessing from either direction. This helps avoid an inverted but detectable watermark. Leaving individual bits flexible allows image-quality constraints to favor less damaging changes, while an optional frequency-guided mask limits their location. We verify removal using an exact two-sided binomial test rather than assuming the confidence target guarantees success. Experiments on four released watermarking systems show that LiBRA substantially reduces two-sided detection rates while improving image fidelity over the inversion baseline. An iteration study on Stable Signature shows that extending optimization from 
+
+25 to 100 iterations further degrades the inversion baseline’s image quality, while LiBRA maintains stable detection rates and image fidelity. 
+
+Index Terms —Image watermarking, watermark removal, ad-versarial attacks, latent space, two-sided detection. 
+
+I. I NTRODUCTION 
+
+# THE rapid development of artificial intelligence-generated content (AIGC) has made high-quality synthetic images increasingly accessible. Generative adversarial networks, dif-fusion models, and latent diffusion models have advanced visual realism, supporting content creation, digital design, and media production [1]–[3]. These capabilities also complicate authenticity verification and source attribution, creating risks of misleading dissemination and unauthorized use [4]. Digital watermarking supports provenance by embedding recoverable 
+
+> ♠
+
+Equal Contribution, ♢Corresponding Author. †Faculty of Data Science, City University of Macau, Macao SAR, China. ‡School of Information and Communications Engineering, Xi’an Jiaotong University, Xi’an 710049, China. §School of Information and Software Engineering, University of Electronic Science and Technology of China, Chengdu 610054, China. 
+
+> ¶
+
+School of Cyber Engineering, Xidian University, Xi’an 710071, China. E-mail: {d24090127012, hjchen, h23090104001, chiliu, tqzhu }@cityu.edu.mo; yangle15@xjtu.edu.cn; huxiangyu@uestc.edu.cn; jjguo@xidian.edu.cn. Watermarked input Attacked output Latent-space editing 
+
+Small, controlled changes 
+
+Encode Decode 
+
+> Steer toward a fixed near-chance target
+
+Detector feedback 
+
+Refine  
+
+> Confidence Discourage excessive bit inversion
+> LiBRA: Confidence targeting
+
+Fig. 1. Overview of LiBRA. A watermarked image is encoded into latent space and iteratively refined using feedback from a frozen watermark detector. LiBRA steers the mean soft bit-matching confidence toward a fixed near-chance target to discourage excessive bit inversion, while fidelity regulariza-tion limits visual changes. The refined latent is decoded into the output image. The dashed arrow denotes iterative refinement. Images are illustrative. 
+
+identifiers into images. Research has progressed from con-ventional signal-based embedding to learned encoder–decoder systems and generation-integrated watermarking [5]–[8]. De-spite their different embedding mechanisms, these methods depend on reliable detection after image processing and de-liberate removal attempts. Alongside watermarking, removal attacks have expanded beyond conventional transformations to exploit decoder feed-back, spectral structures, and generative models. Pixel-domain attacks directly optimize image perturbations, as exemplified by WEvade and its WEvade-W-II variant, which uses random target watermarks to address double-tail detection [9]. Spectral attacks disrupt structures associated with watermark carriers; UnMarker does so without detector feedback [10]. Regener-ation attacks reconstruct images through learned compression or diffusion models to weaken watermarks while preserving visual content [11], [12]. Latent-space optimization offers another route, modifying compact autoencoder representa-tions before decoding them into images. Related research also explores decision-boundary information for watermark removal [13]. Although their access assumptions and distortion mechanisms differ, these approaches must balance detection evasion with image fidelity. Three issues remain. First, low bit accuracy does not neces-sarily indicate removal: pushing decoded bits away from the key can produce an inverted watermark that remains detectable under a two-sided test. Second, objectives that reward contin-ued inversion may introduce distortion after entering the non-detection region, while simple per-bit stopping thresholds can arXiv:2610.03166v1 [cs.CR] 2 Oct 2026 2
+
+admit fully inverted results. Third, attacks optimize soft confi-dences, whereas detection depends on discrete bit matches, and these quantities can disagree. We examine whether a bidirectional objective on average decoding confidence can counter excessive inversion while preserving image quality during latent-space optimization. Evaluation must examine image-level detection outcomes, since average bit accuracy near chance can conceal removal failures. 
+
+Our Work . We propose LiBRA (Latent In-band Bidirec-tional Removal Attack), a detection-aware watermark removal method operating in latent space. We consider a white-box set-ting in which the adversary can access the watermark decoder and its gradients and knows or can estimate the watermark key. Our goal is to evade a two-sided statistical test while preserv-ing the visual content of the input image. Given a watermarked image, we first encode it using a public, non-watermarked autoencoder, optimize a bounded perturbation in its latent representation, and decode the modified representation into an attacked image. This allows the attack to operate in a compact space without accessing the provider’s watermark-generating components. Latent and image-level fidelity penalties constrain changes to the representation and reconstructed image. An optional frequency-guided mask further restricts perturbations to regions selected from the image content, providing a spatial prior for controlling visual distortion. The central component is a symmetric loss that guides the mean per-bit confidence toward a prescribed near-chance target. When the mean exceeds the target, the loss encour-ages it to decrease; when it falls below the target, the loss encourages it to increase. The objective therefore counteracts excessive inversion while leaving individual bit configurations unspecified. We optimize this loss jointly with the fidelity terms, allowing image preservation to influence how the target is approached. LiBRA uses a single optimization procedure without an outer perturbation-budget search. We evaluate the resulting images with the two-sided test and examine the gap between soft confidence and hard bit accuracy. Comparisons across the evaluated watermarking systems and ablations of supporting components assess whether the objective improves the balance between evasion and fidelity. Our main contributions are as follows:  
+
+> •
+
+Analysis of objective–detector mismatch. We explain why confidence-minimizing objectives and simple per-bit thresholding rules can still admit fully inverted water-marks, and distinguish soft-confidence optimization from hard-bit detection.  
+
+> •
+
+A detection-aware aggregate objective in latent space. 
+
+We study a symmetric mean-confidence penalty com-bined with bounded latent optimization, fidelity con-straints, and an optional spatial prior, examining its effect on watermark evasion and image quality.  
+
+> •
+
+Cross-system evaluation and mechanism analysis. 
+
+We assess four watermarking systems through direct comparisons with WEvade-W-II, component ablations, surrogate-gap measurements, and adaptive evaluation, establishing the approach’s empirical benefits and scope under the stated threat model.                     
+
+> TABLE I MAIN NOTATION .
+> Notation Definition
+> x0,x′Watermarked input and attacked image.
+> E,DPublic autoencoder encoder and decoder.
+> DmWatermark decoder.
+> w,NWatermark key and its bit length.
+> Lw,δInput latent representation and latent perturbation.
+> MsFrequency-guided spatial mask.
+> a(x′)Fraction of decoded bits matching the key.
+> ¯c,a⋆Mean soft confidence of agreement with the key and its target value.
+> AN,α Accepted bit accuracies under the two-sided test at significance level α.
+> Lbd2 ,Lfid Proposed watermark loss and fidelity loss.
+
+II. P RELIMINARIES 
+
+Table I summarizes the principal notation used in the subsequent analysis, method, and experiments. 
+
+A. Notation 
+
+We write x0 ∈ R3×H×W for a watermarked image and x′
+
+for its attacked counterpart. The provider’s secret key is w ∈{− 1, +1 }N and its detector is Dm, whose soft output on an image is d = Dm(x′) ∈ RN . We write si = diwi for the per-bit margin, so that si > 0 means bit i is decoded correctly, and 
+
+ci = σ(si) for the corresponding confidence, where σ is the logistic sigmoid. The mean confidence is ¯c = N −1 PNi=1 ci,whereas hard bit accuracy a(x′) is the fraction of decoded bits matching the key. Vectors on the latent grid are written with a capital L; ⊙ denotes the Hadamard product and ∥·∥ 0 counts nonzeros. 
+
+B. Latent Autoencoding 
+
+A variational autoencoder consists of an encoder E and a decoder D [14]. The encoder maps an image to a lower-dimensional representation, 
+
+L = E(x) ∈ RC×(H/f )×(W/f ),
+
+where C is the latent channel count and f is the spatial downsampling factor. The decoder reconstructs an image from this representation. Latent diffusion models use such represen-tations for image generation [3]. For C = 4 and f = 8 , a 512 × 512 RGB image corresponds to a 4 × 64 × 64 latent representation, reducing the number of optimization variables by a factor of 48 . A differentiable decoder allows gradients computed on the reconstructed image to propagate to the latent representation. However, autoencoder reconstruction is lossy, and small latent changes do not by themselves guarantee small perceptual changes. 
+
+C. Discrete Wavelet Decomposition 
+
+A one-level two-dimensional discrete wavelet transform separates an image into an approximation subband YL and three detail subbands YLH , YHL , and YHH [15]. The approx-imation subband represents coarse image structure, while the 3
+
+detail subbands describe directional changes at a finer scale. Each subband has half the height and width of the input. The Haar transform computes these components using local sums and differences. Its spatial localization allows subband magnitudes to describe where image structure and texture oc-cur. Such information can support a spatial prior, but does not identify where a watermark is embedded. For an orthonormal transform with compatible boundary handling, the sum of squared errors over all subbands equals the squared error in the image domain. 
+
+D. Watermark Detection as a Hypothesis Test 
+
+A watermark decoder produces bit predictions, which the provider converts into a detection decision. Under the unwa-termarked null hypothesis H0, decoded bits are assumed to agree with a fixed key independently with probability 1/2.The random number of matching bits therefore follows 
+
+K ∼ Binomial( N, 1/2) .
+
+For an observed image, the matching count is k = N a (x′).A one-sided test detects unusually high agreement with the key. A two-sided test also detects unusually low agreement, since a nearly inverted key is unlikely under the same null model. Consequently, both near-perfect agreement and near-complete inversion can provide evidence of a watermark [9]. At significance level α, an exact two-sided binomial test determines which matching counts are accepted under the null. The corresponding bit accuracies form the discrete acceptance set AN,α . Here, acceptance means that the test does not detect the watermark; it does not establish that all watermark information has been erased. The exact decision rule used in this work is specified in Subsection IV-A. III. R ELATED WORK 
+
+A. Watermarking for AI-Generated Content 
+
+Classical watermarking embeds signals through spread-spectrum or quantization-based constructions [5], [16]. Learned watermarking changes the embedding mechanism, but retains the need to trade distortion against reliable detection. Watermarking schemes for generative models fall into two families according to where the mark is injected. Endogenous 
+
+schemes couple the watermark to the generation process itself. Stable Signature fine-tunes the VAE decoder of a latent diffusion model so that every image it produces carries a fixed multi-bit signature [7]; GAN fingerprinting embeds a scalable identifier into the generator’s parameters so that outputs remain attributable to a specific model instance [17]; and initial-noise schemes such as Tree-Ring and Gaussian Shading plant a structured pattern in the sampling seed and recover it by DDIM inversion [18] [19], [20]. Exogenous schemes instead treat watermarking as a post-hoc image-processing step, training an encoder–decoder pair to hide and recover a bit string under a differentiable noise layer, as in HiDDeN and its noise-robust successor MBRS [6], [21]. The two families differ in where the watermark is embedded and how much of the pipeline the provider controls. The four systems evaluated in this work expose a common soft per-bit decoding interface, with agree-ment against an N -bit key measured by Equation 1. Our attack therefore does not target a particular embedding mechanism, and we evaluate it on fragile and robust endogenous schemes and on post-hoc ones; broader taxonomies of the design space are available in recent surveys [8]. Beyond these evaluated systems, StegaStamp targets phys-ical capture robustness, while SteganoGAN studies high-capacity learned hiding [22], [23]. RoSteALS uses frozen autoencoder latents for embedding, and TrustMark supports robust watermarking at arbitrary resolution [24], [25]. Water-mark Anything extends decoding to localized messages, and VINE studies robustness against generative image editing [26], [27]. These works broaden the embedding and threat-model landscape; they are related work, not additional victims eval-uated here. 
+
+B. Watermark Removal Attacks 
+
+Watermark removal attacks seek to prevent detection while preserving image content. WEvade optimizes image perturba-tions using watermark-decoder feedback [9]. Its WEvade-W-II variant addresses double-tail detection by targeting a ran-domly sampled watermark and searching over the perturbation budget. UnMarker disrupts spectral structures without detector feedback [10], while regeneration attacks weaken watermarks through learned compression or diffusion-based reconstruc-tion [11], [12]. Lee et al. investigate how information near detection boundaries can support watermark removal [13]. WEvade-W-II is the closest comparison because it explicitly accounts for detectable watermark inversion. LiBRA differs by constraining average decoding confidence rather than pre-scribing a target for every bit. Its symmetric objective corrects deviations on both sides of a near-chance target, while leaving individual bit configurations flexible so that fidelity constraints can favor less damaging changes. LiBRA jointly optimizes watermark and fidelity losses through bounded latent pertur-bations, without the outer perturbation-budget search used by WEvade-W-II. Our matched latent-space comparisons show that this opti-mization procedure reduces runtime while maintaining similar evasion and image fidelity under the tested setting (Sub-section V-F). Beyond this comparison, we evaluate both generation-integrated and post-hoc watermarking systems, quantify the gap between soft-confidence targets and actual detection outcomes, and examine adaptation to an additional detection statistic. The main LiBRA setting assumes knowl-edge or a reliable estimate of the watermark key, whereas WEvade-W-II does not require the true key. 
+
+C. Adaptive Attacks and Evaluation Practice 
+
+Research on adversarial robustness emphasizes evaluat-ing defenses against attacks that account for their mecha-nisms [28]–[30]. For watermark removal, this requires assess-ing success against the provider’s actual detection rule. Low bit accuracy alone is insufficient when inverted watermarks remain detectable. 4
+
+We evaluate image-level detection outcomes and distinguish them from the soft confidence optimized by the attack. In Subsection V-O, we further examine a detector that checks confidence dispersion and an adaptive attack that accounts for this additional statistic. IV. P ROPOSED METHOD 
+
+A. Threat Model 
+
+We consider a watermarking pipeline in which a provider embeds a secret watermark into an image and later uses a dedicated detector to verify its presence. The adversary seeks to modify the watermarked image so that it evades detection while preserving image quality. We specify the provider’s detection rule and the adversary’s capabilities below. 
+
+1) The Victim’s Goal: The victim is the model provider, who wants every image emitted by its service to remain attributable while staying visually unchanged. Embedding is performed with a secret key w ∈ {− 1, +1 }N that only the provider’s detector Dm can read. Given an image x′, the detector produces a soft output d = Dm(x′) ∈ RN , from which the per-image bit accuracy follows as 
+
+a(x′) = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1[sign( di) = wi] . (1) How the provider maps a(x′) to a decision is central to our design. A naive one-sided detector declares an image watermarked when a(x′) > 0.5, so an attack that merely drives 
+
+a below 0.5 already counts as successful. A security-conscious provider instead applies an exact two-sided binomial test . Un-der the null hypothesis that x′ is unwatermarked, the number of matching bits K = N a (x′) follows Binomial( N, 0.5) .Let pexact (k; N ) denote the exact two-sided binomial p-value for observing k matches. The image is flagged when 
+
+pexact (k; N ) < α and is accepted as unwatermarked only when 
+
+a(x′) ∈ A N,α =
+
+(
+
+kN
+
+k ∈ { 0, . . . , N },pexact (k; N ) ≥ α
+
+)
+
+. (2) Because the tested statistic is discrete, AN,α is a finite set of attainable bit accuracies rather than a continuous normal-approximation interval. Under the symmetric null considered here, the accepted integer counts k are contiguous, so we report the smallest and largest accepted counts as its bound-aries. The provider detects the watermark whenever a(x′) falls outside this set, since a statistically significant deviation from chance in either direction indicates an association with the key. A fully inverted watermark ( a ≈ 0) therefore remains detectable, just as an unchanged watermark ( a ≈ 1) does, be-cause inversion preserves the key information in negated form. The provider also requires watermark embedding to preserve image quality and keeps both the key and the watermarked decoder confidential. 
+
+2) The Adversary’s Goal: The adversary is a legitimate or semi-legitimate service user, such as a platform user, partner, or insider with limited privileges. The adversary obtains water-marked images through normal inference and seeks to remove                   
+
+> TABLE II ADVERSARY CAPABILITIES ASSUMED IN THIS WORK .Capability Assumed Query the detector Dmon chosen images yes Back-propagate gradients through Dmyes Know or estimate the key wyes Know the key length Nyes Use a public, non-watermarked VAE (E, D )yes Access the provider’s watermarked decoder no Modify or retrain the detector no Interfere with the generation process no Observe the provider’s significance level αno Re-embed or re-synthesize a watermark no
+
+their watermarks so that the content can be redistributed or misused without being traced. Given a watermarked image x0,the adversary seeks a perceptually close image x′ that simul-taneously achieves effectiveness , meaning the detector cannot assert that the watermark is present, and fidelity , meaning the image remains visually indistinguishable from x0 under SSIM and LPIPS. Because the provider is assumed to run the two-sided test Equation 2, effectiveness is not the same as flipping the watermark: the adversary must land a(x′) inside the exact acceptance set AN,α rather than push it to zero. Writing 
+
+Lw = E(x0) for the latent of the watermarked image and δ
+
+for a perturbation confined to a frequency-guided spatial mask 
+
+M s (Subsection IV-D) and kept within the admissible latent range, the decoded image is x′ = clip  D(Lw +M s ⊙δ), −1, 1
+
+and the adversary solves 
+
+min  
+
+> δ
+
+∥M s ⊙ δ∥22 s.t. a(x′) ∈ A N,α . (3) In Equation 3, the adversary seeks a small latent perturbation that places the attacked image within the detector’s exact acceptance set defined in Equation 2. The differentiable for-mulation and optimization procedure are presented in Subsec-tion IV-B–Subsection IV-G. 
+
+3) The Adversary’s Capabilities: We assume a white-box but resource-limited adversary. It (i) can query the detector Dm
+
+and back-propagate through it, so gradients of the detection confidence with respect to the image are available; (ii) owns a publicly available standard VAE with encoder E and decoder 
+
+D, but not the provider’s secret watermarked decoder, so it must encode and decode through the clean VAE and can never re-embed or re-synthesize the watermark; (iii) can access or reliably estimate the key w, which specifies the key-aware setting evaluated in this work; and (iv) operates under a limited compute and memory budget, which motivates optimizing in the compact latent space to reduce the number of optimization variables. Conversely, the adversary does not interfere with the generation process, does not hold the provider’s secret watermarking components, cannot modify or retrain the de-tector, and cannot observe the provider’s decision threshold α
+
+directly—it can infer the exact acceptance set from N and the assumed significance level via Equation 2. Table II summarizes these capabilities. 5
+
+B. Overview 
+
+Figure 2 summarizes LiBRA. The method combines bounded latent optimization with a symmetric mean-confidence objective. Latent and image-level fidelity penalties constrain changes, while an optional spatial prior restricts the modified regions. The watermark objective guides mean con-fidence toward a near-chance target and counteracts excessive inversion. To isolate its contribution, the main objective com-parison uses a common latent platform. Separate experiments examine the effects of optimization space, spatial prior, key knowledge, and other supporting components. 
+
+C. Attack Platform 1) Bounded latent perturbation: The attacker encodes the watermarked image with a clean public autoencoder, Lw =
+
+E(x0), and optimizes a perturbation of that code. We enforce the latent bounds [Lmin , L max ] through a tanh reparameteri-zation, allowing unconstrained optimization without a separate projection step [31]: 
+
+˜L(v) = Lmax − Lmin 
+
+2
+
+  tanh( v) + 1  + Lmin , (4) and optimize the free variable v. It is initialized so that 
+
+˜L(v0) = Lw, i.e. v0 = artanh  2( Lw −Lmin )/(Lmax −Lmin )−
+
+1, so the attack starts from the unperturbed code rather than from zero. 
+
+2) Fidelity: The perturbation δ = ˜L(v) − Lw is penalized both in the latent code and in the decoded image x′ =clip  D(Lw + M s ⊙ δ), −1, 1,
+
+Lfid = λl ∥M s ⊙ δ∥22 + λx ∥x′ − x0∥22. (5) Our implementation computes the image term as a sum of squared errors over the four subbands of a one-level orthonor-mal Haar decomposition with equal weights. Because that transform is orthonormal the two quantities are identical, so we state the term directly in the pixel domain rather than presenting it as a separate frequency-domain constraint. At each iteration, we clip the decoded image to [−1, 1] 
+
+before watermark decoding and image-fidelity evaluation. The final output uses the same clipping operation. 
+
+D. Heuristic Spatial Prior 
+
+The platform can restrict the perturbation to part of the latent grid. The mask is a heuristic prior on where a perturbation is least visible—textured and structured regions—and not a localization of watermark energy: it is computed from image content alone, and nothing in its construction refers to the watermark. We apply a one-level Haar DWT to x0 and form high- and low-frequency energy maps 
+
+EH =
+
+q
+
+Y 2 
+
+> LH
+
++ Y 2 
+
+> HL
+
++ Y 2 
+
+> HH
+
+, EL = |YL|, (6) threshold them at fractions τh, τ l of their maxima, take the union, fill holes with a k × k morphological closing, resize the result to the latent grid and dilate it by max-pooling over a (2 p+1) × (2 p+1) neighbourhood, 
+
+M s(i, j ) = max  
+
+> (m,n )∈N p(i,j )
+
+M ↓(m, n ). (7) Figure 3 shows an example. Two caveats follow from the con-struction. The low-frequency branch thresholds the magnitude of the approximation band, which is a brightness measure, so on a flat bright image it selects everything. And the mask reduces the number of free coordinates, not the per-iteration cost, because the full latent is still decoded and the detector still runs on the full image. Whether the prior is worth its parameters is therefore an empirical question, which Subsection V-G answers by comparing it with no mask, a random mask of equal area and a plain edge mask. 
+
+E. Watermark Objective 
+
+Let d = Dm(x′), si = diwi the per-bit margin and 
+
+ci = σ(si) the per-bit confidence, so that ci > 0.5 exactly when bit i is decoded correctly. The detector tests the hard bit accuracy a(x′) of Equation 1, which is piecewise constant; every objective below therefore acts on the soft confidences instead. Figure 4 shows the trajectories they produce. 
+
+1) Baseline: The standard objective minimizes the mean confidence, 
+
+Lwm = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+σ(diwi). (8) It rewards lowering every margin without limit, so its natural end state is a fully inverted decoding, a(x′) → 0, which lies outside the acceptance set Equation 2 and remains detectable by a two-sided test. 
+
+2) Two-sided objective: We instead penalize the distance of the mean confidence from a target a⋆ chosen between the smallest and largest accepted hard bit accuracies, 
+
+Lbd2 =
+
+ 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+σ(diwi) − a⋆2
+
+. (9) The loss is symmetric: it pushes the confidences down while their mean is above a⋆ and back up when it falls below, so an overshoot is corrected rather than left in place. This objective forms the core of LiBRA. It guides mean confidence toward a near-chance target and penalizes deviations in both directions, counteracting excessive inversion while leaving individual bit configurations flexible for fidelity preservation. 
+
+3) Per-bit alternatives: Two simpler modifications of the baseline suggest themselves, and we evaluate both to establish that the aggregate form of Equation 9 is needed. The first (B) stops pushing a bit once its confidence falls below a threshold 
+
+τ ,
+
+Lbd = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+ReLU  σ(diwi) − τ , (10) and the second (B+) adapts τ online from the running bit accuracy at,
+
+τt+1 = clip  τt − η (at − a⋆), τ min , τ max 
+
+. (11) Both constrain bits individually, and that is where they fail. For any τ ≤ 0.5 the zero set of Equation 10 consists of decodings in which every bit is wrong, so the hinge still drives toward full inversion and only slows down on the way; the controller can raise τ to slow the descent further, but the per-bit loss 6Latent-space Perturbation Encode once 
+
+> Watermarked image x 0
+
+E
+
+> Lw
+> Fixed reference latent
+
+Bounded masked update 
+
+v
+
+> Optimized variable
+
+L 
+
+> ~
+
+(v) = 6 tanh(v) 
+
+L′ = L w + M s ⊙ (L  
+
+> ~
+
+(v) − L w)   
+
+> δ = L
+> ~(v) − L w; L wfixed, v optimized L′
+
+D
+
+> Attacked image x′ x′ = clip(D(L′), −1, 1)
+
+Optional spatial prior · computed once     
+
+> DWT energy maps Latent-grid mask M s
+> Ms= 1 when disabled
+> −x0x′ −
+> LwL′
+
+Fidelity loss 
+
+ℒfid = λ l ‖M s ⊙ δ‖ 22
+
++ λ x ‖x′ − x 0‖22   
+
+> Inputs: M s⊙δ, x 0, x′
+
+Secret key w 
+
+Detection 
+
+Frozen detector D m
+
+d
+
+Soft matching 
+
+ci = σ(d iwi)c = (1/N) Σ i ci
+
+> Differentiable
+
+Fixed soft target a ∗ = 0.45  
+
+> a∗c
+
+ℒbd2 = (c − a ∗)2
+
++
+
+ℓ = ℒbd2 + ℒfid 
+
+∇vℓ
+
+v
+
+Adam update 
+
+Optimize v only · T = 50 
+
+Iterative Optimization  
+
+> Update v Final
+
+(d T, w) Hard bit accuracy 
+
+a(x′) = (1/N) Σ i 1[sign(d i) = w i]
+
+Exact two-sided binomial test 
+
+Evaluation only · after T iterations  
+
+> 0
+
+Accepted k = 15…33 48   
+
+> Example: N = 48, α = 0.01; k = N a(x′)
+> No gradient to optimizer
+> Fixed model weights Data flow Parameter update
+
+LiBRA objective 
+
+Fig. 2. Overview of the attack. Stage 1 builds an optional spatial prior M s from the image’s DWT energy; Stage 2 perturbs the latent code of a public autoencoder inside that prior and decodes the attacked image x′; Stage 3 queries the detector and scores the decoded bits with the watermark objective. Dashed arrows denote parameter updates. The symmetric objective guides mean confidence toward a near-chance target and counteracts excessive inversion, while fidelity penalties constrain changes to the latent representation and reconstructed image. 5Perturb the latent 
+
+> e a bounded latent perturbation
+
+3 · Aim at the band  (ours) 
+
+> stop where the detector cannot decide
+
+VAE encoder ℰ
+
+Lw + M s ⊙ δ
+
+VAE decoder D 
+
+cked x′ amplified residual 
+
+> hanged; the change sits on contours
+
+watermark detector D m            
+
+> decoded d = 1 0 0 1 1 0 1 0 secret key w = 0 1 1 0 1 0 0 1
+> compare
+> baseline Lwm — pushed to 0, still detected B+ Lbd — stops too early, still detected B++ Lbd2 — inside the band, undetected
+> x′
+> gradient w.r.t. δ
+> s
+
+from the image’s DWT energy; Stage 2 perturbs the latent code of a public 
+
+> ′
+
+; Stage 3 queries the detector and scores the decoded bits with the watermark objective. his paper changes: the standard confidence loss drives the bit accuracy to zero, outside ets a point inside it. 
+
+penalized 
+
+= D(Lw +
+
+(5) or-to
+
+tent t a ge 
+
+and form 
+
+L|, (6) 
+
+ke the 
+
+ize 
+
+(7) on-itude 
+
+(a) (b) (c) Fig. 2. The heuristic spatial prior and the perturbation it admits. 
+
+of the approximation band, which is a brightness measure, so on a flat bright image it selects everything. And the mask reduces the number of free coordinates, not the per-iteration cost, because the full latent is still decoded and the detector still runs on the full image. Whether the prior is worth its parameters is therefore an empirical question, which Section V-G answers by comparing it with no mask, a random mask of equal area and a plain edge mask. 
+
+E. Watermark Objective 
+
+Let d = Dm(x′), si = diwi the per-bit margin and 
+
+ci = σ(si) the per-bit confidence, so that ci > 0.5 exactly when bit i is decoded correctly. The detector tests the hard bit accuracy a(x′) of (1), which is piecewise constant; every objective below therefore acts on the soft confidences instead. Figure 3 shows the trajectories they produce. 
+
+Fig. 3. The heuristic spatial prior: (a) watermarked input; (b) spatial mask; (c) perturbation visualization. The mask describes image content, not watermark localization. 
+
+provides no direct incentive to restore a bit once its confidence falls below the threshold. B and B+ are therefore ablations, not components of the proposed method. 
+
+F. What the Objectives Control 
+
+The objectives of Subsection IV-E are easiest to compare through their gradients with respect to the per-bit margins 
+
+si = diwi. Two cautions apply to everything in this subsection. First, the optimization variable is the shared latent code v, not the margins: with J = ∂s/∂v , a small step on the watermark term alone changes the margins by ∆s ≈ − γJJ ⊤∇sL, so a positive partial derivative ∂L/∂s i does not guarantee that si
+
+itself decreases, and the fidelity term couples the coordinates further. The statements below describe what each objective Stable Signature (N = 48, α = 0.01)       
+
+> 010 25 50 75 100 0.0 0.2 0.4 0.6 0.8 1.0
+> Iteration Bit accuracy a(x')
+> Exact acceptance band Baseline Lwm B+: adaptive τ
+> LiBRA
+
+Fig. 4. Bit-accuracy trajectories under the baseline, the adaptive per-bit variant (B+) and the two-sided objective (LiBRA). 
+
+rewards , not how the optimizer converges. Second, all three act on soft confidences, while the detector tests the hard bit accuracy. 
+
+Proposition 1 (Baseline) . For Lwm of Equation 8, 
+
+∂L wm /∂s i = 1
+
+N σ(si) 1 − σ(si) > 0 for every finite si.Hence Lwm has no stationary point at finite margins, and its infimum is approached only as every si → −∞ , i.e. at 
+
+a(x′) = 0 .7
+
+Proposition 2 (Per-bit hinge) . For Lbd of Equation 10 with 
+
+τ ≤ 0.5, the loss is zero exactly on Sτ = {s : ci ≤ τ ∀i}.Every point of Sτ has ci ≤ 0.5 for all i, and therefore a(x′) = 0.
+
+Proposition 2 is the precise sense in which the per-bit variants do not solve the problem. The hinge stops pushing a bit once it has crossed τ , which slows the descent, but its minimizers are still fully inverted decodings: a per-bit decision boundary has been used in place of the image-level acceptance set, and the two define different sets. Adapting τ through Equation 11 moves where the hinge stops, not what its minimizers are; and because at takes only the values k/N , the controller need not reach at = a⋆ exactly. 
+
+Proposition 3 (Two-sided objective) . For Lbd2 of Equation 9, 
+
+∂L bd2 /∂s i = 2 
+
+> N
+
+(¯ c − a⋆) σ′(si) with ¯c = 1
+
+> N
+
+P 
+
+> i
+
+ci. Every partial derivative has the sign of ¯c − a⋆, and the loss is zero exactly on {s : ¯ c = a⋆}.
+
+The symmetry is what distinguishes LiBRA from the hinge: an overshoot reverses the sign of the gradient instead of zeroing it. What the proposition does not give is evasion. The zero set is a level set of the mean confidence, but hard bit accuracy is not determined by this mean. For example, 80 bits with confidence 0.55 and 20 bits with confidence 0.05 yield a mean confidence of 0.45 but a hard bit accuracy of 0.80. Nothing in the loss rules such points out. What can make them rare in practice is that the margins are coupled through the shared latent and tend to move together, which is a property of the victim detectors rather than of the objective. We therefore do not claim that reaching ¯c = a⋆ places an image inside the acceptance set, nor that attacked images are statistically indistinguishable from unwatermarked ones, which a single test failing to reject would not establish in any case. Subsection V-D measures how often the surrogate and the tested statistic disagree on the victim systems. 
+
+G. Overall Objective and Algorithm 
+
+The attack solves 
+
+min  
+
+> v
+
+Lbd2 
+
+ Dm(x′) + Lfid , (12) with x′ and Lfid as in Equation 5; the baseline and the per-bit variants replace Lbd2 by Equation 8 or Equation 10. Algorithm 1 gives the procedure, using Adam [32]. Each iteration costs one decoder and one detector forward–backward pass, O T (CD +CDm ) in total. Optimizing the latent reduces the number of free variables by 48 × at 512 × 512 relative to the pixel grid, but it does not by itself reduce the per-iteration cost, which the decoder dominates; measured cost is reported in Subsection V-A. V. E XPERIMENTS 
+
+A. Experimental Setup 1) Watermarking systems and datasets: We evaluate the released checkpoints of Stable Signature, YU1, HiDDeN, and MBRS [6], [7], [17], [21], using 5,000 watermarked images per system. Stable Signature images are generated at 512 ×512 
+
+Algorithm 1 LiBRA: Latent In-band Bidirectional Removal Attack 
+
+Require: watermarked image x0, key w, detector Dm, VAE 
+
+(E, D ), iterations T , target a⋆
+
+Ensure: attacked image x′ 
+
+> 1:
+
+Lw ← E(x0) 
+
+> 2:
+
+build M s by Equation 6–Equation 7, or set M s = 1 
+
+> 3:
+
+v ← artanh  2( Lw − Lmin )/(Lmax − Lmin ) − 1 
+
+> 4:
+
+for t = 1 to T do  
+
+> 5:
+
+δ ← ˜L(v) − Lw 
+
+> 6:
+
+x′ ← clip  D(Lw + M s ⊙ δ), −1, 1 
+
+> 7:
+
+d ← Dm(x′) 
+
+> 8:
+
+ℓ ← Lbd2 (d) + Lfid (δ, x ′) 
+
+> 9:
+
+v ← ADAM UPDATE (v, ∇v ℓ) 
+
+> 10:
+
+end for  
+
+> 11:
+
+L′ ← Lw + M s ⊙ ( ˜L(v) − Lw) 
+
+> 12:
+
+return clip  D(L′), −1, 1                                         
+
+> TABLE III ATTACK HYPERPARAMETERS .Symbol Meaning Value
+> Toptimization iterations 50
+> —optimizer / learning rate Adam / 0.01
+> τh,τlmask thresholds (high, low freq.) 0.3,0.5
+> k,pclosing kernel side length, expansion radius 5,2
+> λlweight of ∥Ms⊙δ∥2210 −2
+> λxweight of ∥x′−x0∥2210 −4
+> λbit sign-consistency (baseline / others) 1/0
+> τ0initial hinge threshold (B, B+) 0.5
+> ηthreshold update gain (B+) 0.5
+> a⋆target mean confidence 0.45
+> αdetector significance level 0.01 [Lmin , L max ]admissible latent range [−6,6]
+
+from MS-COCO 2017 validation captions [33]. YU1 uses fingerprinted CelebA test images [34] at 128 × 128 . HiDDeN and MBRS watermark the same 5,000 MS-COCO validation images at 256 × 256 . Each configuration in the four-system main experiment therefore covers 20 ,000 images, with results averaged separately for each system. 
+
+2) Implementation: The attacker uses the public, non-watermarked Stable Diffusion 2.1-base VAE without model training. Experiments run on Ubuntu 22.04 with eight NVIDIA A100 GPUs (80 GB each), using PyTorch 2.4.1, CUDA 12.4, PyWavelets, and AlexNet-based LPIPS. Each image is pro-cessed on one GPU; multiple GPUs process different images in parallel. Reported per-image runtimes are 12.4 s at 512 ×512 
+
+and 1.3 s at 128 × 128 . Resolution-specific runtime and mem-ory measurements appear in Table XIV. 
+
+3) Attack configuration: Table III lists the default hyper-parameters. Unless otherwise stated, objective variants share the optimizer, spatial restriction, and fidelity terms; only the reproduced baseline includes the sign-consistency term. We use a⋆ = 0 .45 , a fixed random seed, and no per-image tuning. Every configuration includes all 5,000 images for its system. 
+
+4) Detectors and metrics: We apply the naive one-sided rule a(x′) > 0.5 and the exact two-sided binomial test at 
+
+α = 0 .01 defined in Subsection IV-A. Accepted bit counts are listed in Table IV. We denote the proportions of images 8                                                                                                                                                               
+
+> TABLE IV MAIN RESULTS ACROSS FOUR WATERMARKING SYSTEMS .Scheme ( N, accepted k)Configuration DR 1↓Bit ACC PSNR (dB) ↑SSIM ↑LPIPS ↓DR 2↓
+> Stable Signature
+> N= 48 ,k= 15:33
+> No attack 1.00 0.996 —1.000 0.000 1.00 Baseline 0.00 0.018 35.1 0.942 0.074 1.00 B (fixed τ)0.00 0.091 36.0 0.951 0.066 1.00 B+ (adaptive τ)0.00 0.228 36.8 0.958 0.060 1.00
+> LiBRA (two-sided) 0.00 0.458 38.0 0.970 0.046 0.03
+> YU1
+> N= 100 ,k= 37:63
+> No attack 1.00 0.998 —1.000 0.000 1.00 Baseline 0.00 0.001 26.9 0.740 0.095 1.00 B (fixed τ)0.00 0.061 27.8 0.758 0.084 1.00 B+ (adaptive τ)0.00 0.229 28.6 0.776 0.069 0.98
+> LiBRA (two-sided) 0.00 0.433 29.9 0.982 0.031 0.00
+> HiDDeN
+> N= 30 ,k= 8:22
+> No attack 1.00 0.990 —1.000 0.000 1.00 Baseline 0.00 0.003 34.8 0.928 0.082 1.00 B (fixed τ)0.00 0.067 35.6 0.938 0.073 0.98 B+ (adaptive τ)0.00 0.200 36.4 0.947 0.065 0.82
+> LiBRA (two-sided) 0.00 0.433 37.6 0.972 0.065 0.04
+> MBRS
+> N= 64 ,k= 22:42
+> No attack 1.00 0.995 —1.000 0.000 1.00 Baseline 0.00 0.006 35.0 0.934 0.079 1.00 B (fixed τ)0.00 0.083 35.8 0.943 0.070 1.00 B+ (adaptive τ)0.00 0.241 36.5 0.951 0.063 1.00
+> LiBRA (two-sided) 0.00 0.445 37.3 0.971 0.063 0.05
+
+flagged by these rules as DR 1 and DR 2, respectively, and report both as fractions between 0 and 1. Lower detection rates indicate better evasion. Bit ACC is mean hard bit accuracy and has no monotonic preference. Fidelity is measured against the watermarked input using PSNR in dB, SSIM [35], and LPIPS [36]. Higher PSNR and SSIM and lower LPIPS indicate better fidelity. 
+
+B. Main Results 
+
+Table IV compares the four objectives on four watermarking systems. The first column lists the watermark length and the exact accepted bit-count range for each system. Arrows indicate the preferred direction of each metric. Bold metric values mark the best detection and fidelity results among the attacked configurations for each system. Every attacked row has zero DR 1 under the naive one-sided rule. The two-sided test separates these apparently identical outcomes: the inversion baseline is detected on every image, whereas LiBRA reaches detection rates between 0 and 0.05 .On YU1, the baseline reaches a mean Bit ACC of 0.001 
+
+and a two-sided detection rate of 1.00 . B+ increases mean Bit ACC to 0.229 , but 98% of images remain detectable. LiBRA reaches a mean Bit ACC of 0.433 with no observed two-sided detections. It also increases SSIM from 0.740 to 0.982 and reduces LPIPS from 0.095 to 0.031 relative to the baseline. On Stable Signature, LiBRA reduces the two-sided detec-tion rate from 1.00 to 0.03 , while increasing SSIM from 
+
+0.942 to 0.970 and reducing LPIPS from 0.074 to 0.046 .On HiDDeN and MBRS, LiBRA reaches mean bit accuracies of 0.433 and 0.445 , with two-sided detection rates of 0.04 
+
+and 0.05 , respectively. The corresponding SSIM values are 
+
+0.972 and 0.971 , and LPIPS values are 0.065 and 0.063 . Both systems show higher SSIM and lower LPIPS than the inversion baseline. Means must nevertheless be read with the detection-rate column. For HiDDeN, the exact accepted range is k = 8:22                  
+
+> TABLE V SOFT -TARGET AND HARD -TEST AGREEMENT .Scheme N
+> Soft target met Hard-test evasion Target met, detected Stable Signature 48 0.95 0.97 0.02 YU1 100 0.97 1.00 0.00 HiDDeN 30 0.93 0.96 0.03 MBRS 64 0.94 0.95 0.03
+
+at N = 30 . B+ has mean Bit ACC 0.200 , outside that range, although 18% of images are accepted; B similarly leaves 2% 
+
+accepted despite a mean of 0.067 . Subsection V-C explains why the per-image count distribution is needed. 
+
+C. Distribution of the Achieved Operating Point 
+
+Mean bit accuracy alone does not determine the fraction of images detected: a mean inside the acceptance set is compatible with individual images outside it. For N = 48 ,the statistic has only 49 attainable values, k/ 48 . An empirical evaluation should therefore plot the count distribution and sum the mass on rejected counts. Figure 5 shows the per-image distributions for the evaluated attack objectives. Its shaded region covers k = 15:33 , and its black curve is the theoretical binomial null. 
+
+D. The Surrogate Gap 
+
+LiBRA optimizes mean soft confidence, while the detector evaluates hard bit accuracy. Figure 6 plots these quantities for the attacked images, and Table V measures their agreement. “Soft target met” denotes |¯c − a⋆| ≤ 0.02 , and “Hard-test evasion” denotes hard bit accuracy within the exact acceptance set. “Target met, detected” denotes images that meet the soft target but remain detectable. All three columns report fractions of the full evaluated image set. 90.0 1.0 No attack 2-sided 100.0% 1-sided 100.0% 0.0 1.0 Baseline Lwm 2-sided 100.0% 1-sided 0.0% 0.0 0.2 B: fixed 2-sided 100.0% 1-sided 0.0% 0.0 0.2 0.4 B+: adaptive 2-sided 100.0% 1-sided 0.0%                       
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Achieved bit accuracy a(x) = k/48
+> 0.0 0.5 2-sided 3.0% 1-sided 0.0%
+> Fraction of images
+> Accepted by exact test ( = 0.01 )Unwatermarked, Bin (48, 12)
+> LiBRA (ours)
+> Fig. 5. Distribution of achieved bit accuracy on Stable Signature over 5,000 images, on the 48-bit grid. Panels compare no attack, baseline, B, B+, and LiBRA. Shading denotes exact accepted counts k= 15:33 at α= 0 .01 ; the black curve is the theoretical binomial null. Percentages report the two-sided and naive one-sided detection rates. 0.40 0.45 0.50
+
+Final mean confidence c              
+
+> 0.2 0.3 0.4 0.5 0.6 0.7
+> Final bit accuracy  a(x ) =  k/48
+> Met 95.0% In set 97.0% Met, out of set 2.0%
+> Met, in set Met, out of set Not met Accepted by exact test ( = 0.01 )
+> |ca|0.02
+> c=a(x)
+> Fig. 6. Relationship between final mean confidence and hard bit accuracy under LiBRA on Stable Signature ( N=48 ). The vertical band marks
+> |¯c−0.45 | ≤ 0.02 and the horizontal band marks exact accepted bit counts. Crosses illustrate meeting the soft target while failing the hard test. Each point represents one attacked image, with horizontal and vertical jitter for visibility; categories and statistics use unjittered values.
+
+Hard-test evasion ranges from 0.95 to 1.00 across the four systems. Images that meet the soft target but remain detectable account for 0.02 of all images on Stable Signature, 0.00 on YU1, and 0.03 on both HiDDeN and MBRS. These results identify a specific difference between target attainment and successful removal: some images reach the desired mean confidence while retaining a detectable hard-bit pattern. 
+
+E. Comparison with Existing Removal Attacks 
+
+Table VI places our objective against both families an adver-sary might otherwise reach for: the classical post-processing distortions that any deployed watermark is expected to survive, and the removal attacks discussed in Subsection III-B. Table VI compares removal attacks and image transfor-mations on 5,000 Stable Signature images. All tested post-processing transformations have a two-sided detection rate of 
+
+1.00 . WEvade-W-I and the latent inversion baseline achieve zero detection under the naive one-sided rule but remain fully detectable under the two-sided test. LiBRA reaches a two-sided detection rate of 0.03 , compared with 0.02 for pixel-domain WEvade-W-II, while increasing SSIM from 0.951 to 
+
+0.970 and reducing LPIPS from 0.061 to 0.046 . The runtime comparison in Table VII further shows a reduction from 24 .8
+
+to 12 .4 s per image. LiBRA therefore achieves higher image fidelity and halves the measured runtime at comparable two-sided evasion. 
+
+F. Head-to-Head with WEvade-W-II 
+
+Table VII compares optimization space, optimization proce-dure, and reference-bit choice on Stable Signature. WEvade-W-II [9] optimizes toward a random target bit string and searches over the perturbation budget. LiBRA uses a single optimization procedure with a symmetric mean-confidence objective and fidelity penalties. We evaluate WEvade-W-II in both pixel and latent spaces, and LiBRA with either a random reference bit string or the true watermark key. In the “Space / reference” column, “random” denotes a uniformly sampled bit string and “key” denotes the true key. The two latent-space rows using random references compare the procedures under a common perturbation space and reference setting. With a random reference, LiBRA achieves a two-sided detection rate of 0.04 , SSIM of 0.967 , and LPIPS of 0.048 ,compared with 0.03 , 0.970 , and 0.046 when using the true key. Under the common latent-space and random-reference setting, WEvade-W-II requires 118 .6 s per image, while LiBRA re-quires 12 .5 s, giving an approximately 9.5× speedup. LiBRA also increases SSIM from 0.965 to 0.967 and reduces LPIPS from 0.050 to 0.048 , with detection rates of 0.04 and 0.03 ,respectively. This comparison demonstrates the computational benefit of LiBRA’s single optimization procedure at compara-ble evasion. 
+
+G. Is Each Component Necessary? 
+
+The attack platform carries several components besides the objective, and Section IV argues that none of them should be assumed necessary. Table VIII evaluates the components on Stable Signature. Unless otherwise stated, the configurations use the LiBRA objective and the fidelity loss in Equation 5. The “LiBRA (frequency mask)” row is the full configuration; the +Lbit and +Ldfl rows add the corresponding term to this configuration. The rows answer specific questions rather than enumerate combinations. Clean reconstruction without 10                                                                              
+
+> TABLE VI COMPARISON WITH REMOVAL ATTACKS AND IMAGE TRANSFORMATIONS .Family Method DR 1↓Bit ACC SSIM ↑LPIPS ↓DR 2↓
+> Post-processing Center crop ( 10% )1.00 0.943 0.618 0.312 1.00 JPEG ( q= 90 )1.00 0.991 0.967 0.029 1.00 Gaussian blur ( k= 5 )1.00 0.978 0.884 0.148 1.00 Bilateral filter 1.00 0.969 0.912 0.106 1.00 Quantization ( 8levels) 1.00 0.927 0.741 0.223 1.00 Removal attacks WEvade-W-I (flip) [9] 0.00 0.012 0.944 0.067 1.00 WEvade-W-II ( a≈0.5) [9] 0.42 0.497 0.951 0.061 0.02 UnMarker [10] 0.75 0.566 0.832 0.187 0.13 VAE regeneration [11], [12] 0.91 0.662 0.861 0.121 0.41 Diffusion regeneration [11], [12] 0.68 0.548 0.793 0.169 0.09 Latent attack, Lwm objective 0.00 0.018 0.942 0.074 1.00 Ours LiBRA (two-sided) 0.00 0.458 0.970 0.046 0.03 TABLE VII COMPARISON WITH WE VADE -W-II.
+
+Method Space / reference DR 2 ↓ SSIM ↑ LPIPS ↓
+
+Time (s/image) WEvade-W-II pixel / random 0.02 0.951 0.061 24.8 WEvade-W-II latent / random 0.03 0.965 0.050 118.6 LiBRA latent / random 0.04 0.967 0.048 12.5 
+
+LiBRA latent / key 0.03 0.970 0.046 12.4 TABLE VIII ABLATION STUDY OF ATTACK COMPONENTS .Configuration Bit ACC SSIM ↑ LPIPS ↓ DR 2 ↓
+
+Time (s/image) VAE reconstruction only 0.893 0.976 0.039 1.00 0.2 Full latent, no mask 0.461 0.962 0.053 0.03 12.1 Random mask 0.452 0.964 0.051 0.05 12.4 Edge (Sobel) mask 0.455 0.967 0.049 0.04 12.4 LiBRA (frequency mask) 0.458 0.970 0.046 0.03 12.4 
+
++ Lbit 0.447 0.966 0.050 0.04 12.9 Baseline, early-stopped 0.412 0.963 0.053 0.11 4.3 
+
++ Ldfl 0.456 0.958 0.058 0.03 13.6 
+
+optimization measures how much of the effect comes from passing the image through the autoencoder at all. Full-latent optimization removes the spatial prior. The random and edge masks are matched to the frequency-guided mask in area to assess whether its construction provides benefits beyond re-stricting the perturbation region. Adding the sign-consistency term tests whether a per-bit flipping pressure helps or fights the aggregate target. The early-stopped baseline keeps Equation 8 but returns the first iterate whose bit accuracy enters the band, which separates the effect of the loss shape from the effect of simply not optimizing past the band. The spatial prior is not required for evasion, but it improves fidelity. Full-latent LiBRA and the frequency prior both reach a two-sided rate of 0.03 , while the prior raises SSIM from 0.962 
+
+to 0.970 and lowers LPIPS from 0.053 to 0.046 at essentially unchanged runtime. Random and Sobel masks yield SSIM and LPIPS values between those of the full-latent and frequency-guided configurations, with detection rates of 0.05 and 0.04 ,respectively. The frequency-guided mask provides the highest SSIM and lowest LPIPS among the four mask configurations, while matching the full-latent detection rate of 0.03 . Early stopping alone does not reproduce LiBRA: the early-stopped baseline reaches Bit ACC 0.412 but leaves 11% of images detectable, versus 3% for LiBRA, and has lower SSIM ( 0.963 
+
+versus 0.970 ) and higher LPIPS ( 0.053 versus 0.046 ). Adding 
+
+Lbit likewise does not help, slightly worsening both fidelity and detection rate. 
+
+1) Negative result: blind spectral destruction: As an auxil-iary ablation, we test whether an additional spectral-disruption term improves LiBRA. The term measures Fourier-amplitude differences over the high-frequency subbands: 
+
+Ldfl = X
+
+> b∈{ LH,HL,HH }
+
+|F (b′)| − |F (b0)| 1, (13) We maximize this term to disrupt spectral amplitudes. This auxiliary experiment examines a spectral-disruption strategy studied for attacks without detector feedback [10]; the term is not part of LiBRA. Adding Ldfl leaves the two-sided detection rate unchanged at 0.03 , while lowering SSIM from 0.970 to 
+
+0.958 , increasing LPIPS from 0.046 to 0.058 , and increasing runtime from 12 .4 to 13 .6 s per image. In this comparison, the additional spectral term increases distortion and computation without improving evasion. 
+
+H. Sensitivity to the Target Operating Point 
+
+We examine how the target mean confidence a⋆ affects hard bit accuracy, detection rate, and image fidelity on Stable Signature. Table IX reports mean Bit ACC and the mean absolute error (MAE) between each image’s hard bit accuracy and the target: 
+
+MAE = 15000 
+
+> 5000
+
+X
+
+> j=1
+
+a(x′ 
+
+> j
+
+) − a⋆ .
+
+This measures deviations across individual images. We use 
+
+a⋆ = 0.45 as the common default throughout the main experiments and vary it here to examine its effect. Figure 7 presents a sweep of the target mean confidence across the four watermarking systems. The MAE ranges from 0.026 to 0.031 across the tested targets. At a⋆ = 0 .30 , mean Bit ACC is 0.309 , below the lower acceptance boundary of 0.3125 , and the two-sided detection 11 Bit ACC Two-sided detection rate SSIM LPIPS 
+
+(a) Stable Signature N = 48             
+
+> 0.0 0.0 0.2 0.2 0.4 0.4 0.6 0.6 0.8 0.8 1.0 1.0
+> 0.36 0.38 0.40 0.42 0.45 0.48 0.50
+
+Target mean confidence a*     
+
+> Bit ACC / detection rate SSIM / LPIPS
+> a*= 0.45
+> Bit ACC 0.458 2-sided 0.030 SSIM 0.970 LPIPS 0.046
+
+(b) YU1 N = 100             
+
+> 0.0 0.0 0.2 0.2 0.4 0.4 0.6 0.6 0.8 0.8 1.0 1.0
+> 0.36 0.38 0.40 0.42 0.45 0.48 0.50
+
+Target mean confidence a*     
+
+> Bit ACC / detection rate SSIM / LPIPS
+> a*= 0.45
+> Bit ACC 0.433 2-sided 0.000 SSIM 0.982 LPIPS 0.031
+
+(c) HiDDeN N = 30             
+
+> 0.0 0.0 0.2 0.2 0.4 0.4 0.6 0.6 0.8 0.8 1.0 1.0
+> 0.36 0.38 0.40 0.42 0.45 0.48 0.50
+
+Target mean confidence a*     
+
+> Bit ACC / detection rate SSIM / LPIPS
+> a*= 0.45
+> Bit ACC 0.433 2-sided 0.040 SSIM 0.972 LPIPS 0.065
+
+(d) MBRS N = 64             
+
+> 0.0 0.0 0.2 0.2 0.4 0.4 0.6 0.6 0.8 0.8 1.0 1.0
+> 0.36 0.38 0.40 0.42 0.45 0.48 0.50
+
+Target mean confidence a*     
+
+> Bit ACC / detection rate SSIM / LPIPS
+> a*= 0.45
+> Bit ACC 0.445 2-sided 0.050 SSIM 0.971 LPIPS 0.063
+
+Fig. 7. Sensitivity of LiBRA to the target mean confidence a⋆ across four watermarking systems. The vertical dashed line marks the default setting a⋆ = 0 .45 .TABLE IX SENSITIVITY TO THE TARGET CONFIDENCE .
+
+a⋆ Bit ACC MAE to target SSIM ↑ LPIPS ↓ DR 2 ↓
+
+0.30 0.309 0.031 0.962 0.053 0.44 0.40 0.407 0.027 0.967 0.049 0.05 0.45 0.458 0.026 0.970 0.046 0.03 0.48 0.484 0.027 0.972 0.044 0.02 0.50 0.503 0.029 0.973 0.043 0.02 
+
+rate reaches 0.44 . Increasing the target from 0.40 to 0.50 
+
+reduces the detection rate from 0.05 to 0.02 , raises SSIM from 
+
+0.967 to 0.973 , and lowers LPIPS from 0.049 to 0.043 . Thus, targets closer to 0.5 improve both evasion and fidelity in this sweep. The default target of 0.45 gives the lowest MAE, while 
+
+0.50 gives the highest SSIM, lowest LPIPS, and a detection rate tied with 0.48 .
+
+I. Point Target versus Band Penalty 
+
+We compare LiBRA’s point-target objective with a penalty that allows mean soft confidence to lie within a band around 
+
+0.5:
+
+Lband = ReLU  |¯c − 0.5| − h2, (14) The band penalty is zero when |¯c − 0.5| ≤ h, allowing a range of mean soft confidences instead of penalizing deviations from a single target. Table X compares the two objectives on Stable Signature at N = 48 and α = 0 .01 . The hard-test acceptance set has boundary accuracies of 0.3125 and 0.6875 , corre-sponding to a half-width of 0.1875 around 0.5. We evaluate both objectives using the resulting hard-bit detection decisions and image fidelity. The DR 2 column reports detection before post-processing, while “DR after JPEG” reports the two-sided detection rate after JPEG compression at quality factor q = 50 .The band penalty exposes a direct margin–fidelity trade-off rather than strictly dominating the point target. With h = 0 .10 ,it improves SSIM from 0.970 to 0.972 and LPIPS from 0.046 
+
+to 0.044 , but its clean two-sided rate increases from 0.03 to 
+
+0.05 ; after JPEG the corresponding rates are 0.05 and 0.06 .Wider bands save slightly more distortion but lose substantially more evasion: at h = 0 .15 and 0.18 , the clean two-sided rates rise to 0.12 and 0.26 . We therefore retain the point target as the more conservative operating point in these experiments: its small fidelity cost buys a measurable margin in both the clean and post-processed evaluations. 12                                                               
+
+> TABLE X COMPARISON OF POINT -TARGET AND BAND -PENALTY OBJECTIVES .Objective Bit ACC SSIM ↑LPIPS ↓DR 2↓
+> DR after JPEG ↓
+> Point, a⋆= 0 .45 0.458 0.970 0.046 0.03 0.05 Band, h= 0 .10 0.406 0.972 0.044 0.05 0.06 Band, h= 0 .15 0.359 0.974 0.042 0.12 0.09 Band, h= 0 .18 0.331 0.975 0.041 0.26 0.15 TABLE XI EFFECT OF THE DETECTOR SIGNIFICANCE LEVEL .
+> DR 2↓
+> α
+> Acceptance bounds Width Baseline B+ LiBRA
+> 0.1[0 .420 ,0.580] 0.160 1.00 1.00 0.21
+> 0.05 [0 .400 ,0.600] 0.200 1.00 1.00 0.06
+> 0.01 [0 .370 ,0.630] 0.260 1.00 0.98 0.00
+> 0.001 [0 .340 ,0.660] 0.320 1.00 0.93 0.00
+
+J. Sensitivity to the Defender’s Significance Level 
+
+The exact acceptance set depends on two quantities: the key length N , which the attacker knows, and the significance level 
+
+α, which it does not. Subsection V-A gives the exact accepted count ranges for the evaluated key lengths at α = 0.01 ;here we use YU1 with N = 100 and vary α. Acceptance bounds are computed using exact binomial tests. “Width” is the difference between the largest and smallest accepted bit accuracies. Under the independent fair-bit null, α is an upper bound on the false-positive rate. No re-optimization is required, because the attacked images and their decoded bits are fixed and changing α only moves the threshold of the test applied to them: we re-evaluate the same 5,000 images under detectors that use different α.Table XI shows that decreasing α widens the exact ac-ceptance set. LiBRA has zero observed detections at both 
+
+α = 0 .01 and α = 0 .001 . Increasing α narrows the acceptance set and raises the detection rate to 0.06 at α = 0 .05 and 0.21 
+
+at α = 0 .1. The provider can therefore detect more attacked images by enlarging the rejection region, at the cost of a higher false-positive rate under the stated null model. Here, 
+
+α specifies the test’s nominal significance level and bounds its false-positive rate; the exact rate depends on the discrete binomial distribution. 
+
+K. Relaxing Knowledge of the Key 
+
+Our threat model assumes that the adversary knows the secret key w. We also evaluate LiBRA on Stable Signature using an estimated key ˆw that differs from w in a fraction ϵ
+
+of its bit positions. The attack optimizes against the estimated key ˆw, while all metrics are computed against the true key w
+
+used by the detector. Table XII shows the effect of key estimation errors on LiBRA. As ϵ increases from 0 to 0.20 , mean Bit ACC rises from 0.458 to 0.481 , and the MAE to the target, defined in Subsection V-H, increases from 0.026 to 0.041 . The two-sided detection rate increases from 0.03 to 0.05 ; SSIM and LPIPS change from 0.970 /0.046 to 0.968 /0.048 . Across the tested                                                              
+
+> TABLE XII SENSITIVITY TO WATERMARK KEY ESTIMATION ERRORS .Key error ϵBit ACC MAE to target SSIM ↑LPIPS ↓DR 2↓
+> 0(exact key) 0.458 0.026 0.970 0.046 0.03
+> 0.05 0.463 0.028 0.970 0.046 0.03
+> 0.10 0.469 0.032 0.969 0.047 0.04
+> 0.20 0.481 0.041 0.968 0.048 0.05 TABLE XIII EFFECT OF THE ITERATION BUDGET .Baseline LiBRA
+> TBit ACC SSIM ↑DR 2↓Bit ACC SSIM ↑DR 2↓
+> 10 0.214 0.968 0.94 0.527 0.975 0.06
+> 25 0.052 0.955 1.00 0.466 0.971 0.03
+> 50 0.018 0.942 1.00 0.458 0.970 0.03
+> 100 0.004 0.921 1.00 0.455 0.970 0.03
+
+key error rates up to 20% , LiBRA maintains low detection rates and similar image fidelity. 
+
+L. Effect of the Iteration Budget 
+
+Proposition 1 states that, in margin space, the baseline objective has no finite stationary point, whereas the two-sided objective has a zero set (Proposition 3). We compare the baseline and LiBRA on Stable Signature while varying the iteration budget T to examine their optimization behavior. Table XIII shows different responses to increasing the iteration budget. For the baseline, mean Bit ACC decreases from 0.214 at T = 10 to 0.004 at T = 100 , while SSIM falls from 0.968 to 0.921 . Its two-sided detection rate reaches 1.00 
+
+at T = 25 and remains unchanged as optimization continues. LiBRA already achieves a detection rate of 0.06 at T = 10 ,which decreases to 0.03 at T = 25 . From T = 25 to T = 100 ,its detection rate stays at 0.03 , SSIM remains between 0.970 
+
+and 0.971 , and mean Bit ACC changes from 0.466 to 0.455 .These results show that further iterations continue to degrade the baseline’s image fidelity, while LiBRA maintains stable evasion and fidelity over the tested budgets from 25 to 100 .
+
+M. Effect of Image Resolution 
+
+We measure how image resolution affects LiBRA’s detection outcomes, per-image runtime, and peak memory usage. Table XIV compares LiBRA on Stable Signature images at three resolutions with T = 50 . The autoencoder downsamples each spatial dimension by a factor of 8. Mean Bit ACC remains between 0.457 and 0.461 , and two-sided detection rates remain between 0.03 and 0.04 , showing similar evasion across the tested resolutions. Increasing resolution from 256 × 256 to 
+
+768 × 768 increases runtime from 3.6 to 25 .9 s per image, approximately 7.2×, and peak memory from 5.1 to 29 .6 GB. 
+
+N. Robustness of the Attacked Image 
+
+An attacked image is rarely consumed in the exact form the attacker produces: it is recompressed when uploaded, 13                                                                                    
+
+> TABLE XIV EFFECT OF IMAGE RESOLUTION .Resolution Latent shape
+> (H/f )×(W/f )×CBit ACC DR 2↓Time (s/image) Peak memory (GB)
+> 256 ×256 32 ×32 ×40.461 0.04 3.6 5.1
+> 512 ×512 64 ×64 ×40.458 0.03 12.4 13.8
+> 768 ×768 96 ×96 ×40.457 0.03 25.9 29.6 TABLE XV POST -PROCESSING ROBUSTNESS AND DISPERSION -AWARE DETECTION .Condition Bit ACC SSIM ↑DR 1↓DR 2↓
+> None (as attacked) 0.458 0.970 0.00 0.03 JPEG ( q= 90 )0.466 0.962 0.12 0.03 JPEG ( q= 50 )0.489 0.921 0.36 0.05 Resize ( 0.5×, restored) 0.474 0.931 0.21 0.04 Gaussian noise ( σ= 0 .02 )0.471 0.903 0.18 0.04 Center crop ( 10% )0.483 0.611 0.29 0.05 Dispersion-aware detection Setting No attack Baseline B+ LiBRA Combined DR ↓1.00 1.00 1.00 0.64
+
+resized when displayed, possibly screenshotted. Although Li-BRA targets an interior soft-confidence value, subsequent image processing may shift the hard bit accuracy outside the detector’s acceptance set. We therefore examine whether the achieved evasion survives common post-processing oper-ations. Table XV reports results on 5,000 Stable Signature images. The upper part evaluates detection after standard post-processing of images attacked with LiBRA. The lower part reports the combined detection rate under the stronger detector discussed in Section VI, which additionally tests the dispersion of per-bit confidences. Each statistical test uses α = 0 .01 .LiBRA retains low two-sided detection rates after the tested post-processing transformations. Starting from 0.03 
+
+before post-processing, the detection rate remains between 
+
+0.03 and 0.05 after JPEG compression, resizing, Gaussian noise, and center cropping. Image fidelity changes with the transformation, with SSIM decreasing to 0.611 after cropping. The dispersion-aware detector produces a different result: its combined detection rate is 0.64 for LiBRA and 1.00 for the no-attack, baseline, and B+ settings. Confidence dispersion therefore provides additional detection information beyond hard bit agreement. 
+
+O. An Adaptive Round Against the Dispersion-Aware Detector 
+
+The detector in Subsection V-N combines hard-bit agree-ment with a test of per-bit confidence dispersion. We evaluate an adaptive LiBRA variant that accounts for this additional statistic during optimization. The adaptive objective adds a penalty that guides confidence variance toward a reference value estimated from unwater-marked images: 
+
+Ldisp =
+
+
+
+Var i
+
+ σ(diwi) − v⋆2
+
+, (15) where v⋆ is estimated once from a batch of unwatermarked images. Adding λdisp Ldisp to Equation 12 costs one extra 
+
+> TABLE XVI ADAPTIVE ATTACK AGAINST THE DISPERSION -AWARE DETECTOR .
+
+Setting DR 2 ↓
+
+Dispersion DR ↓
+
+Combined DR ↓ SSIM ↑ LPIPS ↓
+
+No attack 1.00 0.99 1.00 1.000 0.000 LiBRA 0.03 0.62 0.64 0.970 0.046 
+
+LiBRA +Ldisp 0.04 0.06 0.09 0.966 0.050 
+
+scalar per iteration and no additional forward pass, since d
+
+is already computed. Table XVI compares the unaware and adaptive attacks on Stable Signature, with α = 0 .01 for each test. DR 2, “Disper-sion DR”, and “Combined DR” report detection rates for the hard-bit test, the dispersion test, and the combined detector, respectively. The unaware attack optimizes Equation 12, while the adaptive attack adds the dispersion penalty in Equation 15. Adding Ldisp reduces the combined detection rate from 0.64 
+
+to 0.09 and the dispersion-only detection rate from 0.62 to 
+
+0.06 . The original two-sided detection rate changes from 0.03 
+
+to 0.04 , while SSIM decreases from 0.970 to 0.966 and LPIPS increases from 0.046 to 0.050 . These results show that LiBRA can accommodate the additional detection statistic through a variance-matching term, substantially reducing combined detection with a small change in the measured fidelity. 
+
+P. Qualitative Results 
+
+Figure 8 compares three examples from Stable Signature. The first column shows the watermarked input x0, followed by the outputs of the baseline, B+, and LiBRA. Beneath each attacked image, the residual map visualizes its difference from the corresponding input. Residual maps are omitted for the input column because its difference from itself is zero. VI. D ISCUSSION 
+
+A. Evaluation Must Match the Decision Rule 
+
+The same attacked images can count as complete successes under the naive one-sided rule and complete failures under the two-sided test. An inverted decoding retains information about the key, so reporting low bit accuracy alone obscures attribution risk. Evaluation should specify the tested statistic, null model, significance level, and image-level detection rate. Comparing level-calibrated detectors is also necessary when making claims about security at matched false-positive rates; our naive one-sided comparison does not provide that calibra-tion. 14    
+
+> Fig. 8. Qualitative comparison on Stable Signature ( N= 48 ). Columns: input x0, baseline, B+, and LiBRA; lower rows are labeled as amplified residuals.
+
+B. Implications for Watermark Design 
+
+The four evaluated systems share a soft per-bit decoding interface despite different embedding mechanisms. Our objec-tive controls only the mean of those confidences. Dispersion, joint bit patterns, or agreement across disjoint key subsets may expose information that this mean leaves unconstrained. Subsection V-N and Subsection V-O examine dispersion and show why the resulting gain must be assessed against an aware attacker. Redundant keys and joint-pattern tests remain future directions. Multiple rejection rules also require calibration of their combined false-positive rate, for example using a multiple-testing correction [37]; a level of 0.01 per test does not imply the same overall level. 
+
+C. Bidirectional Control and Detection Outcomes 
+
+LiBRA separates the direction encouraged by the optimiza-tion objective from the final detection decision. Proposition 2 shows that per-bit thresholding can still admit fully inverted decodings, whereas Proposition 3 shows that LiBRA reverses its gradient direction when mean confidence crosses the target. This provides a mechanism for counteracting excessive inver-sion while retaining flexibility in individual bit configurations. Reaching the confidence target does not, however, guarantee hard-test acceptance. We therefore evaluate final detection out-comes alongside image fidelity and use controlled comparisons to distinguish the effects of objective design, optimization space, and key knowledge. 
+
+D. Limitations and Threats to Validity 
+
+The attack assumes detector gradients and access to the key or an estimate. It therefore characterizes the stated white-box setting, not an arbitrary black-box deployment. The key-error experiment relaxes one assumption but does not supply missing detector gradients. The target also depends on an as-sumed significance level; different null distributions, statistics, or changing thresholds can require a different objective. The evaluation covers four released checkpoints and their associated data, rather than a broad sweep of training runs. It does not establish transfer to initial-noise schemes such as Tree-Ring and Gaussian Shading [19], [20], whose inversion-based detectors differ from the evaluated interfaces. The spatial prior uses one configuration; interactions between its thresholds and the watermark objective remain unexplored. The reproduced baseline additionally retains a sign-consistency term that LiBRA does not use. The ablations and early-stopping control help separate these factors, but no single comparison establishes universal superiority. Finally, reaching a mean-confidence target neither guarantees hard-count evasion nor minimizes distortion. Per-image outcomes and uncertainty estimates are needed to interpret aggregate means and observed zero detection rates. 
+
+E. Ethical Considerations 
+
+Watermark-removal research can improve robustness eval-uation and can also enable provenance evasion. The study is scoped to publicly released research implementations and controlled evaluation images under explicit capability as-sumptions. The supplied manuscript reports no targeting of 15 
+
+commercial provenance services, private APIs, or deployed infrastructure. Our defensive analysis therefore accompanies the attack, including the adaptive failure of a stronger detector; it should not be read as a claim that adding dispersion alone resolves the vulnerability. VII. C ONCLUSION 
+
+We present LiBRA, a watermark removal method based on bidirectional latent optimization. Its symmetric mean-confidence objective counteracts excessive inversion while allowing fidelity constraints to favor less damaging changes. Experiments across four released watermarking systems show improved evasion and image quality over the inversion base-line. An iteration study on Stable Signature further shows stable evasion and fidelity from 25 to 100 iterations. Our analysis also confirms that reaching the soft target does not guarantee successful removal. Future work will explore black-box attacks, additional detection statistics, and minimum-distortion limits. REFERENCES [1] I. J. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley, S. Ozair, A. Courville, and Y. Bengio, “Generative adversarial nets,” in 
+
+Advances in Neural Information Processing Systems , 2014. [2] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” in Advances in Neural Information Processing Systems , 2020. [3] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion (CVPR) , 2022, pp. 10 674–10 685. [4] L. Verdoliva, “Media forensics and deepfakes: An overview,” IEEE Journal of Selected Topics in Signal Processing , vol. 14, no. 5, pp. 910–932, 2020. [5] I. J. Cox, J. Kilian, F. T. Leighton, and T. Shamoon, “Secure spread spectrum watermarking for multimedia,” IEEE Transactions on Image Processing , vol. 6, no. 12, pp. 1673–1687, 1997. [6] J. Zhu, R. Kaplan, J. Johnson, and L. Fei-Fei, “Hidden: Hiding data with deep networks,” in Computer Vision – ECCV 2018 , vol. 11219. Springer, 2018, pp. 682–697. [7] P. Fernandez, G. Couairon, H. J´ egou, M. Douze, and T. Furon, “The stable signature: Rooting watermarks in latent diffusion models,” in 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , 2023, pp. 22 409–22 420. [8] X. Zhao, S. Gunn, M. Christ, J. Fairoze, A. Fabrega, N. Carlini, S. Garg, S. Hong, M. Nasr, F. Tram` er, S. Jha, L. Li, Y.-X. Wang, and D. Song, “SoK: Watermarking for ai-generated content,” in 2025 IEEE Symposium on Security and Privacy (SP) . IEEE Computer Society, 2025, pp. 2621–2639. [9] Z. Jiang, J. Zhang, and N. Z. Gong, “Evading watermark based detection of ai-generated content,” in Proceedings of the 2023 ACM SIGSAC Conference on Computer and Communications Security (CCS ’23) .Association for Computing Machinery, 2023, pp. 1168–1181. [10] A. Kassis and U. Hengartner, “UnMarker: A universal attack on defen-sive image watermarking,” in 2025 IEEE Symposium on Security and Privacy (SP) . IEEE Computer Society, 2025, pp. 2602–2620. [11] X. Zhao, K. Zhang, Z. Su, S. Vasan, I. Grishchenko, C. Kruegel, G. Vi-gna, Y.-X. Wang, and L. Li, “Invisible image watermarks are provably removable using generative ai,” in Advances in Neural Information Processing Systems , vol. 37, 2024, pp. 8643–8672. [12] Y. Liu, Y. Song, H. Ci, Y. Zhang, H. Wang, M. Z. Shou, and Y. Bu, “Image watermarks are removable using controllable regeneration from clean noise,” in International Conference on Learning Representations (ICLR) , vol. 2025, 2025, pp. 87 310–87 327. [13] D. Z. Lee, H. Fang, H. Wang, and E.-C. Chang, “Removal attack and defense on ai-generated content latent-based watermarking,” in 
+
+Proceedings of the 2025 ACM SIGSAC Conference on Computer and Communications Security (CCS ’25) . Association for Computing Machinery, 2025, pp. 2174–2188. [14] D. P. Kingma and M. Welling, “Auto-encoding variational bayes,” in 
+
+International Conference on Learning Representations , 2014. [15] S. G. Mallat, “A theory for multiresolution signal decomposition: The wavelet representation,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 11, no. 7, pp. 674–693, 1989. [16] B. Chen and G. W. Wornell, “Quantization index modulation methods for digital watermarking and information embedding of multimedia,” 
+
+Journal of VLSI Signal Processing Systems for Signal, Image and Video Technology , vol. 27, no. 1–2, pp. 7–33, 2001. [17] N. Yu, V. Skripniuk, S. Abdelnabi, and M. Fritz, “Artificial fingerprinting for generative models: Rooting deepfake attribution in training data,” in 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , 2021, pp. 14 428–14 437. [18] J. Song, C. Meng, and S. Ermon, “Denoising diffusion implicit models,” in International Conference on Learning Representations , 2021. [19] Y. Wen, J. Kirchenbauer, J. Geiping, and T. Goldstein, “Tree-rings watermarks: Invisible fingerprints for diffusion images,” in Advances in Neural Information Processing Systems , vol. 36, 2023, pp. 58 047– 58 063. [20] Z. Yang, K. Zeng, K. Chen, H. Fang, W. Zhang, and N. Yu, “Gaussian shading: Provable performance-lossless image watermarking for diffu-sion models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2024, pp. 12 162–12 171. [21] Z. Jia, H. Fang, and W. Zhang, “MBRS: Enhancing robustness of dnn-based watermarking by mini-batch of real and simulated jpeg compression,” in Proceedings of the 29th ACM International Conference on Multimedia (MM ’21) . Association for Computing Machinery, 2021, pp. 41–49. [22] M. Tancik, B. Mildenhall, and R. Ng, “StegaStamp: Invisible hyperlinks in physical photographs,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2020, pp. 2114–2123. [23] K. A. Zhang, A. Cuesta-Infante, L. Xu, and K. Veeramachaneni, “SteganoGAN: High capacity image steganography with GANs,” arXiv preprint arXiv:1901.03892 , 2019. [24] T. Bui, S. Agarwal, N. Yu, and J. Collomosse, “RoSteALS: Robust steganography using autoencoder latent space,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops , 2023, pp. 933–942. [25] T. Bui, S. Agarwal, and J. Collomosse, “TrustMark: Robust water-marking and watermark removal for arbitrary resolution images,” in 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 18 629–18 639. [26] T. Sander, P. Fernandez, A. Durmus, T. Furon, and M. Douze, “Water-mark anything with localized messages,” in International Conference on Learning Representations , 2025. [27] S. Lu, Z. Zhou, J. Lu, Y. Zhu, and A. W.-K. Kong, “Robust watermarking using generative priors against image editing: From benchmarking to advances,” in International Conference on Learning Representations ,2025. [28] A. Athalye, N. Carlini, and D. Wagner, “Obfuscated gradients give a false sense of security: Circumventing defenses to adversarial examples,” in International Conference on Machine Learning , 2018. [29] F. Tram` er, N. Carlini, W. Brendel, and A. Madry, “On adaptive attacks to adversarial example defenses,” in Advances in Neural Information Processing Systems , 2020. [30] F. Croce and M. Hein, “Reliable evaluation of adversarial robustness with an ensemble of diverse parameter-free attacks,” in International Conference on Machine Learning , 2020. [31] N. Carlini and D. Wagner, “Towards evaluating the robustness of neural networks,” in 2017 IEEE Symposium on Security and Privacy (SP) .IEEE, 2017, pp. 39–57. [32] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in International Conference on Learning Representations , 2015. [33] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Doll´ ar, and C. L. Zitnick, “Microsoft COCO: Common objects in context,” in European Conference on Computer Vision , 2014, pp. 740– 755. [34] Z. Liu, P. Luo, X. Wang, and X. Tang, “Deep learning face attributes in the wild,” in Proceedings of the IEEE International Conference on Computer Vision , 2015, pp. 3730–3738. [35] Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, “Image quality assessment: From error visibility to structural similarity,” IEEE Transactions on Image Processing , vol. 13, no. 4, pp. 600–612, 2004. [36] R. Zhang, P. Isola, A. A. Efros, E. Shechtman, and O. Wang, “The unreasonable effectiveness of deep features as a perceptual metric,” in 
+
+Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2018, pp. 586–595. 16 
+
+[37] S. Holm, “A simple sequentially rejective multiple test procedure,” 
+
+Scandinavian Journal of Statistics , vol. 6, no. 2, pp. 65–70, 1979.

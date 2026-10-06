@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-10-06 <!--dpr-date:20261006-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/06/2610.03166v1-libra-detection-aware-image-watermark-removal-via-bidirectional-latent-optimization" data-sidebar-item="{&quot;title&quot;: &quot;LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2610.03166v1-libra-detection-aware-image-watermark-removal-via-bidirectional-latent-optimization&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffusion-wm&quot;}], &quot;evidence&quot;: &quot;在保持图像质量的同时使水印不可检测的移除攻击&quot;}">LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization</a>
   * 2026-10-04 <!--dpr-date:20261004-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/04/2609.36145v1-from-sharp-eyes-to-expert-mind-internalizing-expert-knowledge-in-mllms-for-tampered-text-detection" data-sidebar-item="{&quot;title&quot;: &quot;From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.36145v1-from-sharp-eyes-to-expert-mind-internalizing-expert-knowledge-in-mllms-for-tampered-text-detection&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;image-tamper&quot;}], &quot;evidence&quot;: &quot;检测并定位篡改文本区域&quot;}">From Sharp Eyes to Expert Mind: Internalizing Expert Knowledge in MLLMs for Tampered Text Detection</a>
