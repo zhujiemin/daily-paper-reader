@@ -1,15 +1,15 @@
 {
   "mode": "standard",
-  "generated_at": "2026-10-06T01:03:39.207410+00:00",
+  "generated_at": "2026-10-06T22:49:40.677998+00:00",
   "stats": {
     "mode": "standard",
     "tag_count": 2,
-    "deep_divecandidates": 1,
+    "deep_divecandidates": 2,
     "deep_cap": 7,
-    "deep_selected": 1,
-    "quick_candidates": 0,
+    "deep_selected": 2,
+    "quick_candidates": 4,
     "quick_skim_target": 12,
-    "quick_selected": 0
+    "quick_selected": 4
   },
   "deep_dive": [
     {
@@ -41,13 +41,13 @@
         "query:image-tamper"
       ],
       "llm_score": 9.0,
-      "llm_evidence_en": "removal attack that makes image watermarks undetectable while preserving quality",
-      "llm_evidence_cn": "在保持图像质量的同时使水印不可检测的移除攻击",
-      "llm_evidence": "在保持图像质量的同时使水印不可检测的移除攻击",
-      "canonical_evidence": "在保持图像质量的同时使水印不可检测的移除攻击",
-      "llm_tldr_en": "LiBRA is a detection-aware image watermark removal attack that adjusts the image in latent space to make watermarks undetectable while preserving image quality.",
-      "llm_tldr_cn": "数字水印支撑AI生成图像的来源溯源，但其可靠性取决于抗移除攻击能力，现有攻击强行反转水印仍可被检测或损害图像质量。作者提出LiBRA，一种检测感知的双向潜空间移除攻击，通过调整图像隐藏水印而非持续推向反转，在使水印不可检测的同时保持图像质量。该工作揭示了水印移除攻击的新方向，对水印鲁棒性评估与防御具有重要参考价值。",
-      "llm_tldr": "数字水印支撑AI生成图像的来源溯源，但其可靠性取决于抗移除攻击能力，现有攻击强行反转水印仍可被检测或损害图像质量。作者提出LiBRA，一种检测感知的双向潜空间移除攻击，通过调整图像隐藏水印而非持续推向反转，在使水印不可检测的同时保持图像质量。该工作揭示了水印移除攻击的新方向，对水印鲁棒性评估与防御具有重要参考价值。",
+      "llm_evidence_en": "detection-aware watermark removal attack on generated images",
+      "llm_evidence_cn": "针对生成图像的检测感知水印移除攻击",
+      "llm_evidence": "针对生成图像的检测感知水印移除攻击",
+      "canonical_evidence": "针对生成图像的检测感知水印移除攻击",
+      "llm_tldr_en": "LiBRA is a detection-aware watermark removal attack that uses bidirectional latent optimization to make AI-generated image watermarks undetectable while preserving image quality.",
+      "llm_tldr_cn": "数字水印为AI生成图像提供来源归属，但其可靠性取决于抗移除攻击能力。已有攻击通过迫使解码水印与原始不同来移除水印，却可能产生仍可检测的翻转水印并损害图像质量。该文提出LiBRA潜在带内双向移除攻击，通过调整图像隐蔽水印而非持续推向翻转，使水印不可检测同时保持图像质量。实验表明该攻击能有效移除水印并保持视觉质量，暴露了生成式图像水印的脆弱性。",
+      "llm_tldr": "数字水印为AI生成图像提供来源归属，但其可靠性取决于抗移除攻击能力。已有攻击通过迫使解码水印与原始不同来移除水印，却可能产生仍可检测的翻转水印并损害图像质量。该文提出LiBRA潜在带内双向移除攻击，通过调整图像隐蔽水印而非持续推向翻转，使水印不可检测同时保持图像质量。实验表明该攻击能有效移除水印并保持视觉质量，暴露了生成式图像水印的脆弱性。",
       "llm_tags": [
         "query:diffusion-wm"
       ],
@@ -55,7 +55,205 @@
       "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
       "matched_requirement_id": "req-6",
       "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.04151v1",
+      "source": "arxiv",
+      "title": "Watermarks and Fingerprints as Soft Bindings for Content Provenance: An Open-Licence Benchmark for Images, Audio and Video",
+      "abstract": "Content-provenance standards such as C2PA let a platform recover a stripped manifest through a soft binding: an invisible watermark read from the content, or a fingerprint looked up in a registry. We benchmarked both families under one protocol, restricted to openly available models whose licences we audited, on public media, with false-match rates calibrated on held-out negatives and source-level bootstrap intervals for performance estimates. For watermarking we evaluated 25 image, 7 audio and 7 video configurations from 12 methods on perceptual quality, robustness, false positives and cost; for fingerprinting, 35 methods on registries of up to 98,985 images, partial edits and adversarial attacks. PixelSeal gave the best balance for image and video watermarks and AudioSeal for audio, but the error-correcting detector of every TrustMark variant fired on 5.9 to 15.3% of unmarked images, so a verifier should test the expected payload. Among fingerprints, copy detectors trained on non-commercial data detected up to 75.5% of transformed images at a pair-level false-match rate of $10^{-7}$ and DINOv2, the best permissively licensed method, 65.0%; near-copies in a product catalogue dominated the false matches, and no detection improvement from geometric verification was observed under a matched calibration false-binding constraint in the evaluated image pipelines. On the same attacked copies the two families failed differently: the union of watermark and fingerprint successes covered 69% of image copies; fingerprints covered more audio queries, whereas expected-key watermark verification covered more video queries. Embedding a watermark moved the ISCC code of 62.0% of images past its match threshold, and platform-dependent colour conversion changed watermark bits between x86 and ARM hosts.",
+      "authors": [
+        "Seyedmahdi Kazempourradi",
+        "Ramtin Mojtahedi",
+        "Behrang Mohseni"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-02T23:52:30+00:00",
+      "link": "https://arxiv.org/pdf/2610.04151v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "invisible watermarks and fingerprints as soft bindings for content provenance",
+      "llm_evidence_cn": "以不可见水印与指纹作为内容溯源软绑定",
+      "llm_evidence": "以不可见水印与指纹作为内容溯源软绑定",
+      "canonical_evidence": "以不可见水印与指纹作为内容溯源软绑定",
+      "llm_tldr_en": "Content-provenance standards like C2PA recover stripped manifests via soft bindings, i.e. invisible watermarks or registry fingerprints. This paper benchmarks both families under one protocol on public media, evaluating perceptual quality, robustness, false matches and cost.",
+      "llm_tldr_cn": "C2PA等内容溯源标准在清单被剥离后，需要软绑定来恢复来源，即从内容中读取不可见水印或在注册表中查找指纹。论文在统一协议下评测开放许可的水印与指纹方法，并在留出负样本上校准误匹配率。实验覆盖12种方法的39个水印配置与35种指纹方法，评估感知质量、鲁棒性、误报与成本，为内容溯源中的软绑定技术提供了可复现的开源基准与性能参考。",
+      "llm_tldr": "C2PA等内容溯源标准在清单被剥离后，需要软绑定来恢复来源，即从内容中读取不可见水印或在注册表中查找指纹。论文在统一协议下评测开放许可的水印与指纹方法，并在留出负样本上校准误匹配率。实验覆盖12种方法的39个水印配置与35种指纹方法，评估感知质量、鲁棒性、误报与成本，为内容溯源中的软绑定技术提供了可复现的开源基准与性能参考。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
     }
   ],
-  "quick_skim": []
+  "quick_skim": [
+    {
+      "id": "2610.05870v1",
+      "source": "arxiv",
+      "title": "Certification of Real Images through Calibrated Content Authentication",
+      "abstract": "Generative models can synthesize high-quality inauthentic multimedia content that is already being misused at scale. We evaluate twenty deepfake detectors against ten generators released in the last four years and find accuracy decreasing over time, from near-perfect 99.5% to 76%. Adversarial perturbations further reduce every baseline detector to below 2% accuracy, effectively inverting the detector's assigned label. We argue that this unreliability reflects a fundamental ambiguity: generators can reproduce authentic content exactly (e.g., through memorization), so content alone cannot reveal the true provenance label.For this reason, content produced by a generator must admit a faithful reconstruction by that same generator, and finding such a reconstruction makes synthetic provenance plausible and authenticity plausibly deniable.We therefore propose and evaluate a detection paradigm that outputs a calibrated prediction of whether authenticity is plausibly deniable: a faithful reconstruction by any known generator establishes plausible deniability, while calibration bounds how often content from known generators fails to be reproduced. Our evaluation shows that (i) our detector can be calibrated so that at most 1% of generated content is wrongly certified, an operating point at which most baseline detectors reach near-zero recall, including the strongest with 93% accuracy; (ii) calibrating a stricter security threshold on attacked samples preserves this bound against adaptive adversaries within the evaluated bounded-perturbation attack space, whose perturbations break every baseline, but does not cover arbitrary adversarial transformations; and (iii) post-hoc verifiability is eroding, as 1,116 of 3,000 Reddit images resist reproduction by a 2022 generator, but only 55 to 79 resist reproduction by 2024 generators.",
+      "authors": [
+        "Sarim Hashmi",
+        "Abdelrahman Elsayed",
+        "Mohammed Talha Alam",
+        "Samuele Poppi",
+        "Nils Lukas"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-05T06:36:03+00:00",
+      "link": "https://arxiv.org/pdf/2610.05870v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "content authentication and provenance for real versus generated images",
+      "llm_evidence_cn": "面向真实与生成图像的内容认证与来源判定",
+      "llm_evidence": "面向真实与生成图像的内容认证与来源判定",
+      "canonical_evidence": "面向真实与生成图像的内容认证与来源判定",
+      "llm_tldr_en": "Deepfake detectors degrade over time and collapse under adversarial perturbations, so content alone cannot reveal provenance. This paper evaluates twenty detectors against ten generators and argues authenticity should require faithful reconstruction by the same generator.",
+      "llm_tldr_cn": "生成模型能合成高质量虚假内容并被大规模滥用，而深度伪造检测器准确率随时间从99.5%降至76%，对抗扰动更将其降至2%以下。论文评估二十个检测器对抗十种生成器，指出生成器可精确复现真实内容，因此单凭内容难以判定来源。作者主张生成内容须能被同一生成器忠实重建，从而以可重建性进行内容认证，为真实图像认证提供更可靠的框架。",
+      "llm_tldr": "生成模型能合成高质量虚假内容并被大规模滥用，而深度伪造检测器准确率随时间从99.5%降至76%，对抗扰动更将其降至2%以下。论文评估二十个检测器对抗十种生成器，指出生成器可精确复现真实内容，因此单凭内容难以判定来源。作者主张生成内容须能被同一生成器忠实重建，从而以可重建性进行内容认证，为真实图像认证提供更可靠的框架。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.34003v1",
+      "source": "arxiv",
+      "title": "DeMark: A Query-Free Black-Box Attack for Quality-Preserving Audio Watermark Removal",
+      "abstract": "Audio watermarking protects digital speech by embedding imperceptible signals for ownership verification and misuse tracing. However, the security of learning-based watermarking remains insufficiently understood under realistic adversarial removal, where attackers cannot access or query the watermark encoder, decoder, or detector. Existing attacks either rely on model feedback, require clean-watermarked pairs, or reconstruct the waveform with generative models, often leading to high query costs, limited generalization, or degraded perceptual quality. In this paper, we propose DeMark, a query-free black-box attack for quality-preserving audio watermark removal. Our key insight is that watermark embedding, while perceptually hidden, can introduce subtle non-speech artifacts in the time-frequency domain that are not fully aligned with natural speech. DeMark removes watermarks by suppressing these artifacts through two stages: Diverse Artifact Learning, which extracts complementary non-stationary and stationary artifact patterns, and Adaptive Artifact Scaling, which adaptively combines and amplifies them under quality-preserving constraints. Across two speech datasets and four state-of-the-art watermarking methods, DeMark achieves average attack success rates of 0.92 and 0.96 while consistently preserving higher perceptual quality than existing adaptive attacks. These results reveal a practical vulnerability of current audio watermarking systems and call for more robust watermark designs against query-free adversarial removal.",
+      "authors": [
+        "Weikang Ding",
+        "Binhao Ma",
+        "Hanqing Guo",
+        "Rui Duan"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-09-27T23:03:19+00:00",
+      "link": "https://arxiv.org/pdf/2609.34003v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "query-free black-box attack for watermark removal",
+      "llm_evidence_cn": "无查询黑盒水印移除攻击",
+      "llm_evidence": "无查询黑盒水印移除攻击",
+      "canonical_evidence": "无查询黑盒水印移除攻击",
+      "llm_tldr_en": "Learning-based watermarking security is understudied; this paper proposes DeMark, a query-free black-box attack that removes watermarks without accessing the encoder, decoder, or detector while preserving quality.",
+      "llm_tldr_cn": "学习式音频水印在真实对抗移除下的安全性尚未被充分理解，现有攻击依赖模型反馈或需成对样本。作者提出无查询黑盒攻击DeMark，无需访问或查询水印编码器、解码器与检测器即可移除水印。实验表明其在低查询成本下保持音质并具备更好泛化性。这揭示了水印移除攻击的现实威胁，为鲁棒水印设计提供参考。",
+      "llm_tldr": "学习式音频水印在真实对抗移除下的安全性尚未被充分理解，现有攻击依赖模型反馈或需成对样本。作者提出无查询黑盒攻击DeMark，无需访问或查询水印编码器、解码器与检测器即可移除水印。实验表明其在低查询成本下保持音质并具备更好泛化性。这揭示了水印移除攻击的现实威胁，为鲁棒水印设计提供参考。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.05215v1",
+      "source": "arxiv",
+      "title": "NeuMark-Native: Robust Text-to-Speech-Native Watermarking Through Full Utilization of Neural Audio Codec Latent Space",
+      "abstract": "Speech watermarking offers proactive traceability for synthetic speech, yet most existing models operate only after text-to-speech (TTS) synthesis by adding a watermark perturbation to the generated waveform. This post-hoc design leaves watermarking as an external step that can be omitted or bypassed and restricts the watermark to a shallow waveform representation. We propose NeuMark-Native, a TTS-native watermarking framework for neural codec-based synthesis. It embeds payload information into every generated codec-latent layer before waveform decoding, improving watermark persistence under downstream digital signal processing (DSP) and neural codec resynthesis. NeuMark-Native keeps the pretrained TTS model and the neural codec frozen, while optimizing only the watermark modules on generated codec tokens. Experiments on two corpora under 11 DSP attacks and 9 neural-codec attacks demonstrate robust watermark detection while preserving naturalness, intelligibility, and speech quality close to synthetic speech.",
+      "authors": [
+        "Annan Wu",
+        "Wen-Chin Huang",
+        "Tomoki Toda"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-10-04T13:32:32+00:00",
+      "link": "https://arxiv.org/pdf/2610.05215v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "native watermark embedding in generative TTS codec latent space",
+      "llm_evidence_cn": "在生成式TTS编解码潜在空间中原生嵌入水印",
+      "llm_evidence": "在生成式TTS编解码潜在空间中原生嵌入水印",
+      "canonical_evidence": "在生成式TTS编解码潜在空间中原生嵌入水印",
+      "llm_tldr_en": "Most speech watermarking is post-hoc and bypassable; this paper proposes NeuMark-Native, a TTS-native framework that embeds payloads into codec-latent layers before waveform decoding for stronger persistence.",
+      "llm_tldr_cn": "多数语音水印在合成后处理，易被绕过且仅作用于浅层波形表示。作者提出TTS原生水印框架NeuMark-Native，在波形解码前将载荷信息嵌入每个编解码潜在层，并保留预训练TTS模型。实验表明该水印在下游数字信号处理和神经编解码重合成下具有更强持久性。这为合成语音提供了更原生、更难绕过的溯源水印方案。",
+      "llm_tldr": "多数语音水印在合成后处理，易被绕过且仅作用于浅层波形表示。作者提出TTS原生水印框架NeuMark-Native，在波形解码前将载荷信息嵌入每个编解码潜在层，并保留预训练TTS模型。实验表明该水印在下游数字信号处理和神经编解码重合成下具有更强持久性。这为合成语音提供了更原生、更难绕过的溯源水印方案。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.06334v1",
+      "source": "arxiv",
+      "title": "SPIN: Image Immunization Against Diffusion Editing via Single-Step Projection in Stochastic Neighborhoods",
+      "abstract": "Diffusion models have greatly advanced instruction-guided image editing, while also raising concerns about unauthorized image manipulation. Image immunization addresses this risk by adding imperceptible perturbations to an input image to disrupt subsequent edits. Since editing requests are unknown at image release, protection should remain effective beyond the instruction used to construct the perturbation. Existing immunization methods either require costly full-trajectory backpropagation or use intermediate objectives whose effects may be weakened by subsequent denoising. Meanwhile, a single inference path provides limited feedback about alternative denoising continuations. To address these challenges, we propose \\textsc{SPIN}, a framework for image immunization via one-step projection over local stochastic trajectory neighborhoods. Starting from an early denoising state, \\textsc{SPIN} generates stochastic neighboring states under the same instruction and predicts their clean latents through one-step projection without full unrolling. We then optimize a bounded input perturbation to maximize the average deviation of these predictions from a clean-edit reference, encouraging the perturbation to disrupt multiple possible editing outcomes. Experiments on two image editors demonstrate substantial gains in protection performance, with \\textsc{SPIN} outperforming compared methods across all six metrics under seen instructions and in the more challenging unseen instruction setting.",
+      "authors": [
+        "Fengming Gu",
+        "Jie Zhang",
+        "Zhongqi Wang",
+        "Qiankun Li",
+        "Shiguang Shan",
+        "Xilin Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-05T13:41:52+00:00",
+      "link": "https://arxiv.org/pdf/2610.06334v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "imperceptible perturbations to protect images from diffusion editing",
+      "llm_evidence_cn": "用不可感知扰动保护图像免遭扩散编辑",
+      "llm_evidence": "用不可感知扰动保护图像免遭扩散编辑",
+      "canonical_evidence": "用不可感知扰动保护图像免遭扩散编辑",
+      "llm_tldr_en": "SPIN immunizes images against unauthorized diffusion editing by adding imperceptible perturbations via single-step projection in stochastic neighborhoods, remaining effective across unknown edit instructions.",
+      "llm_tldr_cn": "扩散模型推动了指令引导的图像编辑，也带来未授权篡改风险。图像免疫通过加入难以察觉的扰动来干扰后续编辑，但编辑指令在发布时未知，且现有方法需全轨迹反传或效果易被去噪削弱。本文提出SPIN，在随机邻域内进行单步投影，生成对多种去噪路径都有效的扰动。实验表明其在未知指令下仍能保持保护效果。该工作为图像发布前的抗扩散编辑保护提供了高效方案。",
+      "llm_tldr": "扩散模型推动了指令引导的图像编辑，也带来未授权篡改风险。图像免疫通过加入难以察觉的扰动来干扰后续编辑，但编辑指令在发布时未知，且现有方法需全轨迹反传或效果易被去噪削弱。本文提出SPIN，在随机邻域内进行单步投影，生成对多种去噪路径都有效的扰动。实验表明其在未知指令下仍能保持保护效果。该工作为图像发布前的抗扩散编辑保护提供了高效方案。",
+      "llm_tags": [
+        "query:image-tamper:composite"
+      ],
+      "matched_query_tag": "query:image-tamper:composite",
+      "matched_query_text": "Papers central to 我关注数字图像真实性认证、图像篡改检测和像素级篡改定位。重点关注 image tampering localization、image forgery localization、image manipulation localization、image authentication、image integrity verification 和 manipulation segmentation；关注对复制粘贴、拼接、生成式编辑、局部修改等操作的检测和像素级定位；尤其关注数字水印与图像认证、篡改检测、篡改定位以及图像恢复相结合的方法。, especially work that connects or combines: localizing tampered regions in digital images at pixel-level precision; identifying and localizing manipulated regions in digital images; achieving pixel-level localization of tampered areas in images; embedding imperceptible watermarks for image authentication and recovery; detecting signs of tampering in digital images; How to localize image tampering at the pixel level using deep learning models?; Pixel level localization of copy move, splicing, and generative editing in digital images.",
+      "matched_requirement_id": "req-composite-image-tamper",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
 }

@@ -1,0 +1,163 @@
+Title: NeuMark-Native: Robust Text-to-Speech-Native Watermarking Through Full Utilization of Neural Audio Codec Latent Space
+
+URL Source: https://arxiv.org/pdf/2610.05215v1
+
+Published Time: Tue, 06 Oct 2026 01:39:18 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# NEUMARK-NATIVE: ROBUST TEXT-TO-SPEECH-NATIVE WATERMARKING THROUGH FULL UTILIZATION OF NEURAL AUDIO CODEC LATENT SPACE 
+
+# Annan Wu, Wen-Chin Huang, Tomoki Toda 
+
+# Nagoya University, Japan 
+
+ABSTRACT 
+
+Speech watermarking offers proactive traceability for synthetic speech, yet most existing models operate only after text-to-speech (TTS) synthesis by adding a watermark perturbation to the generated waveform. This post-hoc design leaves watermarking as an external step that can be omitted or bypassed and restricts the watermark to a shallow waveform representation. We propose NeuMark-Native, a TTS-native watermarking framework for neural codec-based synthe-sis. It embeds payload information into every generated codec-latent layer before waveform decoding, improving watermark persistence under downstream digital signal processing (DSP) and neural codec resynthesis. NeuMark-Native keeps the pretrained TTS model and the neural codec frozen, while optimizing only the watermark mod-ules on generated codec tokens. Experiments on two corpora under 11 DSP attacks and 9 neural-codec attacks demonstrate robust wa-termark detection while preserving naturalness, intelligibility, and speech quality close to synthetic speech. 
+
+Index Terms — speech watermarking, traceable text-to-speech, neural audio codec, speech anti-spoofing, content provenance 
+
+1. INTRODUCTION 
+
+Recent neural codec-based text-to-speech models, including VALL-E 2 [1], MaskGCT [2], and CosyVoice 3 [3], generate increasingly realistic synthetic speech, creating a growing need for reliable prove-nance. Speech watermarking provides proactive traceability by em-bedding recoverable information into synthetic speech. Research on speech watermarking has progressed from signal-processing-based methods using transform coding and auditory masking [4] to neural methods that learn watermark embedding and recovery. Existing neural speech watermarking methods commonly apply the watermark only after waveform generation [5, 6, 7, 8, 9]. Such post-hoc methods add a learned waveform perturbation to synthetic speech, as illustrated in Fig. 1. Although convenient and model ag-nostic, this interface confines the watermark to the final waveform. As a separate post-processing step, watermarking can be omitted or bypassed. Latent-Mark [10] further shows that neural codec resyn-thesis can largely remove conventional waveform watermarks de-spite their robustness to ordinary digital signal processing (DSP) op-erations. Making watermarking native to TTS generation turns trace-ability into part of synthesis. TraceableSpeech [11] follows the TTS-native synthesis path illustrated in Fig. 2, embedding a wa-termark into one continuous codec representation and recovering it with a ResNet extractor. However, it first jointly trains the water-mark model and speech codec, and then trains VALL-E [12] on the resulting codec representations; any modification to the watermark model therefore requires VALL-E to be retrained from scratch. It also incurs a speech-quality cost and leaves robustness to neural 
+
+Fig. 1 . Post-hoc watermarking applied after TTS synthesis. 
+
+Fig. 2 . TTS-native watermarking applied during TTS synthesis. codec resynthesis unaddressed. To improve robustness to neural codec resynthesis without re-training the speech codec, we previously proposed NeuMark [13], which keeps the speech codec frozen and optimizes only its Trans-former watermark modules. Through cross-attention, these mod-ules apply message-conditioned residual updates to every residual vector quantization (RVQ) layer, distributing watermark evidence across codec-aligned latent representations to keep the watermark detectable after resynthesis. However, because its carriers are en-coded from real speech, watermarking remains separate from TTS generation. In this paper, we propose NeuMark-Native, a TTS-native frame-work that extends NeuMark’s per-layer codec-latent watermarking to TTS-generated tokens while retaining its robustness to neural codec resynthesis and frozen-backbone training strategy. A pre-trained TTS model pre-synthesizes target codec tokens from each training transcript and a same-speaker prompt, exposing the water-mark modules to TTS-specific characteristics while the TTS model and speech codec remain frozen. NeuMark-Native produces water-marked synthetic speech with quality competitive with waveform-domain methods such as AudioSeal [6] and WavMark [5]. Our contributions are: • We propose NeuMark-Native, a TTS-native framework that adapts its watermark modules on pre-synthesized codec tokens carrying TTS-specific characteristics and distributions. It em-beds payloads natively within codec-based synthesis using a loss design tailored to zero-shot voice cloning. • We evaluate NeuMark-Native on two corpora under 11 DSP and 9 neural-codec attacks. It substantially outperforms competing methods in codec-resynthesis robustness while achieving speech arXiv:2610.05215v1 [cs.SD] 4 Oct 2026 Fig. 3 . Offline preparation of paired TTS-generated codec tokens and synthetic speech. quality comparable to waveform-domain models across various evaluation metrics. NeuMark-Native source code is available at https://github.com/goannan/NeuMark-Native. 
+
+2. PROPOSED METHOD 2.1. Offline generated-token preparation 
+
+VALL-E [12] is a neural codec language model for zero-shot TTS. It takes target text and a speech prompt as input and predicts the codec tokens of target speech. The VALL-E model used here was pre-trained to predict SpeechTokenizer [14] tokens. As shown in Fig. 3, its input–output relation is 
+
+qx = E(x) = {q(r) 
+
+> x
+
+}Rr=1 ,
+
+ˆq = V(s, qx) = {ˆq(r)}Rr=1 ,
+
+ˆx = G(ˆ q).
+
+(1) Here s is the target text; x is a same-speaker prompt-speech wave-form; E and G are the frozen SpeechTokenizer encoder and decoder; 
+
+qx is the set of prompt tokens; V is the frozen VALL-E model; ˆq is the set of predicted target tokens; q(r) 
+
+> x
+
+and ˆq(r) denote the prompt and target streams at RVQ layer r, respectively; R is the number of RVQ layers; and ˆx is the resulting synthetic speech. For offline adaptation, s is the transcript of a training utterance and x is a prompt from the same speaker. As shown in Fig. 3, each pre-synthesis run stores the predicted tokens ˆq together with their decoded synthetic speech ˆx as a paired training sample. The TTS-generated tokens, rather than tokens encoded from the target record-ing, serve as the watermark carrier, while ˆx provides the sample-aligned reference. This exposes the trainable modules to the token characteristics encountered during synthesis. 
+
+2.2. TTS-native training objective 
+
+Figure 4 shows how the cached TTS-generated tokens ˆq become the actual watermark carrier. For each random 16-bit message m, the carrier supplies the cross-attention queries Q, while m supplies keys and values K, V ; N denotes the number of stacked Transformer blocks. The embedder modifies every RVQ stream and produces wa-termarked tokens eq, which the frozen decoder G converts into water-marked synthetic speech xwm . In parallel, decoding the unchanged 
+
+ˆq produces the paired reference ˆx. The distortion layer transforms 
+
+xwm into ex and provides frame labels yt; the frozen encoder E maps 
+
+ex to distorted tokens eq(r); and the extractor outputs predictions ˆyt
+
+and the recovered message ˆm. Flame and snowflake symbols denote trainable and frozen modules. Thus, only the watermark modules learn from the difference between the paired branches. NeuMark-Native retains six NeuMark objectives [13]. The de-coding, detection, latent-cosine, adversarial, feature-matching, and mel losses are denoted by Ldec , Ldet , Lcos , Ladv , Lfeat , and Lmel ,respectively. The paired reference branch provides a sample-aligned anchor that prevents xwm from drifting in content or acoustics. We further introduce three speech-aware objectives. The naturalness loss is 
+
+Lmos = −U (xwm ), (2) where U is the frozen UTMOS [15] predictor, which maps water-marked synthetic speech xwm to a predicted mean-opinion score. Minimizing Lmos therefore encourages a higher naturalness score. The speaker-similarity (SSIM) loss is 
+
+Lssim = 1 − cos( V (xwm ), V (x)) , (3) where V is an ECAPA-TDNN speaker-verification model using frozen WavLM-Large [16] features and its official fine-tuned check-point, 1 and cos denotes cosine similarity. Minimizing Lssim pre-serves the prompt speaker’s identity in xwm .The ASR loss is 
+
+Lasr = CTC(log softmax( B(xwm )) , τ (s)) , (4) where B is the frozen wav2vec 2.0 Base (960 h) model [17] 2
+
+and maps xwm to framewise character logits. The tokenizer τ
+
+converts target text s into a character sequence. Connectionist tem-poral classification (CTC) [18] sums the probabilities of all valid frame-level paths corresponding to τ (s) and returns their negative log-likelihood. Minimizing Lasr encourages xwm to preserve the target linguistic content without frame-aligned labels. Our joint adaptation objective is 
+
+L = 5 Ldec + Ldet + 2 Lcos + Ladv + 2 Lfeat 
+
++ 0 .25 Lmel + 0 .5Lmos + Lssim + 0 .5Lasr . (5) For adversarial training, D contains multi-period, multi-scale, and multi-scale STFT discriminators (MPD, MSD, and MS-STFTD). Under the least-squares objective, discriminator D ∈ D with KD
+
+outputs is updated by 
+
+LD = 1
+
+|D| 
+
+X
+
+> D∈D
+
+1
+
+KDKDX
+
+> k=1
+
+E(Dk (ˆ x) − 1) 2 + EDk (xwm )2 . (6) The watermark modules are optimized by Eq. (5) with the discrim-inators frozen, whereas D is updated separately by Eq. (6) using a detached xwm . All TTS, codec, and speech-assessment networks remain frozen. We evaluate two NeuMark-Native variants. NeuMark-Native (direct) applies the NeuMark watermark modules pretrained using original codec tokens extracted from natural speech directly to TTS-generated tokens. NeuMark-Native (adapted) initializes from the same checkpoint and fine-tunes the modules on the paired training data in Fig. 3 using Eq. (5). Both variants keep the TTS model and speech codec frozen and use the same watermark-embedding proce-dure during synthesis. 
+
+> 1https://github.com/microsoft/UniSpeech/tree/ma in/downstreams/speaker_verification
+> 2https://docs.pytorch.org/audio/stable/pipelines
+
+Fig. 4 . NeuMark-Native training on the prepared TTS-generated codec tokens. 
+
+3. EXPERIMENTAL EVALUATION 3.1. Setup 
+
+NeuMark-Native used the three LibriTTS [19] training subsets: clean-100, clean-360, and other-500. Together they contained ap-proximately 555 hours before duration filtering. Filtering to 0.5– 10.5 sec yielded approximately 157k cuts, which were preprocessed as in Sec. 2.1. Adaptation ran for ten epochs on one NVIDIA H100 GPU and took approximately 69 hours. Each example re-ceived a random 16-bit message and one augmentation sampled from identity or 11 DSP attacks following AudioCraft: 3 Gaussian noise, pink noise, low-pass filtering, high-pass filtering, band-pass filtering, echo, smoothing, resampling, gain increase, gain decrease, and speed change. The training pool also contained EnCodec [20] resynthesis at 3, 6, and 12 kbps to adapt the model to neural-codec attacks across different bandwidths, together with codec resynthesis combined with frame masking or replacement; negatives alternated between recordings and synthetic speech. Evaluation was conducted as zero-shot text-to-speech (TTS) voice cloning on both corpora. It used 2,078 duration-filtered ut-terances from LibriTTS test-clean as the in-corpus set and 1,088 prompt–text pairs from the English subset of Seed-TTS-Eval [21] (SeedTTS-en) to assess cross-corpus generalization to unseen texts and speakers. Each test item first followed Fig. 3: from test text 
+
+s and a same-speaker prompt x, VALL-E predicted target speech tokens ˆq, which the frozen decoder converted into synthetic speech 
+
+ˆx.NeuMark-Native and TraceableSpeech performed watermark embedding within TTS generation before waveform decoding, thereby producing watermarked synthetic speech directly. By con-trast, WavMark and AudioSeal operated after TTS synthesis by 
+
+> 3https://github.com/facebookresearch/audiocraft
+
+adding watermark perturbations to the synthetic speech ˆx produced in Fig. 3. The resulting watermarked synthetic speech from ev-ery method was evaluated under the same DSP and neural-codec conditions. The evaluation included one identity condition and the same 11 DSP attacks. The 9 codec attacks used EnCodec at 3/6/12 kbps, DAC [22] at 6/8/24 kbps, and SNAC [23] at 0.98/1.9/2.6 kbps. DAC and SNAC were unseen during training. Group means formed the 12/9-weighted overall score. 
+
+3.2. Performance evaluation 
+
+Table 1 compares watermark robustness across the identity, DSP, and neural-codec conditions. NeuMark-Native (adapted) achieves the best overall detection performance on both LibriTTS test-clean and SeedTTS-en, while NeuMark-Native (direct) provides the high-est overall payload-bit accuracy. Consistent results on both corpora demonstrate generalization to unseen texts and speakers. Table 2 compares speech quality against the same synthetic speech. NeuMark-Native preserves naturalness, speaker similarity, intelligibility, and perceptual fidelity close to the unwatermarked reference, with quality competitive with the waveform-domain methods WavMark and AudioSeal. These results demonstrate that TTS-native watermarking can improve overall robustness without substantially degrading the generated speech. 
+
+3.3. Ablation study 
+
+The w/o native losses variant removes the UTMOS, WavLM-similarity, and ASR objectives. The w/o generated tokens variant replaces VALL-E-predicted tokens with SpeechTokenizer tokens encoded from real speech, as in NeuMark. Both retain the same initialization and NeuMark objectives. Tables 2 and 3 show complementary ablation strengths. With-Table 1 . Robustness under DSP and codec conditions. AUC: detection ROC-AUC; TPR .1: TPR at FPR ≤ 0.1% ; Bit: payload accuracy. DSP, Codec, and Overall report means over their respective conditions. LibriTTS test-clean SeedTTS-en Method Conditions AUC ↑ TPR .1 ↑ Bit ↑ AUC ↑ TPR .1 ↑ Bit ↑
+
+WavMark [5] DSP 0.993 0.931 0.954 0.989 0.925 0.948 Codec 0.570 0.095 0.542 0.572 0.092 0.543 Overall 0.812 0.572 0.778 0.810 0.568 0.775 AudioSeal [6] DSP 0.970 0.920 0.946 0.971 0.920 0.944 Codec 0.813 0.445 0.638 0.806 0.422 0.645 Overall 0.903 0.717 0.814 0.900 0.707 0.816 TraceableSpeech [11] DSP 0.987 0.921 0.958 0.984 0.921 0.955 Codec 0.660 0.088 0.605 0.697 0.090 0.610 Overall 0.847 0.564 0.807 0.861 0.565 0.807 NeuMark-Native (direct) DSP 0.999 0.948 0.974 0.998 0.885 0.973 
+
+Codec 0.942 0.521 0.861 0.940 0.481 0.885 
+
+Overall 0.975 0.765 0.926 0.973 0.712 0.936 
+
+NeuMark-Native (adapted) DSP 1.000 0.961 0.982 0.998 0.914 0.964 Codec 0.955 0.605 0.842 0.949 0.490 0.830 Overall 0.981 0.808 0.922 0.977 0.733 0.907 
+
+Table 2 . Speech quality. Synthetic speech is the common unwatermarked carrier; PESQ [24] and STOI [25] use it as reference. LibriTTS test-clean SeedTTS-en Method UTMOS ↑ SSIM ↑ WER(%) ↓ PESQ ↑ STOI ↑ UTMOS ↑ SSIM ↑ WER(%) ↓ PESQ ↑ STOI ↑
+
+Synthetic speech 3.664 0.425 35.8 — — 3.276 0.420 36.7 — —WavMark 3.632 0.421 35.7 4.159 0.996 3.224 0.414 36.8 4.081 0.988 AudioSeal 3.651 0.425 35.8 4.416 0.997 3.259 0.417 36.8 4.427 0.990 TraceableSpeech 2.198 0.174 41.3 3.048 0.925 2.109 0.182 47.1 2.463 0.895 NeuMark-Native (direct) 3.638 0.410 35.7 4.360 0.990 3.244 0.403 36.9 4.161 0.979 NeuMark-Native (adapted) 3.630 0.413 35.7 4.318 0.991 3.238 0.413 37.0 4.212 0.985 
+
+w/o native losses 3.648 0.420 35.8 4.443 0.995 3.254 0.414 37.0 4.382 0.992 
+
+w/o generated tokens 3.613 0.413 35.7 4.278 0.989 3.228 0.407 36.9 4.058 0.978 
+
+Table 3 . NeuMark-Native ablations. TTS-native losses are UTMOS, WavLM, and ASR objectives. TTS-gen. TTS-native LibriTTS test-clean SeedTTS-en Configuration tokens losses AUC ↑ TPR .1 ↑ Bit ↑ AUC ↑ TPR .1 ↑ Bit ↑
+
+NeuMark-Native (adapted) Yes Yes 0.981 0.808 0.922 0.977 0.733 0.907 
+
+w/o native losses Yes No 0.974 0.772 0.899 0.968 0.671 0.874 
+
+w/o generated tokens No Yes 0.979 0.822 0.924 0.974 0.789 0.924 NeuMark-Native (direct) No No 0.975 0.765 0.926 0.973 0.712 0.936 
+
+out TTS-native losses, the differences from AudioSeal are only 0.003/0.005 in UTMOS and 0.005/0.003 in SSIM on LibriTTS test-clean/SeedTTS-en, with the best LibriTTS PESQ and SeedTTS-en STOI. This confirms that NeuMark’s reconstruction objectives provide a strong transparency anchor. Without generated tokens, low-FPR detection and payload recovery exceed the full adapted model despite modestly lower quality. Generated-token training therefore favors the overall robustness–quality balance, while real-speech tokens favor strict low-FPR detection and bit recovery; direct integration retains the highest codec-average payload accuracy. 
+
+4. CONCLUSION 
+
+NeuMark-Native integrates watermarking into neural codec TTS by adapting NeuMark on pre-synthesized TTS tokens and embed-ding the payload into every generated RVQ stream before decoding. Across two corpora, it provides the strongest overall detection and low-FPR performance, with particularly large gains under neural-codec resynthesis, while retaining naturalness, intelligibility, speaker similarity, and perceptual quality close to synthetic speech and com-petitive waveform-domain methods. The frozen-backbone design also permits transfer to compatible codec-based TTS models through watermark-only adaptation. 5. ACKNOWLEDGMENT 
+
+This work was supported in part by JSPS KAKENHI Grant Number 26H02530, and in part by the BRIDGE Program (R7-H05), imple-mented by the Cabinet Office, Government of Japan. 
+
+6. REFERENCES 
+
+[1] Sanyuan Chen, Shujie Liu, Long Zhou, et al., “VALL-E 2: Neural codec language models are human parity zero-shot text to speech synthesizers,” arXiv preprint arXiv:2406.05370 ,2024. [2] Yuancheng Wang, Haoyue Zhan, Liwei Liu, et al., “MaskGCT: Zero-shot text-to-speech with masked generative codec trans-former,” in International Conference on Learning Representa-tions , 2025. [3] Zhihao Du, Changfeng Gao, Yuxuan Wang, et al., “CosyVoice 3: Towards in-the-wild speech generation via scaling-up and post-training,” arXiv preprint arXiv:2505.17589 , 2025. [4] F. J. Ruiz and John R. Deller, Jr., “Digital watermarking of speech signals for the national gallery of the spoken word,” in 
+
+Proceedings of the IEEE International Conference on Acous-tics, Speech, and Signal Processing , 2000, vol. 3, pp. 1499– 1502. [5] Guangyu Chen, Yu Wu, Shujie Liu, Tao Liu, Xiaoyong Du, and Furu Wei, “Wavmark: Watermarking for audio generation,” 
+
+arXiv preprint arXiv:2308.12770 , 2023. [6] Robin San Roman, Pierre Fernandez, Hady Elsahar, Alexandre D´ efossez, Teddy Furon, and Tuan Tran, “Proactive detection of voice cloning with localized watermarking,” in Proceedings of the 41st International Conference on Machine Learning . 2024, vol. 235 of Proceedings of Machine Learning Research , pp. 43180–43196, PMLR. [7] Mayank Kumar Singh, Naoya Takahashi, Wei-Hsiang Liao, and Yuki Mitsufuji, “SilentCipher: Deep audio watermarking,” in Interspeech 2024 , 2024, pp. 2175–2179. [8] Pengcheng Li, Xulong Zhang, Jing Xiao, and Jianzong Wang, “IDEAW: Robust neural audio watermarking with invertible dual-embedding,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing . 2024, pp. 4500–4511, Association for Computational Linguistics. [9] Yixin Liu, Lie Lu, Jihui Jin, Lichao Sun, and Andrea Fanelli, “XAttnMark: Learning robust audio watermarking with cross-attention,” in Proceedings of the 42nd International Confer-ence on Machine Learning . 2025, vol. 267 of Proceedings of Machine Learning Research , pp. 38987–39015, PMLR. [10] Yen-Shan Chen, Shih-Yu Lai, Ying-Jung Tsou, et al., “Latent-Mark: An audio watermark robust to neural codec compres-sion,” in Interspeech 2026 [Long Track] , 2026, pp. 3052–3061. [11] Junzuo Zhou, Jiangyan Yi, Tao Wang, et al., “Traceable-Speech: Towards proactively traceable text-to-speech with wa-termarking,” in Interspeech 2024 , 2024, pp. 2250–2254. [12] Chengyi Wang, Sanyuan Chen, Yu Wu, et al., “Neural codec language models are zero-shot text to speech synthesizers,” 
+
+arXiv preprint arXiv:2301.02111 , 2023. [13] Annan Wu, Wen-Chin Huang, and Tomoki Toda, “NeuMark: Neural codec resynthesis-robust audio watermarking in the codec latent space,” arXiv preprint arXiv:2609.25719 , 2026. [14] Xin Zhang, Dong Zhang, Shimin Li, Yaqian Zhou, and Xipeng Qiu, “SpeechTokenizer: Unified speech tokenizer for speech language models,” in International Conference on Learning Representations , 2024. [15] Takaaki Saeki, Detai Xin, Wataru Nakata, Tomoki Koriyama, Shinnosuke Takamichi, and Hiroshi Saruwatari, “UTMOS: UTokyo-SaruLab system for VoiceMOS challenge 2022,” in 
+
+Interspeech 2022 , 2022, pp. 4521–4525. [16] Sanyuan Chen, Chengyi Wang, Zhengyang Chen, et al., “WavLM: Large-scale self-supervised pre-training for full stack speech processing,” IEEE Journal of Selected Topics in Signal Processing , vol. 16, no. 6, pp. 1505–1518, 2022. [17] Alexei Baevski, Yuhao Zhou, Abdelrahman Mohamed, and Michael Auli, “wav2vec 2.0: A framework for self-supervised learning of speech representations,” in Advances in Neural Information Processing Systems , 2020, vol. 33, pp. 12449– 12460. [18] Alex Graves, Santiago Fern´ andez, Faustino Gomez, and J¨ urgen Schmidhuber, “Connectionist temporal classification: La-belling unsegmented sequence data with recurrent neural net-works,” in Proceedings of the 23rd International Conference on Machine Learning , 2006, pp. 369–376. [19] Heiga Zen, Viet Dang, Rob Clark, et al., “LibriTTS: A corpus derived from LibriSpeech for text-to-speech,” in Interspeech 2019 , 2019, pp. 1526–1530. [20] Alexandre D´ efossez, Jade Copet, Gabriel Synnaeve, and Yossi Adi, “High fidelity neural audio compression,” Transactions on Machine Learning Research , 2023. [21] Philip Anastassiou, Jiawei Chen, Jitong Chen, et al., “Seed-TTS: A family of high-quality versatile speech generation models,” arXiv preprint arXiv:2406.02430 , 2024. [22] Rithesh Kumar, Prem Seetharaman, Alejandro Luebs, Ishaan Kumar, and Kundan Kumar, “High-fidelity audio compression with improved rvqgan,” in Advances in Neural Information Processing Systems , 2023, vol. 36, pp. 27980–27993. [23] Hubert Siuzdak, Florian Gr¨ otschla, and Luca A. Lanzend¨ orfer, “SNAC: Multi-scale neural audio codec,” in Audio Imagina-tion: NeurIPS 2024 Workshop AI-Driven Speech, Music, and Sound Generation , 2024. [24] International Telecommunication Union, Wideband Extension to Recommendation P.862 for the Assessment of Wideband Telephone Networks and Speech Codecs , 2007. [25] Cees H. Taal, Richard C. Hendriks, Richard Heusdens, and Jesper Jensen, “An algorithm for intelligibility prediction of time-frequency weighted noisy speech,” IEEE Transactions on Audio, Speech, and Language Processing , vol. 19, no. 7, pp. 2125–2136, 2011.

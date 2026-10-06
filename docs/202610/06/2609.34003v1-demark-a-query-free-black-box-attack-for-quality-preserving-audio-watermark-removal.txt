@@ -1,0 +1,304 @@
+Title: DeMark: A Query-Free Black-Box Attack for Quality-Preserving Audio Watermark Removal
+
+URL Source: https://arxiv.org/pdf/2609.34003v1
+
+Published Time: Tue, 29 Sep 2026 02:34:31 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# DeMark: A Query-Free Black-Box Attack for Quality-Preserving Audio Watermark Removal 
+
+# Weikang Ding 1, Binhao Ma 1, Hanqing Guo 2, Rui Duan 1
+
+> 1
+
+University of Missouri-Kansas City, USA 
+
+> 2
+
+Indiana University Bloomington, USA 
+
+Abstract 
+
+Audio watermarking protects digital speech by embedding imperceptible signals for ownership verification and misuse tracing. However, the security of learning-based watermark-ing remains insufficiently understood under realistic adversar-ial removal, where attackers cannot access or query the wa-termark encoder, decoder, or detector. Existing attacks either rely on model feedback, require clean-watermarked pairs, or reconstruct the waveform with generative models, often lead-ing to high query costs, limited generalization, or degraded perceptual quality. In this paper, we propose DeMark, a query-free black-box attack for quality-preserving audio watermark removal. Our key insight is that watermark embedding, while perceptually hidden, can introduce subtle non-speech artifacts in the time-frequency domain that are not fully aligned with natural speech. DeMark removes watermarks by suppressing these artifacts through two stages: Diverse Artifact Learning, which extracts complementary non-stationary and stationary artifact patterns, and Adaptive Artifact Scaling, which adap-tively combines and amplifies them under quality-preserving constraints. Across two speech datasets and four state-of-the-art watermarking methods, DeMark achieves average attack success rates of 0.92 and 0.96 while consistently preserving higher perceptual quality than existing adaptive attacks. These results reveal a practical vulnerability of current audio water-marking systems and call for more robust watermark designs against query-free adversarial removal. 
+
+# Introduction 
+
+With the rapid growth of social networking platforms, au-dio content is increasingly shared and redistributed online, making ownership protection and provenance verification important. Audio watermarking provides a proactive protec-tion mechanism by embedding an imperceptible signal into an audio waveform that can later be recovered by a ded-icated decoder. However, the robustness of current audio watermarking methods remains a concern (Wen et al. 2025; O’Reilly et al. 2025). Recent studies have shown that embed-ded watermarks can be removed by adding strong perturba-tions or reconstructing the waveform via signal processing or generative models (Liu et al. 2024; Yao et al. 2026). Existing watermark removal attacks still have two main limitations. (i) Watermark-related components are difficult to isolate from the underlying speech. Since audio watermarks are designed to be imperceptible and may be embedded in A. Existing Attacks 
+
+B. Existing Attacks 
+
+Low Quality 
+
+Watermark Removed 
+
+C. DeMark (Ours) 
+
+High Quality 
+
+Watermark Removed 
+
+Watermark Detected 
+
+High Quality  Attack Failed 
+
+Quality Degraded 
+
+Attack Succeeded 
+
+& Quality Preserved Non-speech Artifact Suppression 
+
+Strong Perturbation 
+
+Speech Structure Distortion 
+
+Limited Artifact Suppression 
+
+Diverse Artifact Learning 
+
+Adaptive Artifact Scaling 
+
+Figure 1: Overview of watermark removal attacks. low-energy or non-speech components, modifying the wave-form without identifying these components may either leave the watermark detectable or unnecessarily distort the speech. (ii) The modification required for successful watermark re-moval varies across audio samples and datasets. A fixed at-tack strength may be insufficient for some samples, whereas a stronger modification may damage the speech structure and introduce perceptible artifacts. Figure 1 illustrates these chal-lenges. Existing attacks (A, B) fail to achieve a high attack success rate while preserving audio quality, but our attack (C) achieves a better balance between attack effectiveness and perceptual quality. Therefore, reliably removing water-marks while preserving audio quality remains difficult. In this paper, we propose DeMark, a De -water Mark attack for audio watermark removal. DeMark uses speech enhance-ment models to extract non-speech artifact patterns from watermarked audio in the time-frequency domain and con-sists of two stages: Diverse Artifact Learning and Adaptive Artifact Scaling. To overcome the first limitation, Diverse Artifact Learning extracts two types of artifact patterns from a watermarked waveform: a non-stationary pattern and a sta-tionary pattern. The non-stationary pattern captures artifacts that vary with time and audio content, while the stationary pattern captures artifacts that persist across time. To better capture stationary artifacts, we further construct a training dataset tailored to the characteristics of audio watermarks. Together, these two patterns provide complementary infor-mation about watermark-related components. arXiv:2609.34003v1 [cs.CR] 27 Sep 2026 To address the second limitation, Adaptive Artifact Scal-ing adjusts and combines the extracted stationary and non-stationary patterns for each input. The initial patterns contain relatively weak watermark-related components, and directly subtracting them may only suppress the watermark rather than cause decoding failure. We therefore scale and com-bine the two patterns to construct an ensemble pattern with stronger watermark-related components and limited speech information. Subtracting this ensemble pattern from the wa-termarked waveform removes the watermark while avoiding substantial changes to the speech structure. This adaptive process enables DeMark to maintain its effectiveness across different audio samples and datasets while preserving per-ceptual quality. In this paper, we make the following contributions: 
+
+• We propose DeMark, a two-stage attack framework for au-dio watermark removal. The first stage employs a Diverse Artifact Learning strategy to capture two complemen-tary types of non-speech artifact patterns, and the second stage introduces an Adaptive Artifact Scaling mechanism to adaptively scale and combine these patterns. 
+
+• We leverage the design principles of speech enhancement to capture the two types of artifact patterns and construct a customized training dataset specifically for training the model to extract stationary patterns. 
+
+• We evaluate DeMark on two speech datasets and four state-of-the-art watermarking models. Compared to the existing attacks, DeMark achieves superior performance in both Attack Success Rate (ASR) and three perceptual audio quality metrics, with an average ASR of 0.96 and NISQA scores of at least 4.22 on the WSJ0 dataset. We further analyze the limitations of existing attacks and val-idate the effectiveness of the proposed two-stage frame-work through comprehensive ablation studies. 
+
+# Related Work 
+
+## Audio Watermarking 
+
+Audio watermarking methods are primarily based on neural networks, which preserve watermark imperceptibility and robustness. Existing methods commonly adopt the Encoder-Decoder architecture (Liu et al. 2024; Wen et al. 2025), where the encoder embeds watermark information into a given au-dio sample and the decoder extracts the embedded watermark from the watermarked audio. Let x denote an audio wave-form and m denote a watermark message. The watermark encoder E embeds a watermark into x and produces a wa-termarked waveform xw = E(x, m ). This process can be viewed as adding a watermark waveform δw to the audio waveform, i.e., xw = x + δw.A watermark is typically encoded as a sequence of binary bits, and its corresponding watermark pattern is represented as a two-dimensional structure in the time-frequency do-main. The watermark patterns can be categorized into two types: non-stationary and stationary. Non-stationary water-mark patterns (Chen et al. 2023; Roman et al. 2024) have statistical properties (e.g., mean and variance) that vary over time. Their design is aligned with human auditory charac-teristics, making them more imperceptible to human hear-ing. However, non-stationary watermark patterns lack ro-bustness (Wen et al. 2025), they are more vulnerable to sig-nal distortions and are difficult to survive in text-to-speech generation. In contrast, stationary watermark patterns (Liu et al. 2023; Zong et al. 2025) exhibit time-invariant statisti-cal properties. They improve robustness but sacrifice imper-ceptibility. To formalize the watermarked audio waveform generation, the audio waveform x is transformed into the time-frequency domain using the short-time Fourier trans-form (STFT), which is denoted as S = STFT( x). A wa-termark pattern Φw, with the same dimension as S, is em-bedded into the spectrogram S. The generated watermarked audio spectrogram is Sw = S + Φ w. The watermarked au-dio waveform is reconstructed by applying the inverse STFT (ISTFT): xw = ISTFT( Sw).In this work, we analyze the characteristics of different watermark patterns, identify their properties, and develop corresponding watermark removal strategies to effectively remove the embedded watermarks. 
+
+## Watermark Removal Attack 
+
+Existing studies have explored watermark removal under dif-ferent attacker assumptions. Detector-knowledge-based at-tacks (Liu et al. 2024; Ding et al. 2026) assume strong at-tacker knowledge, such as access to the detector architecture, parameters, or gradients. These studies reveal vulnerabili-ties in watermarking models when the detector is exposed, but the required knowledge is usually unavailable in the real world. Model-interaction-based attacks require the attacker to in-teract with the watermarking model or detector. Some meth-ods generate watermark-evading perturbations by iteratively querying the detector for feedback, such as HopSkipJumpAt-tack (Chen, Jordan, and Wainwright 2020) and Square At-tack (Andriushchenko et al. 2020) evaluated in AudioMark-Bench (Liu et al. 2024). Although these adversarial attacks avoid assuming full access to the detector internals, they still require repeated queries and often degrade perceptual audio quality. Other methods (López-López, Rosello, and Gomez 2024; Li et al. 2025) query the watermarking model with clean audio to obtain clean-watermarked pairs, which are then used to train a removal model. However, such at-tacks typically require a large number of queries, which can incur high query costs, trigger rate limits or service-side monitoring, and cause the removal model to overfit to the watermarking scheme used for training, thereby limiting its generalization to unseen watermarking schemes. In non-query-based attacks, the attacker has no access to the watermarking model and performs watermark removal on the audio itself. These attacks modify the watermark structure while preserving the speech content, semantics, and intelli-gibility. Prior works (Wen et al. 2025; Özer et al. 2025) have evaluated watermark robustness under various signal pro-cessing algorithms. Other studies (O’Reilly et al. 2025; Özer et al. 2026) further examine audio watermark robustness under voice conversion and vocoder-based transformations. DiffErase (Yao et al. 2026) proposes using a diffusion model and a vocoder to remove audio watermarks. However, these methods reconstruct the audio waveform rather than specifi-cally removing watermark components, which may alter the speech structure and distort the original speech. 
+
+## Speech Enhancement 
+
+Speech enhancement aims to remove noise components from noisy audio waveforms while preserving clean speech components. Existing works (López-López, Rosello, and Gomez 2024; O’Reilly et al. 2025) have explored the impact of speech enhancement on watermark removal. Traditional speech enhancement methods (Chen et al. 2006; Sainburg, Thielk, and Gentner 2020) rely on signal processing algo-rithms to suppress noise. However, these methods may dis-tort the original audio structure and introduce noise artifacts. To address these limitations, AI-based speech enhancement methods have been proposed. Early studies explored GAN-based models (Pascual, Bonafonte, and Serra 2017; Fu et al. 2021), VAE-based models (Leglaive et al. 2019; Fang et al. 2021), and other generative models (Lu, Ai, and Ling 2023) for speech enhancement. Recently, the diffusion-based mod-els (Lu et al. 2022; Richter et al. 2023; Lemercier et al. 2023) have demonstrated superior performance in terms of audio quality and generalization in audio generation. 
+
+# Methodology 
+
+## Motivation and Overview 
+
+To make audio watermarks both imperceptible and robust, watermarking models usually embed watermark signals into audio regions that satisfy human psychoacoustic constraints. Although this makes the embedded signals difficult to per-ceive, the embedding process still introduces additional pat-terns in the time-frequency domain. These patterns are im-portant for watermark decoding, but they are not necessarily consistent with the underlying speech structure. As a result, they may appear as subtle non-speech artifacts mixed with natural human speech. 
+
+Threat Model. The attacker removes the watermark from watermarked audio while preserving speaker characteristics and intelligibility. The attacker can access publicly available speech corpora, but has no access to clean-reference audio from the target speaker, clean-watermarked pairs from the tar-get watermarking model, or the watermark encoder, decoder, and detector, and cannot query watermark information. The attacker also has no knowledge of the specific watermarking method deployed by the defender. These constraints point to speech enhancement as the one operation trainable from publicly available speech alone. Speech enhancement reconstructs clean and natural speech while suppressing components that do not belong to speech, such as noise or other artifacts. Therefore, it may weaken watermark-induced distortions while recovering the original speech structure at the same time. However, directly apply-ing speech enhancement to watermark removal is non-trivial due to a fundamental task gap between speech enhancement and watermark removal. Speech enhancement is mainly de-signed to improve perceptual speech quality by removing audible noise, whereas watermark removal aims to suppress hidden watermark signals that may remain decodable even when they are imperceptible. This task gap leads to two con-crete challenges. 
+
+Limited Artifact Diversity. Existing speech enhancement methods are mainly designed to remove audible environ-mental noises. However, watermark signals can appear as non-speech artifacts with diverse structural characteristics, including stationary and non-stationary patterns in the time-frequency domain. Since such artifact patterns are not suf-ficiently covered by standard enhancement settings, off-the-shelf speech enhancement models may fail to capture them effectively across different watermarking schemes. 
+
+Incomplete Artifact Suppression. Speech enhancement models are primarily optimized to remove perceptually salient distortions that degrade speech quality. Consequently, they tend to suppress only the most prominent non-speech artifacts, while weaker artifacts are often preserved. Directly applying speech enhancement is therefore insufficient for ef-fective watermark removal. We address these two challenges with an operator that tar-gets non-speech artifacts directly rather than the unknown watermark. The design maps one component to each chal-lenge, as Figure 2 shows. 1. Diverse Artifact Learning. Instead of relying on a sin-gle enhancement model, we employ two enhancement models with complementary design objectives to capture diverse non-speech artifacts. Specifically, the framework learns complementary artifact patterns corresponding to non-stationary and stationary artifact structures, improv-ing the coverage of artifact characteristics introduced by different watermarking schemes. 2. Adaptive Artifact Scaling. Since enhancement models mainly suppress perceptually prominent artifacts, the ex-tracted artifact patterns may not completely cover weak abnormal components. Therefore, we progressively scale the extracted artifact patterns under a quality-preserving constraint, enabling broader artifact suppression while maintaining speech quality. 
+
+## Diverse Artifact Learning 
+
+Diverse Artifact Learning employs two complementary en-hancement models to capture non-speech artifacts with dif-ferent structural characteristics. Specifically, DeMark cate-gorizes non-speech artifacts into two types: non-stationary artifacts and stationary artifacts. Non-stationary artifacts vary over time and appear as localized distortions in the time-frequency domain, whereas stationary artifacts remain rela-tively stable along the temporal axis and appear as frequency-persistent structures. Accordingly, we employ two enhancement models with complementary design objectives. The non-stationary en-hancement model Rn extracts a non-stationary artifact pat-tern Φn, while the stationary enhancement model Rs, trained on a customized stationary watermark-like noise dataset, ex-tracts an initial stationary artifact pattern Φs. Since stationary artifacts may appear temporally discontinuous, we further ap-ply a temporal mean operation to each frequency bin of Φs
+
+to obtain the refined stationary artifact pattern ¯Φs.Figure 2: Overview of the two-stage attack framework of DeMark. Diverse Artifact Learning extracts non-stationary and stationary artifact patterns; Adaptive Artifact Scaling adaptively scales and combines them to construct the ensemble pattern. Algorithm 1: Construct Stationary Noise Samples 
+
+Require: Clean audio waveform x, selected frequency bins 
+
+F, a random SNR value ρ, a small constant ϵ
+
+Ensure: Stationary-noise audio waveform ys 
+
+> 1:
+
+S, p ← STFT( x) 
+
+> 2:
+
+Initialize Sn(f, l ) ← 0 for all f, l  
+
+> 3:
+
+for each selected frequency bin f ∈ F do  
+
+> 4:
+
+¯S(f ) ← 1
+
+> L
+
+PLl=1 S(f, l ) 
+
+> 5:
+
+Sn(f, 1: L) ← ¯S(f ) 
+
+> 6:
+
+end for  
+
+> 7:
+
+n ← ISTFT( Sn, p ) 
+
+> 8:
+
+r ←
+
+r ∥x∥22
+
+(∥n∥22+ϵ)·10 ρ/ 10  
+
+> 9:
+
+ns ← rn  
+
+> 10:
+
+ys ← x + ns 
+
+> 11:
+
+return ys
+
+Non-stationary pattern generation branch. We train a con-ditional diffusion model Rn to output a non-stationary pat-tern Φn. The pattern captures non-stationary artifacts that are inconsistent with the distributional structures of clean audio samples. First, we collect a training dataset that contains the clean and non-stationary pairs. Given the clean audio wave-form x and non-stationary noise waveform nn, we generate the corresponding noisy audio waveform yn by injecting nn
+
+into x: yn = x + nn. To train the model Rn, we sample xt
+
+at time step t as follows: 
+
+xt = μ(x0, y n, t ) + σ(t)z, (1) where μ and σ are defined following (Särkkä and Solin 2019; Richter et al. 2023), and z ∼ N C(0 , I ). The training objective is: 
+
+arg min  
+
+> θ
+
+E
+
+"
+
+sθ (xt, y n, t ) + z
+
+σ(t)
+
+> 22
+
+#
+
+. (2) The non-stationary pattern Φn is expressed as: 
+
+Φn = Sw − eSn, eSn = STFT( Rn(xw)) . (3) 
+
+Stationary pattern generation branch . Compared with the non-stationary pattern branch, we make two modifications: (1) we construct stationary noise samples and use this clean-noisy paired dataset for model training; and (2) we apply an additional mean operation to the generated stationary pattern. We first construct a customized noise dataset specifically for watermark removal, where imperceptible stationary noise is injected into the clean audio samples. Then, we train a con-ditional diffusion model Rs to extract a stationary pattern 
+
+Φs, which captures stationary components from the spectro-gram. Moreover, we apply a mean operation along the time axis to repair the discontinuous stationary structure for each frequency bin and generate a refined stationary pattern ¯Φs.It is non-trivial to construct a clean-noisy paired dataset. In real-world scenarios, watermarks are imperceptible to hu-man hearing, and real stationary watermark patterns are un-available for model training. Therefore, inspired by existing noisy dataset construction strategies (Botinhao et al. 2016; Richter et al. 2024), we construct stationary noise samples in the time-frequency domain and scale them based on signal-to-noise ratio (SNR) values. First, we transform the clean audio waveform x into the time-frequency domain S. Sec-ond, we randomly select several frequency bins F as valid noise injection targets. For each selected frequency bin f , we compute its average spectrogram ¯S across all time frames L
+
+and use this value to construct the stationary noise spectro-gram Sn while preserving the original phase information. After applying this operation to all selected frequency bins, we transform the constructed noise spectrogram Sn back to the time domain using ISTFT. Third, to control the noise level and generate the stationary noise waveform ns, we use a scale coefficient r to construct the noise waveform n with a random SNR value ρ. Finally, we add this stationary noise waveform ns to the clean audio waveform x and then gen-erate a stationary-noise audio waveform ys = x + ns. The Algorithm 1 shows the process. In this paper, the number of selected frequency bins ranges from 10 to 50, and the SNR ranges from 25 to 35 dB. We train Rs using the same training objective as Rn, with yn replaced by ys:
+
+arg min  
+
+> θ
+
+E
+
+"
+
+sθ (xt, y s, t ) + z
+
+σ(t)
+
+> 22
+
+#
+
+. (4) The stationary pattern Φs is computed as: 
+
+Φs = Sw − eSs, eSs = STFT( Rs(xw)) . (5) After obtaining Φs, we apply an additional mean opera-tion to generate the refined stationary pattern ¯Φs. From our observation of Φs, we find that some stationary noise com-ponents are not temporally continuous. Therefore, to better capture the statistical properties of the stationary structure, we use a mean operation on Φs and obtain a refined noisy pattern ¯Φs, which is expressed as: 
+
+¯Φs(f, l ) = 1
+
+L
+
+> L
+
+X 
+
+> τ=1
+
+Φs(f, τ ),f = 1 , . . . , F, l = 1 , . . . , L. 
+
+(6) 
+
+## Adaptive Artifact Scaling 
+
+Our goal is to generate an attacked audio waveform that can evade detection by the watermark decoder while main-taining perceptual audio quality. Enhancement-based mod-els are typically designed to remove perceptually obvious artifacts from audio samples. However, for artifacts located in imperceptible regions, these models often suppress them rather than completely remove them. Therefore, the extracted patterns may contain weak watermark-related artifacts, and directly subtracting these weak patterns is insufficient for ef-fective watermark removal. In this section, we aim to amplify the patterns generated by enhancement-based models under a quality-preserving constraint. Given a non-stationary pattern Φn and a refined station-ary pattern ¯Φs, we combine them to construct an ensemble pattern Φe. The ensemble pattern is defined as: 
+
+Φe = αΦn + β ¯Φs, (7) where α and β are the scaling parameters for Φn and ¯Φs,respectively. Since the energy of Φn and ¯Φs is dynamic across differ-ent audio samples, the α and β should not be fixed values. To dynamically determine these scaling parameters, we pro-pose a two-stage optimization strategy. In the first stage, we scale the refined stationary pattern ¯Φs to a fixed SNR value, such as 35 dB, which determines β. In the second stage, we keep β ¯Φs unchanged and only adjust the scaling parameter 
+
+α for the non-stationary pattern Φn. We combine the scaled non-stationary pattern αΦn with the fixed stationary pattern 
+
+β ¯Φs, and search for a suitable α to make the ensemble pat-tern αΦn + β ¯Φs reach another target SNR value, e.g., 20 dB, which determines α. In this way, the stationary component is first amplified to a controlled level, and the non-stationary component is then adaptively adjusted based on the already fixed stationary component. This strategy ensures the ensem-ble pattern is adaptively amplified according to the energy distribution of each audio sample. Finally, we subtract the ensemble pattern Φe from the watermarked spectrogram Sw to obtain the attacked spectro-gram ˆSw = Sw − Φe, and then apply ISTFT to ˆSw to obtain the attacked audio waveform ˆxw.
+
+# Evaluation 
+
+## Experimental Setup 
+
+Dataset. We use three public datasets in our experiments: one for training and two for inference. The training and inference datasets have no overlap. We use VoiceBank-DEMAND (Botinhao et al. 2016) as the training dataset. To train the non-stationary model, we follow the default data settings. To train the stationary model, we follow Algorithm 1 to construct a noisy training dataset. For inference, we use the Flickr 8k Audio Caption Corpus (Harwath and Glass 2015) and the Wall Street Journal (WSJ0) (Garofolo et al. 1993). 
+
+Audio Watermarking Methods. We select four state-of-the-art watermarking methods: AudioSeal (Roman et al. 2024), WavMark (Chen et al. 2023), Timbre (Liu et al. 2023), and AudioMarkNet (Zong et al. 2025). The watermark message length is 16 bits. For the first three methods, we randomly assign a binary watermark message to each audio sample. For AudioMarkNet, we use a fixed binary watermark message. By default, we scale the refined stationary pattern to an SNR of 35 dB and scale the ensemble pattern to an SNR of 20 dB. 
+
+Evaluation Metrics. We use the Attack Success Rate (ASR) to measure how successfully the attackers perform the watermark attack . An attack is considered successful if at least one decoded watermark bit differs from the ground-truth watermark message. For audio quality evaluation, our goal is to suppress perceptual artifacts while preserving speech content. Reference-based metrics such as SNR measure the energy difference between the reference audio and the at-tacked audio, but they do not always accurately reflect human perception. Therefore, we focus on three MOS-based met-rics: NISQA (Mittag et al. 2021), the overall quality score (OVRL) of DNSMOS P.835 (Reddy, Gopal, and Cutler 2021, 2022), and UTMOS (Saeki et al. 2022). 
+
+Audio Watermark Attack Methods. We compare our method with eleven watermark removal attacks from three categories. The first category is signal processing attacks , in-cluding NoiseReduce (Sainburg, Thielk, and Gentner 2020), Wiener Filter, MMSE_STSA (Ephraim and Malah 1984). The second category is speech enhancement attacks , includ-ing MP-SENet (Lu, Ai, and Ling 2023), MetricGAN+ (Fu et al. 2021), StoRM (Lemercier et al. 2023). The third cat-egory is adaptive attacks , including BigVGAN (Lee et al. 2022), the HSJA-Signal attack (Chen, Jordan, and Wain-wright 2020) and Square attack (Andriushchenko et al. 2020) implemented by AudioMarkBench (Liu et al. 2024), and DiffErase-Mel and DiffErase-Latent (Yao et al. 2026). To eliminate the potential influence of data discrepancy, we train these models on the same dataset used by our method, i.e., VoiceBank-DEMAND. In our experiments, since SGMSE+ can generate audio with high perceptual quality (Richter et al. 2023), we use the model architecture of SGMSE+ by default. 
+
+## Attack Performance 
+
+Table 1 shows the attack results. For signal processing (SP) attacks, only NoiseReduce achieves a high ASR, but it sac-rifices much audio quality, with an average NISQA score of 3.34 and an average UTMOS score of 3.39. Attack Type Attack Method Flickr dataset WSJ0 dataset AudioS. WavMark Timbre AudioM. Avg. AudioS. WavMark Timbre AudioM. Avg. SP                                                                                                                         
+
+> NoiseReduce 0.82 0.94 1.00 1.00 0.94 0.33 0.74 1.00 0.50 0.64 Wiener Filter 0.00 0.00 0.02 0.00 0.01 0.00 0.00 0.00 0.00 0.00 MMSE_STSA 0.06 0.00 0.00 0.27 0.08 0.00 0.00 0.00 0.18 0.05
+> SE
+> MP-SENet 0.14 0.02 0.01 0.96 0.28 0.06 0.09 0.03 0.99 0.29 MetricGAN+ 0.12 0.06 0.00 0.27 0.11 0.02 0.00 0.00 0.10 0.03 StoRM 0.18 0.15 0.04 0.79 0.29 0.15 0.32 0.01 1.00 0.37
+> Adaptive
+> BigVGAN 1.00 1.00 0.82 0.19 0.75 1.00 1.00 0.88 0.12 0.75 Square 0.19 0.87 0.12 0.00 0.30 0.14 0.96 0.36 0.06 0.38 HSJA 0.98 0.97 1.00 0.98 0.98 0.70 0.90 1.00 0.96 0.89 DiffErase-M 1.00 1.00 0.95 0.19 0.79 1.00 1.00 0.94 0.14 0.77 DiffErase-L 1.00 1.00 0.96 0.38 0.84 1.00 1.00 0.95 0.30 0.81
+> Ours 0.84 0.91 0.94 1.00 0.92 0.85 0.99 1.00 1.00 0.96
+
+Table 1: Attack Success Rate (ASR) against different audio watermarking methods. The attack types include three categories: Signal Processing (SP) attacks, Speech Enhancement (SE) attacks, and Adaptive attacks.                                                                                        
+
+> Attack Method AudioSeal WavMark Timbre AudioMarkNet NISQA DNSMOS UTMOS NISQA DNSMOS UTMOS NISQA DNSMOS UTMOS NISQA DNSMOS UTMOS
+> w/o attack 3.87 3.19 4.17 4.05 3.23 4.10 3.64 3.18 4.03 3.36 2.77 4.01 BigVGAN 3.78 3.06 3.49 3.91 3.07 3.44 3.58 3.08 3.25 3.78 3.01 3.66 Square 1.71 2.35 2.32 1.74 2.38 2.13 1.68 2.36 2.18 1.85 2.36 2.57 HSJA 1.20 1.81 1.55 2.41 2.70 3.42 1.16 1.85 1.38 1.09 1.54 1.42 DiffErase-M 3.56 3.02 3.28 3.72 3.02 3.24 3.43 3.04 3.13 3.82 3.02 3.44 DiffErase-L 3.75 3.15 3.38 3.96 3.18 3.37 3.64 3.17 3.29 3.94 3.18 3.37
+> Ours 4.22 3.25 4.25 4.29 3.22 4.18 4.28 3.23 4.10 4.59 3.31 4.22
+
+Table 2: Audio quality evaluation under adaptive attacks on the WSJ0 dataset. w/o attack is watermarked audio without attack. For speech enhancement (SE) attacks, most attacks fail to achieve effective watermark removal, with most ASR val-ues below 0.2. One exception is that MP-SENet and StoRM achieve relatively high ASR against AudioMarkNet, espe-cially on the WSJ0 dataset. This is because AudioMarkNet embeds watermarks below 1000 Hz, which can be more eas-ily identified and suppressed by speech enhancement attacks. For adaptive attacks, most methods achieve high ASR, and our attack demonstrates strong performance across all four watermarking methods, with average ASRs of 0.92 and 0.96 on two datasets, respectively. Additionally, among the five existing attacks, only HSJA successfully attacks Au-dioMarkNet. This indicates that models trained with BigV-GAN and DiffErase are less effective at handling watermark artifacts in low-frequency regions. Compared with the other attacks, our ASR against AudioSeal is slightly lower, al-though the average ASR still exceeds 0.9. The goal of our attack is to achieve successful watermark removal while pre-serving audio quality, but existing attacks often degrade the final perceptual quality (Sawata et al. 2022). Therefore, al-though existing attacks can successfully remove watermarks in some cases, they tend to destroy more speech structure. In the next section, we further compare the audio quality of our attack with that of the existing adaptive attacks. 
+
+## Audio Quality 
+
+We evaluate audio quality under adaptive attacks using three metrics: NISQA, DNSMOS, and UTMOS. The results are shown in Table 2. Our attack preserves audio quality better than the existing adaptive attacks. We observe that HSJA achieves high ASR but has poor perceptual quality. BigV-GAN and DiffErase, which directly reconstruct audio using trained models, improve audio quality compared with Square attack and HSJA. However, they still fail to preserve the orig-inal audio quality, and their overall quality is even lower than that of the watermarked audio without attack. Since the train-ing and inference datasets do not overlap, models trained on one dataset may not generalize well to another dataset. In addition, the phase of the reconstructed audio may be sub-stantially modified during reconstruction. In contrast, our attack is designed to balance attack effectiveness and audio quality. Rather than directly reconstructing the audio using a model, our method optimizes and scales the extracted pat-terns while preserving the original audio phase. In this way, our method suppresses watermark-related regions while bet-ter maintaining the speech structure and perceptual quality. 
+
+## Attack Visualization 
+
+Figure 3 compares the spectrograms of the representative au-dio sample. Square and HSJA introduce large perturbations Figure 3: Attacked audio visualization. The red solid boxes in BigVGAN and DiffErase highlight regions of noticeable distortion. AudioSeal is used as the watermarking method. 
+
+Figure 4: Pattern Visualization. Our ensemble pattern cap-tures some artifacts of the watermark pattern. into the spectrogram. When these perturbations are suffi-ciently strong, they can mislead the watermark decoder to produce an incorrect output. BigVGAN and DiffErase intro-duce additional reconstruction artifacts, which may alter the original phase and result in perceptible speech distortion. In contrast, our attack aims to suppress the artifacts that are inconsistent with the speech structure. Specifically, it modifies only the magnitude spectrum while preserving the original phase. By suppressing the non-speech artifacts, our attack successfully removes the watermark while maintain-ing the speech structure. The red solid boxes highlight regions with noticeable spectrogram distortion produced by existing attacks, whereas the green dashed boxes indicate that our method better preserves the original speech structure. Figure 4 compares our ensemble pattern and the water-mark pattern. We select two representative patterns for Au-dioSeal and Timbre, respectively. The ensemble pattern cap-tures several artifacts present in the watermark pattern, en-abling our attack to suppress watermark-related components. Although some low-frequency magnitude components are slightly decreased, our attack still preserves the overall audio quality while effectively removing the watermark. 
+
+## Ablation Study 
+
+First, we evaluate the effectiveness of adaptive scaling and the two artifact branches. Figure 5 shows the ASR. We set 
+
+α = β = 1 (w/o Scale), retain only the stationary pattern scaled to 35 dB (w/o Non-sta), and retain only the non-stationary pattern scaled to 20 dB (w/o Sta). The results show that our attack achieves the highest ASR. The two patterns are complementary, and adaptive scaling is necessary for 
+
+Figure 5: ASR for evaluating adaptive scaling, stationary branch, and non-stationary branch on the WSJ0 dataset.             
+
+> AudioSeal ASR NISQA DNSMOS UTMOS
+> Ours 0.85 4.22 3.25 4.25 Ours (+Refiner) 0.94 3.88 3.01 4.00
+
+Table 3: Comparison between our attack and our attack using an additional refiner on AudioSeal using WSJ0. effectively suppressing diverse watermark artifacts. Second, we further explore other optimization strategies for the non-stationary pattern. Here, we use Diffiner+ (Sawata et al. 2022). This method restores regions degraded or dis-torted by a preceding SE method and generates a percep-tually improved speech waveform. We denote the Diffiner+ model as Un and obtain the refined non-stationary pattern as Φrn = Un(xw, Rn(xw)) . The resulting ensemble pattern is ˜Φe = αΦrn + β ¯Φs. Table 3 compares the performance of our original attack with that of the variant incorporating the additional refiner. Refining the non-stationary pattern produces a higher ASR, but at the cost of reduced audio quality. Moreover, by comparing these results with those of existing attacks shown in Table 2, our observation is: prioritizing audio quality re-duces ASR, but pursuing stronger attack effectiveness tends to introduce greater audio degradation. Therefore, improving attack effectiveness by optimizing the non-stationary pattern, or even the ensemble pattern, while preserving high audio quality remains an important challenge. 
+
+# Conclusion 
+
+In this work, we propose DeMark, a two-stage query-free black-box attack framework that targets non-speech artifact patterns. Diverse Artifact Learning extracts complementary non-stationary and stationary patterns, and Adaptive Artifact Scaling combines and scales these patterns to construct an en-semble pattern. We develop a customized training dataset to facilitate the model-based extraction of stationary patterns. Experimental results demonstrate that DeMark achieves a high attack success rate while preserving high perceptual au-dio quality. Our analysis also validates the effectiveness of the proposed framework and highlights the persistent challenge of balancing attack effectiveness with audio quality. References 
+
+Andriushchenko, M.; Croce, F.; Flammarion, N.; and Hein, M. 2020. Square attack: a query-efficient black-box adver-sarial attack via random search. In European conference on computer vision , 484–501. Springer. Botinhao, C. V.; Wang, X.; Takaki, S.; and Yamagishi, J. 2016. Investigating RNN-based speech enhancement meth-ods for noise-robust text-to-speech. In 9th ISCA speech syn-thesis workshop , 159–165. Chen, G.; Wu, Y.; Liu, S.; Liu, T.; Du, X.; and Wei, F. 2023. Wavmark: Watermarking for audio generation. arXiv preprint arXiv:2308.12770 .Chen, J.; Benesty, J.; Huang, Y.; and Doclo, S. 2006. New insights into the noise reduction Wiener filter. IEEE Trans-actions on audio, speech, and language processing , 14(4): 1218–1234. Chen, J.; Jordan, M. I.; and Wainwright, M. J. 2020. Hop-skipjumpattack: A query-efficient decision-based attack. In 
+
+2020 ieee symposium on security and privacy (sp) , 1277– 1294. IEEE. Ding, W.; Guo, H.; Duan, R.; Wang, G.; Wang, Y.; Chen, M.; and Yan, Q. 2026. Learning to Evade: Adaptive Attacks on Audio Watermarking. arXiv preprint arXiv:2606.22310 .Ephraim, Y.; and Malah, D. 1984. Speech enhancement using a minimum-mean square error short-time spectral am-plitude estimator. IEEE Transactions on acoustics, speech, and signal processing , 32(6): 1109–1121. Fang, H.; Carbajal, G.; Wermter, S.; and Gerkmann, T. 2021. Variational autoencoder for speech enhancement with a noise-aware encoder. In ICASSP 2021-2021 IEEE interna-tional conference on acoustics, speech and signal processing (ICASSP) , 676–680. IEEE. Fu, S.-W.; Yu, C.; Hsieh, T.-A.; Plantinga, P.; Ravanelli, M.; Lu, X.; and Tsao, Y. 2021. Metricgan+: An improved ver-sion of metricgan for speech enhancement. arXiv preprint arXiv:2104.03538 .Garofolo, J. S.; Graff, D.; Baker, J. M.; Paul, D.; and Pallett, D. 1993. CSR-I (WSJ0) Complete. Web Download. LDC Catalog No. LDC93S6A. Harwath, D.; and Glass, J. 2015. Deep multimodal semantic embeddings for speech and images. In 2015 IEEE workshop on automatic speech recognition and understanding (ASRU) ,237–244. IEEE. Lee, S.-g.; Ping, W.; Ginsburg, B.; Catanzaro, B.; and Yoon, S. 2022. Bigvgan: A universal neural vocoder with large-scale training. arXiv preprint arXiv:2206.04658 .Leglaive, S.; Şimşekli, U.; Liutkus, A.; Girin, L.; and Horaud, R. 2019. Speech enhancement with variational autoencoders and alpha-stable distributions. In ICASSP 2019-2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 541–545. IEEE. Lemercier, J.-M.; Richter, J.; Welker, S.; and Gerkmann, T. 2023. StoRM: A diffusion-based stochastic regenera-tion model for speech enhancement and dereverberation. 
+
+IEEE/ACM Transactions on Audio, Speech, and Language Processing , 31: 2724–2737. Li, K.; Hu, X.; Grishchenko, I.; and Lie, D. 2025. Har-monicAttack: An Adaptive Cross-Domain Audio Watermark Removal. arXiv preprint arXiv:2511.21577 .Liu, C.; Zhang, J.; Zhang, T.; Yang, X.; Zhang, W.; and Yu, N. 2023. Detecting voice cloning attacks via timbre watermarking. arXiv preprint arXiv:2312.03410 .Liu, H.; Guo, M.; Jiang, Z.; Wang, L.; and Gong, N. Z. 2024. Audiomarkbench: Benchmarking robustness of audio watermarking. Advances in Neural Information Processing Systems , 37: 52241–52265. López-López, A.; Rosello, E.; and Gomez, A. M. 2024. Speech watermarking removal by DNN-based speech en-hancement attacks. In Proc. IberSPEECH 2024 , 16–20. Lu, Y.-J.; Wang, Z.-Q.; Watanabe, S.; Richard, A.; Yu, C.; and Tsao, Y. 2022. Conditional diffusion probabilistic model for speech enhancement. In ICASSP 2022-2022 IEEE Inter-national Conference on Acoustics, Speech and Signal Pro-cessing (ICASSP) , 7402–7406. Ieee. Lu, Y.-X.; Ai, Y.; and Ling, Z.-H. 2023. MP-SENet: A speech enhancement model with parallel denoising of magnitude and phase spectra. arXiv preprint arXiv:2305.13686 .Mittag, G.; Naderi, B.; Chehadi, A.; and Möller, S. 2021. NISQA: A deep CNN-self-attention model for multidimen-sional speech quality prediction with crowdsourced datasets. 
+
+arXiv preprint arXiv:2104.09494 .O’Reilly, P.; Jin, Z.; Su, J.; and Pardo, B. 2025. Deep audio watermarks are shallow: Limitations of post-hoc watermark-ing techniques for speech. arXiv preprint arXiv:2504.10782 .Özer, Y.; Choi, W.; Serrà, J.; Singh, M. K.; Liao, W.-H.; and Mitsufuji, Y. 2025. A comprehensive real-world assessment of audio watermarking algorithms: Will they survive neural codecs? arXiv preprint arXiv:2505.19663 .Özer, Y.; Ge, W.; Zhang, Z.; Wang, X.; and Yamagishi, J. 2026. Self Voice Conversion as an Attack against Neural Audio Watermarking. arXiv preprint arXiv:2601.20432 .Pascual, S.; Bonafonte, A.; and Serra, J. 2017. SEGAN: Speech enhancement generative adversarial network. arXiv preprint arXiv:1703.09452 .Reddy, C. K.; Gopal, V.; and Cutler, R. 2021. Dnsmos: A non-intrusive perceptual objective speech quality metric to evaluate noise suppressors. In ICASSP 2021 IEEE Interna-tional Conference on Acoustics, Speech and Signal Process-ing (ICASSP) , 6493–6497. IEEE. Reddy, C. K.; Gopal, V.; and Cutler, R. 2022. DNSMOS P.835: A non-intrusive perceptual objective speech quality metric to evaluate noise suppressors. In ICASSP 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE. Richter, J.; Welker, S.; Lemercier, J.-M.; Lay, B.; and Gerk-mann, T. 2023. Speech enhancement and dereverberation with diffusion-based generative models. IEEE/ACM Trans-actions on Audio, Speech, and Language Processing , 31: 2351–2364. Richter, J.; Wu, Y.-C.; Krenn, S.; Welker, S.; Lay, B.; Watan-abe, S.; Richard, A.; and Gerkmann, T. 2024. EARS: An anechoic fullband speech dataset benchmarked for speech enhancement and dereverberation. arXiv preprint arXiv:2406.06185 .Roman, R. S.; Fernandez, P.; Défossez, A.; Furon, T.; Tran, T.; and Elsahar, H. 2024. Proactive detection of voice cloning with localized watermarking. arXiv preprint arXiv:2401.17264 .Saeki, T.; Xin, D.; Nakata, W.; Koriyama, T.; Takamichi, S.; and Saruwatari, H. 2022. Utmos: Utokyo-sarulab system for voicemos challenge 2022. arXiv preprint arXiv:2204.02152 .Sainburg, T.; Thielk, M.; and Gentner, T. Q. 2020. Find-ing, visualizing, and quantifying latent structure across di-verse animal vocal repertoires. PLoS computational biology ,16(10): e1008228. Särkkä, S.; and Solin, A. 2019. Applied stochastic differential equations , volume 10. Cambridge University Press. Sawata, R.; Murata, N.; Takida, Y.; Uesaka, T.; Shibuya, T.; Takahashi, S.; and Mitsufuji, Y. 2022. Diffiner: A versatile diffusion-based generative refiner for speech enhancement. 
+
+arXiv preprint arXiv:2210.17287 .Wen, Y.; Innuganti, A.; Ramos, A. B.; Guo, H.; and Yan, Q. 2025. SoK: How robust is audio watermarking in generative AI models? arXiv preprint arXiv:2503.19176 .Yao, L.; Zhong, X.; Huang, C.; Zhao, X.; Guo, H.; Li, A.; Liu, J.; Ohtsuki, T.; and Pan, M. 2026. Audio Pirates: Black-box Audio Watermark Removal via Diffusion Priors. arXiv preprint arXiv:2605.30614 .Zong, W.; Chow, Y.-W.; Susilo, W.; Baek, J.; and Camtepe, S. 2025. {AudioMarkNet }: Audio watermarking for deep-fake speech detection. In 34th USENIX Security Symposium (USENIX Security 25) , 4663–4682.
