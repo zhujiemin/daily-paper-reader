@@ -1,0 +1,89 @@
+{
+  "date": "20261007",
+  "date_label": "",
+  "generated_at": "2026-10-07 23:35:05 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.07916v1",
+      "route": "202610/07/2610.07916v1-can-we-model-the-artifacts-explicitly-disentangle-artifacts-via-pairwise-edit-relations-for-image-manipulation-localization",
+      "title": "Can We Model the Artifacts Explicitly? Disentangle Artifacts via Pairwise Edit Relations for Image Manipulation Localization",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向图像篡改定位掩码的显式伪影建模",
+      "first_seen_at": "2026-10-07 23:35:05 UTC",
+      "updated_at": "2026-10-07 23:35:05 UTC"
+    },
+    {
+      "paper_id": "2610.08137v1",
+      "route": "202610/07/2610.08137v1-rethinking-visual-provenance-detection-and-watermarking-across-direct-visual-generation-and-llm-driven-code-rendering",
+      "title": "Rethinking Visual Provenance: Detection and Watermarking Across Direct Visual Generation and LLM-Driven Code Rendering",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向生成内容溯源的检测与水印",
+      "first_seen_at": "2026-10-07 23:35:05 UTC",
+      "updated_at": "2026-10-07 23:35:05 UTC"
+    },
+    {
+      "paper_id": "2610.08178v1",
+      "route": "202610/07/2610.08178v1-on-the-intrinsic-limited-robustness-of-latent-based-watermarking",
+      "title": "On the Intrinsic Limited Robustness of Latent-Based Watermarking",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "扩散模型潜空间水印及其对失真的鲁棒性",
+      "first_seen_at": "2026-10-07 23:35:05 UTC",
+      "updated_at": "2026-10-07 23:35:05 UTC"
+    },
+    {
+      "paper_id": "2610.08639v1",
+      "route": "202610/07/2610.08639v1-forensic-reserve-eliciting-latent-knowledge-for-image-forgery-detection",
+      "title": "Forensic Reserve: Eliciting Latent Knowledge for Image Forgery Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "利用内部取证知识进行图像伪造检测",
+      "first_seen_at": "2026-10-07 23:35:05 UTC",
+      "updated_at": "2026-10-07 23:35:05 UTC"
+    },
+    {
+      "paper_id": "2610.08668v1",
+      "route": "202610/07/2610.08668v1-semantic-behavioral-watermarking-paraphrase-robust-and-forgery-resistant-provenance-for-llm-agents",
+      "title": "Semantic Behavioral Watermarking: Paraphrase-Robust and Forgery-Resistant Provenance for LLM Agents",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "用于来源认证且抗伪造的水印",
+      "first_seen_at": "2026-10-07 23:35:05 UTC",
+      "updated_at": "2026-10-07 23:35:05 UTC"
+    }
+  ]
+}

@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-06</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-07</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 6 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
-    <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>2 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>3</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-06 22:51:55 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-07 23:35:05 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,9 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日6篇聚焦水印攻防与内容溯源，精读2篇9分工作：LiBRA用双向潜变量优化做检测感知去水印，另有跨图音视频的开放许可溯源基准。</p>
-<p>最值得看的是“检测感知去水印”与“软绑定/开放基准溯源”两条线，前者暴露水印鲁棒性压力，后者为跨模态内容认证提供可比标尺。</p>
-<p>普通读者可优先关注真图认证与来源凭证，转发前多查认证标签和原始出处，别只凭肉眼判断。</p>
+<p>今日筛选5篇图像取证与水印论文，精读3篇、速读2篇，主线聚焦篡改定位与视觉溯源。</p>
+<p>最值得看的是两篇9分精读：用成对编辑关系显式解耦伪影做图像篡改定位，以及跨直接视觉生成与LLM代码渲染重思视觉溯源检测和水印。</p>
+<p>普通读者可优先关注“检测+水印”组合思路，并留意其在真实平台中的鲁棒性与伪造抵抗验证。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -80,12 +80,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization">LiBRA: Detection-Aware Image Watermark Removal via Bidirectional Latent Optimization</span></li><li><span class="dpr-home-dashboard-paper-title" title="Watermarks and Fingerprints as Soft Bindings for Content Provenance: An Open-Licence Benchmark for Images, Audio and Video">Watermarks and Fingerprints as Soft Bindings for Content Provenance: An Open-Licence Benchmark for Images, Audio and Video</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Can We Model the Artifacts Explicitly? Disentangle Artifacts via Pairwise Edit Relations for Image Manipulation Localization">Can We Model the Artifacts Explicitly? Disentangle Artifacts via Pairwise Edit Relations for Image Manipulation Localization</span></li><li><span class="dpr-home-dashboard-paper-title" title="Rethinking Visual Provenance: Detection and Watermarking Across Direct Visual Generation and LLM-Driven Code Rendering">Rethinking Visual Provenance: Detection and Watermarking Across Direct Visual Generation and LLM-Driven Code Rendering</span></li><li><span class="dpr-home-dashboard-paper-title" title="On the Intrinsic Limited Robustness of Latent-Based Watermarking">On the Intrinsic Limited Robustness of Latent-Based Watermarking</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -93,12 +93,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">4 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Certification of Real Images through Calibrated Content Authentication">Certification of Real Images through Calibrated Content Authentication</span></li><li><span class="dpr-home-dashboard-paper-title" title="DeMark: A Query-Free Black-Box Attack for Quality-Preserving Audio Watermark Removal">DeMark: A Query-Free Black-Box Attack for Quality-Preserving Audio Watermark Removal</span></li><li><span class="dpr-home-dashboard-paper-title" title="NeuMark-Native: Robust Text-to-Speech-Native Watermarking Through Full Utilization of Neural Audio Codec Latent Space">NeuMark-Native: Robust Text-to-Speech-Native Watermarking Through Full Utilization of Neural Audio Codec Latent Space</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Forensic Reserve: Eliciting Latent Knowledge for Image Forgery Detection">Forensic Reserve: Eliciting Latent Knowledge for Image Forgery Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="Semantic Behavioral Watermarking: Paraphrase-Robust and Forgery-Resistant Provenance for LLM Agents">Semantic Behavioral Watermarking: Paraphrase-Robust and Forgery-Resistant Provenance for LLM Agents</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>3</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 

@@ -1,0 +1,232 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-07T23:32:39.050410+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 3,
+    "deep_cap": 7,
+    "deep_selected": 3,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2610.07916v1",
+      "source": "arxiv",
+      "title": "Can We Model the Artifacts Explicitly? Disentangle Artifacts via Pairwise Edit Relations for Image Manipulation Localization",
+      "abstract": "Image Manipulation Localization (IML) is commonly formulated as a fully supervised learning task that estimates the optimal manipulation mask $y$ for a given image $x$. In this work, we first reveal the latent nature of artifacts and thus reinterpret IML as a latent-variable problem, $P(y|x)=\\int P(y|z)\\,P(z|x)\\,dz$, where $z$ denotes the artifacts. Following this interpretation, we pinpoint the cause for the current IML models' insufficiency as their implicit artifacts modeling strategy, highlighting the necessity of modeling $z$ in an explicit manner. Without direct labels, feature disentanglement is the most appropriate solution for this explicit modeling. Accordingly, we propose a two-stage learning paradigm with the Pairwise Artifacts Learning (PAL) and Standard Localization (SL) phases to estimate $P(z|x)$ and $P(y|z)$ via edit relations. To support our edit-relation-based learning, we further curate EditGroup-45K, a source-anchored dataset organized into edit groups for pair construction. Extensive experiments show that our PAL paradigm yields consistent improvements across diverse IML architectures, and empirical analyses further verify that PAL does capture artifacts explicitly through feature disentanglement. Code and dataset are available at https://github.com/venus-guangjian/PAL",
+      "authors": [
+        "Xuekang Zhu",
+        "Kaiwen Feng",
+        "Ruifeng Wang",
+        "Xiwen Wang",
+        "Xiaochen Ma",
+        "Bo Du",
+        "Changjiang Jiang",
+        "Chenfan Qu",
+        "Songyu Ye",
+        "Xia Du",
+        "Wentao Feng",
+        "Jian Liu",
+        "Ji-Zhe Zhou"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-06T07:58:40+00:00",
+      "link": "https://arxiv.org/pdf/2610.07916v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "explicit artifact modeling for image manipulation localization masks",
+      "llm_evidence_cn": "面向图像篡改定位掩码的显式伪影建模",
+      "llm_evidence": "面向图像篡改定位掩码的显式伪影建模",
+      "canonical_evidence": "面向图像篡改定位掩码的显式伪影建模",
+      "llm_tldr_en": "Image Manipulation Localization is typically fully supervised. This paper reinterprets it as a latent-variable problem where artifacts are latent, argues for explicit artifact modeling, and proposes a two-stage feature-disentanglement framework using pairwise edit relations to improve mask localization.",
+      "llm_tldr_cn": "图像篡改定位通常被形式化为全监督掩码预测任务，现有模型因对伪影采用隐式建模而性能受限。本文揭示伪影的隐变量本质，将篡改定位重解释为含隐变量伪影的概率积分问题，并指出必须显式建模伪影。为此提出两阶段学习框架，通过特征解耦与成对编辑关系显式建模伪影。实验表明该方法提升了篡改掩码的定位精度，为图像篡改定位提供了显式伪影建模的新范式。",
+      "llm_tldr": "图像篡改定位通常被形式化为全监督掩码预测任务，现有模型因对伪影采用隐式建模而性能受限。本文揭示伪影的隐变量本质，将篡改定位重解释为含隐变量伪影的概率积分问题，并指出必须显式建模伪影。为此提出两阶段学习框架，通过特征解耦与成对编辑关系显式建模伪影。实验表明该方法提升了篡改掩码的定位精度，为图像篡改定位提供了显式伪影建模的新范式。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "localizing tampered regions in digital images at pixel-level precision",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.08137v1",
+      "source": "arxiv",
+      "title": "Rethinking Visual Provenance: Detection and Watermarking Across Direct Visual Generation and LLM-Driven Code Rendering",
+      "abstract": "AI systems create images and videos with image/video generation models or by writing code and graphics descriptions that are then rendered. These routes can produce similar visible artifacts but expose different representations, intervention points, and provenance evidence. We develop a production-centered framework that compares detection and watermarking across both routes. An explicit verification specification distinguishes passive inference, message recovery, and authenticated provenance. We organize image, video, source-code, and rendering-aware watermarks by production stage. We examine the different requirements of generated images and video, plots and SVG, programmable video, and agent-composed workflows. Documented Claude, OpenAI, and rendering-tool interfaces connect the framework to concrete systems. We pose ten scoped research questions on identifiability, observability, fair comparison across stages, recoverable payload, reconstruction, synchronization, composition, hybrid local contribution, and private production-event authentication. The result is a conceptual research agenda grounded in published methods, inspected interfaces, and elementary boundary examples. It reports no experiments and claims no new theorems; its appendix results are elementary calculations, and documentation and source inspection establish interfaces, not empirical robustness.",
+      "authors": [
+        "Zheng Gao",
+        "Xiaoyu Li",
+        "Zhicheng Bao",
+        "Yang Song",
+        "Jiaojiao Jiang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CV"
+      ],
+      "published": "2026-10-06T10:53:19+00:00",
+      "link": "https://arxiv.org/pdf/2610.08137v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "detection and watermarking for visual provenance of generated content",
+      "llm_evidence_cn": "面向生成内容溯源的检测与水印",
+      "llm_evidence": "面向生成内容溯源的检测与水印",
+      "canonical_evidence": "面向生成内容溯源的检测与水印",
+      "llm_tldr_en": "This work compares detection and watermarking across direct visual generation and LLM-driven code rendering, proposing a production-centered framework and a verification spec for provenance.",
+      "llm_tldr_cn": "针对AI系统可通过图像视频生成模型或编写代码渲染两条路径产生视觉内容、二者暴露不同表示与溯源证据这一问题，本文提出以生产为中心的框架，对比两条路径上的检测与水印方法，并给出区分被动推断、消息恢复与认证溯源的验证规范。研究按生产阶段组织图像、视频、源代码与渲染感知水印，分析生成图像与视频、SVG及可编程视频等不同需求，为跨路径的视觉内容溯源与水印部署提供统一参考。",
+      "llm_tldr": "针对AI系统可通过图像视频生成模型或编写代码渲染两条路径产生视觉内容、二者暴露不同表示与溯源证据这一问题，本文提出以生产为中心的框架，对比两条路径上的检测与水印方法，并给出区分被动推断、消息恢复与认证溯源的验证规范。研究按生产阶段组织图像、视频、源代码与渲染感知水印，分析生成图像与视频、SVG及可编程视频等不同需求，为跨路径的视觉内容溯源与水印部署提供统一参考。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.08178v1",
+      "source": "arxiv",
+      "title": "On the Intrinsic Limited Robustness of Latent-Based Watermarking",
+      "abstract": "Existing latent-based watermarking methods for diffusion models have overestimated their robustness to image distortions, including geometric transformations such as rotation, scaling, and translation (RST). Moreover, this paradigm of watermarking approaches may suffer from inherent limitations arising from the domain in which the watermark is embedded. In this paper, we provide the first theoretical analysis explaining why these methods lack invariance to perturbations. By relaxing the invariant relation, we derive a maximum perturbation bound that characterizes the relationship between pixel-space perturbations and their corresponding effects in latent space. In addition, we present the first analytical formulation that captures all components of practical detection mechanisms. Finally, we conduct experiments to validate the theoretical findings and the limitations of latent-based watermarking methods. Our theoretical and empirical results indicate that, under the current design paradigm, latent-based watermarking methods intrinsically exhibit limited robustness. We conclude by providing the analytical tool and design guidelines that future research could follow.",
+      "authors": [
+        "Cheng-Han Yeh",
+        "Kuan-chun Yu",
+        "Cheng-Chang Tsai",
+        "Chun-Shien Lu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CR"
+      ],
+      "published": "2026-10-06T11:29:50+00:00",
+      "link": "https://arxiv.org/pdf/2610.08178v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "latent-based watermarking for diffusion models, robustness to distortions",
+      "llm_evidence_cn": "扩散模型潜空间水印及其对失真的鲁棒性",
+      "llm_evidence": "扩散模型潜空间水印及其对失真的鲁棒性",
+      "canonical_evidence": "扩散模型潜空间水印及其对失真的鲁棒性",
+      "llm_tldr_en": "Latent-based watermarking for diffusion models overestimates robustness to image distortions. This paper gives the first theoretical analysis of why such watermarks lack perturbation invariance and derives a maximum perturbation bound linking pixel and latent spaces.",
+      "llm_tldr_cn": "现有面向扩散模型的潜空间水印方法普遍高估了自身对图像失真的鲁棒性，尤其是旋转、缩放、平移等几何变换，且该范式可能因嵌入域而存在固有局限。本文首次从理论上分析这些方法为何缺乏扰动不变性：通过放宽不变关系，推导出刻画像素空间扰动与其潜空间效应之间关系的最大扰动界，并给出涵盖实际流程各组成部分的分析性公式。该工作量化了潜空间水印的内在脆弱性，为设计更鲁棒的水印方案提供理论依据。",
+      "llm_tldr": "现有面向扩散模型的潜空间水印方法普遍高估了自身对图像失真的鲁棒性，尤其是旋转、缩放、平移等几何变换，且该范式可能因嵌入域而存在固有局限。本文首次从理论上分析这些方法为何缺乏扰动不变性：通过放宽不变关系，推导出刻画像素空间扰动与其潜空间效应之间关系的最大扰动界，并给出涵盖实际流程各组成部分的分析性公式。该工作量化了潜空间水印的内在脆弱性，为设计更鲁棒的水印方案提供理论依据。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermarking latent diffusion models and their generated outputs",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2610.08639v1",
+      "source": "arxiv",
+      "title": "Forensic Reserve: Eliciting Latent Knowledge for Image Forgery Detection",
+      "abstract": "As generated images become increasingly realistic, reliable forgery detection is essential for maintaining trust in visual information. However, existing methods primarily rely on task-specific supervision to adapt vision foundation model representations, without fully exploiting internal forensic knowledge to guide detection. To address this limitation, we propose Reserve-Guided Elicitation (RGE), a framework that treats sparse, origin-sensitive internal components in pretrained models as a forensic reserve and translates their localization into structural constraints for lightweight adaptation. Specifically, we first use the Forensic Lens (F-lens) to decompose activations across layers and token groups into independent components and globally screen them by their response differences between real and generated images, identifying reserve sites and directions. Next, we map the selected directions back to hidden-state space to construct fixed reserve subspaces and insert Forensic Reserve Adapters (FRA) only at the identified sites. Finally, with the backbone parameters, previously fitted reference classifier, and subspace bases fixed, we train only the FRA coefficient maps to generate input-dependent residual updates constrained to the corresponding subspaces, strengthening existing forensic responses. Using only 500 labeled training images and a trainable parameter budget below 0.2% of the backbone, RGE achieves competitive performance across three detection benchmarks without target-benchmark adaptation. Furthermore, RGE consistently improves over the corresponding frozen detectors across eight encoders spanning self-supervised and vision-language pretraining, eliciting a latent forensic capacity broadly shared across pretrained vision models.",
+      "authors": [
+        "Jiahua Li",
+        "Zixu John",
+        "Tom Zhong",
+        "Fuping Wu",
+        "Tianhao Xu",
+        "Jianqing Zheng",
+        "Yuanhan Mo",
+        "Fei Shen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-06T16:33:00+00:00",
+      "link": "https://arxiv.org/pdf/2610.08639v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "image forgery detection exploiting internal forensic knowledge",
+      "llm_evidence_cn": "利用内部取证知识进行图像伪造检测",
+      "llm_evidence": "利用内部取证知识进行图像伪造检测",
+      "canonical_evidence": "利用内部取证知识进行图像伪造检测",
+      "llm_tldr_en": "The paper proposes Reserve-Guided Elicitation, treating sparse origin-sensitive internal components of pretrained vision models as a forensic reserve and converting their localization into structural constraints for lightweight image forgery detection adaptation.",
+      "llm_tldr_cn": "随着生成图像愈发逼真，可靠伪造检测对维护视觉信息可信至关重要，但现有方法多依赖任务特定监督微调视觉基础模型，未能充分利用其内部取证知识。该文提出Reserve-Guided Elicitation框架，先用Forensic Lens将各层与token组的激活分解为独立成分并全局筛选出来源敏感的稀疏成分，再将其定位转化为结构约束用于轻量适配。方法把预训练模型的取证储备转化为检测引导信号。该工作为图像伪造检测提供了挖掘基础模型内部知识的新范式。",
+      "llm_tldr": "随着生成图像愈发逼真，可靠伪造检测对维护视觉信息可信至关重要，但现有方法多依赖任务特定监督微调视觉基础模型，未能充分利用其内部取证知识。该文提出Reserve-Guided Elicitation框架，先用Forensic Lens将各层与token组的激活分解为独立成分并全局筛选出来源敏感的稀疏成分，再将其定位转化为结构约束用于轻量适配。方法把预训练模型的取证储备转化为检测引导信号。该工作为图像伪造检测提供了挖掘基础模型内部知识的新范式。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.08668v1",
+      "source": "arxiv",
+      "title": "Semantic Behavioral Watermarking: Paraphrase-Robust and Forgery-Resistant Provenance for LLM Agents",
+      "abstract": "Behavioral watermarking embeds an owner identifier in an LLM agent's high-level action choices, giving provenance without touching output tokens. Prior agent watermarks break in two ways. First, all three prior schemes bind the watermark to the exact action symbol, so renaming a tool desynchronizes decoding even when the observation is untouched; in AgentMark's own robustness test, paraphrasing the observation alone drops bit-recovery to 16.8%. Second, every prior agent watermark studies only removal: none asks whether an adversary can forge a trajectory that verifies as someone else's, a question answered affirmatively for text watermarks (Jovanović et al., 2024). We present Semantic Behavioral Watermarking (SBW): watermarking over semantic action clusters under history conditioning, with the public-cluster bin replaced by keyed collision-resistant binning whose fresh-bucket assignment is provably unpredictable in the random-oracle model. Across five agent models (3B-14B, four vendors) and three encoders the ordering holds on both benchmarks: on ToolBench (600 trajectories per model) detection under rewriting is 0.49-0.66 for cluster-level versus 0.05-0.17 for exact-symbol at a permutation-calibrated 1% FPR, at 72-83% choice agreement against 22-27% for logit biasing; on ALFWorld (100 episodes per model) it is 0.92-0.97 versus 0.00-0.01. Keyed binning takes adaptive forgery from 100% to the false-positive floor at the primary operating point (bge, r=64). We also mark the boundary that guarantee does not cover: when the adversary copies the victim's own steps, shuffled splicing is neutralized (0.000 on Qwen2.5-3B) but chained replay remains at 0.76-0.98 across the five models, reported as open. Paraphrase robustness costs about half of the per-step watermark capacity. Code is available at https://anonymous.4open.science/r/SBW-Agent-Watermark.",
+      "authors": [
+        "Suxin Ji",
+        "Hungtao Wan",
+        "Shaoxuan Chen",
+        "An Zhang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-10-06T16:50:42+00:00",
+      "link": "https://arxiv.org/pdf/2610.08668v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermarking for provenance, forgery-resistant attribution",
+      "llm_evidence_cn": "用于来源认证且抗伪造的水印",
+      "llm_evidence": "用于来源认证且抗伪造的水印",
+      "canonical_evidence": "用于来源认证且抗伪造的水印",
+      "llm_tldr_en": "Prior LLM-agent watermarks bind to exact action symbols and ignore forgery. Semantic Behavioral Watermarking embeds an owner identifier in high-level action choices, achieving paraphrase-robust and forgery-resistant provenance.",
+      "llm_tldr_cn": "行为水印在LLM智能体的高层动作选择中嵌入所有者标识，从而在不改动输出词元的情况下提供来源信息。但先前智能体水印存在两类缺陷：将水印绑定到精确动作符号，工具改名即导致解码失步；且只研究移除，从未探讨敌手能否伪造可验证为他人轨迹的问题。本文提出语义行为水印SBW，在语义层面嵌入水印，实现抗复述与抗伪造的来源认证。该工作为智能体行为水印提供了兼顾鲁棒性与防伪的新范式。",
+      "llm_tldr": "行为水印在LLM智能体的高层动作选择中嵌入所有者标识，从而在不改动输出词元的情况下提供来源信息。但先前智能体水印存在两类缺陷：将水印绑定到精确动作符号，工具改名即导致解码失步；且只研究移除，从未探讨敌手能否伪造可验证为他人轨迹的问题。本文提出语义行为水印SBW，在语义层面嵌入水印，实现抗复述与抗伪造的来源认证。该工作为智能体行为水印提供了兼顾鲁棒性与防伪的新范式。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
