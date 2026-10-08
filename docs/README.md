@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-07</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-08</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 7 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>3</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>5</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-07 23:35:05 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-08 23:53:44 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,9 +69,10 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日筛选5篇图像取证与水印论文，精读3篇、速读2篇，主线聚焦篡改定位与视觉溯源。</p>
-<p>最值得看的是两篇9分精读：用成对编辑关系显式解耦伪影做图像篡改定位，以及跨直接视觉生成与LLM代码渲染重思视觉溯源检测和水印。</p>
-<p>普通读者可优先关注“检测+水印”组合思路，并留意其在真实平台中的鲁棒性与伪造抵抗验证。</p>
+<p>今日共生成 7 篇推荐（精读 2 篇，速读 5 篇）</p>
+<p>精读：《Latent Watermarks under Generative Editing: A Benchmark and Analysis of Detection Survival》（9.0/10）, 《Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies》（9.0/10）</p>
+<p>速读：《Learning to Watermark Speech Synthesis Against Model-Driven Reconstruction》（7.0/10）, 《Watermarking: from Impossibility to Auditable Compliance》（7.0/10）, 《MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection》（7.0/10）</p>
+<p>这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -80,12 +81,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">3 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Can We Model the Artifacts Explicitly? Disentangle Artifacts via Pairwise Edit Relations for Image Manipulation Localization">Can We Model the Artifacts Explicitly? Disentangle Artifacts via Pairwise Edit Relations for Image Manipulation Localization</span></li><li><span class="dpr-home-dashboard-paper-title" title="Rethinking Visual Provenance: Detection and Watermarking Across Direct Visual Generation and LLM-Driven Code Rendering">Rethinking Visual Provenance: Detection and Watermarking Across Direct Visual Generation and LLM-Driven Code Rendering</span></li><li><span class="dpr-home-dashboard-paper-title" title="On the Intrinsic Limited Robustness of Latent-Based Watermarking">On the Intrinsic Limited Robustness of Latent-Based Watermarking</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Latent Watermarks under Generative Editing: A Benchmark and Analysis of Detection Survival">Latent Watermarks under Generative Editing: A Benchmark and Analysis of Detection Survival</span></li><li><span class="dpr-home-dashboard-paper-title" title="Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies">Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -93,12 +94,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">5 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Forensic Reserve: Eliciting Latent Knowledge for Image Forgery Detection">Forensic Reserve: Eliciting Latent Knowledge for Image Forgery Detection</span></li><li><span class="dpr-home-dashboard-paper-title" title="Semantic Behavioral Watermarking: Paraphrase-Robust and Forgery-Resistant Provenance for LLM Agents">Semantic Behavioral Watermarking: Paraphrase-Robust and Forgery-Resistant Provenance for LLM Agents</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Learning to Watermark Speech Synthesis Against Model-Driven Reconstruction">Learning to Watermark Speech Synthesis Against Model-Driven Reconstruction</span></li><li><span class="dpr-home-dashboard-paper-title" title="Watermarking: from Impossibility to Auditable Compliance">Watermarking: from Impossibility to Auditable Compliance</span></li><li><span class="dpr-home-dashboard-paper-title" title="MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection">MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>4</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 

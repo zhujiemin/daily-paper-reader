@@ -1,0 +1,121 @@
+{
+  "date": "20261008",
+  "date_label": "",
+  "generated_at": "2026-10-08 23:53:44 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.09702v1",
+      "route": "202610/08/2610.09702v1-latent-watermarks-under-generative-editing-a-benchmark-and-analysis-of-detection-survival",
+      "title": "Latent Watermarks under Generative Editing: A Benchmark and Analysis of Detection Survival",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "评测生成式编辑下隐式水印的检测存活",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    },
+    {
+      "paper_id": "2610.09755v1",
+      "route": "202610/08/2610.09755v1-diffusion-generated-image-watermarking-a-two-axis-taxonomy-and-three-protocol-bounded-case-studies",
+      "title": "Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向扩散生成图像的水印分类与流程",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    },
+    {
+      "paper_id": "2610.04235v1",
+      "route": "202610/08/2610.04235v1-learning-to-watermark-speech-synthesis-against-model-driven-reconstruction",
+      "title": "Learning to Watermark Speech Synthesis Against Model-Driven Reconstruction",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "为合成语音嵌入生成式水印以溯源并考察鲁棒性",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    },
+    {
+      "paper_id": "2610.06317v1",
+      "route": "202610/08/2610.06317v1-watermarking-from-impossibility-to-auditable-compliance",
+      "title": "Watermarking: from Impossibility to Auditable Compliance",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "生成式水印在自适应移除下的不可能性与合规",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    },
+    {
+      "paper_id": "2610.09952v1",
+      "route": "202610/08/2610.09952v1-msu-team-at-the-explainable-deepfake-detection-challenge-2026-grounded-artifact-evidence-for-deepfake-detection",
+      "title": "MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "利用篡改定位特征进行深度伪造检测，定位被操纵区域",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    },
+    {
+      "paper_id": "2610.05453v1",
+      "route": "202610/08/2610.05453v1-the-poisoned-conversation-privacy-leaking-watermarks-in-unified-multimodal-models",
+      "title": "The Poisoned Conversation: Privacy-Leaking Watermarks in Unified Multimodal Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "生成式多模态模型中的不可见触发水印",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    },
+    {
+      "paper_id": "2610.06334v1",
+      "route": "202610/08/2610.06334v1-spin-image-immunization-against-diffusion-editing-via-single-step-projection-in-stochastic-neighborhoods",
+      "title": "SPIN: Image Immunization Against Diffusion Editing via Single-Step Projection in Stochastic Neighborhoods",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "通过不可感知扰动实现图像免疫以抵御扩散编辑",
+      "first_seen_at": "2026-10-08 23:53:44 UTC",
+      "updated_at": "2026-10-08 23:53:44 UTC"
+    }
+  ]
+}

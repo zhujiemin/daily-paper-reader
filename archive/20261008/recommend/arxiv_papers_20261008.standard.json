@@ -1,0 +1,294 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-08T23:50:51.457242+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 2,
+    "deep_cap": 7,
+    "deep_selected": 2,
+    "quick_candidates": 5,
+    "quick_skim_target": 12,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2610.09702v1",
+      "source": "arxiv",
+      "title": "Latent Watermarks under Generative Editing: A Benchmark and Analysis of Detection Survival",
+      "abstract": "Ordinary prompt-based editing can cause latent watermark detection to fail without explicitly targeting the watermark. We benchmark eight watermark methods against five editors across four generative backbones, four editing strengths, and five semantic categories, with edit-validity and threshold checks. Separating editing from seven subsequent distortions reveals that editing alone primarily distinguishes Tree-Ring, while added distortions expose a broader spectrum of detection survival. Sequential edits reveal a second hidden difference: score separation can decline while detection rates remain near their ceiling. Across methods, standardized clean score separation ($d'$) organizes composite-survival tiers, whereas spatial overlap adds little to predicting edit-only survival beyond clean detectability. Embedding-strength interventions in two methods link higher clean separation to higher post-edit separation. In HSTR, the margin contrast is positive, while the angular layout contrast at matched clean separation remains unresolved. Together, outcome decomposition and continuous separation expose differences hidden by aggregate TPR. Method tiers are stable under threshold recalibration at the main operating points and alternative composite weights. Clean $d'$ is thus a useful empirical diagnostic within this benchmark, with mixed transfer to unseen methods. Code and supporting artifacts are planned for a separate release.",
+      "authors": [
+        "Sung Ju Lee",
+        "Nam Ik Cho"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-07T09:01:05+00:00",
+      "link": "https://arxiv.org/pdf/2610.09702v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmarks latent watermarks under generative editing and detection survival",
+      "llm_evidence_cn": "评测生成式编辑下隐式水印的检测存活",
+      "llm_evidence": "评测生成式编辑下隐式水印的检测存活",
+      "canonical_evidence": "评测生成式编辑下隐式水印的检测存活",
+      "llm_tldr_en": "This paper benchmarks eight latent watermark methods against five generative editors and seven distortions, showing prompt-based editing alone can break detection and revealing which methods survive.",
+      "llm_tldr_cn": "针对扩散模型隐式水印在生成式编辑下可能失效的问题，本文构建了系统基准，将八种水印方法与五种编辑器、四种生成骨干、四种编辑强度和五类语义类别交叉评估，并加入编辑有效性与阈值检验。结果显示仅编辑操作主要区分Tree-Ring，而后续失真会暴露更广的检测存活谱系；标准化干净分数间隔d'可组织复合存活层级，为水印鲁棒性评估提供统一诊断框架。",
+      "llm_tldr": "针对扩散模型隐式水印在生成式编辑下可能失效的问题，本文构建了系统基准，将八种水印方法与五种编辑器、四种生成骨干、四种编辑强度和五类语义类别交叉评估，并加入编辑有效性与阈值检验。结果显示仅编辑操作主要区分Tree-Ring，而后续失真会暴露更广的检测存活谱系；标准化干净分数间隔d'可组织复合存活层级，为水印鲁棒性评估提供统一诊断框架。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermarking latent diffusion models and their generated outputs",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.09755v1",
+      "source": "arxiv",
+      "title": "Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies",
+      "abstract": "Watermarking diffusion-generated images requires balancing provenance signals with image quality, robustness, and computational cost. This work organizes methods along two axes: insertion mechanism and primary signal-bearing representation, and formalizes a representative $z_T$-Fourier pipeline for verification and identification. We then use the taxonomy to structure three protocol-bounded case studies. The first examines associations among frequency integrity, detection, quality, and cropping behavior. The second revisits persistence under seed-linked and seed-independent editing and formulates a scoped Semantic Imprinting Hypothesis without claiming a localized carrier or causal mechanism. The third studies single-shot VAE-latent phase modulation, including its efficiency, regeneration robustness, and robustness--quality operating points. Finally, we separate four content-level attack families from model/pipeline adaptation, propose corresponding evaluation protocols and testable conjectures for parameter-tuning threats, and identify additional temporal extensions for video. These analyses do not establish a universal ranking; instead, they provide a framework for matched, protocol-aware comparisons of watermarking systems for diffusion-generated images.",
+      "authors": [
+        "Sung Ju Lee",
+        "Nam Ik Cho"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-07T09:42:46+00:00",
+      "link": "https://arxiv.org/pdf/2610.09755v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "watermarking diffusion-generated images with taxonomy and pipeline",
+      "llm_evidence_cn": "面向扩散生成图像的水印分类与流程",
+      "llm_evidence": "面向扩散生成图像的水印分类与流程",
+      "canonical_evidence": "面向扩散生成图像的水印分类与流程",
+      "llm_tldr_en": "This work organizes diffusion-generated image watermarking along insertion mechanism and signal-bearing representation axes, formalizes a z_T-Fourier pipeline, and studies robustness under editing and cropping.",
+      "llm_tldr_cn": "扩散生成图像的水印需要在来源信号与图像质量、鲁棒性、计算成本之间取得平衡，但方法繁多缺乏统一视角。作者沿插入机制与主信号载体两个轴对方法进行系统归类，并形式化了一条代表性的z_T-Fourier验证与识别流程，据此设计三项协议限定案例研究。实验分析了频率完整性、检测、质量与裁剪行为之间的关联，并考察了种子相关与种子无关编辑下的持久性。该工作为扩散图像水印提供了结构化分类与研究框架。",
+      "llm_tldr": "扩散生成图像的水印需要在来源信号与图像质量、鲁棒性、计算成本之间取得平衡，但方法繁多缺乏统一视角。作者沿插入机制与主信号载体两个轴对方法进行系统归类，并形式化了一条代表性的z_T-Fourier验证与识别流程，据此设计三项协议限定案例研究。实验分析了频率完整性、检测、质量与裁剪行为之间的关联，并考察了种子相关与种子无关编辑下的持久性。该工作为扩散图像水印提供了结构化分类与研究框架。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "digital watermarking for diffusion models that generate images",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2610.04235v1",
+      "source": "arxiv",
+      "title": "Learning to Watermark Speech Synthesis Against Model-Driven Reconstruction",
+      "abstract": "Modern TTS systems increasingly generate synthetic speech at scale for diverse users. This setting calls for content-level provenance that can verify the origin of released speech and attribute it to the requesting user, which generative watermarking can support by embedding multi-bit identifiers directly into synthesized speech. Once released, however, speech may undergo heterogeneous learned transformations during distribution and editing, with reconstruction objectives that can preserve speech utility while affecting watermark recoverability differently. We find that no single watermark carrier remains consistently reliable across reconstruction models, as its survival depends jointly on the embedded structure, reconstruction mechanism, and observation representation. To this end, we propose Thrive, a multi-bit generative speech watermarking framework for modern autoregressive TTS, covering both discrete-token and continuous-representation generation under reconstruction attacks. Specifically, Rise synchronizes watermark injection into intermediate representations with its continued integration into subsequent generation, while Care combines waveform and spectral experts using bit-wise reliability selection. Experiments on both autoregressive paradigms show that Thrive preserves synthesis fidelity, achieves 87.6% average recovery accuracy under reconstruction attacks, and supports source attribution over candidate sets of up to 10,000 identities.",
+      "authors": [
+        "Weizhi Liu",
+        "Yue Li",
+        "Hui Tian",
+        "Zhaoxia Yin"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.SD"
+      ],
+      "published": "2026-10-03T02:57:00+00:00",
+      "link": "https://arxiv.org/pdf/2610.04235v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "generative watermarking of TTS output for provenance and robustness",
+      "llm_evidence_cn": "为合成语音嵌入生成式水印以溯源并考察鲁棒性",
+      "llm_evidence": "为合成语音嵌入生成式水印以溯源并考察鲁棒性",
+      "canonical_evidence": "为合成语音嵌入生成式水印以溯源并考察鲁棒性",
+      "llm_tldr_en": "Proposes learning to watermark TTS output with multi-bit identifiers for provenance and user attribution, showing no single watermark carrier reliably survives all model-driven reconstruction.",
+      "llm_tldr_cn": "针对大规模语音合成带来的来源认证与用户归属需求，本文提出在合成语音中嵌入多位标识的生成式水印方法。作者系统考察了语音在分发与编辑中经受的重构变换，发现没有任何单一水印载体能在所有重构模型下稳定存活。研究揭示嵌入结构、重构机制与观测方式共同决定水印可恢复性，为鲁棒生成式水印设计提供了依据。",
+      "llm_tldr": "针对大规模语音合成带来的来源认证与用户归属需求，本文提出在合成语音中嵌入多位标识的生成式水印方法。作者系统考察了语音在分发与编辑中经受的重构变换，发现没有任何单一水印载体能在所有重构模型下稳定存活。研究揭示嵌入结构、重构机制与观测方式共同决定水印可恢复性，为鲁棒生成式水印设计提供了依据。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.05453v1",
+      "source": "arxiv",
+      "title": "The Poisoned Conversation: Privacy-Leaking Watermarks in Unified Multimodal Models",
+      "abstract": "Multimodal models are increasingly shifting toward unified architectures that understand and generate text, images, and other modalities within a shared conversational context. This design enables fluid interaction across modalities, but it also changes the privacy threat model: Information revealed in one part of a conversation may remain accessible when the model later generates content in another modality. This risk is particularly concerning in settings where users rely on locally deployed models for privacy, assuming that sensitive interactions remain confined to their device. We introduce Privacy-Leaking Watermarks (PLWs): invisible, trigger-dependent watermarks that a malicious model provider can condition on prior chat history. With this adversarial intervention, the usual separation breaks: a sensitive keyword or semantic cue mentioned earlier in the conversation can cause a later, unrelated image to carry a hidden yet detectable watermark. PLWs pose a novel threat to users of unified multimodal models: A poisoned model can retain utility while covertly turning image generation into a channel for privacy leakage, even when deployed locally. Across 13 sensitive-attribute triggers and two model families, PLWs reach up to 100.0% TPR at 1% FPR. For example, across all tested conversational separations, OmniGen2 detects every prior disclosure of depression while falsely flagging only 1% of images generated without such a disclosure.",
+      "authors": [
+        "Tobias Braun",
+        "Jonas Henry Grebe",
+        "Emil Sivic",
+        "Patrick Mohr Gordillo",
+        "Hossein Shakibania",
+        "Marcus Rohrbach",
+        "Anna Rohrbach"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-10-04T18:53:31+00:00",
+      "link": "https://arxiv.org/pdf/2610.05453v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "invisible trigger-dependent watermarks in generative multimodal models",
+      "llm_evidence_cn": "生成式多模态模型中的不可见触发水印",
+      "llm_evidence": "生成式多模态模型中的不可见触发水印",
+      "canonical_evidence": "生成式多模态模型中的不可见触发水印",
+      "llm_tldr_en": "Introduces Privacy-Leaking Watermarks, invisible trigger-dependent watermarks a malicious provider can condition on chat history, revealing cross-modal privacy leakage in unified multimodal generative models.",
+      "llm_tldr_cn": "统一多模态模型在共享对话上下文中跨模态生成内容，带来新的隐私威胁。本文提出隐私泄露水印PLW，一种可由恶意模型提供方依据历史对话条件触发的不可见水印。实验表明该类水印能在后续生成中泄露此前对话的敏感信息，凸显本地部署模型下跨模态水印的风险。该工作从攻击视角拓展了生成模型水印的威胁分析。",
+      "llm_tldr": "统一多模态模型在共享对话上下文中跨模态生成内容，带来新的隐私威胁。本文提出隐私泄露水印PLW，一种可由恶意模型提供方依据历史对话条件触发的不可见水印。实验表明该类水印能在后续生成中泄露此前对话的敏感信息，凸显本地部署模型下跨模态水印的风险。该工作从攻击视角拓展了生成模型水印的威胁分析。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.06317v1",
+      "source": "arxiv",
+      "title": "Watermarking: from Impossibility to Auditable Compliance",
+      "abstract": "Article 50 (2) of the EU Artificial Intelligence Act requires providers of generative systems to make synthetic outputs machine-readable and detectable, while qualifying the effectiveness, interoperability, robustness, and reliability by technical feasibility, cost, content-specific limits, and the state of the art. For free-form text, one important implementation route is the implementation of a generative watermarking procedure, which poses a compliance problem that is hard to address. Strong watermarking is impossible against adaptive removal, while ordinary edits attenuate statistical evidence, and unmarked human text may overlap distributionally with machine output. This article develops an auditable alternative. First, it defines a description-length robustness profile. A finite-sample bound shows that detectable bias decays and that the required sample size grows with the inverse square of the decay rate. This replaces an unidentified Shannon-entropy constant with collision entropy. Second, it constructs label-conditional conformal prediction sets with separate false-attribution and false-exclusion levels, reporting ``watermark supported,'' ``not supported,'' or ``inconclusive''. Coverage is obtained as a finite-sample result and is class-conditional under exchangeability. A small reproducible simulation of a tournament watermark confirms both claims and shows that the surviving-token rule overstates the tolerable edit rate roughly twofold. The resulting premarket certificate, signed detector report, and postmarket recalibration protocol operationalize the Commission's 2026 Code of Practice without claiming universal robustness.",
+      "authors": [
+        "Fernando Delbianco",
+        "Fernando Tohmé",
+        "Hugo Acciarri"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published": "2026-10-05T13:32:41+00:00",
+      "link": "https://arxiv.org/pdf/2610.06317v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "generative watermarking, impossibility against adaptive removal, compliance",
+      "llm_evidence_cn": "生成式水印在自适应移除下的不可能性与合规",
+      "llm_evidence": "生成式水印在自适应移除下的不可能性与合规",
+      "canonical_evidence": "生成式水印在自适应移除下的不可能性与合规",
+      "llm_tldr_en": "This article addresses EU AI Act compliance for generative watermarking, arguing strong watermarking is impossible against adaptive removal and proposing an auditable alternative.",
+      "llm_tldr_cn": "欧盟人工智能法案第50(2)条要求生成系统提供者可机器读取并检测合成输出，但文本水印的合规实现面临难题：强水印在自适应移除下不可能，普通编辑会削弱统计证据，人类文本也可能与机器输出分布重叠。作者提出一种可审计的替代方案，首先定义了基于描述长度的鲁棒性度量。该工作为生成式水印的合规性提供了兼顾技术可行性与审计性的分析框架，揭示了水印安全与合规之间的张力。",
+      "llm_tldr": "欧盟人工智能法案第50(2)条要求生成系统提供者可机器读取并检测合成输出，但文本水印的合规实现面临难题：强水印在自适应移除下不可能，普通编辑会削弱统计证据，人类文本也可能与机器输出分布重叠。作者提出一种可审计的替代方案，首先定义了基于描述长度的鲁棒性度量。该工作为生成式水印的合规性提供了兼顾技术可行性与审计性的分析框架，揭示了水印安全与合规之间的张力。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.06334v1",
+      "source": "arxiv",
+      "title": "SPIN: Image Immunization Against Diffusion Editing via Single-Step Projection in Stochastic Neighborhoods",
+      "abstract": "Diffusion models have greatly advanced instruction-guided image editing, while also raising concerns about unauthorized image manipulation. Image immunization addresses this risk by adding imperceptible perturbations to an input image to disrupt subsequent edits. Since editing requests are unknown at image release, protection should remain effective beyond the instruction used to construct the perturbation. Existing immunization methods either require costly full-trajectory backpropagation or use intermediate objectives whose effects may be weakened by subsequent denoising. Meanwhile, a single inference path provides limited feedback about alternative denoising continuations. To address these challenges, we propose \\textsc{SPIN}, a framework for image immunization via one-step projection over local stochastic trajectory neighborhoods. Starting from an early denoising state, \\textsc{SPIN} generates stochastic neighboring states under the same instruction and predicts their clean latents through one-step projection without full unrolling. We then optimize a bounded input perturbation to maximize the average deviation of these predictions from a clean-edit reference, encouraging the perturbation to disrupt multiple possible editing outcomes. Experiments on two image editors demonstrate substantial gains in protection performance, with \\textsc{SPIN} outperforming compared methods across all six metrics under seen instructions and in the more challenging unseen instruction setting.",
+      "authors": [
+        "Fengming Gu",
+        "Jie Zhang",
+        "Zhongqi Wang",
+        "Qiankun Li",
+        "Shiguang Shan",
+        "Xilin Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-05T13:41:52+00:00",
+      "link": "https://arxiv.org/pdf/2610.06334v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "image immunization via imperceptible perturbations to defend against diffusion editing",
+      "llm_evidence_cn": "通过不可感知扰动实现图像免疫以抵御扩散编辑",
+      "llm_evidence": "通过不可感知扰动实现图像免疫以抵御扩散编辑",
+      "canonical_evidence": "通过不可感知扰动实现图像免疫以抵御扩散编辑",
+      "llm_tldr_en": "SPIN immunizes images against instruction-guided diffusion editing by adding imperceptible perturbations via single-step projection in stochastic neighborhoods, improving robustness to unknown edits at lower cost.",
+      "llm_tldr_cn": "扩散模型推动指令引导图像编辑，也带来未授权篡改风险；现有图像免疫方法要么需昂贵的全轨迹反传，要么中间目标易被后续去噪削弱。本文提出SPIN，在随机邻域内做单步投影，为输入图像添加不可感知扰动以干扰未知编辑请求。实验表明该方法在降低计算成本的同时提升了保护效果对指令的泛化性。该工作为抵御扩散编辑的图像保护提供了更高效鲁棒的方案。",
+      "llm_tldr": "扩散模型推动指令引导图像编辑，也带来未授权篡改风险；现有图像免疫方法要么需昂贵的全轨迹反传，要么中间目标易被后续去噪削弱。本文提出SPIN，在随机邻域内做单步投影，为输入图像添加不可感知扰动以干扰未知编辑请求。实验表明该方法在降低计算成本的同时提升了保护效果对指令的泛化性。该工作为抵御扩散编辑的图像保护提供了更高效鲁棒的方案。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "Defenses against watermark removal and adversarial attacks on generated image watermarks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.09952v1",
+      "source": "arxiv",
+      "title": "MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection",
+      "abstract": "Recent advances in generative image models have made many manipulated images highly realistic, raising the need for detectors that are not only accurate but also able to provide visual evidence for their decisions. In this paper, we present our solution to the Explainable Deepfake Detection Challenge [2] on the XPlainVerse dataset [1], where systems are required to predict whether an image is real or fake and generate both complex and simple explanations grounded in visible forensic cues. Our method follows a modular detection-and-explanation design. For the real/fake decision, we build a multi-backbone detector that combines several DINOv3 models with Mesorch manipulation-localization features, bringing together pretrained visual representations, DCT-aware cues, and multi-scale forensic information. To inject explanation evidence into the detector, we use a Grounding-DINO-based pseudo-mask generation pipeline that converts local artifact descriptions from training explanations into weak patch- level supervision for an Artifact Evidence Map. We further introduce a local patch-level contrastive objective that separates artifact and authenticity evidence in the detector feature space without requiring paired images or pixel-level manipulation masks. For language output, we use class-conditional Qwen3-VL models to generate complex explanations for fake and real predictions, followed by a GRPO-optimized text simplification model. The proposed methods were trained and evaluated on the challenge subset of XPlainVerse. On the full test split, our submission achieves 0.9349 detection accuracy, 0.5571 explanation score, and a 0.7456 final challenge score.",
+      "authors": [
+        "Artem Filippov",
+        "Aleksandr Gushchin",
+        "Kirill Koltsov",
+        "Dmitriy Vatolin",
+        "Anastasia Antsiferova"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-07T12:30:04+00:00",
+      "link": "https://arxiv.org/pdf/2610.09952v1",
+      "tags": [
+        "keyword:image-tamper",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "manipulation-localization features for deepfake detection, localizing manipulated regions",
+      "llm_evidence_cn": "利用篡改定位特征进行深度伪造检测，定位被操纵区域",
+      "llm_evidence": "利用篡改定位特征进行深度伪造检测，定位被操纵区域",
+      "canonical_evidence": "利用篡改定位特征进行深度伪造检测，定位被操纵区域",
+      "llm_tldr_en": "MSU's Explainable Deepfake Detection Challenge solution combines DINOv3 backbones with Mesorch manipulation-localization features to judge real or fake and produce grounded forensic explanations.",
+      "llm_tldr_cn": "生成图像模型使篡改图像高度逼真，现有检测器不仅需准确，还应提供可见取证证据。本文提出模块化检测与解释方案，结合多个DINOv3骨干与Mesorch篡改定位特征进行真伪判定，并生成基于可见线索的复杂与简单解释。在XPlainVerse数据集上验证了检测与定位能力。该工作推进了兼具准确性与可解释性的伪造图像检测与篡改区域定位。",
+      "llm_tldr": "生成图像模型使篡改图像高度逼真，现有检测器不仅需准确，还应提供可见取证证据。本文提出模块化检测与解释方案，结合多个DINOv3骨干与Mesorch篡改定位特征进行真伪判定，并生成基于可见线索的复杂与简单解释。在XPlainVerse数据集上验证了检测与定位能力。该工作推进了兼具准确性与可解释性的伪造图像检测与篡改区域定位。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "identifying and localizing manipulated regions in digital images",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

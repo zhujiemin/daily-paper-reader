@@ -1,0 +1,457 @@
+Title: Watermarking: from Impossibility to Auditable Compliance
+
+URL Source: https://arxiv.org/pdf/2610.06317v1
+
+Published Time: Tue, 06 Oct 2026 03:00:25 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# Watermarking: from Impossibility to Auditable Compliance 
+
+Fernando Delbianco 1,2 Fernando Tohmé 1.2 Hugo Acciarri 3 
+
+> 1
+
+Departamento de Economía, Universidad Nacional del Sur (UNS), Bahía Blanca, Argentina  
+
+> 2
+
+Instituto de Matemática de Bahía Blanca (INMABB), CONICET–UNS, Bahía Blanca, Argentina  
+
+> 3
+
+Departamento de Derecho, Universidad Nacional del Sur (UNS), Bahía Blanca, Argentina 
+
+Corresponding author: Fernando Delbianco, fernando.delbianco@uns.edu.ar 
+
+E-mail: F. Delbianco: fernando.delbianco@uns.edu.ar F. Tohmé: ftohme@criba.edu.ar H. Acciarri: hacciarri@criba.edu.ar 
+
+ORCID: F. Delbianco: https://orcid.org/0000-0002-1560-2587 
+
+F. Tohmé: https://orcid.org/0000-0003-2988-4519 
+
+H. Acciarri: https://orcid.org/0009-0005-8293-7087 
+
+Abstract 
+
+Article 50 (2) of the EU Artificial Intelligence Act requires providers of generative systems to make synthetic outputs machine-readable and detectable, while qualifying the effectiveness, interoperability, robustness, and reliability by technical feasibility, cost, content-specific limits, and the state of the art. For free-form text, one important implementation route is the implementation of a generative watermarking procedure, which poses a compliance problem that is hard to address. Strong watermarking is impossible against adaptive removal, while ordinary edits attenuate statistical evidence, and unmarked human text may overlap distributionally with machine output. This article develops an auditable alternative. First, it defines a description-length robustness profile. A finite-sample bound shows that detectable bias decays and that the required sample size grows with the inverse square of the decay rate. This replaces an unidentified Shannon-entropy constant with collision entropy . Second, it constructs label-conditional conformal prediction sets with separate false-attribution and false-exclusion levels, reporting “watermark supported,” “not supported,” or “inconclusive”. Coverage is obtained as a finite-sample result and is class-conditional under exchangeability. A small reproducible simulation of a tournament watermark confirms both claims and shows that the surviving-token rule overstates the tolerable edit rate roughly twofold. The resulting premarket certificate, signed detector report, and postmarket recalibration protocol operationalize the Commission’s 2026 Code of Practice without claiming universal robustness. 
+
+Keywords: text watermarking, EU AI Act, minimum description length, conformal prediction, synthetic-content provenance, algorithmic accountability 
+
+# 1 Introduction 
+
+Text watermarking is one of the few techniques that can travel with free-form text after metadata is stripped, yet the same editability that makes text useful also makes a statistical watermark fragile. 1arXiv:2610.06317v1 [cs.CR] 5 Oct 2026 The strongest general guarantee, that no efficient adversary can remove a nontrivial mark while preserving output quality, is unavailable under broad, oracle-aided threat models (Zhang et al. 2024). Even without an active adversary, the best possible classifier cannot reliably separate two source distributions that are close in total variation (Sadasivan et al. 2025). At the same time, some evidence shows that generative watermarking can preserve measured quality and provide useful detection on sufficiently long text (Dathathri et al. 2024). The practical question is consequently not whether a watermark is invulnerable, but which evidence survives which transformations, at what error rates, and under which documented conditions. This paper addresses this question under the emerging European regulatory regime. This question became legally concrete on August 2, 2026. Article 50(2) of Regulation (EU) 2024/1689 requires providers of systems that generate synthetic audio, image, video, or text to ensure that outputs are machine-readably marked and detectable as artificially generated or manipulated (European Parliament and Council 2024). The provision is not an absolute command. It requires technical solutions to be effective, interoperable, robust, and reliable “as far as” technically feasible, taking account of content limitations, implementation cost, and the generally acknowledged state of the art. The obligation does not apply in the cases that the AI system assists standard editing, without substantially altering the input data provided by the deployer or its semantics, or alternatively, when the AI system is authorized by law to be used to detect, prevent, investigate, or prosecute criminal offences. Regulation (EU) 2026/1744 allows for a transition until December 2, 2026 for systems placed on the market before August 2, 2026 (European Parliament and Council 2026). The Commission’s final Code of Practice and Article 50 Guidelines now give the provision an operational setting (European Commission 2026a,b). Article 50(2) requires providers to ensure that their marking and detection solutions are effective, interoperable, robust, and reliable insofar as technically feasible, making performance under relevant uses and transformations part of the compliance inquiry. The Code operationalizes that requirement for signatories through testing and documentation across expected contexts and transformations and, for free-form text, expressly recognizes that detection may sometimes yield comparatively less reliable, robust, or potentially misleading or low-confidence results. In such cases, the evidential limitations of the detector should be made explicit, and the result should not be presented as supporting a categorical conclusion where the available evidence does not justify one.. A single area under the receiver operating characteristic curve (AUROC) cannot answer the question. It averages across thresholds, obscuring a text’s length and domain, and says little about a document that has moved outside the evaluation distribution. This article proposes a joint technical and governance framework with five contributions: (i) It defines watermark evidence bits , interpreted as a minimum-description-length (MDL) device that yields auditable robustness. (ii) It derives a conservative bound for surviving edits, diluting the observed watermark. (iii) It supplies a two-sided conformal procedure. Separate error levels control false attribution of the target watermark and false exclusion of genuinely marked text. Ambiguous and anomalous cases are reported as inconclusive. (iv) It reports a simulation of a watermark. It recovers the survival law and the corrected frontier to within Monte Carlo error. The surviving-token approximation overstates the tolerable 2substitution rate by a factor of nearly two. (v) It maps these quantities to a certificate, a detector report, and a monitoring loop aligned with Article 50(2)’s criteria of effectiveness, reliability, robustness, and interoperability. The framework delivers less than a universal detector. The outcome is text carrying the watermark of a specified provider, model or sampler version, detector version, and key epoch . Its complement includes human text, output from other models, provider output generated without the target mark, and text from which the mark has been removed. Accordingly, a negative result does not establish human authorship, and a positive result does not establish who submitted, edited, or endorsed the text. Those distinctions are essential since the output may affect a person’s rights or reputation. 
+
+# 2 Regulatory and Technical Background 
+
+Three features of the current legal setting matter for a technical design. First, Article 50(2) states a provider obligation at the system-output layer. It is distinct from the disclosure duties imposed on deployers in other paragraphs. Second, its four performance attributes are expressly contextual and technologically qualified. A technical certificate may therefore delimit supported content types, lengths, languages, transformations, and operating points. Third, compliance is evaluated within a developing ecosystem of standards, codes, and supervisory practice rather than by a single statutory threshold. The regulatory setting was subsequently supplemented by three separate instruments with different legal effects. The Code was the first of these three instruments to reach its final form on 10 June 2026, although the Commission’s work on the Article 50 Guidelines had begun earlier, with a public draft released on 8 May 2026. The Code is a voluntary compliance instrument rather than mandatory legislation. It translates the general requirements of Article 50(2), together with the obligations in Article 50(4) and (5), into more detailed operational commitments concerning matters such as marking techniques, testing, documentation, detector access, and interoperability. On 8 July 2026, the Commission assessed the Code as adequately covering the obligations in Article 50(2), (4), and (5), an assessment followed by the AI Board on 9 July. Article 50(7), as amended by Regulation (EU) 2026/1744, expressly provides for the Commission to assess whether adherence to the Code is adequate to ensure compliance with the obligations laid down in paragraphs 2 and 4, while the Code itself continues to address the horizontal requirements of paragraph 5. Adherence does not constitute conclusive evidence of compliance, nor does it give rise to a presumption of conformity of the kind that Article 40 attaches, within its own scope, to compliance with harmonized standards. The Code nevertheless occupies a privileged practical position. The Commission Guidelines describe it as “the only Union-wide recognised practical framework for demonstrating compliance” with the obligations in Article 50(2), (4), and (5). Non-signatories may demonstrate compliance through other adequate means, but those alternatives are not equivalent in practical terms: providers must independently explain and document how their measures satisfy Article 50, may have to carry out a gap analysis comparing those measures with the Code, and may face additional requests for information or access from competent authorities. A second development was Regulation (EU) 2026/1744 (the AI Omnibus), adopted by the European Parliament and the Council on 8 July 2026. This instrument is binding legislation and amended the AI Act itself. For present purposes, its principal effect on 3our subject was to introduce a limited transitional rule for Article 50(2). Providers of systems generating synthetic audio, image, video, or text that had already been placed on the market before 2 August 2026 must take the necessary steps to comply with Article 50(2) by 2 December 2026. The four-month transition concerns only this obligation and this category of pre-existing systems; the other transparency obligations in Article 50 remain subject to their ordinary application dates (European Parliament and Council 2026). The third instrument is the European Commission’s Guidelines on the implementation of Article 50, adopted and published on 20 July 2026 under Article 96(1)(d) of the AI Act (European Commission 2026b). The Guidelines are an official interpretive instrument. They explain how the Commission understands the scope and application of the binding obligations contained in Article 50, while leaving the Regulation itself unchanged. For Article 50(2), they clarify, among other matters, the treatment of source code, outputs intended exclusively for machine-to-machine communication, certain outputs used only within closed-loop industrial or product-development environments, standard editing, and narrowly defined business-to-business or industrial contexts. They therefore help identify when the statutory obligation applies without creating an independent marking or detection regime. For the technical framework developed here, the resulting structure is consequential. Article 50(2) supplies the binding legal standard: qualifying outputs must be machine-readably marked and detectable through solutions that satisfy the Regulation’s contextual requirements of effectiveness, interoperability, robustness, and reliability. The Code supplies a more detailed, voluntary implementation route for signatories. The Guidelines are intended to clarify the scope and application of the underlying legal obligation. Regulation (EU) 2026/1744 modifies the binding framework itself, including the limited transition for systems already on the market. These instruments perform different functions and should therefore remain analytically separate. This structure also leaves room for uncertainty at the level of individual detection results. Article 50(2) requires a technically adequate marking and detection system under the conditions specified by the Regulation. Conversely, it does not establish that every individual output must permit categorical attribution. The final Code of Practice recognizes that no single marking technique generally satisfies all four Article 50(2) attributes across modalities. It adopts a multilayer approach, combining digitally signed metadata with content that can contain imperceptible watermarking. Free-form text cannot reliably retain container metadata, so the Code treats it as one of two narrow exceptions in which a single marking layer suffices. For free-form text, the Code requires signatories to apply an imperceptible watermark to texts longer than 200 tokens, while recognizing that reliability at such lengths may be lower than for very long texts. At the detection stage, it allows access to free-form-text watermark detectors to be restricted where comparatively lower reliability or robustness may produce misleading or low-confidence results, provided that useful access remains available, in particular to verified expert users with a legitimate need, and that the restriction lasts only until sufficiently reliable and robust detection mechanisms become established. The Code also calls for: • reliability testing across content length, size, diversity, semantics, and expected use contexts, • robustness testing against ordinary processing, including lexical substitution, character insertion or deletion, paraphrasing, and translation cycles, and against adversarial attacks, • interoperable access to detection mechanisms, with watermark-detection interoperability required by February 2, 2027, and 4• downloadable, digitally signed detection results carrying identifying information. These requirements create a need for reproducible claims, bounded scope, auditable error rates, and corrective action. The Commission Guidelines further explain that adherence to the voluntary Code can demonstrate compliance, while a provider using an alternative route must show that its means are adequate (European Commission 2026b). The proposal below involves a measurement layer that can support either route. The Code’s 200-token benchmark deserves particular attention because it links a specific implementation commitment for signatories to a statistical instrument whose evidential power varies with text length. Section 5 shows that, in a controlled simulation, text in the vicinity of that benchmark may still be too short to support a categorical conclusion once ordinary editing is introduced. The point at which the Code requires signatories to apply watermarking should therefore be distinguished from the point at which the resulting evidence becomes sufficiently informative for a categorical attribution. The certificate proposed in this article is designed to make that distinction explicit. AI-text classifiers detect distributional features associated with machine output. Generative watermarks, instead, alter the sampling process using a secret or provider-controlled key and test for the induced statistical pattern (Kirchenbauer et al. 2023). Cryptographic and coding-based work has produced distortion-free, undetectable, and provably robust constructions under different assumptions (Kuditipudi et al. 2024; Christ et al. 2024; Zhao et al. 2024; Golowich and Moitra 2024; Qu et al. 2025). These are not interchangeable guarantees. “Undetectable” may mean computational indistinguishability to an observer without the key, whereas “detectable” means recoverable evidence for the authorized detector. “Robust” is meaningful only relative to the properties of the generative process. More precisely, let Y = 1 denote the fact that the input contains the target provider’s active watermark under a declared configuration. Let Y = 0 denote its complement. The hypotheses are 
+
+H1 : Y = 1 versus H0 : Y = 0 . (1) Neither hypothesis is equivalent to “AI authored” versus “human authored.” Mixed authorship, retrieval, quotations, provider-side exemptions, and post-generation edits all break that equivalence. Zhang et al. (2024) show that strong watermarking is impossible in general against an efficient adversary equipped with suitable quality and perturbation oracles. But their result does not claim that every deployed watermark is useless. It just shows that a nontrivial, quality-preserving, universally removal-resistant guarantee cannot be assumed under that threat model. Later work sharpens robustness boundaries in coding abstractions and constructs guarantees for specified edit channels (Francati et al. 2025; Golowich and Moitra 2024; Qu et al. 2025; Zhai et al. 2026). Sadasivan et al. (2025) establish a different, statistical boundary. For human-text distribution 
+
+PH , machine-text distribution PM , and any detector D, and total variation distances dT V ,1
+
+AUROC( D) ≤ 12 + dTV (PM , P H ) − 12 dTV (PM , P H )2. (2) 
+
+> 1A ROC curve illustrates the performance of a binary classifier model at varying threshold values. AUROC is the area under the ROC curve.
+
+5As the two distributions approach one another, the upper bound approaches a purely random valuation. A watermark can separate its marked distribution from the unmarked distribution, but editing can close that gap, and quality constraints limit how much separation a provider can introduce. Equation (2) is therefore a reason to report the tested distributions and transformations. The human costs of misclassification reinforce this requirement. Generic AI detectors have exhibited severe error disparities for nonnative English writing (Liang et al. 2023). A provider-specific watermark detector avoids some feature-based biases, but length, language, topic, etc., can still change its score distribution. SynthID-Text demonstrates that a generative watermark can operate at production scale. Its evaluation included approximately 20 million live Gemini responses and found no statistically significant degradation in the reported feedback measures. It also documented that longer and higher-entropy text carries more evidence and that editing or paraphrasing weakens detection (Dathathri et al. 2024). The system uses pseudorandom scores and tournament sampling, generally with a four-token seed window and multiple tournament layers. It also offers selective prediction. Confidence intervals for an average benchmark metric do not become coverage guarantees for a later item. For that, conformal calibration is needed. This has already been applied in the watermark literature. Xie et al. (2026) use conformal p-values to control false positives for adaptive AI-use policies in classrooms. The present contribution differs in purpose and construction. It addresses provider-side Article 50 auditing, ties calibration cells to an explicit robustness profile, and uses two label-conditional p-values so that both false attribution and false exclusion can be assigned separate tolerances. 
+
+# 3 A Description-Length Robustness Profile 
+
+Let V denote the model’s token vocabulary, a finite set of tokens its tokenizer can emit, fixed by the declared model and tokenizer version. Let Xt ∈ V be the token generated at position t and 
+
+X<t = ( X1, . . . , X t−1) the vector of tokens preceding it. Consider an autoregressive model with token distribution 
+
+pt(v) = Pr( Xt = v | X<t ), v ∈ V . (3) A context-seeded watermark derives a pseudorandom seed 2
+
+rt = Hash( k, X t−h, . . . , X t−1) (4) from a secret key k and a window of h preceding tokens. A detector computes bounded contributions 
+
+Zj ∈ [0 , 1] and aggregates them into a score S. Conditioning on the hypotheses, under a Bernoulli implementation, the stylized null and marked models are 
+
+Zj | Y = 0 ∼ Ber(1 /2) , Zj | Y = 1 ∼ Ber(1 /2 + ε), (5) where ε > 0 is the average marked bias.         
+
+> 2A deterministic map Hash : K× V h→ R from a key and an h-token window to a seed space R, whose outputs are computationally indistinguishable from independent uniform draws on Rfor any party not holding the key.
+
+6In a single-layer tournament under the distribution Ber(1 /2), let 
+
+Ct = ∑
+
+> v∈V
+
+pt(v)2 and H2(pt) = − log Ct (6) be the collision probability and the order-two Rényi entropy, respectively. The SynthID-Text analysis gives, after expectation over the random seed, Pr( Zt = 1 | Y = 1) = 12 + 1 − Ct
+
+4 . (7) The first-layer signal is εt = (1 − Ct)/4, vanishing for a deterministic next-token distribution (Dathathri et al. 2024). Deeper tournament layers alter the token distribution and its collision probability, so their contributions cannot simply be multiplied by the number of layers. Providers should report the actual covariance structure. If n raw contributions have autocorrelations rq, a conventional planning diagnostic is 
+
+neff ≈ n
+
+1 + 2 ∑qmax  
+
+> q=1
+
+rq
+
+, (8) with a prespecified truncation. Substituting neff into an asymptotic formula is not a guarantee in itself but provides a useful heuristic. In Section 5, Equation (8) is applied on a simulated single-layer scheme, where it correctly returns neff ≈ n.Only one edit model admits an exact survival calculation.It makes four assumptions: (i) Each token is substituted independently with probability δ, (ii) the editor does not know the key, (iii) tokenization and length stay fixed. Finally, (iv) a contribution whose own token, or whose h-token seed context, has been touched loses its bias and behaves like the null in expectation. Write Et = 1 if position t was substituted and Et = 0 otherwise. Contribution t survives only if none of the h + 1 positions on which it depends has been touched, so the survival indicator is 
+
+Ut =
+
+> h∏
+> j=0
+
+(1 − Et−j ), (9) with 
+
+ρ(δ, h ) = E[Ut] = (1 − δ)h+1 . (10) If the detector cannot identify which windows survived, the observed marked mean becomes diluted: 
+
+E[Zt | Y = 1 , δ ] = 12 + ερ (δ, h ). (11) Suppose a detector could discard every corrupted position. It would see about nρ contributions, each still biased by ε so that the separation would depend on nε 2ρ. A real detector would not be able to tell which windows survived. It only sees about n contributions, each biased by ερ , so the separation will depend on nε 2ρ2. The extra factor of ρ is the whole difference between the two accounts. 
+
+Proposition 1. Let ¯Z be the mean of n independent contributions taking values in [0 , 1] . Under H0
+
+7each contribution has mean 1/2. According to Equations 10 and 11, each has mean 1/2 + ε(1 − δ)h+1 .
+
+H0 gets rejected when 
+
+¯Z > 12 +
+
+√
+
+log(1 /α )2n . (12) 
+
+Then the false-positive probability is at most α. The false-negative probability is at most β whenever 
+
+n ≥
+
+(√log(1 /α ) + √log(1 /β )
+
+)2
+
+2ε2(1 − δ)2( h+1) . (13) 
+
+Equivalently, a sufficient maximum substitution rate is 
+
+δHmax =
+
+1 −
+
+{ √ log(1 /α ) + √log(1 /β )
+
+ε√2n
+
+}1/(h+1) 
+
+> +
+
+, (14) 
+
+where [u]+ = max( u, 0) .Proof. Hoeffding’s inequality applied to Equation (12) gives Pr 0(reject) ≤ α. Under the edited marked hypothesis (Equations 10 and 11), set ∆ = ε(1 − δ)h+1 . The probability that ¯Z falls below the threshold is at most exp 
+
+−2n
+
+∆ −
+
+√
+
+log(1 /α )2n
+
+
+
+> 2
+
+ ,
+
+provided the expression in braces is nonnegative. Requiring this upper bound to be no larger than 
+
+β gives Equation (13), and a rearrangement gives Equation (14). Hoeffding’s inequality 3 holds for any bounded contribution. Under the Bernoulli model of Equation (5) a normal approximation gives the tighter planning values 
+
+n ≳ (z1−α + z1−β )2
+
+4ε2(1 − δ)2( h+1) (15) and 
+
+δNmax =
+
+[
+
+1 −
+
+{ z1−α + z1−β
+
+2ε√n
+
+}1/(h+1) ]
+
+> +
+
+. (16) Here z1−α is the (1 − α) quantile of the standard normal distribution. Equation (16) shows the impact of the correction. A surviving-position derivation assumes that nρ contributions remain and that each keeps the full bias ε. That gives 1 − δmax ∝ n−1/(h+1) .Because an unaided detector cannot find the surviving windows, the correct exponent is half as large: 1 − δmax ∝ n−1/[2( h+1)] . The two rules disagree by a wide margin, and Section 5 measures the gap. As an illustration only, Equation (16) with α = .01, β = .05, h = 4, and ε = .05 gives δNmax ≈ .02 at n = 2 ,000 and ≈ .17 at n = 10 ,000. The difference of performance with SynthID stems from the assumptions (i)-(iv) of the edit model. 
+
+> 3Which yields an upper bound on the probability that the sum of bounded independent random variables deviates from its expected value by more than a certain amount.
+
+8The Minimal Description Length (MDL) criterion selects the model that gives the shortest joint description of model and data (Rissanen 1978; Grünwald 2007). Let P1 and P0 be two fixed score models, with densities f1 and f0, describing the detector score under the marked and null hypotheses. For an observed score s, the codelength advantage of the marked model is the base-two log-likelihood ratio 
+
+b(s) = log 2
+
+f1(s)
+
+f0(s) . (17) Its expectation under P1 is 
+
+B(P1, P 0) = DKL (P1∥P0)log 2 bits . (18) This provides an evaluation of the comparison of the two models. A detector report can disclose Equation (17) for a single item, because it depends only on the observed score. Under Equations (5) and (11), the expected codelength advantage over n independent contribu-tions is 
+
+B(δ) = n
+
+log 2 DKL 
+
+> (
+
+Ber   
+
+> {12
+
++ ε(1 − δ)h+1 }∥ ∥∥Ber( 12 )
+
+> )
+
+. (19) For small ε(1 − δ)h+1 , Equation (19) reduces to 
+
+B(δ) ≈ 2nε 2
+
+log 2 (1 − δ)2( h+1) . (20) Equation (20) explains that, while edits reduce the mean signal linearly in ρ, the information separating two nearby Bernoulli models falls quadratically. 
+
+B(δ) is a description-length robustness curve . That is, the loss of provider-specific statistical evidence under a declared transformation. Let S denote the aggregate detector score treated as a random variable, and let Fa,θ be a transformation family with operation type a and severity θ. The general profile is 
+
+Ba,θ,r = 1log 2 DKL 
+
+> (
+
+PS|Y =1 ,F a,θ ,R =r
+
+> ∥∥∥
+
+PS|Y =0 ,R =r
+
+> )
+
+, (21) where the random variable R indexes calibration strata and R = r fixes one of them. Providers must estimate Equation (21) on held-out data, report its uncertainty, and retain the underlying score distributions. No single number captures every text change that matters legally or technically. Normalized token edit distance catches substitutions, insertions, deletions, and seed desynchronization, but it scores a meaning-preserving paraphrase as a large change. Embedding similarity tracks meaning better, but it can miss negation, changed named entities, and task-critical facts, and it depends on the embedding model chosen. The audit should therefore keep both: 
+
+dtok (x, x ′) = Lev tok (x, x ′)max {| x|, |x′|} , (22) 
+
+dsem (x, x ′) = 1 − sim E (x, x ′), (23) 9Here x is the original text and x′ the transformed text, Lev tok is Levenshtein distance measured in tokens, |x| is the token length of x, and sim E is cosine similarity under an embedding model E.The script E distinguishes the embedding model from the expectation operator E and from the substitution indicator Et. Both distances are preserved under the operation family a (substitution, insertion or deletion, copy and paste, paraphrase, summarization, or translation), the language pair, and task-specific semantic checks, although the embedding model, the tokenizer, the normalization rules, and the thresholds must all be adapted under those transformations. Proposition 1 covers independent substitutions under fixed tokenization. Insertions and deletions change the text, as well as paraphrasing and translating. Those transformations belong to an empirical Pareto surface, capturing the trade-offs between them. 
+
+# 4 Label-Conditional Conformal Calibration 
+
+Let s(x) be the detector score assigned to a document x, increasing with evidence for the target watermark. It is the realized value of the random variable S, where the change of symbol marks the change of role, from a distribution to a fixed function to be calibrated. Once calibration begins, 
+
+s may not be retuned. Detector development data, calibration data, and robustness test data must be disjoint. Each example receives a provenance label Y ∈ { 0, 1} established by controlled generation logs, not inferred by another detector. Calibration is performed within cells R = r that may combine: • provider, generator or sampler version, detector version, and key epoch, • language, domain, and length bin, • decoding settings and watermark-strength configuration, and • allowed or expected edit family and severity band. Where a cell holds only a few examples, it should be merged with others before calibration begins. Choosing a favorable cell after the test score has been revealed destroys the guarantee. Hierarchical pooling can improve efficiency, as in Xie et al. (2026), but the exchangeability or weighting assumptions must be recorded. Define the nonconformity scores 
+
+A(x, 1) = −s(x), A(x, 0) = s(x). (24) For a candidate label y in cell r, let Iy,r be the index for ny,r calibration examples with that label. The smoothed finite-sample conformal p-value is 
+
+py(x) = 1 + ∑ 
+
+> i∈Iy,r
+
+1{A(Xi, y ) ≥ A(x, y )}
+
+ny,r + 1 . (25) Let p1 count the calibration items whose scores are no larger than s(x), and p0 count those whose scores are no smaller. Randomized tie-breaking may replace the ≥ relation where exact rather than conservative validity is wanted. With separate tolerances α0 and α1, define Γ( x) = {y ∈ { 0, 1} : py(x) > α y}. (26) 10 Table 1 Permitted interpretation of the conformal prediction set. The target is a specified provider watermark, not human authorship. 
+
+Γ( x) Reported result Controlled error and required interpretation 
+
+{1} Target watermark supported If Y = 0 and exchangeability holds in the declared cell, false attribution is bounded by 
+
+α0. This supports a provider-specific mark. 
+
+{0} Target watermark not supported If Y = 1 and exchangeability holds, false exclusion is bounded by α1. It does not prove human authorship or absence of other AI assistance. 
+
+{0, 1} Inconclusive Both labels remain compatible with calibration data. No categorical source claim is warranted. 
+
+∅ Inconclusive; investigate drift Both labels are atypical. Map to {0, 1} for decisions, preserve the anomaly flag, and examine version mismatch, attack, or distribution shift. Attributing a watermark to a text that does not carry it and failing to find a mark that is there lead to different consequences. A regulator or user should then be able to price them separately, under two provisos: each cell requires a minimum calibration size, and the score may not be changed after the disputed item has been seen. 
+
+Proposition 2. Fix a cell r and a label y. Suppose the ny,r calibration examples and a future example are exchangeable conditional on Y = y, R = r, and all model-training information. Then the set in Equation (26) satisfies 
+
+Pr {y / ∈ Γ( Xnew ) | Ynew = y, R new = r} ≤ αy. (27) 
+
+Proof. Conditional exchangeability makes the rank of the future nonconformity score among the 
+
+ny,r + 1 scores uniform when there are no ties and stochastically dominates the uniform one with the conservative tie rule. Therefore Pr {py(Xnew ) ≤ αy | Y = y, R = r} ≤ αy. The event y / ∈ Γ( Xnew ) is exactly this event. This is a finite-sample, class-conditional coverage statement (Vovk et al. 2005; Vovk 2013; Angelopoulos and Bates 2023). Equation (27) averages over draws of the calibration set. For one 
+
+particular frozen calibration set, the realized error rate is itself random, with a standard deviation of order 
+
+> √
+
+αy(1 − αy)/n y,r .Table 1 presents the four possible cases. Mapping the empty set to the full set can only enlarge predictions, so it preserves coverage. The size of cells is a floor for what the levels can mean. The smallest attainable conformal 
+
+p-value is 1 /(ny,r + 1), so a nominal αy = .01 needs at least 99 calibration examples in that cell before exclusion is even possible. The two inconclusive cases arise in different regimes. Where the marked and null score distribu-11 tions are well separated, a genuinely marked item in the lower α1 tail of the marked distribution is usually still far above the null. Both labels are then excluded, and the set is empty. Where separation is weak, as with short text, low entropy, or heavy editing, the same item fits both distributions and the set is full. An empty set therefore means different things in different cells. In a well-separated cell it is the 
+
+α1 “budget” being spent as expected. In a cell that normally returns full sets, it is an anomaly. Validity does not survive repeated querying. If many detectors or many documents are tested and a decision maker will act on any positive result, the family-wise and false-discovery rates become uncontrolled. The audit policy must fix a correction or an error bound in advance. Repeatedly testing revised versions of one document raises the same problem, unless the sequence is treated as a family or handled by a sequentially valid method. Exchangeability is crucial. There are several issues (a model update, a new key epoch, etc.) that can break it. Weighted conformal prediction can restore validity under a specified covariate shift, provided the density ratio is known or can be estimated consistently (Tibshirani et al. 2019). More general departures yield only approximate bounds, depending on the assumptions adopted (Barber et al. 2023). Every recalibration creates a new detector version and a new calibration hash. 
+
+# 5 A Synthetic Demonstration 
+
+The preceding sections make three claims: • evidence decays as (1 − δ)h+1 ,• the tolerable substitution rate follows the corrected ρ2 frontier, • a conditional conformal layer delivers class-conditional error rates, degrading into abstention. This section checks all three in a small simulator. The value of this exercise is that it makes the framework cheap to falsify. On top of that, it adds a fourth result, specifying what happens when a calibration cell is mis-specified. The simulator implements a miniature single-layer tournament watermark. A pseudorandom function with a key maps a packed ( h-token context , token) pair to a value in {0, 1} under a Bernoulli distribution. The generation process draws two candidate tokens from the next-token distribution and emits the one with the larger value in {0, 1}, breaking ties with a keyed coin. Unmarked text is drawn from the same distributions, which gives exactly matched null data. Each next-token distribution places mass q∗ on one token and spreads 1 −q∗ over K−1 alternatives. The collision probability is then available in closed form as Ct = ( q∗)2 + (1 − q∗)2/(K − 1), and varying ( q∗, K ) we capture the entropy of the distribution. Two strata are used, stratum A, with mean per-token bias ¯ ε = .095, and the lower-entropy stratum B, with ¯ ε = .047. Here ¯ ε is the average over positions and documents of the per-token signal εt of Equation (7), and it plays the role of ε in Section 3. The edit channel substitutes each token independently with probability δ, drawing the replace-ment uniformly from the vocabulary. Detection recomputes every value Zt ∈ { 0, 1} and reports the standardized score 
+
+s = 
+
+> ∑
+> t
+
+Zt − n/ 2
+
+> √
+
+n/ 4 , (28) 12 0.0 0.1 0.2 0.3 0.4        
+
+> substitution rate δ
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> observed bias /̄  ε
+> (a)
+> curves: (1 − δ)h+ 1
+> h= 1
+> h= 2
+> h= 4
+> 10 3
+> scorable contributions n
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> δ tolerated at 1 −  β = 0.95
+> (b)
+> surviving-token approximation corrected bound, Eq. (16) simulated frontier
+
+Fig. 1 Context survival and the corrected frontier. a Observed marked bias after substitution, normalized by the unedited bias ¯ ε. Simulation values are the marks on the curves representing (1 − δ)h+1 . b Substitution rate tolerated at α = .01, 1 − β = .95 in stratum A as a function of the number of scorable contributions. The surviving-token approximation allows roughly twice the edit rate the detector can in fact tolerate. 
+
+where n is the number of scorable positions, as in Section 3. A document of N tokens gives n = N −h
+
+of them. The null score has mean 1 /2 per contribution and unit variance after standardization. The marked bias equals the closed-form E[(1 − Ct)/4] to within .003. And a substituted token or context yields a fresh pseudorandom bit, which is exactly the “null-like corrupted window” assumption of Proposition 1. Throughout, h = 4, matching the seed-window length reported for SynthID-Text. Equation (8) returns neff between 409 and 1 ,621 against nominal n of 396 and 1 ,596. Single-layer contributions with distinct contexts are independent, something that cannot be assumed for multilayer tournaments. Figure 1a plots the observed marked bias after substitution, normalized by the unedited bias, against δ for h ∈ { 1, 2, 4}. Simulation and the analytic curve (1 − δ)h+1 differ by at most .010 over δ ∈ [0 , . 45], with mean deviations below .005. Equations (10) and (11) therefore describe this channel accurately, including the exponent h + 1. Figure 1b tests the correction itself. For each length, the largest δ at which the one-sided test keeps power 1 − β = .95 at α = .01 was estimated by simulation, then compared with two predictions: Equation (16), and the surviving-position rule that credits the detector with nρ contributions at bias ε.The simulated frontier tracks Equation (16) closely: .079 against .079 at n = 1 ,000, .137 against 
+
+.141 at n = 2 ,000, and .197 against .199 at n = 4 ,000. The surviving-position rule is optimistic by a factor of 1 .8 to 2 .0 throughout. At n = 4 ,000 in stratum A it would certify tolerance to a 36 percent substitution rate where the true limit is 20 percent. Stratum B repeats the pattern at roughly four times the length, which is what Equation (15) predicts from the ratio of squared biases. A provider reasoning from surviving tokens would report an edit tolerance about twice the achievable one, and the error grows with the seed-window length. This is a claim a supervisory authority or an independent assessor could falsify using the transformation tests the Code already 13 A            
+
+> n=400
+> δ=0.00 A
+> n=400
+> δ=0.15 A
+> n=1600
+> δ=0.00 A
+> n=1600
+> δ=0.15 B
+> n=1600
+> δ=0.00 B
+> n=1600
+> δ=0.15
+> 0.00 0.02 0.04 0.06 0.08 0.10 0.12 0.14 0.16
+> empirical error rate
+> α0
+> α1
+> (a) false attribution ( Y= 0) false exclusion ( Y= 1) A, n=400 A, n=1600 B, n=1600
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> false exclusion ( Y = 1)
+> α1
+> (b)
+> calibrated in the tested cell calibrated at δ= 0, tested at δ= 0.15
+
+Fig. 2 Label-conditional conformal calibration with α0 = .01 and α1 = .10. a Empirical false attribution and false exclusion in six calibration cells, averaged over 60 calibration draws of 500 examples per label; error bars are the standard deviation across draws. b False exclusion when the item is scored against a cell calibrated on unedited text but is itself edited at δ = .15, compared with calibration in the tested cell 
+
+contemplates. Six cells were calibrated at α0 = .01 for false attribution and α1 = .10 for false exclusion. The asymmetry is the one recommended by the framework, attributing a provider’s watermark to text that does not carry it is the more consequential error. Table 2 reports the results. Empirical false attribution falls between .0086 and .0105, and empirical false exclusion between .0938 and .1000, against nominal levels of .01 and .10. Figure 2a also shows the dispersion anticipated in Section 4. Across 60 calibration draws of 500 examples per label, the realized false-exclusion rate has a standard deviation of .013 to .017, and the realized false-attribution rate one of .004 to .005. Both match 
+
+√
+
+αy(1 − αy)/n y,r to two significant figures. The guarantee is an average over calibration draws, and any single deployed calibration object sits somewhere in that spread. A certificate reporting only the nominal level hides this. Figure 2b shows what a mis-specified cell costs. Items edited at δ = .15 were scored against a cell calibrated on unedited text. A provider calibrates once on a clean output, then applies the result to text found in the wild. False exclusion rises from about .10 to between .80 and .998. The detector reports “watermark not supported” for nearly every genuinely marked document. This is what the exchangeability requirement amounts to in practice, and it is the strongest argument for three things: • declaring the edit band as part of the cell, • carrying an in-scope flag on the detector report, and • answering out-of-scope items inconclusive rather than confidently. Figure 3a follows genuinely marked documents as editing increases at fixed length. The share reported “watermark supported” falls from .877 at δ = 0 to .033 at δ = .40. The displaced mass moves into the inconclusive categories, which rise from .123 to .879. The share reported “watermark not supported” stays within the α1 budget throughout, and false attribution on unmarked items never exceeds .017. 14 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40         
+
+> substitution rate δ
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> share of genuinely marked items  (a)
+> 10 3
+> scorable contributions n(at δ= 0.10)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> share of genuinely marked items
+> 200-token Code threshold
+> (b)
+> supported {1} not supported {0} inconclusive {0, 1} empty ∅
+
+Fig. 3 Decision composition for genuinely marked items at α0 = .01, α1 = .10, using a single calibration draw of 800 examples per label. a By substitution rate at n = 1 ,600. b By length at δ = .10, with the Code of Practice’s 200-token threshold marked. Evidence loss is absorbed by the inconclusive categories rather than by confident misclassification 
+
+As the marked and null distributions converge, which is the regime Equation (2) describes, the system loses the ability to make any claim before it starts making false ones. The figure also shows the transition between the two inconclusive categories described in Section 4. At low δ, separation is strong and the α1 budget goes on empty sets. From δ = .15 the marked and null calibration distributions overlap, and the budget goes on full sets instead. Both are reported as inconclusive. Figure 3b has the most direct regulatory bearing. At a modest δ = .10, the share of genuinely marked documents reported as supported rises from .239 at n = 200 to .899 at n = 3 ,200. At a 200-token threshold, two-thirds of the genuinely marked documents are inconclusive in this simulation. The benchmark provides a Code implementation rule for signatories as to when watermarking should be applied. A compliance regime that reads the marking obligation as an implied detection warranty will overestimate what the evidence supports for short texts. Those are exactly the texts most likely to be disputed (single messages, a review, or an answer). Table 2 shows that abstention is not monotone in any single variable. Stratum A at n = 1 ,600 and δ = .15 abstains on .049 of items. The same length and edit band in stratum B abstains on 
+
+.519. Two cells with identical declared length and identical declared edit severity behave completely differently, because their entropy differs. A certificate that reports length and edit tolerance but not the entropy regime is therefore incomplete. The simulated next-token distributions are parametric and independent across positions, so they lack the long-range structure of natural language. Real per-token bias is heterogeneous in ways this construction only crudely imitates. The edit channel is analytically tractable, but the demonstration does not extend to insertion, deletion, paraphrase, or translation. Only one tournament layer is 15 Table 2 Simulated calibration cells. Levels are α0 = .01 for false attribution and α1 = .10 for false exclusion; entries are means over 60 draws of 500 calibration examples per label, with the standard deviation across draws in parentheses. Abstention is the combined share of inconclusive outputs across both labels Stratum ¯ε n δ False attribution False exclusion Abstention A .095 400 .00 .0086 (.0042) .0943 (.0169) .017 A .095 400 .15 .0089 (.0043) .0938 (.0139) .515 A .095 1,600 .00 .0094 (.0041) .0959 (.0125) .053 A .095 1,600 .15 .0105 (.0050) .1000 (.0154) .049 B .047 1,600 .00 .0094 (.0037) .0948 (.0149) .014 B .047 1,600 .15 .0093 (.0045) .0950 (.0138) .519 
+
+simulated, so the dependence that motivates Equation (8) never arises. And because calibration and test data come from one process, exchangeability holds by construction except where Figure 2b breaks it. 
+
+# 6 An Auditable Article 50 Architecture 
+
+The description-length profile and the conformal set do different jobs. The profile characterizes how evidence degrades across transformations. The conformal set converts a frozen score into set-valued decisions with bounded error for a specified population. Our proposed compliance architecture therefore combines both within a lifecycle. • Proposed predeployment robustness certificate. Before deployment, the provider chooses the generator or sampler, the detector, the tokenizer, the key-epoch, the policy, the target populations, the transformations, and the acceptance criteria. Independent held-out data then produce a certificate that includes negative findings and unsupported cells. Notice that this certificate does not constitute an EU conformity certificate, a conformity assessment, or a presumption of compliance. • Signed per-query detector report. Each detector response identifies the exact system and calibration object used, records both conformal p-values and the prediction set, and cryptograph-ically binds the result to a hash of the tested bytes. It reports whether the item lies within a certified cell and implements the Code’s call for downloadable, signed detection output. • Lifecycle monitoring and recalibration. Providers monitor score distributions, edit channels, detector abuse, false-attribution reports, and model changes. A material generator, tokenizer, detector, or calibration change creates a new version. This lifecycle is consistent with the testing and maintenance approach recommended for synthetic-content transparency (NIST 2024). Table 3 lists the fields a certificate should contain and what each is for. The population row must record the entropy regime as well as the length bin, because Table 2 shows two cells with the same length and edit severity behaving entirely differently when entropy differs. The robustness row must record the edit band used for calibration, because Figure 2b shows that scoring an edited item against an unedited cell inverts the guarantee rather than merely loosening it. The certificate should expose enough aggregate information for scrutiny without publishing secret keys or an attack-enabling transcript. A competent independent assessor can receive further confidential material. 16 Table 3 Proposed certificate fields and their compliance function Field Minimum disclosure Function System identity Provider, model and sampler versions, watermark mode, tokenizer, detector, key epoch or rotation policy Prevents performance claims from migrating across incompatible versions. Population Languages, domains, length bins, entropy regime, decoding settings, exclusions, and intended uses Defines the exchangeability claim and the scope of effectiveness. Null and positive labels Operational construction of Y = 0 and 
+
+Y = 1, matched prompt protocol, provenance logs Makes “reliability” a reproducible source-specific test. Quality Blind human preference where material, task scores, diversity, latency; uncertainty Documents the quality–detectability trade-off Robustness surface Operation family, token and semantic distances, calibrated edit band, attack knowledge, score/evidence bits, FPR, TPR, and abstention with intervals Gives a bounded, multidimensional meaning to robustness. Conformal calibration Nonconformity function, cells, n0,r , n1,r ,
+
+α0, α1, realized dispersion, hashes, and validity date Makes the decision rule and finite-sample resolution auditable. Interoperability Authenticated API or standard access method; schemas, rate limits, detector discovery and retirement policy Allows authorized third parties to reproduce detection without exposing keys. Security and abuse Key custody, detector-query controls, spoofing and removal tests, incident process Addresses the possibility that detector access itself enables attacks. Monitoring Drift metrics, thresholds, review interval, corrective actions, and version history Converts a one-time benchmark into continuing assurance. 
+
+A machine-readable report should contain at least: 1. a cryptographic hash of the exact input bytes and the normalization/tokenization procedure, 2. provider, generator or sampler, watermark, detector, and calibration-set identifiers, 3. timestamp, key epoch tested, declared cell, input length, and in-scope/out-of-scope status, 4. raw detector score, p0, p1, α0, α1, n0,r , n1,r , and Γ( x); 5. the three-state natural-language conclusion from Table 1; 6. active drift or integrity warnings and a link to the applicable certificate version, and 7. the detector service’s digital signature and verification information. The report must never present 1 − p0, the raw score, or a classifier confidence as “the probability that AI wrote this.” Conformal coverage does not allocate a legal burden of proof, which is supplied by the applicable substantive and procedural law and applied by the competent decision-maker. Table 4 translates each of the four attributes named in Article 50(2) into evidence a provider can produce. 17 Table 4 Operational interpretation of Article 50(2)’s four technical attributes 
+
+Attribute Proposed evidence What it does not establish Effectiveness Coverage of in-scope outputs, detectable-length distribution, TPR and abstention at declared α0, α 1
+
+Universal marking of exempt, truncated, unsupported, or externally generated content Reliability Label-conditional error control in declared cells, subgroup results; signed reproducible reports Pointwise certainty for a disputed document or validity after unmeasured shift Robustness Description-length and performance surfaces across named ordinary and adversarial transformations Resistance to every adaptive, quality-preserving removal strategy Interoperability Versioned detector discovery, authenticated access, common schemas, signatures, and retirement notices Semantic equivalence among different providers’ scores or keys 
+
+# 7 Discussion and Conclusion 
+
+Text watermarking cannot carry universal artificial content detection. Quality-preserving robustness fails under adaptive threat models. Statistical separability vanishes as source distributions converge. And ordinary editing erases evidence faster than a surviving-token count suggests, by a factor of roughly two in the simulation reported here. None of this makes Article 50 incoherent. The provision itself qualifies its technical attributes by feasibility, content limitations, cost, and the state of the art. The Code adds voluntary implemen-tation commitments concerning layered marking, testing, signed detection results, and continuing improvement, while the Guidelines clarify the scope and application of the statutory obligations. The response is to generate an auditable object. A description-length robustness profile states how much source-specific evidence survives a named transformation. Collision probability and empirical score distributions replace an unidentified entropy multiplier. Token edit distance and semantic loss stay on separate axes. A label-conditional conformal layer then turns the frozen detector score into a supported, unsupported, or inconclusive result, at separately chosen false-attribution and false-exclusion levels, under stated exchangeability conditions. Three findings from the demonstration carry straight into practice. First, a robustness claim built on surviving-token reasoning overstates tolerable editing about twofold, and the overstatement grows with the seed’s window length. Second, a calibration cell that omits the edit band does not degrade gracefully on edited text. It reports “not supported” for nearly every genuinely marked document. Third, assuming a 200-token threshold, editing already leaves most genuinely marked documents inconclusive. A duty to mark is not a warranty of detectability. This architecture does not defeat the impossibility theorem, and it assigns no posterior probability to an individual text. Its value is that it makes claims falsifiable. Regulators gain a way to read “robust and reliable as far as technically feasible” as evidence comparable across providers and over time. Providers gain a way to disclose failure regions without treating every limitation as noncompliance. Watermarking works as an indicator of provenance rather than as an oracle of authorship. 18 A final caveat is that this design has the potential to create an incentives problem for providers, since lower reliability may justify more restrictive access while improvements in detector performance may reduce a provider’s regulatory discretion. The issue is in part endogenous, since the technical limitation that triggers the restriction is itself influenced by the provider’s choices concerning the development, validation, and deployment of the detector. 
+
+# Declarations 
+
+Data availability. This article develops an analytic and governance framework and reports no new empirical dataset, human-participant experiment, or proprietary system evaluation. All data underlying Section 5 are synthetic and are regenerated deterministically by the accompanying code from the seed recorded in Appendix C; no separate data deposit is required. 
+
+Code availability. The simulator, experiment driver, and test suite described in Appendix C are provided as supplementary material and will be deposited in a public repository with a persistent identifier on acceptance. The code depends only on numpy , scipy , and matplotlib , and reproduces every figure and every number in Section 5 in a few minutes on a single core. 
+
+Ethics. No human participants or personal data were involved. A future empirical validation should archive prompts, generation settings, transformation code, prespecified cells, calibration splits, and report schemas, subject to key-security, privacy, and ethics constraints. Any evaluation using user text or consequential decisions requires the applicable ethics, privacy, and due-process review. 
+
+Competing interests and funding. Funding. The authors received no specific funding for this work. Competing interests. The authors have no relevant financial or non-financial interests to disclose. 
+
+# A Reproducing the Demonstration 
+
+The supplementary code has three files. wmdemo.py implements the keyed pseudorandom func-tion, the next-token model, tournament generation, the substitution channel, the detector, the conformal p-values of Equation (25), the decision rule of Equation (26), and the diagnostic of Equa-tion (8). run_demo.py runs the three experiments and writes the figures and a machine-readable 
+
+results.json . test_wmdemo.py asserts the properties the propositions assume: that the null score is unbiased and standard normal after standardization; that the marked bias equals E[(1 − Ct)/4]; that ρ = (1 − δ)h+1 holds for h ∈ { 1, 3, 5}; that both conformal p-values are super-uniform at the .01, .05, .10, and .20 levels; and that realized class-conditional errors respect α0 and α1.
+
+python3 test_wmdemo.py # property checks, a few seconds python3 run_demo.py # figures + results.json, a few minutes 
+
+19 The master seed is 20260902 and the seed-window length is h = 4. The planning levels are α = .01 and β = .05; the operating levels are α0 = .01 and α1 = .10. Stratum A uses K ∈ { 2, 4, 8, 16 } and 
+
+q∗ ∼ Unif( .55 , . 97), stratum B uses K ∈ { 2, 4, 8} and q∗ ∼ Unif( .80 , . 99). Every reported quantity is a deterministic function of these settings. 
+
+# References 
+
+Angelopoulos AN, Bates S (2023) Conformal prediction: a gentle introduction. Found Trends Mach Learn 16(4):494–591. https://doi.org/10.1561/2200000101 
+
+Barber RF, Candès EJ, Ramdas A, Tibshirani RJ (2023) Conformal prediction beyond exchange-ability. Ann Stat 51(2):816–845. https://doi.org/10.1214/23-AOS2276 
+
+Christ M, Gunn S, Zamir O (2024) Undetectable watermarks for language models. In: Proceedings of the 37th Conference on Learning Theory, PMLR 247, pp 1125–1139. https://proceedings. mlr.press/v247/christ24a.html 
+
+Dathathri S, See A, Ghaisas S, Huang PS, McAdam R, Welbl J et al (2024) Scalable watermarking for identifying large language model outputs. Nature 634:818–823. https://doi.org/10.1038/ s41586-024-08025-4 
+
+European Commission (2026a) Code of Practice on Transparency of AI-Generated Content. Published 10 June 2026. https://digital-strategy.ec.europa.eu/en/policies/code-practice-a i-generated-content . Accessed 4 September 2026 European Commission (2026b) Guidelines on the implementation of the transparency obligations for certain AI systems under Article 50 of the AI Act. Published 20 July 2026. https://digita l-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-provide rs-and-deployers-ai-systems . Accessed 4 September 2026 European Parliament and Council of the European Union (2024) Regulation (EU) 2024/1689 of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act). Off J Eur Union L 2024/1689, 12 July 2024. http://data.europa.eu/eli/reg/2024/1689/oj 
+
+European Parliament and Council of the European Union (2026) Regulation (EU) 2026/1744 of 8 July 2026 amending Regulations (EU) 2024/1689, (EU) 2018/1139 and (EU) 2023/1230 as regards the simplification of the implementation of harmonised rules on artificial intelligence (Digital Omnibus on AI). Off J Eur Union L 2026/1744, 24 July 2026. http://data.europa.eu /eli/reg/2026/1744/oj 
+
+Francati D, Goonatilake YN, Pawar S, Venturi D, Ateniese G (2025) The coding limits of robust watermarking for generative models. Cryptology ePrint Archive, Paper 2025/1620; published at the 2026 IEEE European Symposium on Security and Privacy. https://eprint.iacr.org/2025 /1620 
+
+20 Golowich N, Moitra A (2024) Edit distance robust watermarks via indexing pseudorandom codes. In: Advances in Neural Information Processing Systems 37. https://doi.org/10.52202/07901 7-0652 
+
+Grünwald PD (2007) The minimum description length principle. MIT Press, Cambridge Kirchenbauer J, Geiping J, Wen Y, Katz J, Miers I, Goldstein T (2023) A watermark for large language models. In: Proceedings of the 40th International Conference on Machine Learning, PMLR 202, pp 17061–17084. https://proceedings.mlr.press/v202/kirchenbauer23a.html 
+
+Kuditipudi R, Thickstun J, Hashimoto T, Liang P (2024) Robust distortion-free watermarks for language models. Trans Mach Learn Res. https://openreview.net/forum?id=FpaCL1MO2C 
+
+Liang W, Yuksekgonul M, Mao Y, Wu E, Zou J (2023) GPT detectors are biased against non-native English writers. Patterns 4(7):100779. https://doi.org/10.1016/j.patter.2023.100779 
+
+National Institute of Standards and Technology (2024) Reducing risks posed by synthetic content: an overview of technical approaches to digital content transparency. NIST AI 100-4. https: //doi.org/10.6028/NIST.AI.100-4 
+
+Qu W, Zheng W, Tao T, Yin D, Jiang Y, Tian Z, Zou W, Jia J, Zhang J (2025) Provably robust multi-bit watermarking for AI-generated text. In: 34th USENIX Security Symposium, pp 201–220. 
+
+https://www.usenix.org/conference/usenixsecurity25/presentation/qu-watermarking 
+
+Rissanen J (1978) Modeling by shortest data description. Automatica 14(5):465–471. https: //doi.org/10.1016/0005-1098(78)90005-5 
+
+Sadasivan VS, Kumar A, Balasubramanian S, Wang W, Feizi S (2025) Can AI-generated text be reliably detected? Stress testing AI text detectors under various attacks.Transactions on Machine Learning Research 1. Tibshirani RJ, Barber RF, Candès EJ, Ramdas A (2019) Conformal prediction under covariate shift. In: Advances in Neural Information Processing Systems 32, pp 2526–2536. https://procee dings.neurips.cc/paper/2019/hash/8fb21ee7a2207526da55a679f0332de2-Abstract.html 
+
+Vovk V (2013) Conditional validity of inductive conformal predictors. Mach Learn 92:349–376. 
+
+https://doi.org/10.1007/s10994-013-5355-6 
+
+Vovk V, Gammerman A, Shafer G (2005) Algorithmic learning in a random world. Springer, New York Xie Y, Chen X, Ren Z, Su WJ (2026) Watermark in the classroom: a conformal framework for adaptive AI usage detection. Harv Data Sci Rev 8(1). https://doi.org/10.1162/99608f92.0 72aebb0 
+
+Zhai L, Shang X, Zhang L, Hu P (2026) A distortion-minimization watermarking framework for large language models: larger capacity, stronger robustness and higher quality. In: 35th USENIX Security Symposium, pp 4443–4462. https://www.usenix.org/conference/usenixsecurity 26/presentation/zhai 
+
+21 Zhang H, Edelman BL, Francati D, Venturi D, Ateniese G, Barak B (2024) Watermarks in the sand: impossibility of strong watermarking for language models. In: Proceedings of the 41st International Conference on Machine Learning, PMLR 235, pp 58851–58880. https://proceedi ngs.mlr.press/v235/zhang24o.html 
+
+Zhao X, Ananth P, Li L, Wang YX (2024) Provable robust watermarking for AI-generated text. In: International Conference on Learning Representations. https://openreview.net/forum?id=Ss mT8aO45L 
+
+22

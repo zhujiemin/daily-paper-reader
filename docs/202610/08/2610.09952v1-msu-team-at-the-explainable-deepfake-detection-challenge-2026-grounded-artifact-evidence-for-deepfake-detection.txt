@@ -1,0 +1,381 @@
+Title: MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection
+
+URL Source: https://arxiv.org/pdf/2610.09952v1
+
+Published Time: Thu, 08 Oct 2026 01:16:58 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection 
+
+## Artem Filippov 
+
+Lomonosov Moscow State University Moscow, Russia artyom.filippov@graphics.cs.msu.ru 
+
+## Aleksandr Gushchin 
+
+MSU Institute for Artificial Intelligence Moscow, Russia alexander.gushchin@graphics.cs.msu.ru 
+
+## Kirill Koltsov 
+
+Lomonosov Moscow State University Moscow, Russia kirill.e.koltsov@mail.ru 
+
+## Dmitriy Vatolin 
+
+MSU Institute for Artificial Intelligence Moscow, Russia dmitriy@graphics.cs.msu.ru 
+
+## Anastasia Antsiferova 
+
+MSU Institute for Artificial Intelligence Moscow, Russia aantsiferova@graphics.cs.msu.ru 
+
+Abstract 
+
+Recent advances in generative image models have made many manipulated images highly realistic, raising the need for detectors that are not only accurate but also able to provide visual evidence for their decisions. In this paper, we present our solution to the Explainable Deepfake Detection Challenge [2] on the XPlainVerse dataset [1], where systems are required to predict whether an image is real or fake and generate both complex and simple explanations grounded in visible forensic cues. Our method follows a modular detection-and-explanation de-sign. For the real/fake decision, we build a multi-backbone detector that combines several DINOv3 models with Mesorch manipulation-localization features, bringing together pretrained visual represen-tations, DCT-aware cues, and multi-scale forensic information. To inject explanation evidence into the detector, we use a Grounding-DINO-based pseudo-mask generation pipeline that converts local artifact descriptions from training explanations into weak patch-level supervision for an Artifact Evidence Map. We further intro-duce a local patch-level contrastive objective that separates artifact and authenticity evidence in the detector feature space without requiring paired images or pixel-level manipulation masks. For language output, we use class-conditional Qwen3-VL models to generate complex explanations for fake and real predictions, fol-lowed by a GRPO-optimized text simplification model. The proposed methods were trained and evaluated on the chal-lenge subset of XPlainVerse. On the full test split, our submission achieves 0.9349 detection accuracy, 0.5571 explanation score, and a 0.7456 final challenge score. 
+
+CCS Concepts 
+
+• Computing methodologies → Computer vision tasks ; Natu-ral language generation ; • Security and privacy → Social aspects of security and privacy .
+
+> This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
+> MM ’26, Rio de Janeiro, Brazil
+> © 2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2213-4/2026/11 https://doi.org/10.1145/3767308.3838609
+
+Keywords 
+
+deepfake detection, explainable AI, image forensics, vision-language models, pseudo-mask supervision, contrastive learning 
+
+ACM Reference Format: 
+
+Artem Filippov, Aleksandr Gushchin, Kirill Koltsov, Dmitriy Vatolin, and Anas-tasia Antsiferova. 2026. MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection. In 
+
+Proceedings of the 34th ACM International Conference on Multimedia (MM ’26), November 10–14, 2026, Rio de Janeiro, Brazil. ACM, New York, NY, USA, 7 pages. https://doi.org/10.1145/3767308.3838609 
+
+1 Introduction 
+
+Recent progress in generative image models has made many manip-ulated images increasingly realistic and harder to verify. A useful deepfake detector should therefore return not only a binary authen-ticity label but also evidence supporting the prediction; visible cues help audit model decisions and understand failures. The Explainable Deepfake Detection Challenge [2] directly tar-gets this setting. It is built on XPlainVerse [1], a large-scale dataset of real and manipulated images with image-level labels, complex ex-planations for technical users, and simple explanations for general users. The official score combines real/fake classification with se-mantic similarity, simplicity, and LLM-based grounding metrics that check whether explanations refer to the correct entities and visual evidence. This encourages methods that connect the authenticity decision to the image cues described in the explanations. Our solution separates real/fake detection from explanation gen-eration. For the detector, we follow recent robust AI-generated image detection challenge results, where strong submissions of-ten use ensembles of large pretrained visual backbones, especially DINOv3-based models [3, 4]. We use several DINOv3 backbones and complement them with Mesorch features [5], which provide DCT-aware, multi-scale forensic representations. To pass artifact information into the detector, we convert local artifact cues from fake-image explanations into weak patch-level pseudo-masks with a Grounding-DINO-based pipeline [6, 7]. These masks encourage the detector to use visible, semantically grounded manipulation evidence when available. We further adapt contrastive learning to the patch level, follow-ing the motivation of DRCT [8] and HiDA-Net [9]: image-level arXiv:2610.09952v1 [cs.CV] 7 Oct 2026 MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Artem Filippov, Aleksandr Gushchin, Kirill Koltsov, Dmitriy Vatolin, & Anastasia Antsiferova 
+
+contrastive objectives can improve fake-image separation, while local predictions encourage attention to fine forensic details. Our objective operates on patch embeddings and separates local fake and authentic evidence without paired images or pixel-level manip-ulation masks. For explanation generation, we use class-conditional Qwen3-VL models [10] selected by the detector prediction, followed by a text-only simplification model optimized with GRPO [11]. This keeps classification in a specialized detector and uses VLMs for the challenge language outputs. Our main contributions are (I) a pseudo-mask pipeline that ex-tracts local forensic cues from complex explanations and grounds the corresponding image regions to obtain weak patch-level super-vision, and (II) an explainable deepfake detection system combin-ing DINOv3 and Mesorch features, patch-level artifact supervision, local contrastive learning, and class-conditional Qwen3-VL expla-nation generation. 
+
+2 Related Work 2.1 Datasets 
+
+Image-level synthetic-image benchmarks mainly target real/fake classification. GenImage [12] pairs ImageNet real images with GAN-and diffusion-generated counterparts. WildFake [13] contains over 3.5M real and fake images and organizes generators by model family, architecture, weights, and version, while Community Forensics [14] collects 2.7M images from 4,803 text-to-image models. These datasets are valuable for cross-generator generalization, but they mostly contain fully synthetic images and lack the explanation annotations required here. MultiFakeVerse [15] is closer to realistic misinformation sce-narios, with 86,952 real and 758,041 person-centric manipulations involving people, objects, scenes, actions, and human–object inter-actions. Recent datasets also move toward explainable detection. DD-VQA [16] reformulates face forgery detection over FaceForen-sics++ [17] as visual question answering. FakeClue, introduced with FakeVLM [18], contains more than 100K real and synthetic images with natural-language artifact explanations. LOKI [19] eval-uates multimodal models across images, video, 3D, text, and audio using judgment, multiple-choice, abnormal-detail, and abnormal-explanation questions. Their formats, annotation protocols, and artifact distributions nevertheless differ from the challenge data. 
+
+2.2 Methods 
+
+AI-generated image detectors use reconstruction cues, as in AER-OBLADE [20]; CLIP-based adaptation, as in FatFormer [21]; or frequency information, as in SPAI [22]. Recent challenge results show the practical strength of large pretrained backbones and en-sembles. The NTIRE 2026 Robust AI-Generated Image Detection Challenge [3] reports strong systems based on transformer ensem-bles, DINOv3 models [4], robustness augmentation, and fusion, motivating our multi-backbone design. DRCT [8] applies image-level contrastive learning to separate real, generated, and diffusion-reconstructed samples. HiDA-Net [9] emphasizes spatial sensitivity to local edits, showing that local predictions can force attention to subtle forensic details. These ideas motivate our dense features and patch-level objective in addition to global classification. Manipulation localization is especially relevant when only a small region is fake. TruFor [23] combines RGB evidence with noise-sensitive representations, CAT-Net [24] exploits RGB-DCT compression cues, and Mesorch [5] combines DCT-aware inputs with multi-scale forensic features. We include Mesorch because its frequency-aware, localization-oriented representation comple-ments DINOv3. Vision-language models are increasingly used for explainable fake-image detection. FakeVLM [18] fine-tunes a multimodal model, including its visual encoder, for detection and artifact explanation. ForenDeX [25] injects detector-guided forensic features into an MLLM, while FakeXplainer [26] combines visual-encoder adapta-tion, supervised fine-tuning, and GRPO. These works show that VLMs are useful for explanation, but their visual components of-ten need forensic adaptation; we therefore separate a specialized detector from class-conditional explanation generators. 
+
+3 XPlainVerse Dataset and Challenge Subset 
+
+XPlainVerse[1] is the largest dataset for explainable deepfake de-tection, containing one million real and manipulated images paired with natural-language explanations. A substantial portion of it is based on the person-centric MultiFakeVerse dataset[15]. The Ex-plainable Deepfake Detection Challenge[2] uses a curated 760,000-image subset: 270,000 real and 490,000 fake images. The public train, validation, and test splits contain 450,000, 110,000, and 200,000 im-ages, respectively; labeled train–validation data comprise 180,000 real and 380,000 fake images, and the test split contains 90,000 real and 110,000 fake images. 
+
+4 Methodology 4.1 Pseudo-mask Generation Pipeline 
+
+We convert fake-image explanations into patch-level pseudo-masks used as weak artifact supervision. The masks are not pixel-accurate manipulation annotations; they indicate regions where textual evi-dence and open-vocabulary grounding agree. Let 𝐼 𝑖 have image-level label 𝑦 𝑖 ∈ { 0, 1}, where 𝑦 𝑖 = 1 denotes fake. For fake images, the dataset provides a complex explanation 𝑒 𝑖 
+
+describing the forensic evidence; we use it to derive a pseudo-mask 
+
+𝑇 𝑖 ∈ [ 0, 1]𝐻 𝑝 ×𝑊 𝑝 on the detector patch grid. We do not extract artifact regions for real images and set 𝑇 𝑖 ≡ 0. The pipeline runs offline for the training and validation splits and has vocabulary-construction and image-level grounding stages. 
+
+4.1.1 Artifact Vocabulary Construction. We first use Qwen3-VL-32B-Instruct [10] on a subset of image–explanation pairs to extract short artifact phrases from each complex explanation. The same model then merges near-duplicates and selects one representative per cluster. The resulting vocabulary is V = {𝑐 1, . . . , 𝑐 𝐾 }, where each 𝑐 𝑘 denotes a recurring artifact category observed in the dataset. The normalized vocabulary is divided into disjoint local and global subsets, V = Vloc ∪ V glob and Vloc ∩ V glob = ∅. Local attributes can be associated with bounded regions, whereas global attributes describe image-wide properties. Only local attributes are grounded, avoiding noisy box supervision for global observations. MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Pseudo-mask generation Multi-backbone forensic detector Class-conditional explanations             
+
+> Training Images
+> Complex fake explanations extract and cluster recurring artifact phrases Local vocabulary Global vocabulary
+> local only
+> Image-level phrase extraction Grounding DINO
+> patch coverage patch pseudo-mask
+> (a) Offline weak artifact supervision
+> Mesorch backbone
+> manipulation localization
+> DINOv3 backbones
+> 3x Transformer DINOv3 3x CNN DINOv3
+> Mesorch features
+> localization maps
+> DINO dense
+> dense maps
+> DINO global
+> global embeddings
+> UFFD fusion
+> DINO dense + Mesorch features
+> Global fusion
+> DINO global + max-pooled UFFD max pooling
+> Patch branch
+> Artifact Evidence Map · local evidence
+> Image branch
+> fake probability
+> Lart
+> pseudo-mask BCE
+> Llcl
+> local contrastive learning
+> pull / push / ignore
+> Limg
+> focal classification
+> Ldet = λ img Limg + λ art Lart + λ lcl Llcl
+> (b) Detector training and inference
+> input image
+> Threshold decision
+> fake / real route by label
+> Fake model
+> LoRA vision
+> Real model
+> LoRA vision selected model only
+> Complex explanation Text-only simplifier LoRA SFT + GRPO
+> Simple explanation
+> (c) Explanation generation
+> trainable frozen
+
+Figure 1: Overview of the proposed system, including offline pseudo-mask generation, multi-backbone forensic detection, and class-conditional explanation generation. 
+
+4.1.2 Image-level Grounding Phrase Extraction. For each fake image 
+
+𝐼 𝑖 , Qwen3-VL-32B-Instruct receives the image, its complex explana-tion 𝑒 𝑖 , and both attribute lists. It selects visually localizable artifacts mentioned or implied by the explanation and produces phrases for Grounding DINO [6, 7]. Formally, it yields A𝑖 = {𝑎 𝑖 1, . . . , 𝑎 𝑖𝑛 𝑖 } with 
+
+𝑎 𝑖𝑘 ∈ V loc and one phrase 𝑝 𝑖𝑘 = 𝑔 (𝑎 𝑖𝑘 , 𝐼 𝑖 , 𝑒 𝑖 ) per selected attribute. The phrases are concrete visual descriptions, such as an object part associated with the artifact, rather than abstract artifact names. 
+
+4.1.3 Grounding and Patch Targets. For each phrase 𝑝 𝑖𝑘 , Grounding DINO returns candidate bounding boxes with confidence scores. Boxes below the confidence threshold are discarded, and all retained boxes are collected in B𝑖 = {𝑏 𝑖 1, . . . , 𝑏 𝑖𝑚 𝑖 }. We merge them into one artifact-evidence support because different artifact categories may overlap. Let the detector grid have size 𝐻 𝑝 × 𝑊 𝑝 , and let 𝑅 𝑢𝑣 denote the image region corresponding to patch (𝑢, 𝑣 ). The union 𝑈 𝑖 = Ð𝑏 ∈ B 𝑖 𝑏 
+
+defines the grounded support, and the target is the covered fraction of each patch: 
+
+𝑡 𝑖𝑢𝑣 = |𝑅 𝑢𝑣 ∩ 𝑈 𝑖 ||𝑅 𝑢𝑣 | , 𝑇 𝑖 [𝑢, 𝑣 ] = 𝑡 𝑖𝑢𝑣 , 𝑇 𝑖 ∈ [ 0, 1]𝐻 𝑝 ×𝑊 𝑝 .
+
+Thus, overlapping boxes contribute only once. The image-level label remains the primary supervision; 𝑇 𝑖 only regularizes the patch-level artifact branch. 
+
+4.2 Detector 
+
+The detector predicts an image-level fake probability and a patch-level Artifact Evidence Map, and exposes patch embeddings for the local contrastive loss. For image 𝐼 𝑖 with label 𝑦 𝑖 , it outputs an image-level logit 𝑧 𝑖 , an Artifact Evidence Map 𝐴 𝑖 , and patch embeddings from a shared forensic feature map. 
+
+4.2.1 Multi-backbone Features. We combine three transformer-based DINOv3 models [4], three CNN-based DINOv3 models, and a Mesorch manipulation-localization backbone [5]. For every DI-NOv3 backbone, we extract a global image embedding and the last dense feature map: 
+
+𝑓 (𝑘 )
+
+𝑖 ∈ R𝑑 𝑘 , 𝐻 (𝑘 )
+
+𝑖 ∈ R𝐻 𝑝 ×𝑊 𝑝 ×𝑐 𝑘 .
+
+The DINO spatial maps are fused by per-backbone projection, con-catenation, and an MLP over channels: 
+
+𝐻 DINO 
+
+𝑖 = 𝐹 DINO map 
+
+
+
+𝐻 (1)
+
+𝑖 , . . . , 𝐻 (𝐾 )
+
+𝑖 
+
+
+
+, 𝐻 DINO 
+
+𝑖 ∈ R𝐻 𝑝 ×𝑊 𝑝 ×𝐷 .
+
+The global embeddings are fused analogously: 
+
+𝑓 DINO 
+
+𝑖 = 𝐹 DINO glob 
+
+
+
+𝑓 (1)
+
+𝑖 , . . . , 𝑓 (𝐾 )
+
+𝑖 
+
+
+
+, 𝑓 DINO 
+
+𝑖 ∈ R𝐷 .
+
+We use Mesorch only as a feature extractor: its spatial representa-tion is aligned to the DINO patch grid and projected to dimension 
+
+𝐷 ,
+
+𝐻 Mes 
+
+𝑖 = 𝐹 Mes (𝐼 𝑖 ), 𝐻 Mes 
+
+𝑖 ∈ R𝐻 𝑝 ×𝑊 𝑝 ×𝐷 .
+
+4.2.2 Unified Forensic Feature Map. The DINO and Mesorch spatial representations are fused into a shared patch-level representation called the Unified Forensic Feature Map . At each location (𝑢, 𝑣 ),we concatenate the corresponding vectors and apply an MLP: 
+
+𝑈 𝑖 [𝑢, 𝑣 ] = 𝐹 UFFM 
+
+
+
+𝐻 DINO 
+
+𝑖 [𝑢, 𝑣 ], 𝐻 Mes 
+
+𝑖 [𝑢, 𝑣 ]
+
+
+
+, 𝑈 𝑖 ∈ R𝐻 𝑝 ×𝑊 𝑝 ×𝐷 𝑈 .
+
+4.2.3 Image-level Classification Branch. The global branch predicts whether the image is fake. We summarize the Unified Forensic Feature Map with max pooling, 
+
+𝑢 pool 
+
+𝑖 = max 
+
+𝑢,𝑣 𝑈 𝑖 [𝑢, 𝑣 ].
+
+Max pooling allows localized evidence to affect the image-level decision. The pooled descriptor is concatenated with the fused DINO global embedding, 𝑔 𝑖 = [𝑢 pool 
+
+𝑖 ; 𝑓 DINO 
+
+𝑖 ], and passed through an MLP fusion block and binary classifier: 
+
+𝑧 𝑖 = ℎcls 
+
+ 𝐹 img (𝑔 𝑖 ) , 𝑝 𝑖 = 𝜎 (𝑧 𝑖 ).MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Artem Filippov, Aleksandr Gushchin, Kirill Koltsov, Dmitriy Vatolin, & Anastasia Antsiferova 
+
+Here 𝑝 𝑖 is the predicted probability that 𝐼 𝑖 is fake. We train the branch with focal loss using 𝛼 = 0.5 and 𝛾 = 2.0. 
+
+4.2.4 Artifact Evidence Map. A shared patch head is applied to the Unified Forensic Feature Map: 
+
+𝑎 𝑖 [𝑢, 𝑣 ] = ℎart (𝑈 𝑖 [𝑢, 𝑣 ]) , 𝑞 𝑖 [𝑢, 𝑣 ] = 𝜎 (𝑎 𝑖 [𝑢, 𝑣 ]) .
+
+The logits 𝑎 𝑖 form the Artifact Evidence Map 𝐴 𝑖 , and 𝑞 𝑖 [𝑢, 𝑣 ] esti-mates the probability that patch (𝑢, 𝑣 ) contains artifact evidence. The branch is supervised by 𝑇 𝑖 with BCE; real-image targets are zero: 
+
+Lart = 1
+
+𝐻 𝑝 𝑊 𝑝 ∑︁ 𝑢,𝑣 
+
+BCE (𝑞 𝑖 [𝑢, 𝑣 ],𝑇 𝑖 [𝑢, 𝑣 ]) .
+
+4.2.5 Local Patch-level Contrastive Objective. We use a local con-trastive objective over patch embeddings from the Unified Forensic Feature Map. It organizes the patch space so that evidence con-sistent with fake images becomes more separable from authentic evidence, while uncertain regions are handled conservatively. Batches contain fake–fake, real–real, and fake–real pairs. For each image pair (𝐼 𝑎 , 𝐼 𝑏 ), patches are matched by cosine similarity. For 𝑈 𝑎 [𝑢, 𝑣 ], the matched patch in 𝐼 𝑏 is 
+
+(𝑢 ∗, 𝑣 ∗) = arg max  
+
+> 𝑢 ′,𝑣 ′
+
+cos (𝑈 𝑎 [𝑢, 𝑣 ], 𝑈 𝑏 [𝑢 ′, 𝑣 ′]) ,
+
+and matching is performed in both directions so that visually similar local regions can be compared even when they occur at different positions. Each patch receives a status from the image-level label and cur-rent Artifact Evidence Map prediction 𝑞 𝑖 [𝑢, 𝑣 ]. With uncertainty band 𝛿 around 0 .5, 
+
+|𝑞 𝑖 [𝑢, 𝑣 ] − 0.5| ≤ 𝛿 ⇒ UF (𝑦 𝑖 = 1), UR (𝑦 𝑖 = 0),𝑞 𝑖 [𝑢, 𝑣 ] > 0.5 + 𝛿 ⇒ CF (𝑦 𝑖 = 1), WR (𝑦 𝑖 = 0),𝑞 𝑖 [𝑢, 𝑣 ] < 0.5 − 𝛿 ⇒ WF (𝑦 𝑖 = 1), CR (𝑦 𝑖 = 0).
+
+The suffix 𝐹 /𝑅 denotes whether the patch comes from a fake or real image, while 𝐶 /𝑈 /𝑊 denotes consistent, uncertain, or opposite-side local evidence. In other words, confident local predictions agreeing with the image label are treated as consistent, predictions near 0 .5 as uncertain, and confident contradictions as opposite-side evidence. Statuses are based on 𝑞 𝑖 rather than 𝑇 𝑖 because pseudo-masks may be incomplete. For every matched patch pair, Tables 1–3 select pull, push, or ignore. Tables 1 and 2 cover same-class image pairs; in Table 3, rows correspond to fake-image patches and columns to real-image patches. Pull minimizes cosine distance, 
+
+ℓpull (𝑎, 𝑏 ) = 1 − cos (𝑎, 𝑏 ),
+
+while push separates embeddings with margin 𝑚 ,
+
+ℓpush (𝑎, 𝑏 ) = max (0, 𝑚 − [ 1 − cos (𝑎, 𝑏 )]) .
+
+Ignored pairs do not contribute, and sg (·) denotes stop-gradient. The rules treat confident fake artifacts and confident real evi-dence as reliable anchors. Ambiguous or opposite-side patches are either updated through stop-gradient anchors or ignored, prevent-ing uncertain matches from moving both embeddings simultane-ously. The local loss over all retained matches is 
+
+Llcl =∑︁  
+
+> (𝑎,𝑏 )
+
+ℓ𝑎𝑏 ,
+
+Table 1: Local contrastive rules for fake–fake patch pairs. 
+
+CF UF WF CF pull(CF, CF) pull(sg(CF), UF) –UF pull(UF, sg(CF)) pull(UF, UF) –WF – – –
+
+Table 2: Local contrastive rules for real–real patch pairs. 
+
+CR UR WR CR pull(CR, CR) pull(sg(CR), UR) pull(sg(CR), WR) UR pull(UR, sg(CR)) pull(UR, UR) pull(sg(UR), WR) WR pull(WR, sg(CR)) pull(WR, sg(UR)) –
+
+Table 3: Local contrastive rules for fake–real patch pairs. 
+
+CR UR WR CF push(CF, CR) push(sg(CF), UR) push(sg(CF), WR) UF push(UF, sg(CR)) push(UF, UR) pull(sg(UF), WR) WF – pull(sg(WF), UR) pull(sg(WF), WR) where ℓ𝑎𝑏 is the selected pull or push term. 
+
+4.2.6 Training Objective. The final detector objective combines image classification, artifact-map supervision, and local contrastive learning: 
+
+Ldet = 𝜆 img Limg + 𝜆 art Lart + 𝜆 lcl Llcl .
+
+The terms supervise image classification, weak artifact localization, and patch-space organization. 
+
+4.3 Class-Conditional Vision-Language Explanation Generation 
+
+Natural-language explanations are generated by separate Qwen3-VL-8B-Instruct models [10] selected by the detector prediction. The complex explanation is the evidence-bearing output, while the simple explanation is derived afterward for general users. The module uses 𝐺 fake and 𝐺 real for complex explanations and a text-only simplifier 𝑆 .
+
+4.3.1 Class-conditional Complex Explanation Models. The complex explanation is the primary evidence-bearing text output. We train separate generators for fake and real images to reduce class leakage, especially hallucinated artifacts for real images: 
+
+𝐺 fake : 𝐼 𝑖 ↦ → ˆ𝑒 𝑐 𝑖, fake , 𝐺 real : 𝐼 𝑖 ↦ → ˆ𝑒 𝑐 𝑖, real .
+
+At inference, only the generator selected by the detector prediction is used. 
+
+4.3.2 Supervised Fine-tuning. Both generators are LoRA-adapted from Qwen3-VL-8B-Instruct. LoRA is applied to all linear layers, while the vision tower is frozen to reduce memory cost and pre-serve the pretrained visual representation. We train on the public labeled data and reserve an internal subset for model selection and MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Images with pseudo bounding-box annotations: GT simple explanation: Artifact Evidence Maps: Our simple explanation: 
+
+> The little girl's red jacket looks like a flat sticker pasted on the picture. Real jackets have little bumps, folds, and lines where the fabric bends, but this one is too smooth and plain, like a drawing instead of real cloth. The green apple is way too big compared to the other fruits. It looks like a giant sticker stuck on the table instead of sitting there, so it feels out of place. The green tablecloth looks too flat and doesn't have the little wrinkles and folds that real fabric has. It looks like someone just painted a green color on the table without making it look like real cloth. There is a bright, colorful oval stuck over the camera and hands. It looks like a sticker pasted on top because its colors and shape don't match the rest of the photo, so it feels out of place — like a toy sticker put on a real picture. The man's shirt has very bright rainbow stripes that look like they were drawn on with a marker. The stripes are perfectly straight and don't wiggle or bend even where his arms move, making the shirt look like a flat sticker instead of r... The words 'Fiesta Sale' are floating in the sky like a sticker. Real signs need to be attached to something, like a pole or a building, but these words are just hanging in the air with nothing holding them up. The big, colorful music box in the middle looks like a sticker that was pasted onto the picture. It is so bright and shiny that it does not look like it is really standing in the room with the people. The cigarette looks like a sticker stuck on his mouth. It is too bright and stands out, like someone glued a tiny flashlight there instead of a real cigarette. The small rectangular label on the plate looks like a sticker stuck on top. It sits flat instead of curving with the round plate and doesn't leave any darker area under it. The handwriting is too crisp compared to the food, so it look... The woman on the left is wearing a bright red jacket that looks like a flat sticker pasted on top of the picture. It does not look like real cloth because it has no wrinkles or folds, and it does not cast a shadow on her black pants like t... The shiny puddle on the table looks like someone stuck a picture of the railing on top of the wood. The railing in the puddle is too clear and perfect, like a sticker, while the rest of the table looks fuzzy and wet. It does not sit natural...
+> The girl in the red jacket looks like a sticker. Her jacket is too smooth. The big green apple is sitting on the table. It looks like it is floating. It does not look like it is touching the table. The green tablecloth looks like a flat sticker. The plates are sitting on top of it. There is a rainbow sticker on the woman's shirt. It looks like a flat picture. The man's shirt looks like a sticker. The stripes are too straight. The words 'Fiesta Sale' look like a sticker. They are too flat and do not belong in the picture. The jukebox is glowing with bright pink and green lights. The lights look like flat stickers. The man is holding a black stick. It looks like a thin line. It does not look like a real stick. The little label on the plate looks like a sticker. The words on it are all mixed up. The woman in the bright red jacket looks like a sticker. Her jacket is too bright. The puddle on the ground looks like a sticker. The black fence is very clear in the water. It does not look like a real puddle.
+
+Figure 2: Internal-validation examples. From top to bottom: pseudo boxes, ground-truth simple explanations, Artifact Evidence Maps, and generated simple explanations. 
+
+qualitative checking. Because real images are less frequent, they are oversampled when training the real-explanation branch. 
+
+4.3.3 Complex-to-simple Explanation Model. The challenge also requires an explanation for general users. We train a text-only simplifier, ˆ 𝑒 𝑠 𝑖 = 𝑆 ( ˆ𝑒 𝑐 𝑖 ), which makes inference and GRPO rollouts cheaper. Real-image complex and simple explanations are often nearly identical, so fake-image pairs provide most of the simplifica-tion signal. After supervised fine-tuning, 𝑆 is optimized with GRPO [11] using the official simple-explanation score. 
+
+4.3.4 Inference Pipeline. At inference, the detector first predicts ˆ𝑦 𝑖 = 1[𝑝 𝑖 ≥ 𝜏 ], where 𝜏 is selected on validation data. This label routes the image to exactly one complex-explanation model: ˆ𝑒 𝑐 𝑖 =
+
+(
+
+𝐺 fake (𝐼 𝑖 ), ˆ𝑦 𝑖 = 1,𝐺 real (𝐼 𝑖 ), ˆ𝑦 𝑖 = 0, ˆ𝑒 𝑠 𝑖 = 𝑆 ( ˆ𝑒 𝑐 𝑖 ).
+
+The selected generator produces the complex explanation, which is then passed to the simplifier. The final output is ( ˆ𝑦 𝑖 , ˆ𝑒 𝑐 𝑖 , ˆ𝑒 𝑠 𝑖 ): the de-tector supplies the label, the selected VLM the complex explanation, and 𝑆 the simple explanation. 
+
+5 Experiments 5.1 Detector Ablation 
+
+All detector ablations were trained on the public training split and evaluated on the public validation split. Each model was trained for 10 epochs with per-device batch size 4, gradient accumulation over 16 steps, learning rate 5 × 10 −4, cosine decay, warmup ra-tio 0.03, and maximum gradient norm 1.0. A fixed augmentation pipeline used random 90-degree rotations, horizontal and vertical flips, random resized crop, bicubic resizing, JPEG compression, ad-ditive white noise, impulse noise, brightness changes, darkening, and color quantization. Only the three loss weights differed; we report validation AUC for image-level prediction. 
+
+Table 4: Detector ablation on the public validation split. 
+
+Variant 𝜆 img 𝜆 art 𝜆 lcl Val. AUC Image-level detector only 15 0 0 0.8975 + pseudo-mask artifact supervision 15 1 0 0.9139 + LCL 15 1 1 0.9417 
+
+Adding the Artifact Evidence Map improves AUC over the image-level detector, from 0.8975 to 0.9139. This suggests that weak super-vision derived from explanation-grounded boxes helps the detector learn localized artifact cues consistent with the textual evidence. The local contrastive loss provides the largest additional gain, rais-ing AUC to 0.9417. This is consistent with its purpose: organizing patch embeddings around local artifact and authenticity evidence can improve the final image-level decision. For the final submissions, the detector was trained on all available public labeled data rather than only the original training split. Both the pseudo-mask and local contrastive losses were retained. 
+
+5.2 Explanation Generation Evaluation 
+
+We evaluate explanation generation on an internal held-out subset of 10K examples, consisting of 5K real and 5K fake images, using the official evaluation script [2]. The metrics include BERTScore-F1 [27] for complex and simple explanations, normalized SLE [28], entity and evidence F1, the simple score, and the final explanation score. To isolate explanation quality from detector errors, this evalua-tion uses only generations with the correct final answer. Zero-shot Qwen3-VL uses class-specific prompts, the organizer baseline uses its provided answer-prefill format, and our method uses separate fake and real Qwen3-VL-8B complex-explanation models followed by the GRPO-optimized simplifier. All models use rank-16 LoRA with alpha 32 and all-linear targets. The complex generators and supervised simplifier are trained for 4 MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil Artem Filippov, Aleksandr Gushchin, Kirill Koltsov, Dmitriy Vatolin, & Anastasia Antsiferova 
+
+Table 5: Explanation generation evaluation on the internal held-out validation subset. 𝐵 𝑐 and 𝐵 𝑠 denote complex and simple BERTScore-F1; 𝐹 ent and 𝐹 evid denote Entity and Evidence F1; 𝐿 𝑠 , 𝑆 𝑠 , and 𝑀 exp denote normalized simple SLE, Simple score, and Explanation score.                             
+
+> Method 𝐵 𝑐 𝐹 ent 𝐹 evid 𝐵 𝑠 𝐿 𝑠 𝑆 𝑠 𝑀 exp
+> Zero-shot Qwen3-VL-253B-A22B-Instruct 0.6023 0.5310 0.3934 0.4495 0.3418 0.4172 0.4812 Organizer baseline 10.7109 0.5536 0.4620 0.4578 0.4264 0.4484 0.5365 Ours 0.7253 0.6235 0.5447 0.4991 0.9703 0.6405 0.6236
+
+Table 6: Final submission results on the full final test split.             
+
+> Metric Score Detection accuracy 0.9349 Detection fake F1 0.9418 Detection macro F1 0.9340 Detection real F1 0.9261 Complex BERTScore-F1 0.7004 Simple BERTScore-F1 0.6509 Normalized SLE 0.9726 Entity score 0.4987 Evidence score 0.3932 Explanation score 0.5571 Final challenge score 2,30.7456
+
+epochs with effective batch size 128 and learning rate 2 ×10 −4. GRPO runs for 1 epoch with effective batch size 32, learning rate 10 −4, 32 sampled generations per prompt, and KL coefficient 𝛽 = 0.01. Our explanation pipeline improves all internal metrics. The largest gain is in normalized SLE, from 0.4264 for the organizer baseline to 0.9703, while simple BERTScore also improves. This suggests that direct optimization of the official objective produces shorter explanations while preserving semantic alignment. Class-conditional generators raise entity F1 from 0.5536 to 0.6235 and evidence F1 from 0.4620 to 0.5447, consistent with improved ground-ing specialization. 
+
+5.3 Final Submission Results 
+
+We report results on the full final test split, including the detec-tor output and both generated explanations used in the official evaluation [2]. The submission reaches 0.9349 detection accuracy and 0.9340 macro F1, with fake and real F1 scores of 0.9418 and 0.9261. Its explanation score is 0.5571, and the combined final challenge score is 0.7456. 
+
+6 Discussion 
+
+The proposed system achieved strong final results in the challenge setting, but it is computationally heavy. It combines several DINOv3 backbones, Mesorch features, and multiple Qwen3-VL models. This complexity is acceptable for a challenge submission, but it makes the method expensive and less attractive for practical deployment. A key limitation is that the LLM/VLM component is used mostly as an attachment to the detector. The detector first makes the real/fake decision, and the class-conditional Qwen3-VL model then 
+
+> 1The organizer baseline model can be found on the official challenge website:
+> https://explainable-deepfake-detection.github.io/
+> 2The official challenge leaderboard is available at:
+> https://www.codabench.org/competitions/16461/#/results-tab
+> 3Extended metrics for the top-5 teams are reported in the challenge paper [2].
+
+generates an explanation for the predicted class. This improves the challenge-format output, but it does not fully use the reasoning potential of multimodal language models: the VLM does not partic-ipate in the authenticity decision, compare alternative hypotheses, or verify detector evidence. Although GRPO improves the official metrics for simple expla-nations, especially normalized SLE, this does not necessarily mean that they become substantially more useful or accessible to ordinary users. 
+
+7 Conclusion 
+
+We presented a modular solution for explainable deepfake detection trained and evaluated on the XPlainVerse challenge subset [1]. The system combines a multi-backbone forensic detector, explanation-grounded pseudo-mask supervision, local patch-level contrastive learning, class-conditional Qwen3-VL explanation generation, and GRPO-based simplification. On the final test split, it achieved 0.9349 detection accuracy, a 0.5571 explanation score, and a 0.7456 final challenge score. In validation, ablations indicate that local supervision derived from explanations improves detector generalization, with a further gain from local contrastive learning. GRPO-based simplification also improves the official simple-explanation score and contributes to the final result. 
+
+Acknowledgments 
+
+The research was carried out using the MSU-270 supercomputer of Lomonosov Moscow State University. MSU Team at the Explainable Deepfake Detection Challenge 2026: Grounded Artifact Evidence for Deepfake Detection MM ’26, November 10–14, 2026, Rio de Janeiro, Brazil 
+
+References 
+
+[1] Abhijeet Narang, Kartik Kuckreja, Shreya Ghosh, Muhammad Haris Khan, Jianfei Cai, and Abhinav Dhall. 2026. XPlainVerse: A Million-Scale Benchmark for Explainable Deepfake Detection. arXiv preprint arXiv:2607.03562 . https://arxiv. org/abs/2607.03562 [2] Abhijeet Narang, Kartik Kuckreja, Shreya Ghosh, Muhammad Haris Khan, Usman Tariq, Jianfei Cai, and Abhinav Dhall. 2026. Explainable Deepfake Detection Challenge. arXiv preprint arXiv:2607.21007 . https://arxiv.org/abs/2607.21007 [3] Aleksandr Gushchin, Khaled Abud, Ekaterina Shumitskaya, Artem Filippov, Georgii Bychkov, Sergey Lavrushkin, Mikhail Erofeev, Anastasia Antsiferova, Changsheng Chen, Shunquan Tan, Radu Timofte, Dmitriy Vatolin, Chuanbiao Song, Zijian Yu, Hao Tan, Jun Lan, Zhiqiang Yang, Yongwei Tang, Zhiqiang Wu, Jia Wen Seow, Hong Vin Koay, Haodong Ren, Feng Xu, Shuai Chen, Ruiyang Xia, Qi Zhang, Yaowen Xu, Zhaofan Zou, Hao Sun, Dagong Lu, Mufeng Yao, Xinlei Xu, Fei Wu, Fengjun Guo, Cong Luo, Hardik Sharma, Aashish Negi, Prateek Shaily, Jayant Kumar, Sachin Chaudhary, Akshay Dudhane, Praful Hambarde, Amit Shukla, Zhilin Tu, Fengpeng Li, Jiamin Zhang, Jianwei Fei, Kemou Li, Haiwei Wu, Bilel Benjdira, Anas M. Ali, Wadii Boulila, Chenfan Qu, and Junchi Li. 2026. NTIRE 2026 Challenge on Robust AI-Generated Image Detection in the Wild. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops , 1895–1913. [4] Oriane Siméoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Rama-monjisoa, and others. 2025. DINOv3. arXiv preprint arXiv:2508.10104 .[5] Xuekang Zhu, Xiaochen Ma, Lei Su, Zhuohang Jiang, Bo Du, Xiwen Wang, Zeyu Lei, Wentao Feng, Chi-Man Pun, and Ji-Zhe Zhou. 2025. Mesoscopic insights: orchestrating multi-scale & hybrid architecture for image manipulation localization. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 39, No. 10, 11022–11030. [6] Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Qing Jiang, Chunyuan Li, Jianwei Yang, Hang Su, and others. 2024. Grounding DINO: Marrying DINO with grounded pre-training for open-set object detection. In 
+
+European Conference on Computer Vision , Springer, 38–55. [7] Zuwei Long and Wei Li. 2023. Open Grounding Dino: The third party imple-mentation of the paper Grounding DINO. https://github.com/longzw1997/Open-GroundingDino. [8] Baoying Chen, Jishen Zeng, Jianquan Yang, and Rui Yang. 2024. DRCT: Diffu-sion reconstruction contrastive training towards universal detection of diffusion generated images. In Forty-first International Conference on Machine Learning .[9] Lianrui Mu, Haoji Hu, Zou Xingze, Jianhong Bai, and Jiaqi Hu. 2026. No Pixel Left Behind: A Detail-Preserving Architecture for Robust High-Resolution AI-Generated Image Detection. In The Fourteenth International Conference on Learn-ing Representations . https://openreview.net/forum?id=9QQ3Kc2hj6 [10] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, and others. 2025. Qwen3-VL technical report. arXiv preprint arXiv:2511.21631 .[11] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, YK Li, Yang Wu, and others. 2024. DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 .[12] Mingjian Zhu, Hanting Chen, Qiangyu Yan, Xudong Huang, Guanyu Lin, Wei Li, Zhijun Tu, Hailin Hu, Jie Hu, and Yunhe Wang. 2023. GenImage: A million-scale benchmark for detecting AI-generated image. Advances in Neural Information Processing Systems 36 (2023), 77771–77782. [13] Yan Hong, Jianming Feng, Haoxing Chen, Jun Lan, Huijia Zhu, Weiqiang Wang, and Jianfu Zhang. 2025. WildFake: A large-scale and hierarchical dataset for AI-generated images detection. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 39, No. 4, 3500–3508. [14] Jeongsoo Park and Andrew Owens. 2025. Community forensics: Using thousands of generators to train fake image detectors. In Proceedings of the Computer Vision and Pattern Recognition Conference , 8245–8257. [15] Parul Gupta, Shreya Ghosh, Tom Gedeon, Thanh-Toan Do, and Abhinav Dhall. 2025. Multiverse Through Deepfakes: The MultiFakeVerse Dataset of Person-Centric Visual and Conceptual Manipulations. In Proceedings of the 33rd ACM International Conference on Multimedia (MM ’25) , 13258–13265. https://doi.org/ 10.1145/3746027.3758283 [16] Yue Zhang, Ben Colman, Xiao Guo, Ali Shahriyari, and Gaurav Bharaj. 2024. Common sense reasoning for deepfake detection. In European Conference on Computer Vision , Springer, 399–415. [17] Andreas Rössler, Davide Cozzolino, Luisa Verdoliva, Christian Riess, Justus Thies, and Matthias Nießner. 2019. FaceForensics++: Learning to detect manipulated facial images. In Proceedings of the IEEE/CVF International Conference on Computer Vision , 1–11. [18] Siwei Wen, Peilin Feng, Hengrui Kang, Zichen Wen, Yize Chen, Jiang Wu, Con-ghui He, Weijia Li, and others. 2026. Spot the fake: Large multimodal model-based synthetic image detection with artifact explanation. Advances in Neural Informa-tion Processing Systems 38 (2026), 58972–59005. [19] Junyan Ye, Baichuan Zhou, Zilong Huang, Junan Zhang, Tianyi Bai, Hengrui Kang, Jun He, Honglin Lin, Zihao Wang, Tong Wu, and others. 2025. LOKI: A comprehensive synthetic data detection benchmark using large multimodal models. In International Conference on Learning Representations , Vol. 2025, 70440– 70522. [20] Jonas Ricker, Denis Lukovnikov, and Asja Fischer. 2024. AEROBLADE: Training-free detection of latent diffusion images using autoencoder reconstruction error. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition , 9130–9140. [21] Huan Liu, Zichang Tan, Chuangchuang Tan, Yunchao Wei, Jingdong Wang, and Yao Zhao. 2024. Forgery-aware adaptive transformer for generalizable synthetic image detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 10770–10780. [22] Dimitrios Karageorgiou, Symeon Papadopoulos, Ioannis Kompatsiaris, and Efs-tratios Gavves. 2025. Any-resolution AI-generated image detection by spectral learning. In Proceedings of the Computer Vision and Pattern Recognition Conference ,18706–18717. [23] Fabrizio Guillaro, Davide Cozzolino, Avneesh Sud, Nicholas Dufour, and Luisa Verdoliva. 2023. TruFor: Leveraging all-round clues for trustworthy image forgery detection and localization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 20606–20615. [24] Myung-Joon Kwon, Seung-Hun Nam, In-Jae Yu, Heung-Kyu Lee, and Changick Kim. 2022. Learning JPEG compression artifacts for image manipulation detection and localization. International Journal of Computer Vision 130, 8 (2022), 1875–1895. [25] Chuangchuang Tan, Jinglu Wang, Xiang Ming, Renshuai Tao, Yunchao Wei, Yao Zhao, and Yan Lu. 2026. ForenDeX: Unlocking Forensic Insights for Explainable AI-Generated Image Detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 6592–6601. [26] Yikun Ji, Yan Hong, Qi Fan, Huijia Zhu, Weiqiang Wang, Liqing Zhang, Jianfu Zhang, and others. 2026. FakeXplain: AI-generated image detection via human-aligned grounded reasoning. In The Fourteenth International Conference on Learn-ing Representations .[27] Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q. Weinberger, and Yoav Artzi. 2019. BERTScore: Evaluating text generation with BERT. arXiv preprint arXiv:1904.09675 .[28] Liam Cripwell, Joël Legrand, and Claire Gardent. 2023. Simplicity level estimate (SLE): A learned reference-less metric for sentence simplification. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing ,12053–12059.

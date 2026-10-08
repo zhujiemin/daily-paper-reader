@@ -1,0 +1,404 @@
+Title: Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies
+
+URL Source: https://arxiv.org/pdf/2610.09755v1
+
+Published Time: Thu, 08 Oct 2026 01:03:51 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Diffusion-Generated Image Watermarking: A Two-Axis Taxonomy and Three Protocol-Bounded Case Studies ⋆
+
+Sung Ju Lee 1 and Nam Ik Cho 1
+
+Department of ECE & INMC, Seoul National University, Korea 
+
+{thomas11809,nicho}@snu.ac.kr 
+
+Abstract. Watermarking diffusion-generated images requires balancing provenance signals with image quality, robustness, and computational cost. This work organizes methods along two axes: insertion mechanism and primary signal-bearing representation, and formalizes a represen-tative zT -Fourier pipeline for verification and identification. We then use the taxonomy to structure three protocol-bounded case studies. The first examines associations among frequency integrity, detection, qual-ity, and cropping behavior. The second revisits persistence under seed-linked and seed-independent editing and formulates a scoped Seman-tic Imprinting Hypothesis without claiming a localized carrier or causal mechanism. The third studies single-shot VAE-latent phase modula-tion, including its efficiency, regeneration robustness, and robustness– quality operating points. Finally, we separate four content-level attack families from model/pipeline adaptation, propose corresponding evalu-ation protocols and testable conjectures for parameter-tuning threats, and identify additional temporal extensions for video. These analyses do not establish a universal ranking; instead, they provide a framework for matched, protocol-aware comparisons of watermarking systems for diffusion-generated images. 
+
+Keywords: Diffusion Model Watermarking · Watermarking Taxonomy · Semantic Watermarking · Generative Editing Robustness · Frequency Integrity 
+
+## 1 Introduction 
+
+The rapid evolution of generative AI, most notably text-to-image Latent Dif-fusion Models (LDMs), has democratized high-quality visual content creation. While early defense research focused primarily on synthetic image detection, modern media protection faces a broader challenge: verifying whether content  
+
+> ⋆
+
+An English translation, with partial reorganization, of our article originally published in Korean in the Journal of Broadcast Engineering , Vol. 31, No. 4, pp. 687–699, July 2026 [18]. Reused with permission of the Korean Institute of Broadcast and Media Engineers (KIBME); reused figures and tables are identified in their captions. arXiv:2610.09755v1 [cs.CV] 7 Oct 2026 2 S. J. Lee and N. I. Cho 
+
+has been misappropriated or altered via prompt-driven inpainting and seman-tic editing. Traditional pixel-domain watermarks and imperceptible noise injec-tion [2, 5] fail in this paradigm. Because diffusion-based editors re-synthesize images using learned generative priors, they tend to suppress subtle watermark perturbations that are weakly coupled to perceptually salient content [22, 30]. This vulnerability requires embedding watermark signals directly into the gen-erative process itself. To address this, semantic watermarking has emerged as a promising alterna-tive, with the literature referring to these methods as either sampling-based or inversion-based, depending on the underlying design perspective. These meth-ods embed a watermark signal directly into the diffusion model’s initial Gaussian noise seed zT . During generation, the noisy latent is progressively denoised into the VAE latent z0 and finally decoded into the pixel space. Existing approaches manipulate frequency patterns via predefined rules [4,25], encode payloads while preserving Gaussian noise statistics [27], or combine inversion with iterative opti-mization to embed watermark signals [29]. By embedding the watermark into the initial noise and propagating it through the diffusion sampling process, semantic watermarking can remain detectable under generative re-synthesis [15,30]. How-ever, this paradigm introduces distinct trade-offs: improper frequency-spectrum manipulation can degrade generation quality, whereas optimization-heavy meth-ods incur substantial computational overhead. Rather than merely comparing the performance of individual methods, this work examines diffusion-generated image watermarking from the perspective of the conditions under which embedded signals remain recoverable through-out generation, attacks, and detection. We organize the design space along two orthogonal axes, insertion mechanism and target representation space , provid-ing a structured framework for analyzing how design choices shape the trade-offs among robustness, visual quality, and computational efficiency. Within this framework, we clarify how latent-space strategies overcome the limitations of pixel-domain watermarking, identify their remaining challenges, and outline an expanded threat model for future generative media protection. Our analysis focuses on diffusion-generated static images, covering repre-sentative state-of-the-art latent watermarking methods together with founda-tional pixel-domain baselines for reference. Non-diffusion generative models (e.g., GANs) are excluded from the scope, while video watermarking is discussed only where temporal dynamics extend the image-centric threat model. The remainder of this paper is organized as follows. Sections 2 and 3 introduce the proposed two-axis taxonomy and formal system model. Sections 4 to 6 present three case studies, under their respective evaluation protocols, on frequency integrity and cropping, watermark persistence under generative editing, and the efficiency and regeneration robustness of phase modulation in the VAE latent space, respec-tively. Section 7 separates attacks on existing watermarked images from adap-tation of the model or pipeline, presents evaluation guidance and three testable conjectures for parameter tuning, and briefly discusses the extension to video. Section 8 concludes with key future research directions. Taxonomy and Case Studies of Diffusion-Image Watermarking 3            
+
+> Table 1: Taxonomy matrix of generative-image watermarking methods by insertion mechanism and primary signal-bearing representation (Sec. 2.3). Reproduced from [18]. Mechanism Representation Training-free Opt.-based Learning-based Initial noise ( zT)Tree-Ring [25] (freq.); RingID [4] (freq.); G.Shading [27] (spatial); HSTR/HSQR [15] (freq.); WIND [1] (freq., seed) ZoDiac [29] (freq.) DiffuseTrace [19] (spatial) Intermediate ( zt)–ROBIN [14] –VAE latent ( z0)PhaseMark [16] (freq., phase) FreqMark [9] (freq.) RoSteALS [3] (spatial); Latent Watermark [21] (spatial) Pixel Classical DCT/DWT; DwtDctSvd [5] (freq.) –Stable Signature [7] (spatial, VAE-FT); RivaGAN [28] (spatial, attention); HiDDeN [31] (spatial)
+
+## 2 A Two-Axis Taxonomy for Generative-Image Watermarking 
+
+Existing literature often conflates embedding mechanisms with target represen-tation spaces, blending labels such as learning-based , initial-noise-based , and 
+
+pixel-domain onto a single descriptive axis. Such categorization obscures whether two methods share an algorithmic pipeline or simply target the same underlying tensor. To resolve this ambiguity, we establish a two-dimensional taxonomy that disentangles the insertion mechanism (how the signal is embedded) from the 
+
+insertion representation space (where the signal resides). This orthogonal coordinate system, summarized in Table 1, provides a systematic framework to map the design space and expose the technical trade-offs inherent in generative image watermarking. 
+
+2.1 Insertion Mechanism 
+
+The mechanism axis characterizes the operational procedure used to embed the watermark, categorized into three distinct paradigms: 
+
+– Training-free: Inserts signals via fixed rules or closed-form mathematical transformations (e.g., Fourier frequency modulation) without requiring pa-rameter updates or iterative optimization during embedding. 4 S. J. Lee and N. I. Cho 
+
+– Optimization-based: Leaves the generative model parameters frozen while solving an iterative, backpropagation-driven optimization over latent vectors or additive latent perturbations to satisfy a target watermark signal. 
+
+– Learning-based: Trains or fine-tunes model parameters (e.g., the VAE de-coder or diffusion backbone weights) or introduces auxiliary neural network modules to implicitly embed and extract watermark payloads. Note that these categories focus on the dominant embedding procedure; for instance, a training-free embedding method may still rely on inversion routines for watermark extraction. 
+
+2.2 Insertion Representation Space 
+
+The representation axis identifies the primary computational stage targeted by the embedding design along the generative pipeline: initial Gaussian noise zT ,intermediate denoising states zt, clean VAE latents z0, or output pixels. Where applicable, methods are further subdivided into frequency or spatial domains. Rather than rigid partitions, these representations span a continuous computa-tional spectrum along the generative process: 
+
+– Initial Noise ( zT ): Targets the starting random latent seed, allowing the embedded signal to propagate through the entire denoising trajectory. 
+
+– Intermediate States ( zt): Intervenes directly within the iterative denois-ing process (e.g., ROBIN [14], which applies adversarial optimization over intermediate time steps, t ∈ [200 , 300] ). 
+
+– VAE Latent Space ( z0): Modulates the denoised latent vector z0 generated after diffusion, prior to or during VAE decoding. 
+
+– Pixel Domain: Embeds signals directly into the finalized RGB image. 
+
+2.3 Assignment Principle: Primary Signal-Bearing Representation 
+
+The key principle in categorizing a method is not to confuse the representations traversed along the pipeline with the space where the signal is actually embedded and extracted. For example, Stable Signature [7] processes VAE latents z0 during generation, but z0 itself is not constrained to hold a watermark pattern. Instead, it fine-tunes the VAE decoder so that the signal is embedded and extracted in the pixel domain, placing it under Pixel / Spatial Domain / Learning-based .Conversely, ZoDiac [29] operates post-hoc on generated pixels and z0, yet its optimization explicitly enforces a Tree-Ring-like Fourier pattern in the inverted initial noise zT . Thus, despite its post-hoc pipeline, it is assigned to Initial Noise (zT ) / Frequency Domain / Optimization-based .Furthermore, while spatial versus frequency domain boundaries are sharp for rule-based or explicit transform approaches, they become subtle in learning-based schemes. For instance, the attention-based encoder in RivaGAN [28] em-beds watermark payloads into learned pixel distributions, which differs concep-tually from classic spatial noise addition. Rather than reflecting a flaw in our taxonomy, this subtle distinction illustrates how the insertion mechanism and representation space inherently interact. Taxonomy and Case Studies of Diffusion-Image Watermarking 5Possibly  Attacked   
+
+> Image 𝒙 𝒘𝒎
+> ∗
+> Latent Query
+> ො𝒛 𝑻 ∈ ℝ
+
+Overall Pipeline of Semantic Watermarking in the Latent Fourier Domain      
+
+> Initial Latent
+> Noise
+> 𝒛 𝑻 ∈ ℝ
+> Watermark Key
+> FFT
+> (Forward)
+> Latent Fourier
+> Domain
+> 𝓕 𝒛 𝑻 ∈ ℂ
+> iFFT
+> (Inverse)
+> Watermarked
+> Latent
+> 𝒛 𝑻 𝒘𝒎 ∈ ℝ
+> Image
+> Generation
+> Diffusion
+> Model
+> Image 𝒙 𝒘𝒎
+> Attack/Edit
+> Original
+> Distance
+> Fourier
+> Query
+> Region
+> Watermark Key
+> Watermark Key
+
+Detection    
+
+> Verification Task
+> Identification Task
+> ∥ 𝑲𝒆𝒚 − 𝑭𝒐𝒖𝒓𝒊𝒆𝒓 𝑸𝒖𝒆𝒓𝒚 𝑹𝒆𝒈𝒊𝒐𝒏 ∥ 𝟏 < 𝝉
+> 𝒂𝒓𝒈𝒎𝒊𝒏 𝒊 ∥ 𝑲𝒆𝒚 𝒊 − 𝑭𝒐𝒖𝒓𝒊𝒆𝒓 𝑸𝒖𝒆𝒓𝒚 𝑹𝒆𝒈𝒊𝒐𝒏 ∥ 𝟏
+> DDIM
+> Inversion
+> Diffusion
+> Latent Fourier
+> Query 𝓕 (ො𝒛 𝑻 ) ∈ ℂ
+> FFT
+> Query
+
+Fig. 1: Representative generation-time zT -Fourier watermarking pipeline used in the case studies: a keyed Fourier pattern is inserted into the initial noise, propagated through diffusion generation, recovered from an optionally transformed query via DDIM inversion, and compared with reference keys for verification or closed-set iden-tification. Reproduced from [18], which is itself adapted from [15]. The diagram does not represent post-hoc optimization, spatial-zT , z0, or pixel-domain methods, and the optional transformation is illustrative rather than a robustness claim. 
+
+2.4 Matrix Coverage and Open Gaps 
+
+As shown in Table 1, mapping existing methods onto this matrix highlights clear technical trends and open gaps. First, direct optimization over the initial noise zT is uncommon due to the high computational cost of backpropagating gradients through the entire generation trajectory; instead, existing methods resort to training-free rules or intermediate-stage optimization. Second, targeting intermediate representations ( zt) via training-free rules or parameter learning remains underexplored. Finally, direct pixel-level optimization is vulnerable to generative re-synthesis [9], leading optimization-based methods to focus on latent representations. 
+
+## 3 Representative zT -Fourier Watermarking: Setup and Detection Tasks 
+
+Among the representation spaces in Tab. 1, Secs. 3 to 5 adopt the zT -Fourier family as a concrete case study to formalize semantic watermarking, examine frequency integrity, and analyze survival under generative editing. Evaluating this family requires definitions of the embedding and extraction pipelines as well as two detection tasks: verification (confirming watermark presence) and identification (attributing content to an enrolled user or model key). Below, we 6 S. J. Lee and N. I. Cho 
+
+outline a representative pipeline; readout metrics and decision thresholds vary across specific methods. Note that both tasks are statistical decisions made under a fixed key and threshold, so neither constitutes proof of ownership on its own. 
+
+3.1 A Representative zT -Fourier Pattern Pipeline 
+
+The overall pipeline includes latent Fourier embedding, image generation, inversion-based extraction, and distance-based detection, as summarized in Fig. 1. For-mally, a text-to-image diffusion model G maps an initial Gaussian noise seed 
+
+zT ∼ N (0 , I ) and a text prompt ps to a synthesized image x = G(zT , p s). In 
+
+zT -Fourier semantic watermarking, a watermark pattern w is embedded into a specified key region within the frequency domain F(zT ), yielding a watermarked seed zwm  
+
+> T
+
+and the corresponding watermarked image xwm = G(zwm  
+
+> T
+
+, p s).During detection, given a query image xquery that may have undergone down-stream editing, an ODE-based DDIM inversion process reconstructs the inverted latent seed ˆzT . Applying the Fourier transform to ˆzT enables the readout of the extracted key pattern ˆw from the designated key region. 
+
+3.2 Detection Tasks: Verification and Identification 
+
+Verification. Verification determines whether a specified watermark is present. In a standard distance-based formulation, the extracted pattern ˆw is compared against a reference key w, typically L1 distance in the Fourier domain: 
+
+Dverif .(xquery ; w) = 1[d( ˆ w, w ) < τ ] , (1) where τ represents a predefined decision threshold calibrated on unwatermarked (negative) queries. Performance is evaluated using the True Positive Rate at a 1% False Positive Rate (TPR@1%FPR). 
+
+Closed-Set Key Identification. Identification expands verification into a multi-class attribution task. It identifies which key from an enrolled pool {w1, . . . , w N }
+
+generated the query image under the assumption that a watermark exists. Under the closed-set zT pattern protocol, the predicted key index ˆi is identified by finding the nearest reference key: 
+
+ˆi = arg min   
+
+> i∈{ 1,...,N }
+
+d( ˆ w, w i). (2) Top-1 accuracy serves as the primary evaluation metric for the task. Because identification must distinguish the correct key among N candidates rather than perform a simple presence test, it demands higher signal preservation under se-vere image distortions. In contrast to this pattern-matching formulation, conven-tional payload-based methods perform identification by applying source-specific thresholded decoding rules to recover the embedded message. Taxonomy and Case Studies of Diffusion-Image Watermarking 7
+
+Table 2: Detection over the harmonized attack subset and generative quality under the PhaseMark configuration. Except for HSTR, values follow [16]; HSTR detection is recomputed from [15] without brightness and noise, and its ∆FID-1k is our matched-condition measurement. “Post” denotes post-hoc applicability, and “Payload/IDs” re-ports payload bits and enrolled-pool size. Verification is TPR@1%FPR. Identifica-tion follows each source-native rule: nearest-pattern accuracy for zero-bit methods or thresholded bit-decoding TPR@1%FPR for payload methods. Lower ∆FID-1k is bet-ter. Adapted from [18]. Method Post Payload / IDs Verif. Ident. ∆FID-1k DwtDctSvd [5] ✓ 32 /10 6 0.494 0.206 −0.389 
+
+RivaGAN [28] ✓ 32 /10 6 0.692 0.484 −0.785 
+
+Stable Signature [7] × 48 /10 6 0.819 0.489 −0.241 
+
+Tree-Ring [25] × zero / 2048 0.699 0.125 +1 .184 
+
+HSTR [15] × zero / 2048 0.993 0.946 −0.099 
+
+RingID [4] × zero / 2048 0.999 0.977 +2 .054 
+
+HSQR [15] × zero / 8192 0.999 0.995 −0.721 
+
+G.Shading [27] × 256 /10 6 1.000 0.999 −0.317 
+
+ZoDiac [29] ✓ zero / 64 0.982 0.031 +0 .091 
+
+PhaseMark-PCQ [16] ✓ 128 /10 6 0.970 0.816 −0.517 
+
+PhaseMark-APM [16] ✓ 128 /10 6 0.999 0.988 +0 .042 
+
+## 4 Case Study I: Frequency Integrity, Detection, and Image Quality 
+
+Early zT semantic watermarking schemes [4, 25] embed watermark signals by modifying specific frequency components of the initial noise vector. However, such spectral modifications often violate Hermitian symmetry in the Fourier do-main. As a result, the imaginary components produced after the inverse Fourier transform must be discarded to enforce a real-valued spatial latent vector. This truncation disrupts the frequency integrity of the seed and shifts the latent distribution even further from the standard Gaussian prior. This compounded Out-of-Distribution (OOD) shift degrades both watermark detectability and the visual quality of generated images. 
+
+4.1 Associations with Detection and Image Quality 
+
+To resolve this limitation, HSTR and HSQR [15], which we introduced in prior work, enforce Hermitian symmetry during frequency-domain embedding. This symmetry condition preserves seed integrity by ensuring lossless frequency re-construction. For the shared attack subset in Tab. 2 [15, 16], HSTR reaches verification of 
+
+0.993 and identification of 0.946 . Tree-Ring reaches 0.699 and 0.125 , respectively. HSTR combines Hermitian symmetry with insertion in the center region, so this comparison does not isolate the effect of symmetry. 8 S. J. Lee and N. I. Cho                  
+
+> Table 3: Closed-set identification accuracy under random-crop attacks at four crop scales; smaller scales indicate more aggressive cropping [15]. Adapted from [18]. Method 0.6 0.5 0.4 0.3 RingID [4] 0.971 0.919 0.774 0.559 HSTR [15] 1.000 0.999 0.992 0.903 HSQR [15] 1.000 1.000 0.999 0.999
+
+RingID and HSQR both use structured binary patterns and reach a verifica-tion TPR at 1% FPR of about 0.999 . Their image quality differs: HSQR records 
+
+∆FID-1k = −0.721 , while RingID records +2 .054 . This contrast is consistent with a relation between frequency integrity and image quality when detection is already high. 
+
+4.2 Identification under Spatial Cropping 
+
+Beyond frequency integrity, resilience to spatial distortions such as cropping is essential for practical deployment. Conventional schemes that apply the Fourier transform across the entire spatial latent vector often induce severe information loss under image cropping. To address this, HSTR and HSQR adopt a center-aware insertion strategy, which embeds watermark signals into the central region of the latent vector. As reported in Tab. 3, HSTR and HSQR maintain high identification accu-racy even under aggressive cropping ratios, whereas global-embedding methods like RingID suffer substantial performance drops. These results imply that local-ized insertion with frequency integrity helps maintain robustness against spatial cropping attacks. 
+
+## 5 Case Study II: Persistence under Generative Editing 
+
+As noted in Section 1, semantic watermarks show promising robustness against generative regeneration attacks [15]. Inversion-based editing such as Prompt-to-Prompt (P2P) [10] remains anchored to the trajectory linking the source image to the initial seed zT . Similarly, diffusion regeneration [30] can be approximated as traversing this trajectory, since it adds forward noise to the source image to reach an intermediate latent state zt before denoising. Because these operations rely on the original latent trajectory, they are categorized as seed-linked . Consequently, semantic watermarks may remain detectable when their structure is preserved in these recovered latent states. However, recent findings show that watermarks also survive seed-independent editing protocols such as InfEdit [26], which synthesize images from newly sampled initial noise while retaining structural guidance. This survival challenges purely seed-linked explanations and leaves the precise watermark carrier unresolved. Taxonomy and Case Studies of Diffusion-Image Watermarking 9                
+
+> Table 4: Verification TPR@1%FPR after Prompt-to-Prompt (P2P) and InfEdit edit-ing [17]. Watermarked source images are generated with SD2.1, whereas InfEdit uses SD1.5, yielding a cross-model editing condition. This editing-specific protocol differs from the harmonized general-attack protocol in Tab. 2, so absolute values are not di-rectly comparable across the two tables. Category labels are study-specific descriptors rather than classes in Tab. 1. Reproduced from [18]. Category Method P2P InfEdit Spectral Modification Tree-Ring [25] 0.25 0.32 Optimization-based ZoDiac [29] 0.75 0.86 Frequency-aligned HSQR [15] 0.99 1.00 Cryptographic G.Shading [27] 1.00 0.98
+
+5.1 Observed Persistence across Editing Protocols 
+
+Table 4 shows that HSQR and Gaussian Shading retain TPRs of at least 0.98 
+
+under both editors, whereas Tree-Ring reaches 0.25 under P2P and 0.32 under InfEdit, as reported in our prior work [17]. Because P2P and InfEdit differ in algorithmic design beyond seed depen-dence, their numerical gap does not isolate the effect of replacing the original seed. In addition, detailed evaluations reveal that Tree-Ring already has low detectability on unedited source images, and this performance remains largely unchanged after editing. Since Tree-Ring directly modifies initial latent frequen-cies without preserving spectral integrity, its embedded pattern forms an out-of-distribution (OOD) signal that fails to align with the natural generative man-ifold. This structural limitation hinders reliable signal recovery even prior to editing, indicating that its low post-edit performance reflects poor initial de-tectability rather than edit-induced signal degradation. If watermark recovery depended solely on reproducing the exact original seed, survival after editing initialized from newly sampled random noise would be impossible. However, because InfEdit remains source-conditioned, the high re-silience of HSQR and Gaussian Shading suggests that well-aligned watermarks are internalized into the image feature space, including semantic structure, tex-ture, or local statistics, and propagate reliably through the editing pipeline even without seed conservation. 
+
+5.2 The Semantic Imprinting Hypothesis 
+
+The results support the hypothesis introduced in that work [17]. 
+
+Semantic Imprinting Hypothesis (SIH). Under a fixed, source-conditioned editing protocol, a watermark remains detectable even after seed-independent editing if it is reliably recoverable from the unedited source image and its signal is carried within features preserved by the editor. 10 S. J. Lee and N. I. Cho Pre -Edit  Image 
+
+> (Watermarked)
+> Post -Edit Image
+> (Detection Target)
+
+# ❌  
+
+> Case 1: Low Pre -Edit Recoverability
+> Post -Edit
+> Detection Result
+> Watermark
+> Not Detected
+> Post -Edit
+> Detection Result
+> Watermark
+> Detected
+
+# ✅ 
+
+> Case 2: High Pre -Edit Recoverability
+
+Prompt -based 
+
+Editing 
+
+> (Target)
+
+“…  dog  …” 
+
+Diffusion 
+
+Generation 
+
+> (Source)
+
+“… cat …” 
+
+> (Target)
+
+“…  dog  …” 
+
+> (Source)
+
+“… cat …” 
+
+> Low Recoverability
+> High Recoverability
+
+Fig. 2: Schematic outcomes used to illustrate SIH. The upper example has low pre-edit recoverability and is not detected after editing, while the lower example has high pre-edit recoverability and is detected after editing. The figure does not identify the watermark carrier or show that recoverability before editing determines the detection result. Adapted from [18]; the underlying study is [17]. 
+
+Figure 2 contrasts the failure and survival cases described by SIH according to pre-edit watermark recoverability. The current evaluation does not directly test the proposed feature carrier because it covers one benchmark, one comparison between Stable Diffusion versions, and four methods. A stronger test should compare the same images before and after editing and report pre-edit TPR, post-edit TPR, and conditional retention Pr[ D(Edit( x)) = 1 | D(x) = 1] at a fixed threshold. It should control for editor type, edit strength, and fidelity. The test should also define a feature measure or a direct intervention. If recoverability before editing does not predict conditional retention under these controls, the hypothesis would be weakened. 
+
+## 6 Case Study III: Single-Shot VAE-Latent Phase Modulation 
+
+Watermarks in zT can be robust, but detection requires DDIM inversion and several seconds per image. The post-hoc zT method ZoDiac [29] shares this detection cost and also requires several minutes of optimization for embedding. PhaseMark [16], which we proposed in prior work, avoids DDIM inversion and embedding optimization. It modifies the phase of an intermediate frequency band in z0 in a single step. 
+
+6.1 Latency and Regeneration Robustness 
+
+Table 5 shows that PhaseMark requires less than a second for both embedding and detection while maintaining an average regeneration verification rate ( 0.998 )Taxonomy and Case Studies of Diffusion-Image Watermarking 11 
+
+Table 5: Embedding procedure or per-image cost, detection latency, and mean verifica-tion TPR@1%FPR across VAE-B, VAE-C, and diffusion regeneration [16]. “Sampling” denotes generation-integrated insertion; “opt.” and “inv.” denote per-image optimiza-tion and DDIM inversion. Reproduced from [18]. Method Space Embedding Detection Regen. avg. ZoDiac [29] zT ∼7.3 min (opt.) 4.11 s (inv.) 0.958 G.Shading [27] zT Sampling 4.11 s (inv.) 0.999 HSQR [15] zT Sampling 4.11 s (inv.) 0.997 PhaseMark-APM [16] z0 0.14 s (one-shot) 0.05 s 0.998 
+
+Table 6: PhaseMark variants: mean verification and identification TPR@1%FPR over clean data and nine attacks, with image-quality metrics [16]. Higher PSNR and lower LPIPS are better. Reproduced from [18]. Modulation Strategy Type Verif. Ident. PSNR ↑ LPIPS ↓
+
+(T@1%F) (T@1%F) APM (Robust) Hard / Absolute 0.999 0.988 31.715 0.129 IPS Hard / Relative 0.998 0.980 32.437 0.090 SPS Soft / Relative 0.996 0.960 32.952 0.068 PCQ (Quality) Soft / Absolute 0.970 0.816 34.156 0.037 
+
+close to that of zT -based semantic watermarks. This high survival rate demon-strates that regeneration robustness does not require initial noise seeds and is achievable through VAE latent frequency modulation. 
+
+6.2 Modulation Strategies and Robustness–Quality Trade-offs 
+
+Table 6 shows a robustness–quality trade-off across the evaluated phase modu-lation strategies. Compared to Absolute Phase Modulation (APM), Phase Con-stellation Quantization (PCQ) yields lower detection scores but higher PSNR and lower LPIPS values. APM applies a stronger modulation to maximize signal detection, whereas PCQ preserves higher visual fidelity. This trade-off provides flexibility to choose a strategy based on application requirements. 
+
+## 7 Threat Surfaces: Content Attacks and Model/Pipeline Adaptation 
+
+The analyses in Secs. 4 to 6 evaluate attacks on watermarked images under a fixed embedding and detection pipeline. They do not cover changes to a released model or pipeline. We group threats into five families: signal processing, crop-ping, generative editing, regeneration, and model/pipeline adaptation. The first four transform existing images, while the last changes the system that produces or embeds future watermarks. We study the last family through parameter tun-ing. The families may overlap. 12 S. J. Lee and N. I. Cho 
+
+Table 7: Operational threat families and evidence scope. Content-level attacks trans-form an existing watermarked image under a fixed embedding rule, key, and detector; model/pipeline adaptation changes future watermark behavior and is supported here only by method-specific reports. Adapted from [18]. Attack family Modified object Evidence in this paper 
+
+Content-level attacks Fixed embedding rule, key, and detector 
+
+Signal processing Samples of an existing image General attacks [15, 16] Cropping Spatial support of an existing image Crop analysis [15] Generative editing Source-conditioned re-synthesis P2P; cross-model InfEdit [17] Regeneration Re-synthesis by VAE or LDM Regeneration study [16, 22, 30] 
+
+Model/pipeline-level adaptation Future watermark behavior 
+
+Adaptation Generator, adapter, conditioning module, or recovery pipeline Method-specific reports [6, 24] 
+
+7.1 Attack Families and Applicability Boundary 
+
+In the first four families in Tab. 7, the embedding rule, key, and detector remain fixed, even if editing or regeneration uses another generative model. Parame-ter tuning changes the released generator, conditioning module, or integrated embedding component. Its future outputs are tested with the original key and detector. This threat applies when watermarking is integrated into the released system and remains active after tuning. If embedding is an optional external step, an operator can omit it without changing the model, so adaptation robustness does not cover that bypass. Attack labels alone do not determine whether pixels, z0, or zT will fail. Our representation taxonomy (Tab. 1) classifies where a watermark is embedded, whereas its actual vulnerability depends on the protected object, pipeline in-tegration, attacker access, and success criteria. W-Bench evaluates watermark robustness under image regeneration and global and local generative editing [20]. Evidence for model/pipeline adaptation remains limited to individual methods. Accordingly, we focus on parameter tuning. 
+
+7.2 Evaluation Protocols and Conjectures for Parameter Tuning 
+
+Full fine-tuning, LoRA [11], DreamBooth [23], and Textual Inversion [8] cannot be placed on a universal severity scale based only on the number of parameters. Full fine-tuning may update broad portions of a generator; LoRA introduces low-rank adapter updates; DreamBooth is a personalization setting where trainable components vary across implementations; and Textual Inversion learns a condi-tioning embedding while leaving the base generator fixed. Any fair comparison Taxonomy and Case Studies of Diffusion-Image Watermarking 13 
+
+must state the exact trainable tensors, objective, data, optimization budget, ac-tive embedding components, and detector model. The primary attack evaluation should keep the key, detector, and threshold calibrated on the original negative distribution fixed. Researchers may report recalibration on adapted outputs sep-arately as a diagnostic for calibration shift. AquaLoRA [6] couples watermark behavior to U-Net adaptation and reports a trade-off between utility and removal in a white-box setting; however, this does not establish universal persistence under subsequent adaptation. Sleeper-Mark [24] reports persistence under LoRA style adaptation, DreamBooth per-sonalization, and ControlNet conditioning by separating watermark signals from learned semantic concepts. Because these findings apply only to individual meth-ods rather than a matched ranking across Tab. 1, they motivate testable conjec-tures instead of general conclusions. 
+
+Conjecture 1 (component overlap). Assume a watermark integrated into the sys-tem, where the operator cannot trivially detach or omit the embedding module. Here, persistence under adaptation relates more directly to whether the modified components overlap the watermark generation path than to the raw number of updated parameters. Testable by: comparing updates that target the water-mark generation path with those that do not, using matched prompts and seeds. Retained utility and adaptation objective performance should also be matched, and the status of the embedding module should be reported. 
+
+Conjecture 2 (inversion trajectory drift). An inversion dependent zT watermark can degrade indirectly when adaptation disrupts compatibility between the gen-eration ( G) and inversion ( I) processes, even though its key is not stored in model weights. In contrast, direct latent level modulation ( z0) exhibits greater resilience against such trajectory distortion because it relies less on the inversion path. Testable by: evaluating (Gθ , I θ ), (Gθ′ , I θ ), (Gθ , I θ′ ), and (Gθ′ , I θ′ ) with the same key, prompts, and seeds, and reporting latent recovery error alongside verification and identification. The fixed original inverter Iθ defines the primary attack result. Conditions using Iθ′ provide diagnostics to separate changes in the forward model from inversion mismatches, rather than representing additional attacker privileges. 
+
+Conjecture 3 (adaptation interaction). Persistence depends on the interaction of adaptation type, objective, and strength. Consequently, training steps or the number of parameters alone do not produce a common severity ordering. 
+
+Testable by: reporting detection, generation quality, and adaptation objective performance across attack strengths at matched retained utility. These evalua-tions characterize persistence and compatibility loss, not resistance to omission of the embedding step. 
+
+7.3 Extension to Video 
+
+Video watermarking introduces temporal attacks that do not occur in static im-ages. VideoShield [12] extends Gaussian Shading across time with template bits. 14 S. J. Lee and N. I. Cho 
+
+It reports spatiotemporal tamper localization and temporal position recovery under frame exchange, insertion, and deletion, but extraction still uses DDIM inversion. VideoMark [13] embeds PRC coded messages frame by frame and uses edit distance for temporal alignment. It addresses inversion error, tempo-ral distortion, and changes in sequence length. Video evaluations should cover insertion, deletion, exchange, and misalignment in addition to the five families above. They should also test inversion drift after temporal adapter tuning. 
+
+## 8 Conclusion and Open Challenges 
+
+This paper organizes watermarking methods for images generated by diffusion models according to insertion mechanism and representation space. It also for-malizes verification and closed set identification for a representative Fourier wa-termark in zT . The three case studies use different evaluation protocols, so their results do not provide a direct ranking. The results suggest a relation among frequency integrity, detection, and image quality, but the comparison does not separate Hermitian symmetry from other design changes. HSTR and HSQR also show higher identification accuracy than RingID in the crop tests. The editing results motivate the Semantic Imprinting Hypothesis, but the experiments do not identify which image features carry the watermark or test the proposed fac-tors separately. PhaseMark requires less than one second for both embedding and detection and records an average verification rate of 0.998 in the regenera-tion tests. Its modulation methods show a trade-off between detection and image quality. Section 7 separates attacks on an existing watermarked image from changes to the model or watermarking pipeline. Current evidence on adaptation comes from individual methods, so the paper does not rank these attacks by strength. The three conjectures concern component overlap, the relation between genera-tion and inversion, and the effects of adaptation type, objective, and strength. Tests should state which components are trained, keep the key, detector, and threshold fixed, and report generation quality and performance on the adap-tation task. Video also requires tests for frame insertion, deletion, exchange, and misalignment. Editing studies should test the same images before and af-ter editing and report conditional retention at a fixed threshold. Adaptation studies should compare settings with similar generation quality and adaptation performance. These questions should also be tested with more diffusion models, watermark families, and video models. The verification and identification tasks in this paper do not by themselves establish legal ownership. 
+
+## Acknowledgements 
+
+This research was supported by Samsung Electronics Co., Ltd. Taxonomy and Case Studies of Diffusion-Image Watermarking 15 
+
+## References 
+
+1. Arabi, K., Feuer, B., Witter, R.T., Hegde, C., Cohen, N.: Hidden in the noise: Two-stage robust watermarking for images. In: Proceedings of the 13th International Conference on Learning Representations (ICLR). Singa-pore (2025), https://proceedings.iclr.cc/paper_files/paper/2025/hash/ 999fcab97007ebef0cda9949550b4a9e-Abstract-Conference.html 
+
+2. Barni, M., Bartolini, F., Cappellini, V., Piva, A.: A DCT-domain system for robust image watermarking. Signal Processing 66 (3), 357–372 (1998). https://doi.org/ 10.1016/S0165-1684(98)00015-2 
+
+3. Bui, T., Agarwal, S., Yu, N., Collomosse, J.: RoSteALS: Robust steganography using autoencoder latent space. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). pp. 933–942. Vancouver, Canada (2023). https://doi.org/10.1109/CVPRW59228.2023.00100 
+
+4. Ci, H., Yang, P., Song, Y., Shou, M.Z.: RingID: Rethinking tree-ring watermarking for enhanced multi-key identification. In: Proceedings of the European Conference on Computer Vision (ECCV). pp. 338–354. Milan, Italy (2024). https://doi.org/ 10.1007/978-3-031-73390-1_20 
+
+5. Cox, I.J., Miller, M.L., Bloom, J.A., Fridrich, J., Kalker, T.: Digital Watermarking and Steganography. Morgan Kaufmann Publishers, Burlington, USA, 2nd edn. (2008). https://doi.org/10.1016/B978-0-12-372585-1.X5001-3 
+
+6. Feng, W., Zhou, W., He, J., Zhang, J., Wei, T., Li, G., Zhang, T., Zhang, W., Yu, N.: AquaLoRA: Toward white-box protection for customized stable diffusion models via watermark LoRA. In: Proceedings of the 41st International Conference on Machine Learning (ICML). vol. 235, pp. 13423–13444. Vienna, Austria (2024), 
+
+https://proceedings.mlr.press/v235/feng24k.html 
+
+7. Fernandez, P., Couairon, G., Jégou, H., Douze, M., Furon, T.: The stable signature: Rooting watermarks in latent diffusion models. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 22409–22420. Paris, France (2023). https://doi.org/10.1109/ICCV51070.2023.02053 
+
+8. Gal, R., Alaluf, Y., Atzmon, Y., Patashnik, O., Bermano, A.H., Chechik, G., Cohen-Or, D.: An image is worth one word: Personalizing text-to-image gener-ation using textual inversion. In: Proceedings of the 11th International Conference on Learning Representations (ICLR) (2023), https://openreview.net/forum?id= NAQvF08TcyG 
+
+9. Guo, Y., Li, R., Hui, M., Guo, H., Zhang, C., Cai, C., Wan, L., Wang, S.: FreqMark: Invisible image watermarking via frequency based optimization in latent space. In: Advances in Neural Information Processing Systems. vol. 37, pp. 112237–112261 (2024). https://doi.org/10.52202/079017-3564 
+
+10. Hertz, A., Mokady, R., Tenenbaum, J., Aberman, K., Pritch, Y., Cohen-Or, D.: Prompt-to-prompt image editing with cross-attention control. In: Proceedings of the 11th International Conference on Learning Representations (ICLR). Kigali, Rwanda (2023), https://openreview.net/forum?id=_CDixzkzeyb 
+
+11. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W.: LoRA: Low-rank adaptation of large language models. In: Proceedings of the 10th International Conference on Learning Representations (ICLR) (2022), https: //openreview.net/forum?id=nZeVKeeFYf9 
+
+12. Hu, R., Zhang, J., Li, Y., Li, J., Guo, Q., Qiu, H., Zhang, T.: VideoShield: Regu-lating diffusion-based video generation models via watermarking. In: Proceedings 16 S. J. Lee and N. I. Cho of the 13th International Conference on Learning Representations (ICLR). Sin-gapore (2025), https://proceedings.iclr.cc/paper_files/paper/2025/hash/ 8227285e32f70e07fa3a247f3a48006d-Abstract-Conference.html 
+
+13. Hu, X., Li, H., Li, J., Huang, Y., Liu, S., Zheng, Q., Chen, J., Liu, A.: VideoMark: A distortion-free robust watermarking framework for video diffusion models. arXiv preprint arXiv:2504.16359 (2025). https://doi.org/10.48550/arXiv.2504.16359 
+
+14. Huang, H., Wu, Y., Wang, Q.: ROBIN: Robust and invisible watermarks for dif-fusion models with adversarial optimization. In: Advances in Neural Information Processing Systems. vol. 37, pp. 3937–3963 (2024). https://doi.org/10.52202/ 079017-0129 
+
+15. Lee, S.J., Cho, N.I.: Semantic watermarking reinvented: Enhancing robustness and generation quality with fourier integrity. In: Proceedings of the IEEE/CVF Inter-national Conference on Computer Vision (ICCV). pp. 18759–18769. Honolulu, USA (2025). https://doi.org/10.1109/ICCV51701.2025.01743 
+
+16. Lee, S.J., Cho, N.I.: PhaseMark: A post-hoc, optimization-free watermarking of AI-generated images in the latent frequency domain. In: Proceedings of the IEEE In-ternational Conference on Acoustics, Speech and Signal Processing (ICASSP). pp. 13472–13476. Barcelona, Spain (2026). https://doi.org/10.1109/ICASSP55912. 2026.11463051 
+
+17. Lee, S.J., Cho, N.I.: The semantic imprinting hypothesis: How semantic water-marks survive prompt-based editing. In: ICLR 2026 Workshop on Principled De-sign for Trustworthy AI: Interpretability, Robustness, and Safety Across Modalities (2026), https://openreview.net/forum?id=hNbkvSjEAD 
+
+18. Lee, S.J., Cho, N.I.: A taxonomy and trade-off analysis of generative media water-marking across latent and pixel domains. Journal of Broadcast Engineering 31 (4), 687–699 (2026), in Korean 19. Lei, L., Gai, K., Yu, J., Zhu, L.: DiffuseTrace: A transparent and flexible water-marking scheme for latent diffusion model. arXiv preprint arXiv:2405.02696 (2024). 
+
+https://doi.org/10.48550/arXiv.2405.02696 
+
+20. Lu, S., Zhou, Z., Lu, J., Zhu, Y., Kong, A.: Robust watermarking using generative priors against image editing: From benchmarking to advances. In: Proceedings of the 13th International Conference on Learning Representations (ICLR) (2025), https://proceedings.iclr.cc/paper_files/paper/2025/hash/ d077bc9ea82a2998ca6b2d0158b5ac6e-Abstract-Conference.html 
+
+21. Meng, Z., Peng, B., Dong, J.: Latent watermark: Inject and detect watermarks in latent diffusion space. IEEE Transactions on Multimedia 27 , 3399–3410 (2025). 
+
+https://doi.org/10.1109/TMM.2025.3535300 
+
+22. Ni, Y., Yang, Z., Niu, Z., Davis, E., Carter, F.: On the information-theoretic fragility of robust watermarking under diffusion editing. arXiv preprint arXiv:2511.10933 (2025). https://doi.org/10.48550/arXiv.2511.10933 
+
+23. Ruiz, N., Li, Y., Jampani, V., Pritch, Y., Rubinstein, M., Aberman, K.: Dream-Booth: Fine tuning text-to-image diffusion models for subject-driven generation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR). pp. 22500–22510 (2023). https://doi.org/10.1109/ CVPR52729.2023.02155 
+
+24. Wang, Z., Guo, J., Zhu, J., Li, Y., Huang, H., Chen, M., Tu, Z.: SleeperMark: Towards robust watermark against fine-tuning text-to-image diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition (CVPR). pp. 8213–8224. Nashville, USA (2025). https://doi.org/10. 1109/CVPR52734.2025.00769 Taxonomy and Case Studies of Diffusion-Image Watermarking 17 25. Wen, Y., Kirchenbauer, J., Geiping, J., Goldstein, T.: Tree-rings watermarks: Invis-ible fingerprints for diffusion images. In: Advances in Neural Information Processing Systems. vol. 36, pp. 58047–58063 (2023). https://doi.org/10.52202/075280-2529 
+
+26. Xu, S., Huang, Y., Pan, J., Ma, Z., Chai, J.: Inversion-free image editing with language-guided diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 9454–9461. Seattle, USA (2024). https://doi.org/10.1109/CVPR52733.2024.00903 
+
+27. Yang, Z., Zeng, K., Chen, K., Fang, H., Zhang, W., Yu, N.: Gaussian shading: Provable performance-lossless image watermarking for diffusion models. In: Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion (CVPR). pp. 12162–12171. Seattle, USA (2024). https://doi.org/10.1109/ CVPR52733.2024.01156 
+
+28. Zhang, K.A., Xu, L., Cuesta-Infante, A., Veeramachaneni, K.: Robust invisi-ble video watermarking with attention. arXiv preprint arXiv:1909.01285 (2019). 
+
+https://doi.org/10.48550/arXiv.1909.01285 
+
+29. Zhang, L., Liu, X., Viros Martin, A., Bearfield, C.X., Brun, Y., Guan, H.: Attack-resilient image watermarking using stable diffusion. In: Advances in Neural Infor-mation Processing Systems. vol. 37, pp. 38480–38507 (2024). https://doi.org/ 10.52202/079017-1215 
+
+30. Zhao, X., Zhang, K., Su, Z., Vasan, S., Grishchenko, I., Kruegel, C., Vigna, G., Wang, Y.X., Li, L.: Invisible image watermarks are provably removable using gen-erative AI. In: Advances in Neural Information Processing Systems. vol. 37, pp. 8643–8672 (2024). https://doi.org/10.52202/079017-0276 
+
+31. Zhu, J., Kaplan, R., Johnson, J., Li, F.F.: HiDDeN: Hiding data with deep net-works. In: Proceedings of the European Conference on Computer Vision (ECCV). pp. 682–697 (2018). https://doi.org/10.1007/978-3-030-01267-0_40
