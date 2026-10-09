@@ -1,0 +1,145 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-09T23:03:00.582348+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2610.11290v1",
+      "source": "arxiv",
+      "title": "ProxyEraseAgent: Blind Watermark Removal in the Wild",
+      "abstract": "Invisible image watermark removal has received growing attention. Despite substantial progress, existing attacks face a tension between practicality and specificity. Attacks exploiting detector outputs, decoder responses, or paired images can be tailored to the watermark decision boundary, but require information rarely available in realistic scenarios. Conversely, attacks based on compression, geometric distortion, or reconstruction are easily deployed from a single watermarked image, but remain largely open-loop: they apply generic transformations without knowing if the image is moving toward watermark failure. Thus, the key challenge in single-image blind watermark removal is not merely how to transform the image, but how to obtain a useful removal direction without accessing the hidden decoder.   To bridge this gap, we propose ProxyEraseAgent, an agent-driven framework recovering attack specificity through proxy decoder responses. Publicly available watermarking schemes provide a natural knowledge base of candidate decoders, where some are informative for a given unknown image. Our insight is that a decoder producing a strong calibrated response to the query image likely shares a nearby decoding boundary with the hidden target mechanism. ProxyEraseAgent ranks these decoders by calibrated response strength and uses the top ones as proxy boundary estimators. Their responses then guide a progressive search over heterogeneous removal operations (e.g., geometric distortion, JPEG compression, image reconstruction, and gradient perturbation) under perceptual-quality constraints. Experiments across 11 watermarking systems show ProxyEraseAgent achieves a 94.8% attack success rate, demonstrating the effectiveness of response-guided proxy retrieval and feedback-driven sequential planning for blind watermark removal.",
+      "authors": [
+        "Jun Yao",
+        "Chao Wang",
+        "Yupeng Qiu",
+        "Zehua Ma",
+        "Weiming Zhang",
+        "Bin Liu",
+        "Han Fang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-10-08T05:53:28+00:00",
+      "link": "https://arxiv.org/pdf/2610.11290v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "blind removal attack against invisible image watermarks",
+      "llm_evidence_cn": "针对隐形图像水印的盲移除攻击",
+      "llm_evidence": "针对隐形图像水印的盲移除攻击",
+      "canonical_evidence": "针对隐形图像水印的盲移除攻击",
+      "llm_tldr_en": "ProxyEraseAgent addresses single-image blind watermark removal, where existing attacks trade practicality for specificity. It seeks a useful removal direction without detector or paired-image access.",
+      "llm_tldr_cn": "隐形图像水印移除攻击面临实用性与针对性的矛盾：依赖检测器或成对图像的攻击难以落地，而压缩与几何变换等开环攻击又无法确认是否逼近水印失效。本文提出ProxyEraseAgent，在仅有一张带水印图像时寻找有效的移除方向，实现真实场景下的盲水印移除。研究为水印鲁棒性评估与移除攻击防御提供了新的基线。",
+      "llm_tldr": "隐形图像水印移除攻击面临实用性与针对性的矛盾：依赖检测器或成对图像的攻击难以落地，而压缩与几何变换等开环攻击又无法确认是否逼近水印失效。本文提出ProxyEraseAgent，在仅有一张带水印图像时寻找有效的移除方向，实现真实场景下的盲水印移除。研究为水印鲁棒性评估与移除攻击防御提供了新的基线。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2610.08316v1",
+      "source": "arxiv",
+      "title": "MARCO: The Radioactive Watermark for Protein Generative Models",
+      "abstract": "Protein Generative Models (PGMs) have revolutionized structural biology by enabling the design of complex 3D protein structures from sequence data. However, this breakthrough introduces a dual-use challenge, exposing high-value PGMs to economic risks like unauthorized model extraction and biosecurity threats such as biohazard synthesis. To mitigate these threats, we propose \\textbf{MARCO} (\\textsc{COnformation waterMARk}), the first radioactive watermarking framework specifically tailored for PGMs. MARCO establishes a Dual-Layer defense that simultaneously protects intellectual property and ensures the forensic traceability of potential biosecurity misuses. (i) To preserve efficiency, MARCO iteratively embeds watermarks during diffusion reverse denoising via an auxiliary encoder-decoder, allowing the original PGM parameters to remain frozen for broad compatibility. (ii) To preserve biophysical fidelity and maximize robustness, we employ specialized loss functions targeting $C_α$-atom pairwise distances and torsion angles ($ψ, φ$) within an adversarial training framework integrated with stochastic attack simulations. (iii) Crucially, MARCO exhibits ``radioactivity'' where the watermark automatically transfers to the outputs of any pirate models trained on the watermarked data, effectively countering model extraction attacks. Comprehensive experiments demonstrate that MARCO achieves superior fidelity and robustness while successfully validating watermark transferability.",
+      "authors": [
+        "Huajie Chen",
+        "Xin Guo",
+        "Yuchen Shi",
+        "Yuchen Zhong",
+        "Minhui Xue",
+        "Chi Liu",
+        "Congcong Zhu",
+        "Kun Gao",
+        "Minfeng Qi",
+        "Tianqing Zhu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-10-06T13:18:22+00:00",
+      "link": "https://arxiv.org/pdf/2610.08316v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "radioactive watermark embedding in generative diffusion models",
+      "llm_evidence_cn": "在生成扩散模型中嵌入放射性水印",
+      "llm_evidence": "在生成扩散模型中嵌入放射性水印",
+      "canonical_evidence": "在生成扩散模型中嵌入放射性水印",
+      "llm_tldr_en": "Proposes MARCO, the first radioactive watermarking framework for protein generative models, iteratively embedding watermarks during diffusion reverse denoising to protect IP and enable forensic traceability.",
+      "llm_tldr_cn": "论文针对蛋白质生成模型易被未授权提取并存在生物安全滥用风险的问题，提出首个面向该类模型的放射性水印框架MARCO。该方法在扩散反向去噪过程中迭代嵌入水印，兼顾嵌入效率与取证可追溯性，构建同时保护知识产权与滥用追责的双层防御。研究为生成模型的版权保护与安全溯源提供了可迁移的水印思路。",
+      "llm_tldr": "论文针对蛋白质生成模型易被未授权提取并存在生物安全滥用风险的问题，提出首个面向该类模型的放射性水印框架MARCO。该方法在扩散反向去噪过程中迭代嵌入水印，兼顾嵌入效率与取证可追溯性，构建同时保护知识产权与滥用追责的双层防御。研究为生成模型的版权保护与安全溯源提供了可迁移的水印思路。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.11488v1",
+      "source": "arxiv",
+      "title": "MARC: Multi-Bit Watermarking for Autoregressive Audio Generation against Codec Attacks",
+      "abstract": "Generated audio is now used in a range of applications, creating a need to verify its origin after distribution and signal processing. This task is particularly challenging for autoregressive audio generation because codec processing can alter the token sequence recovered from the waveform. Such changes reduce the reliability of watermark detection and payload decoding. Existing methods construct token groups using either intrinsic token representations or substitution patterns caused by transformations. As a result, intrinsic token relationships and codec induced substitutions are modeled separately. In addition, most methods support only zero bit detection. They can determine whether a watermark is present but cannot distinguish individual generated outputs. We propose \\textbf{MARC}, a multi-bit generative watermarking method for autoregressive audio generation. MARC integrates intrinsic token representations with confusion patterns obtained through retokenization and multiple codecs, forming a codec-aware token-cluster space. Within this space, payload-driven cluster scheduling is used to embed a multi-bit watermark, while detection and payload decoding are performed on retokenized observations. Experiments on speech, dialogue, and music generation show that MARC achieves an average of 97.3\\% bit extraction accuracy on unmodified watermarked audio and the watermark can still be extracted under diverse codec attacks. MARC also demonstrates robustness to overwriting attacks.",
+      "authors": [
+        "Liaoran Xu",
+        "Weizhi Liu",
+        "Zhaoxia Yin"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-10-08T08:30:17+00:00",
+      "link": "https://arxiv.org/pdf/2610.11488v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "multi-bit watermarking for generative models robust to attacks",
+      "llm_evidence_cn": "面向生成模型的多比特水印，抗攻击",
+      "llm_evidence": "面向生成模型的多比特水印，抗攻击",
+      "canonical_evidence": "面向生成模型的多比特水印，抗攻击",
+      "llm_tldr_en": "Generated audio needs origin verification, but codec processing alters token sequences and breaks watermark detection. MARC jointly models intrinsic token relations and codec-induced substitutions, enabling robust multi-bit watermark detection and payload decoding under codec attacks.",
+      "llm_tldr_cn": "自回归音频生成内容在分发与编解码处理后难以验证来源，现有水印方法将内在词元关系与编解码替换分别建模，且多数仅支持零比特检测。本文提出MARC多比特水印方法，将内在词元关系与编解码诱导替换联合建模以抵御编解码攻击。实验表明该方法在编解码攻击下仍能可靠检测水印并解码多比特载荷，提升了生成内容来源认证的鲁棒性。",
+      "llm_tldr": "自回归音频生成内容在分发与编解码处理后难以验证来源，现有水印方法将内在词元关系与编解码替换分别建模，且多数仅支持零比特检测。本文提出MARC多比特水印方法，将内在词元关系与编解码诱导替换联合建模以抵御编解码攻击。实验表明该方法在编解码攻击下仍能可靠检测水印并解码多比特载荷，提升了生成内容来源认证的鲁棒性。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
