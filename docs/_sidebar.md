@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-10-10 <!--dpr-date:20261010-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/10/2610.11876v1-relative-patch-response-learning-for-generalizable-ai-generated-image-detection" data-sidebar-item="{&quot;title&quot;: &quot;Relative Patch Response Learning for Generalizable AI-Generated Image Detection&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2610.11876v1-relative-patch-response-learning-for-generalizable-ai-generated-image-detection&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;image-tamper&quot;}], &quot;evidence&quot;: &quot;检测AI生成图像与视觉伪造&quot;}">Relative Patch Response Learning for Generalizable AI-Generated Image Detection</a>
   * 2026-10-09 <!--dpr-date:20261009-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/09/2610.11290v1-proxyeraseagent-blind-watermark-removal-in-the-wild" data-sidebar-item="{&quot;title&quot;: &quot;ProxyEraseAgent: Blind Watermark Removal in the Wild&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2610.11290v1-proxyeraseagent-blind-watermark-removal-in-the-wild&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffusion-wm&quot;}], &quot;evidence&quot;: &quot;针对隐形图像水印的盲移除攻击&quot;}">ProxyEraseAgent: Blind Watermark Removal in the Wild</a>

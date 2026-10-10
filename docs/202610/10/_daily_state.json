@@ -1,0 +1,25 @@
+{
+  "date": "20261010",
+  "date_label": "",
+  "generated_at": "2026-10-10 22:05:52 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.11876v1",
+      "route": "202610/10/2610.11876v1-relative-patch-response-learning-for-generalizable-ai-generated-image-detection",
+      "title": "Relative Patch Response Learning for Generalizable AI-Generated Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "检测AI生成图像与视觉伪造",
+      "first_seen_at": "2026-10-10 22:05:52 UTC",
+      "updated_at": "2026-10-10 22:05:52 UTC"
+    }
+  ]
+}

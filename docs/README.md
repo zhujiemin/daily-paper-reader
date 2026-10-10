@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-09</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-10</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 1 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-09 23:06:09 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-10 22:05:52 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,7 +69,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读1篇、速读2篇，共3篇论文，聚焦水印与生成模型安全。最值得看的是8.0分的《ProxyEraseAgent》盲水印去除，以及两项7.0分工作：面向蛋白质生成模型的放射性水印和抗编解码攻击的自回归音频多比特水印。普通读者可先读精读篇理解水印攻防思路，再按需关注蛋白质与音频场景的防护方案。</p>
+<p>今日速读 1 篇论文，聚焦 AI 生成图像检测的泛化能力提升。值得关注的是《Relative Patch Response Learning for Generalizable AI-Generated Image Detection》（6.0/10）提出的相对块响应学习思路，试图让检测器更好应对未见过的生成模型。普通读者可先了解该方法的适用场景与局限，再判断是否值得深入跟进。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -78,12 +78,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">0 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="ProxyEraseAgent: Blind Watermark Removal in the Wild">ProxyEraseAgent: Blind Watermark Removal in the Wild</span></li></ul>
+<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
+
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -91,12 +91,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="MARCO: The Radioactive Watermark for Protein Generative Models">MARCO: The Radioactive Watermark for Protein Generative Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="MARC: Multi-Bit Watermarking for Autoregressive Audio Generation against Codec Attacks">MARC: Multi-Bit Watermarking for Autoregressive Audio Generation against Codec Attacks</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Relative Patch Response Learning for Generalizable AI-Generated Image Detection">Relative Patch Response Learning for Generalizable AI-Generated Image Detection</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 
