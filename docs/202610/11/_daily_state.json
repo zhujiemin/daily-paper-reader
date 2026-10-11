@@ -1,0 +1,41 @@
+{
+  "date": "20261011",
+  "date_label": "",
+  "generated_at": "2026-10-11 23:15:09 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.04763v1",
+      "route": "202610/11/2610.04763v1-tracing-model-generated-dna-with-position-independent-watermarking",
+      "title": "Tracing model-generated DNA with position-independent watermarking",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "在生成式语言模型中嵌入生成期水印以实现来源检测",
+      "first_seen_at": "2026-10-11 23:15:09 UTC",
+      "updated_at": "2026-10-11 23:15:09 UTC"
+    },
+    {
+      "paper_id": "2610.12106v1",
+      "route": "202610/11/2610.12106v1-could-llm-watermark-detection-be-public",
+      "title": "Could LLM Watermark Detection be Public?",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "水印篡改攻击与公开检测器的风险",
+      "first_seen_at": "2026-10-11 23:15:09 UTC",
+      "updated_at": "2026-10-11 23:15:09 UTC"
+    }
+  ]
+}

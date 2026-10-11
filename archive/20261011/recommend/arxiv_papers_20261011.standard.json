@@ -1,0 +1,98 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-11T23:14:40.650611+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2610.04763v1",
+      "source": "arxiv",
+      "title": "Tracing model-generated DNA with position-independent watermarking",
+      "abstract": "Genomic language models can write synthetic DNA that carries no record of its origin. A generation-time watermark could provide a provenance signal, if a verifier can detect it using only the DNA sequence, a key, and published detector settings, without knowing where the generated region starts, which strand it lies on, or how it was divided into six-base tokens. We embed the SynthID tournament watermark in two genomic language models, Carbon and GENERator-v2. The verifier searches both strands, every start position, and four window lengths, and corrects its decision for the whole search. In a detection cohort of 1,544 held-out prompts, it found all 3,088 marked sequences per model, unedited and after one substituted, inserted, or deleted base. For ordinary sequences, the one-sided 95% upper confidence bound on the false-positive rate was at most 0.850%; one bound for the wrong-key control reached 1.015% (Carbon, after a deletion). In a development cohort, neither model showed a detectable change in likelihood or in predefined sequence measures. Under random edits placed without reference to the detector, detection stayed complete or nearly complete up to a 2% per-base edit rate. These results show statistical detection, not biological function, secret-key security, or robustness to an editor who sees the detector.",
+      "authors": [
+        "Kimon Antonios Provatas1",
+        "Christos Galanopoulos",
+        "Ilias Georgakopoulos-Soares"
+      ],
+      "primary_category": "q-bio.GN",
+      "categories": [
+        "q-bio.GN",
+        "cs.CR"
+      ],
+      "published": "2026-10-03T20:56:43+00:00",
+      "link": "https://arxiv.org/pdf/2610.04763v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generation-time watermark embedded in generative language models for provenance detection",
+      "llm_evidence_cn": "在生成式语言模型中嵌入生成期水印以实现来源检测",
+      "llm_evidence": "在生成式语言模型中嵌入生成期水印以实现来源检测",
+      "canonical_evidence": "在生成式语言模型中嵌入生成期水印以实现来源检测",
+      "llm_tldr_en": "Synthetic DNA from genomic language models lacks origin records. The authors embed the SynthID tournament watermark in two genomic LMs and design a verifier scanning both strands, all start positions and window lengths, detecting all marked sequences even after edits.",
+      "llm_tldr_cn": "针对基因组语言模型生成的合成DNA无来源记录的问题，作者把SynthID锦标赛水印嵌入Carbon和GENERator-v2两个基因组模型，并设计可遍历双链、任意起始位置与四种窗口长度的检测器，对整个搜索范围做校正。在1544条留出提示上，每个模型的3088条标记序列在未编辑及单碱基替换、插入或删除后均被检出。该结果说明位置无关水印能为生成式序列提供稳健溯源，其思路可迁移到其他生成模型的水印嵌入与检测。",
+      "llm_tldr": "针对基因组语言模型生成的合成DNA无来源记录的问题，作者把SynthID锦标赛水印嵌入Carbon和GENERator-v2两个基因组模型，并设计可遍历双链、任意起始位置与四种窗口长度的检测器，对整个搜索范围做校正。在1544条留出提示上，每个模型的3088条标记序列在未编辑及单碱基替换、插入或删除后均被检出。该结果说明位置无关水印能为生成式序列提供稳健溯源，其思路可迁移到其他生成模型的水印嵌入与检测。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark embedding and detection in generative models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.12106v1",
+      "source": "arxiv",
+      "title": "Could LLM Watermark Detection be Public?",
+      "abstract": "Watermarking large language models is popular for tracing chatbot and agentic outputs, yet detectors remain unreleased since exposing them could let attackers do targeted edits with the detector's feedback. However, watermarks are already vulnerable to uninformed tampering attacks. We thus first quantify whether a public detector would be an additional liability in a deployment setting at varying levels of access, from token-level scores to a binary verdict. Second, we introduce a split-key public-private watermarking method that exposes one key through a public detector while keeping the other for full verification and forensics. An informed attacker can only move the public signal, creating an imbalance between public and private scores. We introduce a statistical test for this imbalance, and combine it with the full key verdict in a two-stage mechanism. Third, we evaluate the split-key method on a wide range of removal and forgery attacks, comparing the uninformed to detector-informed settings. Public detection improves removal only at small edit budgets, since plain rephrasing already strips the watermark at a lower quality cost, but it does enable forgery, which the private pipeline can identify. Overall, releasing half of the watermark enables transparency and interoperability, and tampering with the released half stays detectable. This bounds the provider's liability and questions the need to keep detectors fully private.",
+      "authors": [
+        "Georgios Milis",
+        "Tom Sander",
+        "Tomáš Souček",
+        "Heng Huang",
+        "Pierre Fernandez"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-10-08T15:05:58+00:00",
+      "link": "https://arxiv.org/pdf/2610.12106v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "watermark tampering attacks and public detector liability",
+      "llm_evidence_cn": "水印篡改攻击与公开检测器的风险",
+      "llm_evidence": "水印篡改攻击与公开检测器的风险",
+      "canonical_evidence": "水印篡改攻击与公开检测器的风险",
+      "llm_tldr_en": "This work asks whether exposing a watermark detector helps attackers. It quantifies uninformed tampering risk and proposes a split-key public-private watermarking scheme, using a statistical test to separate public and private signals.",
+      "llm_tldr_cn": "本文关注大语言模型水印检测器若公开是否会额外增加被攻击风险的问题。作者先量化在从词元分数到二值判决的不同访问级别下，无信息篡改攻击对水印的破坏程度，进而提出拆分密钥的公私水印方案，通过公开检测器只暴露一个密钥，另一密钥用于完整验证与取证。研究表明知情攻击者只能移动公开信号，从而在公开与私有分数之间产生可检测的失衡，并据此设计统计检验。该工作为生成文本水印的公开检测与安全性权衡提供了新思路。",
+      "llm_tldr": "本文关注大语言模型水印检测器若公开是否会额外增加被攻击风险的问题。作者先量化在从词元分数到二值判决的不同访问级别下，无信息篡改攻击对水印的破坏程度，进而提出拆分密钥的公私水印方案，通过公开检测器只暴露一个密钥，另一密钥用于完整验证与取证。研究表明知情攻击者只能移动公开信号，从而在公开与私有分数之间产生可检测的失衡，并据此设计统计检验。该工作为生成文本水印的公开检测与安全性权衡提供了新思路。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "attacks that remove, erase, or forge watermarks in generated images",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

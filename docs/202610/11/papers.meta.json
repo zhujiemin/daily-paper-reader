@@ -1,0 +1,39 @@
+{
+  "label": "2026-10-11",
+  "date": "2026-10-11",
+  "generated_at": "2026-10-11T23:15:13",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202610/11/2610.04763v1-tracing-model-generated-dna-with-position-independent-watermarking",
+      "section": "quick",
+      "title_en": "Tracing model-generated DNA with position-independent watermarking",
+      "authors": "Kimon Antonios Provatas1, Christos Galanopoulos, Ilias Georgakopoulos-Soares",
+      "date": "2026-10-03",
+      "pdf": "https://arxiv.org/pdf/2610.04763v1",
+      "score": "6.0",
+      "evidence": "在生成式语言模型中嵌入生成期水印以实现来源检测",
+      "tldr": "基因组语言模型可生成无来源记录的合成DNA，需仅凭序列溯源的水印。作者把SynthID锦标赛水印嵌入Carbon和GENERator-v2，验证器遍历双链、所有起点与四种窗口长度，并对全搜索校正。1,544个保留提示中，每模型3,088条标记序列全部检出，单碱基替换、插入或删除后仍全部检出；普通序列假阳性率95%上界≤0.850%。随机编辑率≤2%时检出仍完整或接近完整，表明位置无关的统计溯源可行。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Genomic language models can write synthetic DNA that carries no record of its origin. A generation-time watermark could provide a provenance signal, if a verifier can detect it using only the DNA sequence, a key, and published detector settings, without knowing where the generated region starts, which strand it lies on, or how it was divided into six-base tokens. We embed the SynthID tournament watermark in two genomic language models, Carbon and GENERator-v2. The verifier searches both strands, every start position, and four window lengths, and corrects its decision for the whole search. In a detection cohort of 1,544 held-out prompts, it found all 3,088 marked sequences per model, unedited and after one substituted, inserted, or deleted base. For ordinary sequences, the one-sided 95% upper confidence bound on the false-positive rate was at most 0.850%; one bound for the wrong-key control reached 1.015% (Carbon, after a deletion). In a development cohort, neither model showed a detectable change in likelihood or in predefined sequence measures. Under random edits placed without reference to the detector, detection stayed complete or nearly complete up to a 2% per-base edit rate. These results show statistical detection, not biological function, secret-key security, or robustness to an editor who sees the detector.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/11/2610.12106v1-could-llm-watermark-detection-be-public",
+      "section": "quick",
+      "title_en": "Could LLM Watermark Detection be Public?",
+      "authors": "Georgios Milis, Tom Sander, Tomáš Souček, Heng Huang, Pierre Fernandez",
+      "date": "2026-10-08",
+      "pdf": "https://arxiv.org/pdf/2610.12106v1",
+      "score": "6.0",
+      "evidence": "水印篡改攻击与公开检测器的风险",
+      "tldr": "LLM水印检测器通常不公开，以防攻击者利用反馈定向篡改，但无信息攻击已能破坏水印。本文提出分裂密钥的公私水印方案：公开检测器仅暴露一个密钥，私钥用于完整验证与取证，并用统计检验检测公私分数失衡，再结合完整密钥做两阶段判定。在多种去除与伪造攻击下，公开检测仅在小编辑预算下提升去除效果，却引入伪造风险且可被私钥流程识别。该方案兼顾透明与互操作，并限制提供商责任。",
+      "tags": "query:diffusion-wm",
+      "abstract_en": "Watermarking large language models is popular for tracing chatbot and agentic outputs, yet detectors remain unreleased since exposing them could let attackers do targeted edits with the detector's feedback. However, watermarks are already vulnerable to uninformed tampering attacks. We thus first quantify whether a public detector would be an additional liability in a deployment setting at varying levels of access, from token-level scores to a binary verdict. Second, we introduce a split-key public-private watermarking method that exposes one key through a public detector while keeping the other for full verification and forensics. An informed attacker can only move the public signal, creating an imbalance between public and private scores. We introduce a statistical test for this imbalance, and combine it with the full key verdict in a two-stage mechanism. Third, we evaluate the split-key method on a wide range of removal and forgery attacks, comparing the uninformed to detector-informed settings. Public detection improves removal only at small edit budgets, since plain rephrasing already strips the watermark at a lower quality cost, but it does enable forgery, which the private pipeline can identify. Overall, releasing half of the watermark enables transparency and interoperability, and tampering with the released half stays detectable. This bounds the provider's liability and questions the need to keep detectors fully private.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
