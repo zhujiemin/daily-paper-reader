@@ -1,15 +1,15 @@
 {
   "mode": "standard",
-  "generated_at": "2026-10-13T01:36:26.147043+00:00",
+  "generated_at": "2026-10-13T23:48:29.507929+00:00",
   "stats": {
     "mode": "standard",
     "tag_count": 2,
     "deep_divecandidates": 1,
     "deep_cap": 7,
     "deep_selected": 1,
-    "quick_candidates": 1,
+    "quick_candidates": 0,
     "quick_skim_target": 12,
-    "quick_selected": 1
+    "quick_selected": 0
   },
   "deep_dive": [
     {
@@ -39,14 +39,14 @@
         "query:diffusion-wm",
         "query:image-tamper"
       ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "robust wavelet-domain watermarking for diffusion model generated images",
-      "llm_evidence_cn": "面向扩散模型生成图像的鲁棒小波域水印",
-      "llm_evidence": "面向扩散模型生成图像的鲁棒小波域水印",
-      "canonical_evidence": "面向扩散模型生成图像的鲁棒小波域水印",
-      "llm_tldr_en": "Diffusion image watermarking enables provenance tracing but is vulnerable to removal attacks. WaveMark embeds keyed message replicas in the initial noise across spatial positions, wavelet orientations and scales, recovering robustly under perturbation.",
-      "llm_tldr_cn": "针对扩散模型生成图像的水印易被先进去除攻击抹除、视觉退化却很小，从而威胁版权保护与来源追溯的问题，本文提出WaveMark小波域水印方法。该方法将消息嵌入扩散模型的初始噪声，通过幅度投影把密钥比特副本跨空间位置、小波方向与尺度分布，使每个载体编码随机比特，从而在被扰动后仍能稳健恢复。实验表明WaveMark在去除攻击下保持鲁棒且不可感知，为生成图像的来源认证与知识产权保护提供更强保障。",
-      "llm_tldr": "针对扩散模型生成图像的水印易被先进去除攻击抹除、视觉退化却很小，从而威胁版权保护与来源追溯的问题，本文提出WaveMark小波域水印方法。该方法将消息嵌入扩散模型的初始噪声，通过幅度投影把密钥比特副本跨空间位置、小波方向与尺度分布，使每个载体编码随机比特，从而在被扰动后仍能稳健恢复。实验表明WaveMark在去除攻击下保持鲁棒且不可感知，为生成图像的来源认证与知识产权保护提供更强保障。",
+      "llm_score": 9.0,
+      "llm_evidence_en": "wavelet-domain watermarking for diffusion model generated images",
+      "llm_evidence_cn": "面向扩散模型生成图像的小波域水印",
+      "llm_evidence": "面向扩散模型生成图像的小波域水印",
+      "canonical_evidence": "面向扩散模型生成图像的小波域水印",
+      "llm_tldr_en": "Image watermarking for diffusion model provenance is vulnerable to removal attacks; WaveMark embeds keyed message replicas in the initial noise across spatial positions, wavelet orientations and scales.",
+      "llm_tldr_cn": "针对扩散模型生成图像的来源追溯需求，现有水印易被先进移除攻击在几乎无感知退化的情况下抑制，限制了版权保护与滥用归因的有效性。论文提出WaveMark，一种小波域水印方法，将消息嵌入扩散模型的初始噪声中。为抵抗载体扰动，方法在空间位置、小波方向与尺度上分布带密钥的消息比特副本，每个载体组合四个潜通道系数并通过幅度投影编码随机比特。实验表明该方法能在移除攻击下更鲁棒地恢复水印，为扩散模型输出水印提供更可靠的方案。",
+      "llm_tldr": "针对扩散模型生成图像的来源追溯需求，现有水印易被先进移除攻击在几乎无感知退化的情况下抑制，限制了版权保护与滥用归因的有效性。论文提出WaveMark，一种小波域水印方法，将消息嵌入扩散模型的初始噪声中。为抵抗载体扰动，方法在空间位置、小波方向与尺度上分布带密钥的消息比特副本，每个载体组合四个潜通道系数并通过幅度投影编码随机比特。实验表明该方法能在移除攻击下更鲁棒地恢复水印，为扩散模型输出水印提供更可靠的方案。",
       "llm_tags": [
         "query:diffusion-wm"
       ],
@@ -56,49 +56,5 @@
       "selection_source": "fresh_fetch"
     }
   ],
-  "quick_skim": [
-    {
-      "id": "2610.11381v1",
-      "source": "arxiv",
-      "title": "EvoKnow: Continual Knowledge Evolution for AI-Generated Image Detection",
-      "abstract": "AI-generated image detectors are commonly trained on fixed generator domains and become difficult to maintain as new generative models emerge. Continual adaptation is challenging because replaying historical generated images is costly, whereas updating shared parameters with limited current-domain data can overwrite prior forensic knowledge. We propose EvoKnow, a replay-free framework that formulates continual AI-generated image detection as forensic knowledge evolution. EvoKnow preserves a shared forensic basis learned from base domains, incrementally adds isolated residual experts for complementary generator-relevant evidence, and retrieves expertise through an Analytical Incremental Router (AIR) updated in closed form from current-stage generated images and accumulated sufficient statistics. Experiments demonstrate effective cross-generator generalization, few-shot expansion, and long-horizon continual adaptation. With ten generated images per arriving generator, EvoKnow achieves 96.70% average accuracy on non-base GenImage generators and 94.48% accuracy on Chameleon without target-benchmark adaptation. Under a strict replay-free continual learning protocol, EvoKnow achieves state-of-the-art continual learning performance, attaining 96.32% mean stage-wise accuracy and 4.32% average forgetting.",
-      "authors": [
-        "Zhiheng Peng",
-        "Wenwei Jin",
-        "Yangshi Ge",
-        "Siyu Xia",
-        "Jiawei Li",
-        "Xu Tang"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV",
-        "cs.AI"
-      ],
-      "published": "2026-10-08T07:12:47+00:00",
-      "link": "https://arxiv.org/pdf/2610.11381v1",
-      "tags": [
-        "keyword:diffusion-wm",
-        "keyword:image-tamper",
-        "query:diffusion-wm",
-        "query:image-tamper"
-      ],
-      "llm_score": 6.0,
-      "llm_evidence_en": "continual detection of AI-generated images across emerging generators",
-      "llm_evidence_cn": "跨生成模型的AI生成图像持续检测",
-      "llm_evidence": "跨生成模型的AI生成图像持续检测",
-      "canonical_evidence": "跨生成模型的AI生成图像持续检测",
-      "llm_tldr_en": "AI-generated image detectors trained on fixed generator domains degrade as new generators appear, and replaying old data is costly. EvoKnow evolves a shared forensic basis with residual experts and a closed-form incremental router to detect continually without replay.",
-      "llm_tldr_cn": "针对AI生成图像检测器在固定生成域训练、新生成模型出现后性能下降且回放历史数据成本高昂的问题，本文提出免回放的EvoKnow框架。方法将持续检测表述为取证知识演化，保留从基础域学到的共享取证基，增量添加隔离的残差专家以补充新生成器证据，并通过闭式更新的解析增量路由器检索知识。实验表明该方法在持续学习设定下缓解灾难性遗忘，保持对历史与新增生成域的检测能力。该工作为生成模型不断演化场景下的图像真伪鉴别提供了可扩展方案。",
-      "llm_tldr": "针对AI生成图像检测器在固定生成域训练、新生成模型出现后性能下降且回放历史数据成本高昂的问题，本文提出免回放的EvoKnow框架。方法将持续检测表述为取证知识演化，保留从基础域学到的共享取证基，增量添加隔离的残差专家以补充新生成器证据，并通过闭式更新的解析增量路由器检索知识。实验表明该方法在持续学习设定下缓解灾难性遗忘，保持对历史与新增生成域的检测能力。该工作为生成模型不断演化场景下的图像真伪鉴别提供了可扩展方案。",
-      "llm_tags": [
-        "query:image-tamper"
-      ],
-      "matched_query_tag": "query:image-tamper",
-      "matched_query_text": "detecting signs of tampering in digital images",
-      "matched_requirement_id": "req-12",
-      "selection_source": "fresh_fetch",
-      "quick_tier": "6"
-    }
-  ]
+  "quick_skim": []
 }

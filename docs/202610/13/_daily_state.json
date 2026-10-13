@@ -1,9 +1,9 @@
 {
   "date": "20261013",
   "date_label": "",
-  "generated_at": "2026-10-13 01:39:08 UTC",
+  "generated_at": "2026-10-13 23:48:32 UTC",
   "recommend_exists": true,
-  "run_count": 1,
+  "run_count": 2,
   "papers": [
     {
       "paper_id": "2610.12952v1",
@@ -19,7 +19,7 @@
       "score": 10.0,
       "evidence": "面向扩散模型生成图像的鲁棒小波域水印",
       "first_seen_at": "2026-10-13 01:39:08 UTC",
-      "updated_at": "2026-10-13 01:39:08 UTC"
+      "updated_at": "2026-10-13 23:48:32 UTC"
     },
     {
       "paper_id": "2610.11381v1",

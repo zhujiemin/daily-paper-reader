@@ -54,11 +54,11 @@
     <strong class="dpr-home-dashboard-count">共 2 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
-    <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>2 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-13 01:39:08 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-13 23:48:32 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,7 +69,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读1篇、速读1篇，共追踪2篇AI图像安全相关论文。最值得看的是满分10.0的《WaveMark》，聚焦扩散模型的小波域鲁棒图像水印，速读的《EvoKnow》则关注AI生成图像检测的持续知识演化。普通读者可优先了解WaveMark的水印思路，再顺带关注AI生成图像检测的演进方向。</p>
+<p>2026-10-13日报：2篇论文中精读1篇、速读1篇，主线锁定扩散模型水印与AI生成图像检测。</p>
+<p>最值得看的是满分10分的《WaveMark》，主打扩散模型的小波域鲁棒图像水印；速读《EvoKnow》则用持续知识演化提升AI生成图像检测。</p>
+<p>普通读者可先读WaveMark理解水印思路，再留意检测技术如何跟上生成模型演进。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
