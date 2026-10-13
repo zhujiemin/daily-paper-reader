@@ -1,0 +1,41 @@
+{
+  "date": "20261013",
+  "date_label": "",
+  "generated_at": "2026-10-13 01:39:08 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.12952v1",
+      "route": "202610/13/2610.12952v1-wavemark-robust-wavelet-domain-image-watermarking-for-diffusion-models",
+      "title": "WaveMark: Robust Wavelet-Domain Image Watermarking for Diffusion Models",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "面向扩散模型生成图像的鲁棒小波域水印",
+      "first_seen_at": "2026-10-13 01:39:08 UTC",
+      "updated_at": "2026-10-13 01:39:08 UTC"
+    },
+    {
+      "paper_id": "2610.11381v1",
+      "route": "202610/13/2610.11381v1-evoknow-continual-knowledge-evolution-for-ai-generated-image-detection",
+      "title": "EvoKnow: Continual Knowledge Evolution for AI-Generated Image Detection",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "跨生成模型的AI生成图像持续检测",
+      "first_seen_at": "2026-10-13 01:39:08 UTC",
+      "updated_at": "2026-10-13 01:39:08 UTC"
+    }
+  ]
+}
