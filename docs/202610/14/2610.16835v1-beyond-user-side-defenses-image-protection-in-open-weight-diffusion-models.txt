@@ -1,0 +1,398 @@
+Title: Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models
+
+URL Source: https://arxiv.org/pdf/2610.16835v1
+
+Published Time: Wed, 14 Oct 2026 03:27:04 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models 
+
+Jihye Kang Jiwon Park Namhyuk Ahn 
+
+Department of Electrical and Computer Engineering, Inha University 
+
+# Abstract 
+
+Model providers can support image protection, but open-weight deployment intro-duces practical constraints. We propose four requirements: protection effectiveness, clean fidelity, compatibility, and tamper resistance. We incorporate long-horizon attack simulations to strengthen resistance to protection removal. Experiments with a single protection tool show improved resistance to re-alignment at a cost to clean fidelity, motivating further research toward practical model-side protection. 
+
+# 1 Introduction 
+
+Generative models can imitate artistic styles [1, 2], reproduce personal likenesses [3], and manipulate existing images [4], raising concerns about copyright protection and the misuse of personal images [5]. Image protection methods seek to limit such unauthorized uses by adding small perturbations that interfere with model training or editing [5–7]. These methods enable creators and individuals to take protective measures before sharing their images. However, this approach places the burden of applying protection primarily on users , who must modify their images before publication. Developments in AI regulation, including the EU AI Act, reflect growing attention to copyright and the protection of individual rights in generative AI deployment. Against this background, model providers should also consider how the models they release can support image protection . Recent work has explored this direction by fine-tuning models to disrupt the editing of protected images or resist the personalization of designated subjects [8, 9]. However, demonstrating protective behavior in a model does not by itself establish that the protection is suitable for practical deployment. This raises the question of what requirements model-side image protection should satisfy, particularly when the model is released with open weights and can be modified by downstream users. Hence, we propose four requirements for model-side image protection under open-weight deploy-ment. Protection effectiveness requires the model to inhibit unauthorized use of protected images. 
+
+Clean fidelity requires preserving the model’s behavior on unprotected inputs. Compatibility calls for supporting existing user-side protection tools, allowing users to benefit from model-side protection without adopting a provider-specific procedure. Tamper resistance requires maintaining protection against attempts to remove it by modifying the released weights. These requirements connect the protection needs of users with the constraints of model deployment. They provide a basis for assessing the benefits of model-side protection and the trade-offs involved in implementing it. Our technical contribution focuses on tamper resistance while accounting for protection effectiveness and clean fidelity. We study a re-alignment attack that fine-tunes the released model to reconstruct protected inputs as their clean counterparts, thereby suppressing its protective behavior. To resist this attack, we train the model to retain protection after simulated weight updates. The training incorporates longer attack trajectories to account for changes that a short inner loop alone fails to capture. Experiments with a single protection tool show improved resistance to re-alignment compared with protective alignment alone and short-horizon training, while revealing a trade-off with clean fidelity. How to extend this resistance across existing protection tools while preserving ordinary model utility remains an open question for practical model-side image protection.      
+
+> 40th Conference on Neural Information Processing Systems (NeurIPS 2026). Workshop: Self-Evolving Diversity-Driven Search for Robust AI Systems. arXiv:2610.16835v1 [cs.CR] 12 Oct 2026 w/o
+> tamper-resistance training
+> w/
+> tamper-resistance training
+> Clean-image edit
+> Re-alignment attack
+> t=0 t=1 t=3 t=5 t=10 t=20
+
+Figure 1: Maintaining image protection after open-weight release. A re-alignment attack removes the protective behavior of an aligned model (top), whereas tamper-resistance training helps preserve protection under the same attack (bottom). Each row shows edits of the same protected image as the attack progresses, with the corresponding clean-image edit on the right. t: attack epochs. 
+
+# 2 Related Work 
+
+User-side image protection. Image protection methods add imperceptible perturbations to an image so that a diffusion model fails to edit or personalize it faithfully [10, 11, 5, 7, 6]. MetaCloak uses meta-learning to keep such perturbations effective across surrogate models and data transforma-tions [12]. Impasto improves their invisibility [13], and FastProtect reduces the generation cost through perturbation pre-training [14]. These methods assume a fixed model. Purification can weaken the perturbation without modifying the model [15, 16]. CAT instead adapts the latent autoencoder with lightweight adapters [17] and neutralizes existing protective perturbations [18], which suggests that a user-side defense offers limited guarantees once an attacker controls the weights. 
+
+Model-side image protection. Recent work moves protection into the model itself [8, 9]. GuardDoor fine-tunes the autoencoder of a diffusion model so that protected inputs reconstruct to a designated pattern and cannot be edited faithfully [8]. APDM updates a diffusion model to block the personal-ization of designated subjects [9]. Our protective alignment follows the autoencoder-based design. We study whether such protection persists when the released weights are modified to remove it. 
+
+Resistance to fine-tuning. Outside image protection, self-destructing models [19] and TAR [20] train models against simulated fine-tuning attacks so that adapting them to harmful tasks becomes costly. For text-to-image diffusion models, IMMA [21] and GIFT [22] immunize models against malicious adaptation, and SleeperMark [23] embeds watermarks that persist after fine-tuning. Model-side image protection faces the same problem. There, the property to retain is the response to protected inputs. 
+
+# 3 Deployment Scenario 
+
+We consider a model provider that releases an open-weight diffusion model and users who wish to protect their images from unauthorized editing or personalization. Users apply an image protection tool before publishing their images. The provider aligns the model to support the protection proce-dure, aiming to strengthen protection on protected inputs while preserving the model’s behavior on unprotected inputs. The resulting model weights are released for downstream use. 
+
+3.1 Threat Model 
+
+The released model processes both protected and unprotected images, and downstream users have access to its weights. A malicious user may use the model to edit or personalize protected images and may modify the weights to circumvent the protection. The attacker holds the released weights and the public protection tool, and can therefore construct clean and protected image pairs from auxiliary images. We assume that the attacker cannot obtain unprotected weights of the components the provider modifies, since replacing them would otherwise restore the original model without any training. This corresponds to a provider that releases the model only in its protected form. Our experiments use a public base model as a testbed for this setting. Among removal attacks, we consider the re-alignment attack . It reruns protective alignment after replacing the protective target with the 2clean image for each protected input. Its cost is paid once and amortized across images, whereas purification [15, 16] must be applied to each protected image. Training a replacement model from scratch is outside our scope. 
+
+3.2 Model-Side Protection Requirements 
+
+We discuss the requirements that model-side image protection should satisfy for practical open-weight deployment. A model’s ability to protect designated images must be considered alongside its support for existing protection tools, its behavior on ordinary inputs, and its resistance to protection removal. We therefore propose the following four requirements. 
+
+Protection effectiveness. The model should inhibit unauthorized editing or personalization of images processed by a supported protection tool. Evaluation should measure protection on the downstream task of interest, since a change in the model’s intermediate representation or reconstruction does not necessarily imply that the intended misuse has been prevented. 
+
+Clean fidelity. The model should preserve its behavior on unprotected inputs. Because the same weights process both protected and unprotected images, alignment can affect ordinary reconstruction and generation. These effects should be evaluated alongside protection effectiveness to determine the cost of introducing protection into the model. 
+
+Compatibility. Model-side protection should support existing user-side protection tools, reducing the need for users to adopt provider-specific procedures or reprocess previously published images. Evaluation should specify which tools are supported and distinguish support for tools used during alignment from generalization to tools not seen during training. 
+
+Tamper resistance. Protection should persist under attempts to remove it through modification of the released weights. This requirement must be assessed under a specified attack scope and computational budget. Evaluating protection after such modifications is necessary to determine whether the protective behavior survives downstream adaptation. 
+
+# 4 Method 
+
+In this paper, we focus on tamper resistance while accounting for protection effectiveness and clean fidelity. We study this problem using a single protection tool, aligning the model with the protection procedure and training it to retain the protective behavior under model modification. Let x denote a clean image, ˜x its protected version, and T its assigned target pattern. We denote the autoencoder parameters by θ and use the original frozen encoder and decoder, Eg and Dg , as references [24]. 
+
+4.1 Protective Alignment 
+
+The provider aligns the autoencoder so that protected inputs reconstruct to designated high-contrast patterns while unprotected inputs retain their original behavior. The encoder, quantization convolu-tions, and decoder tail are optimized with 
+
+Lalign = Lprot (˜ x, T ) + Lfid (x). (1) The protection loss Lprot encourages the reconstruction of ˜x to match T in image space and its encoding to match Eg (T ) in latent space. The fidelity loss Lfid preserves clean reconstructions and latent features using x and the frozen autoencoder as references. Targets are generated separately for each image and share a high-contrast structure. Appendix A provides the full loss definitions. 
+
+4.2 Tamper-Resistance Training 
+
+The re-alignment attack of Section 3.1 replaces the protective target T in Equation 1 with the clean image x. The evaluated attack updates the encoder to suppress the protective behavior and restore reconstruction of protected inputs. To resist such modifications, we optimize the aligned model to retain protection after simulated attacks using first-order meta-learning [25]. Prior work has explored training model safeguards to resist harmful adaptation [19, 20]. We investigate this direction for image protection, focusing on the effect of the simulated attack horizon. Our simulated attacks optimize the reconstruction objective in 35 10 20 30 50 
+
+attack epoch t
+
+0.0 0.1 0.2     
+
+> cosine similarity
+> long horizon short horizon, K= 3
+> short horizon, K= 5
+> 3.4 ×
+
+Figure 2: Directional agreement with the re-alignment attack. Cosine similarity is mea-sured between encoder parameter displacements; both simulations use the re-alignment objective. Long-horizon simulation better tracks the direc-tion of later attack updates. 0 1 5 10 15 20  
+
+> attack epoch t
+> 0.0 0.2 0.4 0.6 0.8
+> protection (LPIPS)
+> protection removed
+> Protection under the re-alignment attack
+> + long-horizon + short-horizon Protective alignment
+
+Figure 3: Protection under the re-alignment at-tack. Protection LPIPS is measured at each at-tack epoch. The shaded region marks scores at or below the unaligned reference of 0.225, where protection is considered removed. Table 1: Protection effectiveness, clean fidelity, and tamper resistance. Protection is measured by LPIPS before attack and after 20 epochs of encoder re-alignment. Fidelity is pre-attack reconstruction PSNR relative to the original autoencoder. Removal denotes the first attack epoch at which protection LPIPS falls to or below the unaligned reference of 0.225; > 20 means the threshold was not reached. 
+
+Model Protection ↑ Fidelity ↑
+
+(dB) Removal ↑
+
+(epochs) No Attack Attacked Original 0.225 N/A N/A N/A Alignment 0.751 0.118 30.9 1+ short 0.764 0.107 29.8 1+ long 0.743 0.622 25.7 > 20 
+
+Equation 4, which shares the re-alignment attack’s goal but differs from its evaluation objective. Let 
+
+ψ denote the model parameters after a simulated attack. The training objective is 
+
+Ltr (θ) = Lpres (θ) + λ Lmeta (ψ), Lmeta (ψ) = Lψ 
+
+> prot
+
++ Lgap + Lψ
+
+> fid
+
+. (2) The preservation loss Lpres maintains the protective behavior and clean fidelity of the model before the simulated attack, using the aligned checkpoint as a reference. At the attacked parameters ψ, Lψ
+
+> prot
+
+preserves the response to protected inputs, Lgap penalizes reconstructions that approach the clean image within a specified margin, and Lψ 
+
+> fid
+
+preserves clean fidelity. The coefficient λ controls the contribution of the post-attack objective. A short inner loop of three to five updates approximates only the beginning of a potentially much longer attack. We therefore simulate an additional attack on a refresh set once per training epoch and record its detached parameter displacement ∆. For the parameter subset S modified by the simulated attack, the short inner loop starts from θS + ∆ . This long-horizon simulation incorporates the displacement from a longer attack without differentiating through its full trajectory; setting ∆ = 0 
+
+gives the short-horizon variant. The displacement is refreshed each epoch to account for changes in the model during training. Figure 2 compares how closely the two simulations approximate the evaluation attack, and Algorithm 1 provides the full procedure. 
+
+# 5 Experimental Results 
+
+Experimental setup. We use Stable Diffusion 2.1 [24] with LPIPS-constrained Mist [11] at ϵ =2/255 . Training uses 3,602 WikiArt images [26], re-alignment uses 73 disjoint Monet paintings, and evaluation uses 100 held-out WikiArt images. Protection is measured by LPIPS [27] between SDEdit [28] outputs from protected and clean inputs under identical sampling conditions. Clean fidelity is measured by reconstruction PSNR on unprotected inputs relative to the original autoencoder. We evaluate encoder re-alignment over 20 attack epochs. Appendix B provides the full protocol. 4Comparison with baselines. Table 1 compares protective alignment alone with short- and long-horizon tamper-resistance training. All three models provide similar protection before the attack. The two training variants differ only in the epoch-long refresh, isolating the contribution of the extended simulation. However, re-alignment reduces the protection scores of alignment alone and short-horizon training below the unaligned reference within one attack epoch. Figure 3 shows that neither regains protection in the remaining epochs, whereas long-horizon training retains a score of 0.714 after one epoch and 0.724 after ten. Long-horizon training retains a score of 0.622 after the full attack budget, compared with 0.118 and 0.107 for the two baselines. The attack duration needed to reach the removal threshold increases from one epoch to beyond the 20-epoch evaluation window. Figure 1 illustrates the corresponding differences in editing outputs. The improvement therefore concerns the persistence of protection under attack, rather than stronger protection at release. 
+
+Analysis. Figure 2 examines how the simulation horizon affects agreement with the evaluation attack. The directional agreement of short simulations decreases as the attack progresses, whereas the longer simulation remains more closely aligned with later attack updates. This supports incorporating extended attack trajectories when training the model to retain protection under weight modification. Additional analysis of displacement directions and magnitudes is provided in Appendix C.1. Improved resistance comes with a clean-fidelity cost. Long-horizon training achieves 25.7 dB, compared with 29.8 dB for short-horizon training and 30.9 dB for alignment alone. Removing the separation loss Lgap improves clean fidelity by only 0.3 dB but reduces the post-attack protection score from 0.622 to 0.161. Ablations in Appendix C.3 further show that removing clean-fidelity or preservation losses lowers clean fidelity even when the protection score remains above the unaligned reference. These results emphasize the need to assess retained protection alongside ordinary model behavior. Appendix C.4 provides further analysis of this trade-off. 
+
+# 6 Concluding Remarks 
+
+The observed clean-fidelity cost raises a design question: how can protective alignment resist removal while limiting changes to ordinary model behavior? The choice of alignment targets and trainable parameters offers concrete directions for investigating this trade-off. Future work should examine whether protection can be concentrated in model components that respond to protected inputs without substantially affecting unprotected ones. Compatibility broadens this question beyond a single protection procedure. Users may have already published images processed by different tools, making provider-specific reprocessing impractical. Supporting these images calls for studying both alignment with multiple existing tools and gener-alization to tools not seen during training. For open-weight deployment, these extensions should also be evaluated under a broader range of weight-modification attacks and computational budgets. Understanding how tool coverage, clean fidelity, and attack resistance interact will help guide the deployment of model-side image protection. 
+
+Limitations. The evaluated attack updates only the encoder, although the defense also modifies the decoder tail, and no attack is tuned against the defense itself. Because the protection score measures the distance between edits, it cannot tell a triggered pattern from an edit degraded into texture, which the long-horizon model produces past t = 20 . The effect also varies: a second run retains 0.495 instead of 0.622, and one of the 100 images is never protected. Appendix D gives the full list. 
+
+Broader Impact. The defense we study aims to let people who publish images resist unauthorized editing even after the model is released in open weights. Our position is that failing to evaluate tamper resistance overstates what such a defense delivers, and a user who acts on an overstated guarantee is worse off than one who knows the protection is fragile. That applies to our own result: raising the attacker’s cost from one epoch to more than twenty is a delay on a single consumer GPU, not security. The re-alignment attack we describe targets protections that are already published, but it is the provider’s own alignment procedure run with a different target and needs no capability an infringer lacks. Tamper resistance is dual-use: it is desirable when the retained property is a protection and undesirable when it is a backdoor, a bias, or a restriction a downstream user has a legitimate reason to remove. Our method also costs clean fidelity for every user of the released model, including those who never asked for protection. We evaluate on published artworks rather than on personal images, we redistribute none of them, and we introduce no new dataset. Appendix E gives the full statement. 5Acknowledgments. This work was supported by the National Research Foundation of Korea (NRF) grant funded by the Korea government (MSIT) (RS-2026-25603519). 
+
+# References 
+
+[1] Namhyuk Ahn, Junsoo Lee, Chunggi Lee, Kunhee Kim, Daesik Kim, Seung-Hun Nam, and Kibeom Hong. Dreamstyler: Paint by style inversion with text-to-image diffusion models. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 38, pages 674–681, 2024. [2] Gong Zhang, Kihyuk Sohn, Meera Hahn, Humphrey Shi, and Irfan Essa. Finestyle: Fine-grained controllable style personalization for text-to-image models. Advances in Neural Information Processing Systems , 37:52937–52961, 2024. [3] Nataniel Ruiz, Yuanzhen Li, Varun Jampani, Yael Pritch, Michael Rubinstein, and Kfir Aberman. Dream-Booth: Fine tuning text-to-image diffusion models for subject-driven generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 22500–22510, 2023. [4] Qifan Yu, Wei Chow, Zhongqi Yue, Kaihang Pan, Yang Wu, Xiaoyang Wan, Juncheng Li, Siliang Tang, Hanwang Zhang, and Yueting Zhuang. Anyedit: Mastering unified high-quality image editing for any idea. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 26125–26135. IEEE, 2025. [5] Shawn Shan, Jenna Cryan, Emily Wenger, Haitao Zheng, Rana Hanocka, and Ben Y Zhao. Glaze: Protecting artists from style mimicry by text-to-image models. In 32nd USENIX Security Symposium ,2023. [6] Thanh Van Le, Hao Phung, Thuan Hoang Nguyen, Quan Dao, Ngoc Tran, and Anh Tran. Anti-DreamBooth: Protecting users from personalized text-to-image synthesis. In Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023. [7] Hadi Salman, Alaa Khaddaj, Guillaume Leclerc, Andrew Ilyas, and Aleksander Madry. Raising the cost of malicious AI-powered image editing. In International Conference on Machine Learning , 2023. [8] Yaopei Zeng, Yuanpu Cao, and Lu Lin. GuardDoor: Safeguarding against malicious diffusion editing via protective backdoors. arXiv preprint arXiv:2503.03944 , 2025. [9] Tae-Young Lee, Juwon Seo, Jong Hwan Ko, and Gyeong-Moon Park. Perturb a model, not an image: To-wards robust privacy protection via anti-personalized diffusion models. In Advances in Neural Information Processing Systems , 2025. [10] Chumeng Liang, Xiaoyu Wu, Yang Hua, Jiaru Zhang, Yiming Xue, Tao Song, Zhengui Xue, Ruhui Ma, and Haibing Guan. Adversarial example does good: Preventing painting imitation from diffusion models via adversarial examples. In International Conference on Machine Learning , 2023. [11] Chumeng Liang and Xiaoyu Wu. Mist: Towards improved adversarial examples for diffusion models. 
+
+arXiv preprint arXiv:2305.12683 , 2023. [12] Yixin Liu, Chenrui Fan, Yutong Dai, Xun Chen, Pan Zhou, and Lichao Sun. MetaCloak: Preventing unauthorized subject-driven text-to-image diffusion-based synthesis via meta-learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024. [13] Namhyuk Ahn, Wonhyuk Ahn, KiYoon Yoo, Daesik Kim, and Seung-Hun Nam. Imperceptible protection against style imitation from diffusion models. IEEE Transactions on Multimedia , 2026. [14] Namhyuk Ahn, KiYoon Yoo, Wonhyuk Ahn, Daesik Kim, and Seung-Hun Nam. Nearly zero-cost protection against mimicry by personalized diffusion models. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 28801–28810. IEEE, 2025. [15] Weili Nie, Brandon Guo, Yujia Huang, Chaowei Xiao, Arash Vahdat, and Anima Anandkumar. Diffusion models for adversarial purification. In International Conference on Machine Learning , 2022. [16] Bochuan Cao, Changjiang Li, Ting Wang, Jinyuan Jia, Bo Li, and Jinghui Chen. IMPRESS: Evaluating the resilience of imperceptible perturbations against unauthorized data usage in diffusion-based generative AI. In Advances in Neural Information Processing Systems , 2023. [17] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations , 2022. 
+
+6[18] Sen Peng, Mingyue Wang, Jianfei He, Jijia Yang, and Xiaohua Jia. CAT: Contrastive adversarial training for evaluating the robustness of protective perturbations in latent diffusion models. In International Conference on Machine Learning , 2025. [19] Peter Henderson, Eric Mitchell, Christopher D Manning, Dan Jurafsky, and Chelsea Finn. Self-destructing models: Increasing the costs of harmful dual uses of foundation models. In Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society , 2023. [20] Rishub Tamirisa, Bhrugu Bharathi, Long Phan, Andy Zhou, Alice Gatti, Tarun Suresh, Maxwell Lin, Justin Wang, Rowan Wang, Ron Arel, Andy Zou, Dawn Song, Bo Li, Dan Hendrycks, and Mantas Mazeika. Tamper-resistant safeguards for open-weight LLMs. In International Conference on Learning Representations , 2025. [21] Amber Yijia Zheng and Raymond A Yeh. IMMA: Immunizing text-to-image models against malicious adaptation. In European Conference on Computer Vision , 2024. [22] Amro Abdalla, Ismail Shaheen, Dan DeGenaro, Rupayan Mallick, Bogdan Raita, and Sarah Adel Bargal. GIFT: Gradient-aware immunization of diffusion models against malicious fine-tuning with safe concepts retention. arXiv preprint arXiv:2507.13598 , 2025. [23] Zilan Wang, Junfeng Guo, Jiacheng Zhu, Yiming Li, Heng Huang, Muhao Chen, and Zhengzhong Tu. SleeperMark: Towards robust watermark against fine-tuning text-to-image diffusion models. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2025. [24] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 10684–10695, 2022. [25] Chelsea Finn, Pieter Abbeel, and Sergey Levine. Model-agnostic meta-learning for fast adaptation of deep networks. In International Conference on Machine Learning , 2017. [26] Wei Ren Tan, Chee Seng Chan, Hernan Aguirre, and Kiyoshi Tanaka. Improved ArtGAN for conditional synthesis of natural image and artwork. IEEE Transactions on Image Processing , 28(1):394–409, 2019. [27] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , pages 586–595, 2018. [28] Chenlin Meng, Yutong He, Yang Song, Jiaming Song, Jiajun Wu, Jun-Yan Zhu, and Stefano Ermon. SDEdit: Guided image synthesis and editing with stochastic differential equations. In International Conference on Learning Representations , 2022. [29] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Simoncelli. Image quality assessment: From error visibility to structural similarity. IEEE Transactions on Image Processing , 13(4):600–612, 2004. 
+
+7Appendix A Implementation Details 
+
+Notation follows Section 4. Images are normalized to [−1, 1] , every squared error below is a mean over entries, and · denotes that mean. The decoder tail is the last two upsampling blocks together with the middle block, the output layers and the post-quantization convolution. During tamper-resistance training a frozen copy of the aligned checkpoint (Ea, D a) supplies the anchors ˆr = Da(Ea(˜ x)) ,
+
+ˆz = Ea(˜ x) and ˆzx = Ea(x).
+
+A.1 Protective Alignment 
+
+Equation 1 groups five terms: 
+
+Lprot (˜ x, T ) = αiM ⊙  D(E(˜ x)) − TM
+
+2 + αl∥E(˜ x) − Eg (T )∥2,
+
+Lfid (x) = ∥D(E(x)) − x∥2 + γ∥D(E(x)) − Dg (Eg (x)) ∥2 + β∥H(E(x)) − H(Eg (x)) ∥2.
+
+(3) The protection term is weighted by a mask derived from the target. M takes the value wtext = 3 .0 at pixels where T deviates from its background mean by more than τ = 0 .15 and wbg = 1 .0 elsewhere, and TM is T with those remaining pixels replaced by that background mean, so the alignment is asked to render the pattern and to flatten the rest. Figure 4 shows two targets beside the protected inputs they are assigned to. The third fidelity term is a high-pass filter on the clean latent that prevents detail from drifting; H is a Butterworth high-pass filter of order 2 applied to the spectrum of the 
+
+64 × 64 latent, with a cutoff radius of 10 frequency bins. 
+
+A.2 Simulated Attack Objective 
+
+Both the epoch-long refresh and the differentiable inner loop descend 
+
+Latk (θ) = wimg ∥D(E(˜ x)) − x∥2 + wlat ∥E(˜ x) − Ea(x)∥2 + wutil ∥D(E(x)) − x∥2, (4) with wimg = 1 .0, wlat = 0 .5, wutil = 0 .25 . The first two terms express the attacker’s goal of mapping a protected input back to its clean image, and the third expresses the attacker’s interest in preserving the model’s utility. That third term is why clean fidelity moves during the attack. The latent target Ea(x) is the released model’s own encoding, which the attacker holds. The attack we evaluate against in Section 5 is a different one: it descends the provider’s own 
+
+Lalign with x in place of T , so the budgets we report are not measured against any configuration of Equation 4. That evaluation attack is not a weak one. At the same learning rate and on the same scope, it removes the protection from alignment alone within a single epoch and the short-horizon protection with it, so a budget beyond twenty epochs is a property of the defense and not of an attacker too slow to make progress. 
+
+A.3 Tamper-Resistance Training 
+
+The preservation loss Lpres (θ) in Equation 2 maintains the protective behavior and clean fidelity of the aligned checkpoint during tamper-resistance training: 
+
+Lpres (θ) = pc∥D(E(x)) − x∥2 + pca ∥D(E(x)) − Da(Ea(x)) ∥2
+
++ pa∥D(E(˜ x)) − ˆr∥2 + paℓ ∥E(˜ x) − ˆz∥2
+
++ pt∥D(E(˜ x)) − T ∥2 + ptℓ ∥E(˜ x) − Eg (T )∥2. (5) The three groups of Lmeta expand to 
+
+Lψ
+
+> prot
+
+(ψ) = wa∥Dψ (Eψ (˜ x)) − ˆr∥2 + waℓ ∥Eψ (˜ x) − ˆz∥2 + wt∥Eψ (˜ x) − Eg (T )∥2,
+
+Lgap (ψ) = wr max  0, m − ∥ Dψ (Eψ (˜ x)) − x∥2 ,
+
+Lψ
+
+> fid
+
+(ψ) = wc∥Dψ (Eψ (x)) − x∥2 + wcℓ ∥Eψ (x) − ˆzx∥2. (6) 8Algorithm 1 Long-horizon tamper-resistance training of an aligned autoencoder 
+
+Require: aligned θ; protection set D = {(x, ˜x, T )}; refresh set Dr , the training set reused; attack step ηa;inner steps K; outer step η 
+
+> 1:
+
+θO ← encoder, quantization convolutions, decoder tail; θS ← the simulated attack scope  
+
+> 2:
+
+for each epoch do  
+
+> 3:
+
+ϕ ← θ; for each batch in Dr do ϕS ← ϕS − ηa∇ϕS Latk (ϕ); ∆ ← detach( ϕS − θS ) 
+
+> 4:
+
+for (x, ˜x, T ) ∈ D do  
+
+> 5:
+
+ψ ← θ with ψS ← θS + ∆ ; repeat K times: ψS ← ψS − ηa∇ψS Latk (ψ) ▷ first order, detached  
+
+> 6:
+
+θO ← θO − η∇θO Ltr (θ) ▷ Equation 2  
+
+> 7:
+
+end for  
+
+> 8:
+
+end for  
+
+> 9:
+
+return θ
+
+Table 2: Every constant used to produce the models of Table 1. The first block specifies protective alignment of the original autoencoder; the second specifies tamper-resistance training starting from the aligned checkpoint. The simulated attacks used in tamper-resistance training are drawn from a pool of thirty-six configurations, one per epoch in the listed order, so a twenty-epoch run sees encoder-scope attacks first and decoder-tail attacks after. 
+
+Quantity Value 
+
+Protective Alignment 
+
+αi, αl, β, γ 0.5, 0.5, 0.3, 2.0 
+
+τ , wtext , wbg 0.15, 3.0, 1.0 optimizer, epochs AdamW, lr 10 −5, 80 trainable encoder, quant. convs, decoder tail 
+
+Tamper-Resistance Training 
+
+outer optimizer AdamW, lr 5 × 10 −6, weight decay 10 −4, clip 1.0 epochs, lr halved at 20, epochs 8/12/16 
+
+wa, waℓ , wt, wr , m 2.5, 1.5, 0.15, 4.0, 0.02 
+
+wc, wcℓ , λ 1.0, 1.0, 1.0 
+
+pc, pca , pa, paℓ , pt, ptℓ 1.0, 1.0, 1.5, 1.0, 0.25, 0.25 refresh one attack epoch per outer epoch, on the training set simulated attack pool 36: {enc, dec-tail, enc+dec-tail} × {SGD, AdamW} × K ∈ { 3, 5} × lr {5e-5, 1e-4, 2e-4} schedule one per epoch in that order; epochs 1–12 encoder, 13–20 decoder tail 
+
+The first two terms of Lψ 
+
+> prot
+
+are the anchors and the third holds the latent on the designated target. 
+
+Lgap contributes nothing until the attacker has drawn the protected reconstruction within m = 0 .02 
+
+of the clean image, measured as the same mean squared error on [−1, 1] images. The implementation additionally computes margin quantities between the target, anchor and clean distances, and a second hinge in latent space; these are logged for diagnosis and are not part of the objective. Both horizons take first-order inner steps. The inner gradients are detached, so the outer gradient reaches the parameters the simulated attack did not touch exactly, as if no inner loop had run, and the attacked ones through the identity map ∂ψ S /∂θ S = I. The offset ∆ is detached for the same reason, so no gradient is propagated through the epoch-long attack and an outer step still costs K inner steps. It is recomputed every epoch because the defense moves during training and a stale offset ceases to describe the current model. Algorithm 1 states the procedure and Table 2 lists every constant. 
+
+A.4 Hyperparameters A.5 Training Cost 
+
+Protective alignment and tamper-resistance training use a single NVIDIA GeForce RTX 5090. Protective alignment takes about 35 hours for 80 epochs and tamper-resistance training about 36 hours for 20, so an epoch of tamper-resistance training costs roughly four times an epoch of protective alignment. Each outer step includes K simulated attack updates, and epochs with K = 5 take about a third longer than those with K = 3 . Of the 36 hours of tamper-resistance training, the once-per-epoch refresh accounts for 6.5 and the outer loop for the rest. Evaluating one model costs a fifty-epoch attack and an SDEdit sweep at every recorded epoch, and the ablations and the checkpoint sweep of 9Appendix C.3 and Appendix C.4 repeat that twelve times. The numbers above exclude the exploratory runs that preceded them. 
+
+# B Experimental Setup 
+
+B.1 Evaluation Scope 
+
+Training a replacement model from scratch on the deployed model’s outputs lies outside our scope, since no weight-level defense can withstand it in principle. Compatibility with existing user-side protection tools is one of the requirements proposed in Section 3. Our experiments consider a single protection tool applied by users, with the provider aligning the model to support that tool. Compatibility across multiple protection tools remains an open question. Among the removal attacks available, re-alignment is the cheapest because it is paid once rather than per image. Purification runs on every protected image the attacker wants to use and gives up some image quality each time [15, 16], and searching for an input the alignment misses is per-image as well. Re-alignment uses the protection tool and the released checkpoint in a single fine-tuning run, after which the modified model can be reused across images. 
+
+B.2 Datasets and Attack Configuration 
+
+Every model starts from stabilityai/stable-diffusion-2-1-base and every image is pro-cessed at 512 × 512 . Protective alignment and tamper-resistance training use 3,602 WikiArt images; the attack runs on 73 Monet paintings, disjoint from that set; protection effectiveness and clean fidelity are measured on WikiArt images held out from training, drawn as a 200-image pool sampled with the training set excluded by normalized filename and balanced by artist, of which an evenly strided half is evaluated. The WikiArt images come from the refined WikiArt collection of Tan et al. [26], ob-tained through the public re-upload at https://www.kaggle.com/datasets/steubk/wikiart ,and are used for non-commercial research only. All sets are protected with the same tool and budget, LPIPS-constrained Mist [11] at ϵ = 2 /255 in fused mode, with the per-image target described in Section 4. The attack descends the provider’s own Lalign with the original image in place of the target and the target mask disabled, since a mask derived from the pattern is meaningless once the pattern is the clean image. It trains the encoder with AdamW at a learning rate of 10 −5, keeping the weights of Table 2, and we run it for fifty epochs and use the first twenty for the primary comparisons. 
+
+B.3 Protection Effectiveness 
+
+We measure protection effectiveness by comparing the edit of a protected image against the edit of its clean counterpart under the same model, prompt, strength, guidance and seed, so the two outputs differ only through the autoencoder. Edits use SDEdit [28] with the prompt a painting , strength 0.5, guidance 7.5, 50 steps and a single fixed seed. A protection that activates drives the two apart, so higher LPIPS [27] and lower SSIM [29] indicate stronger protection. Every value we report is a mean over the 100 evaluation images; the standard deviation of protection LPIPS across them is 0.063 without alignment, 0.068 after protective alignment and 0.081 after tamper-resistance training. We do not report FID, since the evaluation set is too small for it to be meaningful. 
+
+B.4 Clean Fidelity 
+
+Clean fidelity is measured without diffusion, as the reconstruction of an unprotected image compared against the reconstruction of the frozen original autoencoder, in PSNR and LPIPS. We measure the reconstruction rather than a full editing pipeline because the alignment changes only the autoencoder, which every editing and personalization path passes through, so its reconstruction error is what those paths inherit. This isolates the effects of protective alignment and tamper-resistance training on unprotected inputs, following the reconstruction comparison used in prior work [8]. Measured against the original image instead, the original autoencoder reaches 27.2 dB, the aligned model 27.7 dB and the long-horizon model 24.7 dB. Alignment is slightly above the original model on that axis because both training procedures use the same painting domain the evaluation images come from, which is a domain effect and not evidence that the defense is free. Divergence from the original model and loss of absolute quality are different quantities, and our clean-fidelity metric measures the former. 10 (a) Original  (b) Protected  (d) Target (c) Difference Figure 4: The image the artist publishes, the trigger it carries, and the target that trigger activates, on two images. (a) the original artwork; (b) the protected version the artist publishes, carrying the trigger at ϵ = 2 /255 ; (c) the difference between (a) and (b), amplified forty times so that it is visible at all; (d) the target the protective alignment is trained to produce from (b). Columns (a) and (b) are indistinguishable by design: over the 100 evaluation images the mean distortion between them is 45.1 dB PSNR, 0.990 SSIM and 0.010 LPIPS. The target in (d) is never published. It is what the deployed model produces in place of an edit, and each target renders the identifier of the image it is assigned to, which is why the two differ. 
+
+B.5 Tamper Resistance 
+
+We measure tamper resistance by the first attack epoch at which protection LPIPS falls to or below the unaligned reference of 0.225. The same definition is used in Table 1, Table 5, and Table 6. A removal epoch of > 20 indicates that this threshold was not reached within the first 20 attack epochs. A model whose protection has been removed falls below that level rather than merely reaching it: the attacked alignment settles at 0.118. We attribute the gap to the attack neutralizing the perturbation the protection tool applied along with the alignment itself, and we did not test that attribution separately. 
+
+B.6 Imperceptibility of Protected Images 
+
+The protection budget is ϵ = 2 /255 in pixel space with an LPIPS constraint. Measured distortion between protected and original images is 45.1 dB PSNR, 0.990 SSIM and 0.010 LPIPS on the same 100 images used to evaluate protection effectiveness and clean fidelity. Imperceptibility is a property of the protection tool we adopt, since our trigger is that tool’s output at the budget above. At this budget the trigger is far below the distortion either training procedure introduces, so the measured protection is not bought with visible damage to the published image. 
+
+# C Additional Results 
+
+C.1 Attack Trajectory Approximation 
+
+The approximation is computed on the WikiArt refresh set, which is the data the defender has, and compared against the attack as it runs on Monet, which the defender does not. The ground truth is the re-alignment attack on the encoder scope, AdamW at a learning rate of 10 −5, run for fifty epochs with the displacement recorded at t ∈ { 1, 2, 3, 5, 10 , 20 , 30 , 50 }. Both approximations act on the same scope with SGD at 10 −4, the short loop over at most 200 batches and the refresh over one epoch. Table 3 adds the objective the approximation descends. The upper block is the configuration the models in this paper were trained with, Equation 4; the lower block re-runs the measurement with the re-alignment objective the evaluation attack uses, and is a diagnostic rather than a trained 11 Table 3: How well each way of guessing the attacker’s position actually predicts it. Tamper-resistance training evaluates its objective at some approximation of where the attacker will be, and the two candidates are K differentiable inner steps from the current weights, or the offset reached by running the attack for one full epoch. Each row reports the cosine between that approximation’s parameter displacement and the displacement a real re-alignment attack has reached after t epochs, together with the ratio of their lengths at t=10 . A cosine near zero means the approximation points somewhere else; a small norm ratio means it points the right way but has barely moved. The two blocks differ only in which objective the approximation descends; the ground truth is the same re-alignment attack in both.                                    
+
+> Objective descended Approximation of the attack t=2 t=10 t=50 Norm ratio Equation 4 K=3 inner steps 0.249 0.165 0.049 0.020
+> K=5 inner steps 0.252 0.168 0.051 0.044 one-epoch refresh 0.188 0.195 0.102 0.590 Re-alignment K=3 inner steps 0.246 0.162 0.047 0.023
+> K=5 inner steps 0.254 0.169 0.050 0.051 one-epoch refresh 0.218 0.258 0.163 0.748
+
+configuration. Matching the objective to the attacker’s own benefits the one-epoch refresh and leaves the short inner loop unchanged, which is the expected asymmetry: a few steps are too short for the objective to matter, whereas an epoch is long enough to follow it toward a specific region. A short inner loop agrees best at the first epoch and decays monotonically thereafter, whereas the one-epoch refresh improves up to t = 10 and is ahead from t = 5 on. The short loop’s early lead in cosine costs the defense nothing, because the norm ratio shows it has barely left the point it started from: it points the right way towards a region the attacker passes through immediately. The short loop’s displacement never exceeds a tenth of the attacker’s, whereas the refresh is of the same order at t=10 and falls to a fifth of it by t=50 as the attacker’s own norm keeps growing. Most of the attacker’s loss reduction occurs in its first two epochs, after which the loss declines slowly while its weights keep moving and grow sixfold in norm by t = 50 . The offset is therefore refreshed every epoch. Displacements are compared over the encoder only, 108 tensors and 3.4 × 10 7 parameters, flattened in a fixed order. In 3.4 × 10 7 dimensions two random vectors have cosine approximately 2 × 10 −4,so these values are well above chance. They rank the two approximations against each other; they do not measure absolute agreement. Because a single concatenated cosine is dominated by the largest tensors, we also record the per-tensor cosine: its median for the one-epoch refresh rises from 0.51 to 0.54 between t=1 and t=20 and falls to 0.39 at t=50 , whereas for K=3 it falls from 0.60 to 0.26 over the same range. The short inner loop restarts from the current weights for every training image, so we report the mean of the per-image displacements. The norm of that mean is 0.75 of the mean per-image norm, so the directions do not cancel and the shortfall is in magnitude. The two approximations are compared as they are used, at unequal compute: one epoch of refresh takes many more optimizer steps than K inner steps on a single image. 
+
+C.2 Protection under Re-Alignment 
+
+Figure 3 in Section 5 draws the curve of which Table 1 reports two points, and Table 4 restores the columns the body omits. Against the aligned model, protection LPIPS collapses at the first epoch, from 0.751 to 0.121, and stays between 0.110 and 0.129 through t = 50 , so a single pass exhausts what the attack can recover. Against the long-horizon model, protection LPIPS holds, 0.714 at t = 1 and 0.724 at t = 10 , and falls to 0.622 only by t = 20 .The attacker pays on the clean-fidelity axis while the attack runs, since its objective contains a utility term. The aligned model falls to 23.2 dB at t = 1 and recovers to 28.4 dB by t = 20 , whereas the long-horizon model falls from 25.7 to 22.2 at t = 1 and does not return, reaching 21.3 at t = 20 . An attacker who spends twenty epochs on the long-horizon model is therefore left with a model further from the original model than the checkpoint it started from, and with most of the protection still in place. 12 Table 4: Additional protection and clean-fidelity metrics for the models in Table 1. Protection is reported in LPIPS and SSIM between the edit of a protected image and the edit of its clean counterpart, so larger LPIPS and smaller SSIM both mean stronger protection. The fidelity column reports pre-attack LPIPS between an unprotected reconstruction and the original autoencoder’s, where smaller means less collateral damage to users who never asked for protection.                            
+
+> Protection (no attack) Protection ( t=20 )Fidelity Model LPIPS ↑SSIM ↓LPIPS ↑SSIM ↓LPIPS ↓
+> Original 0.225 0.750 –––Alignment 0.751 0.103 0.118 0.903 0.229 + short-horizon 0.764 0.059 0.107 0.919 0.304 + long-horizon 0.743 0.153 0.622 0.399 0.374
+
+Table 5: What each group of the tamper-resistance objective contributes. All models are trained for twenty epochs and evaluated under the same attack; ablations remove the epoch-long refresh or a loss component from Equation 2. Protection is measured by LPIPS between the edit of a protected image and the edit of its clean counterpart, reported before the attack and after twenty epochs of it. Fidelity is measured by the PSNR of an unprotected reconstruction against the original autoencoder’s, measured before the attack. Removal denotes the first attack epoch at which protection LPIPS falls to or below the unaligned reference of 0.225 ; > 20 indicates that the threshold was not reached within the first 20 attack epochs. The last two ablations illustrate that a delayed removal epoch can coincide with substantial loss of clean fidelity.                                   
+
+> Configuration Protection ↑
+> No attack Protection ↑
+> t=20
+> Fidelity ↑
+> (dB) Removal ↑
+> (epochs) Full (long horizon) 0.743 0.622 25.7 >20 No epoch-long refresh (short horizon) 0.764 0.107 29.8 1No anchors in Lψ
+> prot 0.740 0.141 28.6 20 No target term in Lψ
+> prot 0.731 0.114 25.9 10 No separation term Lgap 0.742 0.161 26.0 10 No clean fidelity at ψ(Lψ
+> fid )0.665 0.462 22.3 >20 No preservation loss Lpres 0.612 0.291 9.2 >20
+
+An independent run of the same procedure, differing in no hyperparameter, reaches protection LPIPS of 0.734 before the attack and 0.495 at t = 20 at 26.3 dB, and still retains 0.424 at t = 50 . Its trajectory has the same shape without the plateau, declining at every epoch and flattening after t = 10 .The two runs place the retained protection at 0.50 and 0.62, both well above the 0.225 an unaligned model reaches, so the size of the effect varies between runs while the conclusion does not. Table 1 and every appendix table report the run that Figure 1, Figure 5 and Figure 3 are drawn from, so the paper describes one model throughout. 
+
+C.3 Ablation Study 
+
+Table 5 evaluates the effect of removing the epoch-long refresh or individual loss components, with the number of training epochs and the schedule of simulated attacks held fixed. The attack is the one reported in Section 5, and the first row is the model of Table 1. Removing the anchors, the target term or Lgap reduces the removal epoch to twenty in the first case and to ten in the other two. The last two rows retain protection above the removal threshold for twenty attack epochs, with reduced clean fidelity of 22.3 and 9.2 dB. At 9.2 dB the model no longer reconstructs unprotected images at all. Both are also below the long-horizon objective on protection at t = 20 , so what the protection score registers for them is a degraded model and not a triggered protection. 
+
+C.4 Protection–Fidelity Trade-off 
+
+Table 6 follows the run of Table 1, evaluating the checkpoint saved every five epochs. Protection before the attack barely moves across the sweep, and across every run in this paper it lies between 0.724 and 0.764 except for the two that abandon clean preservation. The path is not monotone in 13 0.1 0.2 0.3 0.4 0.5 0.6 
+
+# protection at t = 20 (LPIPS) 
+
+18 20 22 24 26 28 30 32 
+
+> clean fidelity (PSNR, dB)
+
+long-horizon 
+
+# Protection vs. clean fidelity 
+
+> protection removed
+
+Figure 5: Every model we trained, placed in the plane of the two costs a provider pays. The horizontal axis is the protection surviving twenty epochs of attack, and the vertical axis is clean fidelity against the original autoencoder, so a point up and to the right is better on both. Filled points are the four that nothing else beats on both axes at once. Inside the shaded band the protection has fallen to the level of a model that was never aligned, and one ablation lies below the axis at 9.2 dB. Table 6: The trade-off along one run of tamper-resistance training, sampled every five epochs. The first row is the aligned checkpoint the run starts from, so reading down the table shows what each further five epochs of training buys and costs. Protection LPIPS, clean-fidelity PSNR, and removal epochs follow the definitions in Table 5. Protection is reported before attack and after one and twenty attack epochs, and clean fidelity is measured before attack.                          
+
+> Checkpoint Protection ↑
+> No attack Protection ↑
+> t=1
+> Protection ↑
+> t=20
+> Fidelity ↑
+> (dB) Removal ↑
+> (epochs) Alignment 0.751 0.121 0.118 30.9 1epoch 5 0.724 0.565 0.129 23.9 10 epoch 10 0.742 0.672 0.571 18.4 >20 epoch 15 0.732 0.457 0.468 24.2 >20 epoch 20 0.743 0.714 0.622 25.7 >20
+
+training time because the simulated attack changes from epoch to epoch, one per epoch in the order of Table 2: the first twelve epochs simulate encoder-scope attacks and the remaining eight decoder-tail ones, so a checkpoint taken in the first phase has clean fidelity that later epochs recover. Taking these five checkpoints together with the seven ablations, four configurations are unbeaten on both clean fidelity and the protection surviving twenty epochs: the aligned model at (0 .118 , 30 .9) , the run without the anchors at (0 .141 , 28 .6) , the run without Lgap at (0 .161 , 26 .0) , and the long-horizon objective at (0 .622 , 25 .7) . The final step carries the result, since 0.3 dB separates a configuration whose protection is removed by t = 10 from one that retains 0.62 of it at t = 20 .
+
+C.5 Qualitative Examples 
+
+Figure 6 repeats the comparison of Figure 1 on three images, so that the behaviour Appendix C.2 reports as a curve can be read off the images themselves. 
+
+# D Limitations 
+
+The attack configuration is fixed rather than searched: we evaluate one removal attack, on one scope, at one learning rate. On the training side the schedule of Table 2 reaches only the first twenty of its thirty-six configurations in a twenty-epoch run, so the combined encoder-and-decoder-tail scope is never simulated. The protection relies on an image-space perturbation, so resistance to purification and compatibility across multiple user-side protection tools remain open questions. Every number here is at a single protection budget, ϵ = 2 /255 , which is also the budget our trigger uses; whether the 14 exchange holds at other budgets is untested, as is whether it holds for a base model other than Stable Diffusion 2.1 or a protection tool other than Mist. Appendix C.4 maps the trade-off along one training run, and we did not sweep a deliberate control such as the weight λ or the number of inner steps. All values are means over 100 images from a single sampling seed, and the two runs of Appendix C.2 are the only evidence we have on run-to-run variation. The defense is also not uniform across images. On one of the 100 evaluation images both training procedures fail: the aligned model reconstructs it at 7.0 dB against the original autoencoder, and after tamper-resistance training the protection does not activate on it at all, protection LPIPS reaching 0.21 against the 0.225 an unaligned model already gives. The means we report absorb that case rather than excluding it. Past t = 20 the long-horizon model stops reproducing the designated pattern and the edit degrades into unstructured texture, so imitation still fails but the distance-based protection score cannot distinguish the two cases. Two directions follow. The clean-fidelity cost is the quantity most worth reducing, and two design choices are the natural candidates: training the encoder alone instead of the encoder and the decoder tail, and choosing a target the encoder can satisfy in latent space instead of one the decoder must render. Separately, Table 3 shows the refresh tracks the attacker more closely when it descends the re-alignment objective than when it descends Equation 4, which the trained models use; refreshing with the former is an improvement we have measured but not yet trained with. 
+
+# E Broader Impact 
+
+The defense we study is meant to give people who publish images a way to resist unauthorized editing that does not stop working the moment the model is released in open weights. Our position is that failing to evaluate tamper resistance overstates what such a defense delivers, and a user who acts on an overstated guarantee is worse off than one who knows the protection is fragile. That applies to our own result as much as to anyone’s: raising the attacker’s cost from one epoch to more than twenty is a delay on a single consumer GPU, not security, and no one should publish work on the strength of it that they could not afford to see edited. We also describe an attack against protections that are already published, which is a disclosure with its own cost. We judge that cost small, since the attack is the provider’s own alignment procedure run again with a different target and needs no capability an infringer does not already have. Tamper resistance has a dual-use face. It makes a property of released weights hard to remove by fine-tuning, and that is desirable when the property is a protection and undesirable when it is a backdoor, a bias or a restriction a downstream user has a legitimate reason to remove. Our method also costs clean fidelity for every user of the released model, including those who never asked for protection, which is why clean fidelity is reported at the same checkpoint rather than separately. We evaluate on published artworks rather than on personal images, we redistribute none of them, and we introduce no new dataset. 15 w/o TR w/ TR      
+
+> Clean-image edit
+> Re-alignment attack
+> t=0 t=1 t=3 t=5 t=10 t=20
+
+/data /kjh /guarddoor_save 
+
+obert -julian -onderdonk_th 
+
+/data /kjh /guarddoor_save /ev 
+
+rousseau_bouquet -of -flowe 
+
+/data /kjh /guarddoor_sav 
+
+arc -chagall_still -life -191 
+
+> w/o TR w/ TR w/o TR w/ TR
+
+Figure 6: The re-alignment attack on three images. Each pair is one protective alignment: the upper row of the pair received no tamper-resistance training (w/o TR) and the lower row did (w/ TR). Columns are attack epochs t ∈ { 0, 1, 3, 5, 10 , 20 } under one seed, and the last column is an edit of an unprotected image under the same model. Without the training the protection is gone after a single epoch in all three cases, and the edit becomes indistinguishable from the clean-image edit beside it. With it the edit is still far from that clean-image edit at t = 20 , although the pattern is no longer crisp. The last column is what a user who never asked for protection gets from the same model, while our clean-fidelity metric quantifies changes in reconstructions rather than edits. 16

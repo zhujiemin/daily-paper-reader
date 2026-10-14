@@ -48,17 +48,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-10-13</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-14</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 2 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 4 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
-    <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>2 次</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>3</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-13 23:48:32 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-14 21:57:24 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -69,9 +69,10 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>2026-10-13日报：2篇论文中精读1篇、速读1篇，主线锁定扩散模型水印与AI生成图像检测。</p>
-<p>最值得看的是满分10分的《WaveMark》，主打扩散模型的小波域鲁棒图像水印；速读《EvoKnow》则用持续知识演化提升AI生成图像检测。</p>
-<p>普通读者可先读WaveMark理解水印思路，再留意检测技术如何跟上生成模型演进。</p>
+<p>今日共生成 4 篇推荐（精读 1 篇，速读 3 篇）</p>
+<p>精读：《Doctor Trigger: A Framework for Release-Bound Face Verification》（8.0/10）</p>
+<p>速读：《Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models》（7.0/10）, 《EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations》（7.0/10）, 《LETHE: Defending against Unauthorized Image-to-Video Generation via Value Diversity Collapse》（6.0/10）</p>
+<p>这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -83,7 +84,7 @@
     <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="WaveMark: Robust Wavelet-Domain Image Watermarking for Diffusion Models">WaveMark: Robust Wavelet-Domain Image Watermarking for Diffusion Models</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Doctor Trigger: A Framework for Release-Bound Face Verification">Doctor Trigger: A Framework for Release-Bound Face Verification</span></li></ul>
   </div>
   <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>1</strong></span></div>
 </section>
@@ -93,12 +94,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="EvoKnow: Continual Knowledge Evolution for AI-Generated Image Detection">EvoKnow: Continual Knowledge Evolution for AI-Generated Image Detection</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models">Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations">EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations</span></li><li><span class="dpr-home-dashboard-paper-title" title="LETHE: Defending against Unauthorized Image-to-Video Generation via Value Diversity Collapse">LETHE: Defending against Unauthorized Image-to-Video Generation via Value Diversity Collapse</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">diffusion-wm <strong>2</strong></span><span class="dpr-home-dashboard-tag">image-tamper <strong>1</strong></span></div>
 </section>
 </div>
 

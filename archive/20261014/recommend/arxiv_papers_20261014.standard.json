@@ -1,0 +1,181 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-14T21:55:37.486657+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 3,
+    "quick_skim_target": 12,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2610.16336v1",
+      "source": "arxiv",
+      "title": "Doctor Trigger: A Framework for Release-Bound Face Verification",
+      "abstract": "Face swapping and generative editing enable realistic facial manipulation, while online redistribution complicates publisher oversight of circulating face images. Existing approaches establish provenance, detect manipulation, recover embedded watermarks, verify image integrity, or disrupt unauthorized face manipulation. These capabilities do not necessarily establish consistency with a specific publisher-enrolled release, limiting the evidence available for verification and human review. To address this gap, we introduce Doctor Trigger, a framework for verifying circulating faces against private publisher-held release records. Before publication, the publisher embeds a weak keyed Fourier-phase signal in each face while preserving visual fidelity and stores its spectral reference. Afterward, verification compares the circulating face with that reference and uses key projection to measure retention of the release-specific signal. Therefore, relation and key evidence jointly help publishers identify suspicious copies for review, potentially reducing the circulation of manipulated images. Experimental results across FF++, DFDC, and Celeb-DF show that spectral agreement separates tested face swaps and generative manipulations from enrolled releases, while the keyed signal distinguishes published versions from their unreleased originals under the evaluated key-preserving benign transformations. Doctor Trigger complements provenance metadata with release-specific face verification and record-linked evidence for further assessment.",
+      "authors": [
+        "Chia-Ming Lee",
+        "Chia-Yu Lin",
+        "Hung-Kai Huang",
+        "Yi-Ting Ku",
+        "Yu-Chen Liang",
+        "Chih-Chung Hsu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-10-12T07:55:48+00:00",
+      "link": "https://arxiv.org/pdf/2610.16336v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "embeds keyed Fourier-phase signal for provenance and release-bound verification",
+      "llm_evidence_cn": "嵌入密钥傅里叶相位信号用于来源认证与发布绑定验证",
+      "llm_evidence": "嵌入密钥傅里叶相位信号用于来源认证与发布绑定验证",
+      "canonical_evidence": "嵌入密钥傅里叶相位信号用于来源认证与发布绑定验证",
+      "llm_tldr_en": "Introduces Doctor Trigger, which embeds a weak keyed Fourier-phase signal into faces before publication and stores release records, letting publishers verify whether a circulating face matches a specific enrolled release for provenance and integrity review.",
+      "llm_tldr_cn": "人脸换脸与生成式编辑可制造逼真伪造，而网络再分发使发布者难以核验流通图像是否源自某次授权发布。本文提出Doctor Trigger框架，在发布前向人脸嵌入弱密钥傅里叶相位信号并保存发布记录，从而可验证流通图像与特定发布版本的一致性。实验在保持视觉保真度的同时实现了发布绑定验证，为来源认证与人工复核提供了新证据。",
+      "llm_tldr": "人脸换脸与生成式编辑可制造逼真伪造，而网络再分发使发布者难以核验流通图像是否源自某次授权发布。本文提出Doctor Trigger框架，在发布前向人脸嵌入弱密钥傅里叶相位信号并保存发布记录，从而可验证流通图像与特定发布版本的一致性。实验在保持视觉保真度的同时实现了发布绑定验证，为来源认证与人工复核提供了新证据。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "watermark-based provenance and attribution of generated content",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2610.16835v1",
+      "source": "arxiv",
+      "title": "Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models",
+      "abstract": "Model providers can support image protection, but open-weight deployment introduces practical constraints. We propose four requirements: protection effectiveness, clean fidelity, compatibility, and tamper resistance. We incorporate long-horizon attack simulations to strengthen resistance to protection removal. Experiments with a single protection tool show improved resistance to re-alignment at a cost to clean fidelity, motivating further research toward practical model-side protection.",
+      "authors": [
+        "Jihye Kang",
+        "Jiwon Park",
+        "Namhyuk Ahn"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CV"
+      ],
+      "published": "2026-10-12T14:15:56+00:00",
+      "link": "https://arxiv.org/pdf/2610.16835v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "image protection against removal in open-weight diffusion models, tamper resistance",
+      "llm_evidence_cn": "开放权重扩散模型中的图像保护与防移除篡改抵抗",
+      "llm_evidence": "开放权重扩散模型中的图像保护与防移除篡改抵抗",
+      "canonical_evidence": "开放权重扩散模型中的图像保护与防移除篡改抵抗",
+      "llm_tldr_en": "This paper studies image protection in open-weight diffusion models, proposing four requirements and using long-horizon attack simulations to strengthen resistance to protection removal at a cost to clean fidelity.",
+      "llm_tldr_cn": "开放权重扩散模型的部署给图像保护带来新约束，既有用户侧防御难以保证保护信号不被移除。本文提出保护有效性、干净保真度、兼容性与防篡改四项要求，并引入长周期攻击模拟以增强保护抵抗再对齐移除的能力。实验显示单一保护工具在提升抵抗移除的同时会牺牲一定的干净保真度。该工作凸显了面向实际模型侧保护的研究方向，对水印移除攻击与防御具有参考意义。",
+      "llm_tldr": "开放权重扩散模型的部署给图像保护带来新约束，既有用户侧防御难以保证保护信号不被移除。本文提出保护有效性、干净保真度、兼容性与防篡改四项要求，并引入长周期攻击模拟以增强保护抵抗再对齐移除的能力。实验显示单一保护工具在提升抵抗移除的同时会牺牲一定的干净保真度。该工作凸显了面向实际模型侧保护的研究方向，对水印移除攻击与防御具有参考意义。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "Defenses against watermark removal and adversarial attacks on generated image watermarks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.13333v1",
+      "source": "arxiv",
+      "title": "LETHE: Defending against Unauthorized Image-to-Video Generation via Value Diversity Collapse",
+      "abstract": "Image-to-video (I2V) diffusion models can animate a single reference image into high-quality, subject-consistent videos, posing threats of misuse as anyone can turn personal photos into fabricated videos without consent. A promising solution is to proactively add an adversarial perturbation to the image before release, such that videos generated from it would be unfaithful or visually corrupted. However, due to an insufficient understanding of what governs how subsequent frames read the reference image in modern I2V models, existing protections struggle to offer strong protection under common perturbation budgets. In this paper, we approach the problem by exploring this underlying reading mechanism. Through a convex geometric analysis, we theoretically identify the spread of the reference value vectors as a key factor governing this reading process, and empirically find that even a mild contraction of this spread can severely degrade the generated video, making it an efficient lever for protection. Guided by this insight, we propose LETHE, a novel protection method that directly disrupts this reading process. LETHE pairs two complementary objectives, where a value collapse objective drives the reference value vectors toward uniformity, while an attention attraction objective draws subsequent frames toward these collapsed tokens to amplify corruption. We further construct two human-centric I2V protection benchmarks and conduct extensive experiments with multiple modern I2V models, which demonstrate the state-of-the-art protection performance and versatility of LETHE.",
+      "authors": [
+        "Boheng Li",
+        "Yueming Xing",
+        "Yiming Li",
+        "Jie Zhang",
+        "Tianwei Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CR"
+      ],
+      "published": "2026-10-09T10:08:39+00:00",
+      "link": "https://arxiv.org/pdf/2610.13333v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "defense against unauthorized image-to-video generation via adversarial perturbation",
+      "llm_evidence_cn": "通过对抗扰动防御未授权的图像到视频生成",
+      "llm_evidence": "通过对抗扰动防御未授权的图像到视频生成",
+      "canonical_evidence": "通过对抗扰动防御未授权的图像到视频生成",
+      "llm_tldr_en": "LETHE defends against unauthorized image-to-video generation by adding adversarial perturbations to reference images, exploiting value diversity collapse to corrupt generated videos.",
+      "llm_tldr_cn": "针对图像到视频扩散模型可未经授权将个人照片生成视频的滥用风险，本文提出LETHE主动防御方法。作者通过凸几何分析揭示后续帧读取参考图像的机制，利用价值多样性崩溃在发布前对图像加入对抗扰动。实验表明在常见扰动预算下生成的视频会被显著破坏，为保护图像免遭未授权生成式滥用提供了更强防御。",
+      "llm_tldr": "针对图像到视频扩散模型可未经授权将个人照片生成视频的滥用风险，本文提出LETHE主动防御方法。作者通过凸几何分析揭示后续帧读取参考图像的机制，利用价值多样性崩溃在发布前对图像加入对抗扰动。实验表明在常见扰动预算下生成的视频会被显著破坏，为保护图像免遭未授权生成式滥用提供了更强防御。",
+      "llm_tags": [
+        "query:diffusion-wm"
+      ],
+      "matched_query_tag": "query:diffusion-wm",
+      "matched_query_text": "Defenses against watermark removal and adversarial attacks on generated image watermarks",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.16879v1",
+      "source": "arxiv",
+      "title": "EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations",
+      "abstract": "The rapid spread of face forgeries on the Web challenges the credibility of visual content. In practical Web environments, manipulated media originate from evolving generation pipelines and undergo diverse processing during dissemination, making reliable authenticity assessment under unseen manipulations and visual changes a critical challenge. We observe that a standard LoRA-adapted CLIP detector exhibits uneven patch-level decision dependence, concen trating a disproportionate share of class-specific relevance on a small fraction of visual patches. To improve robustness to variations in such highly dependent evidence, we propose EviStress, a two-stage framework for generalizable face forgery detection with textual explanations. In the first stage, Evidence-Targeted Patch Perturbation (ETPP) estimates patch dependence from global, relational, and semantic cues and assigns positively correlated perturbation probabilities, explicitly stress-testing highly dependent visual evidence during training. We further introduce Discriminative Variation Preservation (DVP), which constrains the residual between clean and perturbed representations to retain authenticity discriminative information. In the second stage, Intrinsic Evidence Instruction Tuning (IEIT) transfers the adapted CLIP encoder into LLaVA as its vision tower and performs parameter-efficient multimodal instruction tuning, enabling authenticity prediction and textual explanation directly from the learned forgery-sensitive representation without an external detector. Experiments demonstrate improved cross-dataset and cross-method generalization and corruption robustness, with the multimodal model providing authenticity predictions and human-readable explanations.",
+      "authors": [
+        "Jiuyao Jing",
+        "Xuanyu Yi",
+        "Yu Zheng",
+        "Chunlei Peng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-10-12T14:41:54+00:00",
+      "link": "https://arxiv.org/pdf/2610.16879v1",
+      "tags": [
+        "keyword:diffusion-wm",
+        "keyword:image-tamper",
+        "query:diffusion-wm",
+        "query:image-tamper"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "generalizable face forgery detection for assessing image authenticity under unseen manipulations",
+      "llm_evidence_cn": "在未见篡改下评估图像真实性的泛化人脸伪造检测",
+      "llm_evidence": "在未见篡改下评估图像真实性的泛化人脸伪造检测",
+      "canonical_evidence": "在未见篡改下评估图像真实性的泛化人脸伪造检测",
+      "llm_tldr_en": "Observes uneven patch-level decision dependence in LoRA-adapted CLIP forgery detectors and proposes EviStress, a two-stage evidence-stress learning framework that improves generalization under unseen manipulations while providing textual explanations.",
+      "llm_tldr_cn": "网络环境中人脸伪造来源不断演化并经历多样传播处理，使真实性与伪造检测在未见篡改下极具挑战。作者发现标准LoRA微调CLIP检测器在patch级决策依赖上不均衡，过度依赖少量视觉块。为此提出EviStress两阶段框架，对高依赖证据进行压力学习以提升泛化性，并给出文本解释。实验表明该方法在未见伪造与视觉变化下取得更稳健的检测性能，增强了图像真实性评估的可信度。",
+      "llm_tldr": "网络环境中人脸伪造来源不断演化并经历多样传播处理，使真实性与伪造检测在未见篡改下极具挑战。作者发现标准LoRA微调CLIP检测器在patch级决策依赖上不均衡，过度依赖少量视觉块。为此提出EviStress两阶段框架，对高依赖证据进行压力学习以提升泛化性，并给出文本解释。实验表明该方法在未见伪造与视觉变化下取得更稳健的检测性能，增强了图像真实性评估的可信度。",
+      "llm_tags": [
+        "query:image-tamper"
+      ],
+      "matched_query_tag": "query:image-tamper",
+      "matched_query_text": "detecting signs of tampering in digital images",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

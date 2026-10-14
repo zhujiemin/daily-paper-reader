@@ -1,0 +1,73 @@
+{
+  "date": "20261014",
+  "date_label": "",
+  "generated_at": "2026-10-14 21:57:24 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.16336v1",
+      "route": "202610/14/2610.16336v1-doctor-trigger-a-framework-for-release-bound-face-verification",
+      "title": "Doctor Trigger: A Framework for Release-Bound Face Verification",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "嵌入密钥傅里叶相位信号用于来源认证与发布绑定验证",
+      "first_seen_at": "2026-10-14 21:57:24 UTC",
+      "updated_at": "2026-10-14 21:57:24 UTC"
+    },
+    {
+      "paper_id": "2610.16835v1",
+      "route": "202610/14/2610.16835v1-beyond-user-side-defenses-image-protection-in-open-weight-diffusion-models",
+      "title": "Beyond User-Side Defenses: Image Protection in Open-Weight Diffusion Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "开放权重扩散模型中的图像保护与防移除篡改抵抗",
+      "first_seen_at": "2026-10-14 21:57:24 UTC",
+      "updated_at": "2026-10-14 21:57:24 UTC"
+    },
+    {
+      "paper_id": "2610.16879v1",
+      "route": "202610/14/2610.16879v1-evistress-evidence-stress-learning-for-generalizable-face-forgery-detection-with-textual-explanations",
+      "title": "EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "image-tamper"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "在未见篡改下评估图像真实性的泛化人脸伪造检测",
+      "first_seen_at": "2026-10-14 21:57:24 UTC",
+      "updated_at": "2026-10-14 21:57:24 UTC"
+    },
+    {
+      "paper_id": "2610.13333v1",
+      "route": "202610/14/2610.13333v1-lethe-defending-against-unauthorized-image-to-video-generation-via-value-diversity-collapse",
+      "title": "LETHE: Defending against Unauthorized Image-to-Video Generation via Value Diversity Collapse",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "diffusion-wm"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "通过对抗扰动防御未授权的图像到视频生成",
+      "first_seen_at": "2026-10-14 21:57:24 UTC",
+      "updated_at": "2026-10-14 21:57:24 UTC"
+    }
+  ]
+}

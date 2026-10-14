@@ -1,0 +1,412 @@
+Title: EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations
+
+URL Source: https://arxiv.org/pdf/2610.16879v1
+
+Published Time: Wed, 14 Oct 2026 03:35:53 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# EviStress: Evidence Stress Learning for Generalizable Face Forgery Detection with Textual Explanations 
+
+# Jiuyao Jing 
+
+School of Cyber Engineering, Xidian University Xi’an, China 25151110112@stu.xidian.edu.cn 
+
+# Xuanyu Yi 
+
+School of Cyber Engineering, Xidian University Xi’an, China 25189100096@stu.xidian.edu.cn 
+
+# Yu Zheng 
+
+School of Cyber Engineering, Xidian University Xi’an, China yzheng@xidian.edu.cn 
+
+# Chunlei Peng ✉
+
+School of Cyber Engineering, Xidian University Xi’an, China clpeng@xidian.edu.cn 
+
+## Abstract 
+
+The rapid spread of face forgeries on the Web challenges the credi-bility of visual content. In practical Web environments, manipulated media originate from evolving generation pipelines and undergo diverse processing during dissemination, making reliable authen-ticity assessment under unseen manipulations and visual changes a critical challenge. We observe that a standard LoRA-adapted CLIP detector exhibits uneven patch-level decision dependence, concen-trating a disproportionate share of class-specific relevance on a small fraction of visual patches. To improve robustness to varia-tions in such highly dependent evidence, we propose EviStress, a two-stage framework for generalizable face forgery detection with textual explanations. In the first stage, Evidence-Targeted Patch Perturbation (ETPP) estimates patch dependence from global, relational, and semantic cues and assigns positively correlated per-turbation probabilities, explicitly stress-testing highly dependent visual evidence during training. We further introduce Discrimina-tive Variation Preservation (DVP), which constrains the residual between clean and perturbed representations to retain authenticity-discriminative information. In the second stage, Intrinsic Evidence Instruction Tuning (IEIT) transfers the adapted CLIP encoder into LLaVA as its vision tower and performs parameter-efficient mul-timodal instruction tuning, enabling authenticity prediction and textual explanation directly from the learned forgery-sensitive rep-resentation without an external detector. Experiments demonstrate improved cross-dataset and cross-method generalization and cor-ruption robustness, with the multimodal model providing authen-ticity predictions and human-readable explanations. 
+
+## CCS Concepts 
+
+• Security and privacy → Social aspects of security and pri-vacy .
+
+## Keywords 
+
+Face Forgery Detection, Generalizable Detection, Textual Inter-pretability 
+
+## 1 Introduction 
+
+The rapid progress of generative models has made realistic face ma-nipulation increasingly accessible and widely distributable through online platforms, posing growing threats to Web content credibility (c) Evidence stress illustration   
+
+> Input Attention Token Importance Stress & Utilize
+> Gaussian Noise
+
+(a) Baseline concentration curve (b) Post-processing sensitivity 
+
+Figure 1: Motivation and evidence stress in EviStress. (a) LoRA-adapted CLIP concentrates patch-level relevance: top 10% patches account for 43.1% of total relevance vs. 10.2% under uniform allocation. (b) The EviStress visual detector shows smaller probability drops under evaluated JPEG com-pression, resizing, and combined transformations. (c) Evi-dence stress is that training preferentially applies Gaussian perturbations to highly dependent patch tokens. 
+
+and public trust. Media encountered online may originate from previously unseen generation pipelines and further undergo het-erogeneous resizing, compression, transcoding, and re-encoding during dissemination. Consequently, reliable authenticity assess-ment must account not only for unseen manipulation methods, but also for changes in visual evidence induced by online content processing. This work addresses the content-authenticity aspect of Web security, where generalization beyond the training distri-bution is a central requirement for practical face forgery detec-tion [4, 36, 45, 49, 50]. Recent studies increasingly build generalizable detectors upon vision foundation models and vision–language models, particularly CLIP [32]. Its large-scale pretraining provides transferable visual and semantic representations, while subsequent methods improve arXiv:2610.16879v1 [cs.CV] 12 Oct 2026 forgery modeling through parameter-efficient adaptation, local token learning, token reorganization, and pretrained-prior preser-vation [5, 8, 28, 42, 46]. However, improving access to local evidence does not necessarily make the resulting decision robust to changes in that evidence. To examine how a source-trained detector actually uses local visual cues, we quantitatively analyze class-specific patch relevance in a standard LoRA-adapted CLIP detector. As shown in Figure 1(a), its decision relevance is markedly non-uniform: the top 10% patches account for 43.1% of the total class-margin relevance, approximately 4.25 times the mass expected under uniform alloca-tion. Moreover, intervention on the most supportive patches causes greater prediction degradation than removing the same number of randomly selected patches, indicating that these high-relevance regions influence the detector’s authenticity predictions rather than merely being visually salient. These observations motivate a more direct question: instead of forcing the detector to distribute its rel-evance uniformly, can we improve generalization by repeatedly stress-testing the visual evidence on which its current decision depends most strongly? Beyond a binary label, textual explanations provide a human-readable complement to online content authenticity assessment. Multimodal large language models offer a way to generate authen-ticity predictions and explanations within a single framework. Some approaches retain specialized vision detectors for authenticity pre-diction and employ the language model mainly as an interpreter or feature aggregation module [9, 14, 31, 53]. Although this design ben-efits from established detectors, its core detection capability remains external to the MLLM. Other studies directly fine-tune MLLMs with curated forgery image–text data to jointly produce predictions and explanations [13, 38, 44, 54]. However, generic MLLM vision en-coders are primarily pretrained for semantic understanding and are not explicitly optimized for subtle, low-level facial manipulation traces [33, 41]. Consequently, multimodal instruction tuning alone may yield plausible rationales without ensuring that the underly-ing authenticity prediction is built upon a forgery-sensitive visual representation extracted from the input image. To address these issues, we propose EviStress , a two-stage frame-work for generalizable face forgery detection with textual explana-tions. In the first stage, we introduce Evidence-Targeted Patch Perturbation (ETPP) to explicitly stress-test highly dependent vi-sual evidence. ETPP estimates patch dependence through global, relational, and semantic cues and assigns perturbation probabili-ties that are positively correlated with the resulting dependence scores. Instead of uniformly perturbing visual tokens, ETPP prefer-entially applies controlled stochastic modulation to patches with stronger estimated dependence, repeatedly exposing the detector to variations of influential local evidence during training, as illus-trated in Figure 1(c). Since targeted intervention may also introduce class-irrelevant feature variations, we further propose Discrimina-tive Variation Preservation (DVP), which constrains the residual between clean and perturbed representations to retain authenticity-discriminative information. As shown in Figure 1(b), the adapted visual detector exhibits smaller probability drops under the eval-uated post-processing transformations. In the second stage, we present Intrinsic Evidence Instruction Tuning (IEIT) for self-contained explainability. IEIT integrates the adapted CLIP encoder into LLaVA as its vision tower, freezes the visual encoder, and optimizes the multimodal projector and the LLM through LoRA, thereby transferring the learned forgery-sensitive representation to multimodal instruction tuning. Our main contributions are summarized as follows: 
+
+• We propose EviStress, a two-stage evidence stress learning framework for generalizable face forgery detection with textual explanations, aimed at supporting Web content au-thenticity assessment. 
+
+• We introduce ETPP , which preferentially stress-tests highly dependent visual evidence during training, together with 
+
+DVP , which preserves authenticity-discriminative informa-tion in the induced representation variation. We further develop IEIT to transfer the adapted visual encoder to an MLLM without relying on an external detector. 
+
+• We quantitatively characterize concentrated patch-level de-cision dependence and show that evidence stress learning improves cross-dataset and cross-method generalization and average robustness under controlled image corruptions. We further assess textual explanation quality through automatic scoring and a blinded human ranking study against the eval-uated open-source MLLMs. 
+
+## 2 Related Work 2.1 Face Forgery Detection 
+
+Face forgery detection seeks to identify manipulated facial content from subtle visual and temporal inconsistencies. Early approaches mainly exploit low-level artifacts, including color mismatch, abnor-mal head geometry, and blending boundaries [20, 43, 52]. However, such cues are often tied to specific manipulation pipelines and generalize poorly beyond the training distribution. To improve robustness, subsequent studies explore frequency-aware represen-tations [17, 26], pseudo-forgery generation and data augmenta-tion [36, 45], disentangled feature learning [11, 19], and temporal or audio-visual consistency [30, 51]. Despite improved performance, these methods remain vulnerable to manipulation mechanisms and distribution shifts that are absent from the training data. More recently, vision foundation models and vision–language models, particularly CLIP [32], have provided transferable visual and semantic priors for forgery detection. Effort [46] decomposes pretrained representations into orthogonal subspaces, adapting forgery-related components while preserving general visual priors. ForAda [5] introduces lightweight task-specific modules to inject forensic traces into CLIP features. UDD [8] shuffles and mixes patch tokens to reduce positional and content biases. QTFP [42] introduces learnable query tokens to aggregate informative local evidence instead of relying solely on the global token. FIA-USA [28] constructs pseudo-forgeries by simulating transferable facial in-consistencies and up-sampling artifacts. These methods primarily improve evidence extraction, aggregation, or representation adap-tation. In contrast, the robustness of decision-critical local evidence to visual variation is rarely an explicit training objective, leaving detectors vulnerable to key-evidence shifts in unseen distributions. 
+
+## 2.2 Explainable Forgery Detection 
+
+Explainable forgery detection extends authenticity classification with human-readable descriptions of the supporting evidence. One 2 Stage 2: Intrinsic Evidence Instruction Tuning 
+
+Visual Encoder 
+
+> LoRA
+
+Projector LLM    
+
+> LoRA
+> Input Image Is this face real or forged? Please tell me the reason. Text Instruction Multimodal Inputs
+> This image is fake. The image features a woman with a smiling expression, wearing a white shirt and a black ...
+> This image is real. The image of the man's face appears to be a real photograph, as there are no trace-based clues that ...
+> Model Outputs Model Outputs
+> Image Patch Tokens + CLS
+> CLS
+> Text Prompts a real face a forged face
+
+Text Encoder 
+
+> Real Forged
+
+𝐀 𝐀 𝐀 𝐀 𝐀 𝐀 
+
+> Real Forged Logits
+
+## 𝐀 
+
+Discriminative Variation Preservation 
+
+Stage 1: Visual Tuning 1
+
+Visual Encoder 
+
+> LoRA
+> Gaussian Noise
+> 𝐀(1, 𝐀 2)
+
+Patch Dependence Estimation 
+
+> Token Features Perturbed Importance
+> Probability
+> Positive Correlation
+
+Evidence-Targeted Patch Perturbation CLS 
+
+> Text Features Frozen
+> Trainable
+> Clean feature ( 𝐀 𝐀 )Perturbed feature ( 𝐀 𝐀 )
+> Residual feature ( 𝐀 𝐀 )Residual regularization
+
+𝐀 Figure 2: Overview of the EviStress framework. In Stage 1, Evidence-Targeted Patch Perturbation (ETPP) estimates patch dependence and stress-tests highly dependent visual evidence, while Discriminative Variation Preservation (DVP) preserves authenticity-discriminative information in the induced variation. In Stage 2, the adapted visual encoder is integrated into a multimodal large language model for joint authenticity prediction and textual explanation. 
+
+line of work retains specialized visual detectors or fusion modules for the core decision and uses language models mainly for inter-pretation. DD-VQA [53] formulates detection as visual question answering with common-sense descriptions of facial abnormalities. M2F2-Det [9] combines CLIP-based authenticity prediction with language-based interpretation, while FFAA [14] and VLF-FFD [31] aggregate visual and textual information for open-world detection and explanation. These approaches improve interpretability, but the principal detection capability remains partly outside the MLLM. Another line directly fine-tunes MLLMs with forgery-oriented image–text data. FFTG [38] constructs fine-grained descriptions using manipulation and region annotations. SIDA [13] jointly per-forms detection, localization, and explanation for social-media im-ages. FakeShield [44] unifies forgery analysis and localization, while AIGI-Holmes [54] combines visual-expert adaptation and multi-modal instruction tuning for explainable generated-image detec-tion. However, general-purpose MLLM vision encoders remain insufficiently sensitive to subtle facial manipulation traces [33, 41]. These developments motivate learning a visual representation that is not only forgery-sensitive but also robust to variations in influ-ential local evidence. We address this objective through evidence stress learning before multimodal instruction tuning, integrating the adapted encoder into the MLLM for joint authenticity prediction and textual explanation. 
+
+## 3 Methodology 3.1 Evidence-Targeted Patch Perturbation 
+
+Our quantitative analysis shows that a source-trained detector can exhibit markedly uneven patch-level decision dependence, with a limited fraction of visual patches carrying a disproportionate share of class-specific relevance. Intervention analysis further confirms that highly ranked supportive patches exert substantially greater in-fluence on the authenticity decision than randomly selected patches. We therefore propose Evidence-Targeted Patch Perturbation 
+
+(ETPP), which preferentially stress-tests the visual patches on which the detector exhibits stronger estimated dependence, as illustrated in Figure 2. Given an input face image 𝐼 , the visual encoder V𝜃 , consisting of 𝐿 Transformer blocks, produces one global token and 𝑁 patch tokens at each block. We denote the token sequence after the 𝑙 -th block as 
+
+X(𝑙 ) = [x(𝑙 ) 
+
+> cls
+
+, x(𝑙 ) 
+
+> 1
+
+, . . . , x(𝑙 ) 
+
+> 𝑁
+
+], x(𝑙 ) 
+
+> 𝑖
+
+∈ R𝑑 . (1) ETPP is applied to the first 𝐾 Transformer blocks, i.e., 𝑙 ∈ { 1, . . . , 𝐾 },where 𝐾 ≤ 𝐿 controls the perturbation depth. Patch Dependence Estimation assigns each patch a normalized dependence score 𝑠 (𝑙 ) 
+
+> 𝑖
+
+∈[0, 1], which is linearly mapped to the perturbation probability as 
+
+𝑝 (𝑙 ) 
+
+> 𝑖
+
+= 𝑝 min + 𝑠 (𝑙 ) 
+
+> 𝑖
+
+(𝑝 max − 𝑝 min ), with 𝑝 min = 0.45 and 𝑝 max = 0.95. Semantic Evidence 3Relational Evidence 2 
+
+> CLS
+> 1Global Evidence
+> Average
+> Patch Dependence Estimation
+
+Figure 3: Multi-cue patch dependence estimation in ETPP. Patch dependence, derived from global, relational, and se-mantic cues, determines tokens’ perturbation probability. 
+
+Hence, patches with stronger estimated dependence are perturbed more frequently. For each patch token in the selected blocks, we sample a binary indicator 𝑚 (𝑙 ) 
+
+> 𝑖
+
+∼ Bernoulli (𝑝 (𝑙 ) 
+
+> 𝑖
+
+) and a multiplicative factor 𝜖 (𝑙 ) 
+
+> 𝑖
+
+∼N ( 1, 𝛿 2). The perturbed token is defined as: 
+
+ex(𝑙 ) 
+
+> 𝑖
+
+= (1 − 𝑚 (𝑙 ) 
+
+> 𝑖
+
+) + 𝑚 (𝑙 ) 
+
+> 𝑖
+
+𝜖 (𝑙 )
+
+> 𝑖
+
+x(𝑙 ) 
+
+> 𝑖
+
+, 𝑙 ≤ 𝐾 . (2) The global token remains unchanged, and no perturbation is applied to blocks with 𝑙 > 𝐾 . Since the Gaussian factor is centered at one, the intervention introduces controlled feature variation without deterministically suppressing the selected evidence. The clean and perturbed token sequences are then processed by the remaining visual aggregation and projection operations, producing the clean representation z𝑐 and the evidence-stressed representation z𝑝 , respectively. Rather than enforcing invariance between them, we retain the variation induced by targeted evidence stress and regulate its discriminative content through DVP. 
+
+## 3.2 Patch Dependence Estimation 
+
+ETPP requires an operational estimate of patch dependence that can be computed during visual encoding. A single criterion may be incomplete: a patch can be strongly associated with the global representation without carrying clear authenticity semantics, while a locally discriminative patch may not be fully characterized by its relationship with the global token. We therefore estimate patch dependence from three complementary cues—global, relational, and semantic—as illustrated in Figure 3. Let sim (· , ·) denote cosine similarity. For the 𝑖 -th patch token, the three cue scores are defined as: 
+
+𝑢 𝑔 𝑖 = sim (x𝑖 , xcls ),𝑢 𝑟 𝑖 = 1
+
+𝑁 − 1
+
+> 𝑁
+
+∑︁ 
+
+> 𝑗 =1
+> 𝑗 ≠𝑖
+
+sim (x𝑖 , x𝑗 ),𝑢 𝑠 𝑖 = sim (x𝑖 , t𝑓 ) − sim (x𝑖 , t𝑟 ) ,
+
+(3) where t𝑟 and t𝑓 are the textual prototypes obtained from text prompts using the frozen text encoder. The global cue measures the alignment between a local patch and the image-level representation. The relational cue characterizes its average association with the remaining visual tokens, capturing inter-patch structural consistency. The semantic cue measures its differential similarity to the real and forged textual prototypes, introducing authenticity-related semantics into the dependence estimate. Because the three scores have different numerical ranges, each cue is independently normalized across the patch tokens. The final dependence score is obtained by equal-weight aggregation: 
+
+𝑠 𝑖 = 13
+
+ b𝑢 𝑔 𝑖 + b𝑢 𝑟 𝑖 + b𝑢 𝑠 𝑖 
+
+ , (4) where b𝑢 𝑔 𝑖 , b𝑢 𝑟 𝑖 , and b𝑢 𝑠 𝑖 denote the normalized cue scores. Their com-bination provides a multi-cue training-time proxy for patch de-pendence by jointly considering global alignment, inter-patch as-sociation, and authenticity-related semantics. The resulting score determines the patch-wise perturbation probabilities used by ETPP. 
+
+## 3.3 Discriminative Variation Preservation 
+
+ETPP deliberately introduces controlled variation into highly de-pendent visual evidence. However, not every perturbation-induced change is relevant to face authenticity, and excessive variation may distort useful forensic information. Directly minimizing the dis-crepancy between the clean and perturbed representations would instead suppress the intended evidence stress. We therefore propose 
+
+Discriminative Variation Preservation (DVP), which constrains the perturbation-induced variation to retain real-versus-forged dis-criminability. Given the clean representation z𝑐 and the perturbed representa-tion z𝑝 , we construct a normalized residual: 
+
+z𝑟 = z𝑐 − z𝑝 , bz𝑟 = z𝑟 
+
+∥z𝑟 ∥2 + 𝜀 , (5) where 𝜀 is a small constant for numerical stability. This residual represents the change produced when highly dependent visual evidence is stressed. DVP aligns the residual with the real and forged textual proto-types. Its class logits and supervised objective are defined as: 
+
+ℓ𝑟 𝑘 = bz⊤ 
+
+> 𝑟
+
+t𝑘 
+
+𝜏 , Ldvp = − log exp (ℓ𝑟 𝑦 )
+
+Í𝑘 ∈ { 𝑟,𝑓 } exp (ℓ𝑟 𝑘 ) , (6) where 𝑘 ∈ { 𝑟, 𝑓 }, 𝑦 is the authenticity label, and 𝜏 is the temperature parameter. This objective reduces the predictive uncertainty of the residual and prevents it from degenerating into arbitrary noise. The clean representation is simultaneously optimized using the standard CLIP-based binary classification loss Lcls . The complete first-stage objective is: 
+
+Lstage1 = Lcls + 𝜆 dvp Ldvp , (7) where 𝜆 dvp controls the strength of residual regularization. ETPP and DVP therefore play complementary roles, with ETPP introduc-ing targeted variation into highly dependent visual evidence while DVP preserves authenticity-related structure within the resulting representation change. Table 1: Frame-level cross-dataset AUC (%) on CDF, DFD, and DFDC. The symbols † indicates that results are taken from [5]. The best results are highlighted in bold. 
+
+Method Venue CDF DFD DFDC Avg. RECCE [2] † CVPR’22 73.2 81.2 71.3 75.2 SBI [36] † CVPR’22 81.3 77.4 – –DCL [39] AAAI’22 82.3 91.7 76.7 83.6 UCF [49] † ICCV’23 75.3 80.7 71.9 76.0 CFM [27] TIFS’24 82.8 91.5 – –LSDA [45] CVPR’24 83.0 88.0 73.6 81.5 ProDet [4] NeurIPS’24 84.5 – 72.4 –DiffusionFake [37] NeurIPS’24 80.5 90.4 – –UDD [8] AAAI’25 86.9 91.0 75.8 84.6 ForAda [5] † CVPR’25 90.0 93.3 84.3 89.2 FreqDebias [17] CVPR’25 83.6 86.8 74.1 81.5 FFTG [38] CVPR’25 83.2 94.8 – –AdvOU [23] ICCV’25 82.8 82.0 75.3 80.0 X2DFD-7B [3] NeurIPS’25 90.4 92.3 83.7 88.8 X2DFD-13B [3] NeurIPS’25 91.3 92.5 83.4 89.1 FIA-USA [28] NeurIPS’25 86.7 82.1 – –ResProto-FD [16] AAAI’26 83.8 91.4 79.5 84.9 Agent4FF [18] CVPR’26 87.1 93.3 – –SRI-Net [7] ICLR’26 87.5 82.1 – –Ours (Stage 1) - 91.3 93.7 85.1 90.0 
+
+Ours (Stage 2) - 87.2 94.1 82.6 88.0 
+
+## 3.4 Intrinsic Evidence Instruction Tuning 
+
+After the first-stage evidence stress learning, we transfer the adapted visual encoder to a multimodal large language model for joint au-thenticity prediction and textual explanation generation. We refer to this procedure as Intrinsic Evidence Instruction Tuning (IEIT), because the MLLM is directly conditioned on the forgery-sensitive visual representation learned in Stage 1 rather than relying on an external detector. The LoRA-adapted CLIP encoder learned in the first stage re-places the original LLaVA vision tower. Given an image and an instruction, the multimodal input is constructed as: 
+
+H𝑖 = P𝜙 
+
+ V𝜃 𝑣 (𝐼 𝑖 ); E ( q𝑖 ) , (8) where P𝜙 is the multimodal projector and E (·) denotes the lan-guage embedding operation. The projector maps visual tokens into the language-model embedding space so that they can be jointly processed with the textual instruction. 
+
+Instruction Tuning. The MLLM autoregressively generates the authenticity statement and its explanation. The training objective is: 
+
+Lieit = − 1
+
+𝑀 
+
+> 𝑀
+
+∑︁ 
+
+> 𝑖 =1
+> 𝑇 𝑖
+
+∑︁ 
+
+> 𝑡 =1
+
+log 𝑝 Θ
+
+ 𝑎 𝑖,𝑡 | 𝑎 𝑖, <𝑡 , q𝑖 , 𝐼 𝑖 
+
+ , (9) where 𝑎 𝑖,𝑡 is the 𝑡 -th target response token. The loss is computed only over the assistant response, while the image and instruction tokens serve as conditioning context. During IEIT, the adapted visual encoder is frozen to preserve the forgery-sensitive representation learned through ETPP and 
+
+Table 2: Video-level cross-dataset AUC (%) on CDF, DFD, and DFDC. The symbol † indicates that results are taken from [42]. The best results are highlighted in bold. 
+
+Method Venue CDF DFD DFDC Avg. IID [12] † CVPR’23 83.8 93.9 70.0 82.6 UCF [49] † ICCV’23 83.7 86.7 74.2 81.5 CFM [27] TIFS’24 89.7 95.2 – –LSDA [45] † CVPR’24 87.5 88.1 77.0 84.2 CDFA [24] † ECCV’24 93.8 95.4 83.0 90.7 ProDet [4] NeurIPS’24 92.5 – 77.0 –UDD [8] AAAI’25 93.1 95.5 81.2 89.9 FCG [10] CVPR’25 95.0 – 81.8 –VB-StA [51] CVPR’25 94.7 96.5 84.3 91.8 AdvOU [23] ICCV’25 93.9 95.4 79.1 89.5 DeepShield [1] ICCV’25 92.2 96.1 82.8 90.4 FakeRadar [22] ICCV’25 91.7 96.2 84.1 90.7 Effort [47] ICML’25 95.6 96.5 84.3 92.1 X2DFD-7B [3] NeurIPS’25 95.4 95.8 86.0 92.4 X2DFD-13B [3] NeurIPS’25 95.7 96.1 85.7 92.5 FIA-USA [28] NeurIPS’25 94.1 – 73.2 –ResProto-FD [16] AAAI’26 91.5 95.8 81.9 89.7 QTFP [42] † CVPR’26 96.0 97.5 86.9 93.5 SRI-Net [7] ICLR’26 95.5 93.1 – –Ours (Stage 1) - 97.8 96.8 88.2 94.2 
+
+Ours (Stage 2) - 94.8 97.5 84.9 92.4 DVP. At inference, the MLLM directly produces a unified response containing the authenticity prediction and its textual explanation. 
+
+## 4 Experiments 4.1 Datasets 
+
+For generalization evaluation, we follow prior work [3, 16, 50] and train on the c23 version of FaceForensics++ (FF++) [35]. Celeb-DF-v2 (CDF) [21], DeepFakeDetection (DFD) [34], and the Deep-Fake Detection Challenge (DFDC) [6] are used for cross-dataset evaluation, while DF40 [48] is used for cross-method evaluation following [3, 18]. We report AUC as the primary detection metric at the frame level, with video-level AUC additionally reported for the cross-dataset protocol by averaging frame scores within each video. 
+
+## 4.2 Implementation Details 
+
+We use CLIP ViT-L/14 [32] as the Stage-1 backbone with a frozen text encoder and LoRA-adapted visual encoder. LoRA is applied to the 𝑞 /𝑘 /𝑣 projections of all visual Transformer blocks with rank 6, 𝛼 = 12, and dropout 0.8. Stage 1 is trained with a learning rate of 5 × 10 −6 and a batch size of 64. Unless otherwise specified, we set the perturbation depth to 𝐾 = 1, the Gaussian perturbation strength to 𝜎 = 0.04, and the DVP weight to 𝜆 dvp = 0.2. ETPP and DVP are used only during training and introduce no additional module at inference. Table 3: Frame-level cross-method AUC (%) on the six-subset DF40. The best results are highlighted in bold. All experimental results are taken from the original paper and [18]. 
+
+Method Venue UniFace E4S FaceDancer FSGAN InSwap SimSwap Avg. RECCE [2] CVPR’22 84.2 65.2 78.3 88.4 79.5 73.0 78.1 SBI [36] CVPR’22 64.4 69.0 44.7 87.9 63.3 56.8 64.4 CORE [29] CVPRW’22 81.7 63.4 71.7 91.1 79.4 69.3 76.1 IID [12] CVPR’23 79.5 71.0 79.0 86.4 74.4 64.0 75.7 UCF [49] ICCV’23 78.7 69.2 80.0 88.1 76.8 64.9 76.3 LSDA [45] CVPR’24 85.4 68.4 75.9 83.2 81.0 72.7 77.8 CDFA [24] ECCV’24 76.5 67.4 75.4 84.8 72.0 76.1 75.4 ProDet [4] NeurIPS’24 84.5 71.0 73.6 86.5 78.8 77.8 78.7 X2DFD-7B [3] NeurIPS’25 85.5 90.3 82.6 91.1 81.2 85.1 86.0 FIA-USA [28] NeurIPS’25 91.8 87.5 83.0 86.3 87.4 91.0 87.8 ResProto-FD [16] AAAI’26 90.3 94.8 87.8 94.9 89.3 85.7 90.5 Agent4FF [18] CVPR’26 96.3 92.4 92.9 94.8 92.4 94.6 93.9 SRI-Net [7] ICLR’26 92.0 89.4 95.3 94.2 91.1 83.3 90.9 Ours (Stage 1) – 97.2 98.7 95.9 96.1 94.3 94.0 96.0 
+
+Ours (Stage 2) – 95.6 98.6 94.3 95.3 90.6 91.9 94.4 
+
+Table 4: Automatic and human evaluation of explanation quality. “Corr.” denotes the average MLLM-judge score over correctly classified samples, while “All” assigns a score of 1 to incorrect predictions following VERITAS [40]. Human Rank is obtained from a blinded ranking study on 100 samples drawn from the fixed 1K evaluation pool, where lower is better. 
+
+Method LLaVA-1.5-7B Qwen2.5-VL-7B InternVL2.5-8B Average ACC Human Rank ↓
+
+Corr. All Corr. All Corr. All Corr. All LLaVA-1.5-7B 1.677 1.212 3.698 1.716 4.032 1.945 3.136 1.624 0.313 3.1313 Qwen2.5-VL-7B 2.996 1.572 3.996 1.811 4.661 2.114 3.885 1.832 0.305 2.5291 InternVL2.5-8B 2.228 1.379 2.924 1.531 3.355 1.727 2.836 1.546 0.313 2.5992 EviStress (Ours) 3.505 2.751 3.939 2.479 4.573 3.520 4.006 2.917 0.710 1.7404 
+
+In Stage 2, the adapted CLIP encoder replaces the original LLaVA-v1.5-7B vision tower [25] and remains frozen. We follow the image– text data and training protocol of X 2DFD [3]: the model is trained for three epochs with batch size 4 and warmup ratio 0.03; the multimodal projector uses a learning rate of 2 × 10 −5, while the remaining trainable parameters use 2 × 10 −4. LoRA on the language model uses rank 16 and 𝛼 = 32. Only the multimodal projector and language-model LoRA parameters are optimized. 
+
+## 4.3 Generalizability Evaluation 
+
+Tables 1–3 compare EviStress with recent detectors under cross-dataset and cross-method protocols. Stage 1 achieves an average frame-level AUC of 90.0% and video-level AUC of 94.2% on CDF, DFD, and DFDC, while reaching 96.0% frame-level AUC on the six DF40 manipulation subsets. Stage 2 retains strong generalization after multimodal instruction tuning. Stage 2 moderately decreases from Stage 1 as forgery-sensitive representations are mapped into multimodal space and jointly opti-mized with text generation. This alters fine-grained forensic evi-dence use, while explanations are not explicitly constrained to align with patch-level evidence. Stage 2 still generalizes well and enables joint prediction and explanation. 
+
+## 4.4 Explanation Quality Evaluation 
+
+Table 4 evaluates explanation quality using three open-source MLLMs as independent judges under the VERITAS [40] protocol. On correctly classified samples, EviStress achieves the highest average score of 4.006, compared with 3.885 for the strongest open-source baseline. When all samples are considered, its score remains sub-stantially higher (2.917 vs. 1.832), reflecting both stronger detection accuracy and explanation quality. We further conduct a human ranking study by randomly sam-pling 100 examples from the same fixed 1K evaluation pool. For each sample, the anonymous outputs of the four compared mod-els are ranked according to overall explanation quality, and the model identities and presentation order are hidden during evalu-ation. EviStress obtains the best mean rank of 1.740, consistently outperforming the three open-source MLLMs. Figure 4 provides a representative qualitative comparison. 
+
+## 4.5 Robustness to Controlled Corruptions 
+
+Table 5 evaluates the visual detector under five corruption types and five severity levels, using corruption tests based on [15]. Compared with LoRA, ETPP+DVP improves the mean corrupted AUC on all three datasets and reduces the average AUC degradation from 8.91 EviStress This image is fake. The image features a woman with a short haircut, wearing an orange shirt. She appears to be a deepfake, as there are several trace-based clues that suggest the image is not genuine. The eyes in the image are unnatural, with reflections that are not consistent with the surrounding environment. This is a common characteristic of deepfake images, where the eyes are often manipulated to create a more convincing appearance. The facial features in the image are not aligned correctly, with the lips, nose, and jawline appearing misplaced or asymmetric. This is another indication of a deepfake, as the image has been digitally manipulated to create a more realistic appearance. The skin in the image appears to be overly smooth and has an inconsistent color tone, which is not typical for a real person. Deepfake images often use a single skin tone or texture, which can create an unnatural appearance. The lighting and shadows in the image are strange, with overly bright highlights or missing or inconsistent shadows. This is a result of the deepfake process, where the image has been digitally manipulated to create a more convincing appearance. 
+
+LLaVA-1.5-7B The image is real, as it shows a woman with a ponytail and earrings, wearing an orange shirt. The woman appears to be a news reporter, and she is looking at the camera. The image is not a fake or a manipulated photo. 
+
+Qwen2.5-vl The image appears to be real. It shows a person with short hair, wearing an orange top and earrings. The lighting and details in the image suggest it is a photograph of a real individual. However, without additional context or metadata, it's not possible to definitively determine if the image has been manipulated or altered. If you have any specific concerns about the authenticity of the image, such as its source or purpose, please provide more information so I can assist you further. 
+
+Internvl-8B 
+
+This image appears to be a photograph of a person, likely taken during an interview or public speaking event. The lighting, focus, and details such as the person's expression and attire suggest it is a real photograph. However, without additional context or verification, it's not possible to definitively determine its authenticity. Figure 4: Fake image from the CDF dataset. All models use the same prompt text. Table 5: Robustness evaluation on CDF, DFD, and DFDC. For each corruption, AUC (%) is averaged over five severity levels, and 
+
+ΔAUC denotes the drop from clean AUC ( AUC 𝑐𝑙𝑒𝑎𝑛 − AUC 𝑐𝑜𝑟𝑟 ). Avg. averages over the five corruption types. Best results within each dataset are highlighted in bold. 
+
+Gaussian Noise Block-wise Color Contrast Color Saturation JPEG Compression Average Dataset Model Clean AUC Δ AUC Δ AUC Δ AUC Δ AUC Δ AUC Δ
+
+CDF LoRA 88.44 64.32 24.12 84.02 4.42 88.83 -0.39 82.43 6.01 78.07 10.37 79.53 8.91 ETPP+DVP 91.35 70.63 20.72 89.11 2.24 91.50 -0.15 86.40 4.95 82.04 9.31 83.94 7.41 
+
+DFD LoRA 94.08 66.81 27.27 91.05 3.03 92.44 1.64 91.52 2.56 79.91 14.18 84.35 9.74 ETPP+DVP 93.67 67.63 26.04 91.08 2.59 91.82 1.85 91.44 2.23 80.04 13.63 84.40 9.27 
+
+DFDC LoRA 84.75 65.90 18.85 80.21 4.54 82.51 2.24 80.33 4.42 77.21 7.54 77.23 7.52 ETPP+DVP 85.11 68.43 16.68 81.49 3.62 82.68 2.43 81.13 3.98 77.11 8.00 78.17 6.94 
+
+to 7.41 points on CDF, from 9.74 to 9.27 on DFD, and from 7.52 to 6.94 on DFDC. The largest improvements occur under Gaussian noise and block-wise corruption, while the overall trend across heterogeneous perturbations confirms that targeted evidence stress improves robustness beyond a specific corruption type. 
+
+## 4.6 Ablation Study 
+
+4.6.1 Perturbation strategy. Table 6 separates the effects of generic feature perturbation, dependence-aware allocation, and DVP. A fixed probability of 0.5 already improves over LoRA, showing that controlled feature perturbation provides useful regularization. Pos-itive correlation achieves the best average AUC, whereas negative correlation underperforms the fixed-probability setting, demon-strating that the perturbation budget is more effective when stronger intervention is assigned to highly dependent patches. Removing 
+
+Ldvp slightly reduces the average performance, confirming its com-plementary role in preserving discriminative information within the induced variation. 
+
+4.6.2 Influence of Patch-dependence cues. Table 7 evaluates the global (G), relational (R), and semantic (S) cues used for patch-dependence estimation. Relational and semantic cues are individu-ally stronger than the global cue, and their combination provides the best two-cue result. Using all three cues further achieves the highest average AUC of 90.83%, indicating that they provide com-plementary information for estimating patch dependence. 
+
+4.6.3 Perturbation depth. Table 8 shows that applying ETPP only to the first Transformer block ( 𝐾 = 1) achieves the best average AUC. Table 6: Ablation on the correlation between patch depen-dence and perturbation probability. All results are reported in frame-level AUC (%). The best and second-best results are highlighted in bold and underlined, respectively. 
+
+Strategy CDF DFDC DF40 Avg. LoRA 88.44 84.75 95.32 89.50 
+
+𝑃𝑟𝑜𝑏 = 0.5 90.75 84.91 95.74 90.47 Negative 89.15 85.10 95.19 89.81 w/o 𝐿 𝑑𝑣𝑝 91.00 85.40 95.67 90.69 Positive 91.35 85.11 96.02 90.83 Table 7: Ablation study of the three evidence cues. The ex-perimental setup is consistent with Table 6. 
+
+Evidence Cue Dataset G R S CDF DFDC DF40 Avg. 
+
+✓ × × 90.98 85.07 95.91 90.65 
+
+× ✓ × 91.12 85.21 95.92 90.75 
+
+× × ✓ 91.20 85.09 95.97 90.75 
+
+✓ ✓ × 91.09 85.08 95.94 90.70 
+
+✓ × ✓ 91.24 85.11 95.94 90.76 
+
+× ✓ ✓ 91.34 85.16 95.91 90.80 
+
+✓ ✓ ✓ 91.35 85.11 96.02 90.83 Table 8: Effect of perturbation depth. The experimental setup is consistent with Table 6. 
+
+𝐾 CDF DFDC DF40 Avg. 1 91.35 85.11 96.02 90.83 
+
+2 91.04 85.10 95.91 90.68 3 90.96 84.94 95.83 90.58 4 90.86 84.51 95.91 90.43 8 90.83 84.51 95.86 90.40 10 90.72 84.54 95.92 90.39 Performance gradually decreases as the intervention is extended to deeper blocks, suggesting that evidence stress is most effective before local patch features are extensively aggregated into higher-level contextual representations. We therefore use 𝐾 = 1 in all main experiments. 
+
+4.6.4 Perturbation strength. Table 9 studies the Gaussian pertur-bation strength 𝜎 . Moderate values between 0.03 and 0.05 provide stable performance, with 𝜎 = 0.04 achieving the highest average AUC. Weaker perturbation provides insufficient evidence stress, whereas excessive perturbation can distort useful discriminative information; hence 𝜎 = 0.04 is used by default. 
+
+4.6.5 Qualitative visualization. Figure 5 compares the Grad-CAM responses of standard LoRA and EviStress on representative unseen samples. LoRA often exhibits strong responses in a few localized or 
+
+Table 9: Sensitivity to the standard deviation 𝜎 of the multi-plicative Gaussian perturbation. The experimental setup is consistent with Table 6. 
+
+𝜎 CDF DFDC DF40 Avg. 0.02 89.64 84.88 95.55 90.02 0.03 91.22 85.09 95.97 90.76 0.04 91.35 85.11 96.02 90.83 
+
+0.05 91.23 85.19 95.94 90.79 0.06 86.65 82.11 91.86 86.87 0.10 90.70 84.81 95.89 90.47 0.15 88.75 83.69 95.17 89.20 Original LoRA EviStress 
+
+Figure 5: Grad-CAM visualization of LoRA and EviStress on representative unseen samples. EviStress exhibits visibly different response patterns across multiple facial regions compared with the more localized responses of LoRA. 
+
+peripheral regions, whereas EviStress redistributes its responses to-ward multiple facial areas associated with the authenticity decision. These qualitative differences complement the robustness results by illustrating distinct spatial response patterns between the two detectors. 
+
+## 5 Conclusion 
+
+We presented EviStress , a two-stage framework for generalizable face forgery detection with textual explanations, motivated by the authenticity challenges of online facial content. In Stage 1, 
+
+ETPP preferentially perturbs highly dependent visual evidence, while DVP preserves authenticity discriminative information in the induced variation. The resulting encoder achieves strong cross-dataset and cross-method generalization and reduced average AUC degradation under the evaluated visual corruptions. In Stage 2, IEIT 
+
+transfers the adapted encoder into an MLLM for joint authenticity prediction and textual explanation without relying on an external detector. A limitation is that generated rationales are not explicitly grounded in patch-level decision evidence, so explanation quality does not necessarily imply causal faithfulness. Future work will explore region–text alignment and intervention-based supervision to strengthen this connection. References 
+
+[1] Yinqi Cai, Jichang Li, Zhaolun Li, Weikai Chen, Rushi Lan, Xi Xie, Xiaonan Luo, and Guanbin Li. 2025. DeepShield: Fortifying Deepfake Video Detection with Local and Global Forgery Analysis. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 12524–12534. [2] Junyi Cao, Chao Ma, Taiping Yao, Shen Chen, Shouhong Ding, and Xiaokang Yang. 2022. End-to-end reconstruction-classification learning for face forgery detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 4113–4122. [3] Yize Chen, Zhiyuan Yan, Guangliang Cheng, Kangran Zhao, Siwei Lyu, and Baoyuan Wu. 2024. X2-dfd: A framework for explainable and extendable deepfake detection. arXiv preprint arXiv:2410.06126 (2024). [4] Jikang Cheng, Zhiyuan Yan, Ying Zhang, Yuhao Luo, Zhongyuan Wang, and Chen Li. 2024. Can we leave deepfake data behind in training deepfake detector? 
+
+Advances in Neural Information Processing Systems 37 (2024), 21979–21998. [5] Xinjie Cui, Yuezun Li, Ao Luo, Jiaran Zhou, and Junyu Dong. 2025. Forensics adapter: Adapting clip for generalizable face forgery detection. In Proceedings of the Computer Vision and Pattern Recognition Conference . 19207–19217. [6] Brian Dolhansky, Joanna Bitton, Ben Pflaum, Jikuo Lu, Russ Howes, Menglin Wang, and Cristian Canton Ferrer. 2020. The deepfake detection challenge (dfdc) dataset. arXiv preprint arXiv:2006.07397 (2020). [7] Hongyan Fei, Zexi Jia, Chuanwei Huang, Jinchao Zhang, and Jie Zhou. 2026. Exploring Specular Reflection Inconsistency for Generalizable Face Forgery De-tection. arXiv preprint arXiv:2602.06452 (2026). [8] Xinghe Fu, Zhiyuan Yan, Taiping Yao, Shen Chen, and Xi Li. 2025. Exploring unbiased deepfake detection via token-level shuffling and mixing. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 39. 3040–3048. [9] Xiao Guo, Xiufeng Song, Yue Zhang, Xiaohong Liu, and Xiaoming Liu. 2025. Rethinking vision-language model in face forensics: Multi-modal interpretable forged face detector. In Proceedings of the Computer Vision and Pattern Recognition Conference . 105–116. [10] Yue-Hua Han, Tai-Ming Huang, Kai-Lung Hua, and Jun-Cheng Chen. 2025. To-wards More General Video-based Deepfake Detection through Facial Component Guided Adaptation for Foundation Model. In Proceedings of the Computer Vision and Pattern Recognition Conference . 22995–23005. [11] Cheng-Yao Hong, Yen-Chi Hsu, and Tyng-Luh Liu. 2024. Contrastive learning for deepfake classification and localization via multi-label ranking. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 17627– 17637. [12] Baojin Huang, Zhongyuan Wang, Jifan Yang, Jiaxin Ai, Qin Zou, Qian Wang, and Dengpan Ye. 2023. Implicit identity driven deepfake face swapping detection. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition .4490–4499. [13] Zhenglin Huang, Jinwei Hu, Xiangtai Li, Yiwei He, Xingyu Zhao, Bei Peng, Baoyuan Wu, Xiaowei Huang, and Guangliang Cheng. 2025. Sida: Social media image deepfake detection, localization and explanation with large multimodal model. In Proceedings of the Computer Vision and Pattern Recognition Conference .28831–28841. [14] Zhengchao Huang, Bin Xia, Zicheng Lin, Zhun Mou, Wenming Yang, and Jiaya Jia. 2024. Ffaa: Multimodal large language model based explainable open-world face forgery analysis assistant. arXiv preprint arXiv:2408.10072 (2024). [15] Liming Jiang, Ren Li, Wayne Wu, Chen Qian, and Chen Change Loy. 2020. Deeperforensics-1.0: A large-scale dataset for real-world face forgery detection. In 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .IEEE, 2886–2895. [16] Jiuyao Jing, Yu Zheng, and Chunlei Peng. 2026. ResProto-FD: Visual-Language Residual Prototype Sets for Generalized Face Forgery Detection. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 40. 5548–5556. [17] Hossein Kashiani, Niloufar Alipour Talemi, and Fatemeh Afghah. 2025. Freqde-bias: Towards generalizable deepfake detection via consistency-driven frequency debiasing. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion (CVPR) . IEEE, 8775–8785. [18] Yingxin Lai, Zitong Yu, Jun Wang, Linlin Shen, Yong Xu, and Xiaochun Cao. 2026. Agent4faceforgery: Multi-agent llm framework for realistic face forgery detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 14073–14083. [19] Kai Li, Wenqi Ren, Jianshu Li, Wei Wang, and Xiaochun Cao. 2025. Critical Forgetting-Based Multi-Scale Disentanglement for Deepfake Detection. In Pro-ceedings of the AAAI Conference on Artificial Intelligence , Vol. 39. 424–432. [20] Yuezun Li and Siwei Lyu. 2018. Exposing deepfake videos by detecting face warping artifacts. arXiv preprint arXiv:1811.00656 (2018). [21] Yuezun Li, Xin Yang, Pu Sun, Honggang Qi, and Siwei Lyu. 2020. Celeb-df: A large-scale challenging dataset for deepfake forensics. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 3207–3216. [22] Zhaolun Li, Jichang Li, Yinqi Cai, Junye Chen, Xiaonan Luo, Guanbin Li, and Rushi Lan. 2025. FakeRadar: Probing Forgery Outliers to Detect Unknown Deepfake Videos. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 13382–13392. [23] Zhaoyang Li, Zhu Teng, Baopeng Zhang, and Jianping Fan. 2025. Open-Unfairness Adversarial Mitigation for Generalized Deepfake Detection. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 698–707. [24] Yuzhen Lin, Wentang Song, Bin Li, Yuezun Li, Jiangqun Ni, Han Chen, and Qiushi Li. 2024. Fake it till you make it: Curricular dynamic forgery augmentations towards general deepfake detection. In European conference on computer vision .Springer, 104–122. [25] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023. Visual in-struction tuning. Advances in neural information processing systems 36 (2023), 34892–34916. [26] Honggu Liu, Xiaodan Li, Wenbo Zhou, Yuefeng Chen, Yuan He, Hui Xue, Weiming Zhang, and Nenghai Yu. 2021. Spatial-phase shallow learning: rethinking face forgery detection in frequency domain. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 772–781. [27] Anwei Luo, Chenqi Kong, Jiwu Huang, Yongjian Hu, Xiangui Kang, and Alex C Kot. 2023. Beyond the prior forgery knowledge: Mining critical clues for general face forgery detection. IEEE Transactions on Information Forensics and Security 
+
+19 (2023), 1168–1182. [28] Long Ma, Zhiyuan Yan, Jin Xu, Yize Chen, Qinglang Guo, Zhen Bi, Yong Liao, et al. 2026. From specificity to generality: Revisiting generalizable artifacts in detecting face deepfakes. Advances in Neural Information Processing Systems 38 (2026), 69306–69344. [29] Yunsheng Ni, Depu Meng, Changqian Yu, Chengbin Quan, Dongchun Ren, and Youjian Zhao. 2022. Core: Consistent representation learning for face forgery detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 12–21. [30] Trevine Oorloff, Surya Koppisetti, Nicolò Bonettini, Divyaraj Solanki, Ben Col-man, Yaser Yacoob, Ali Shahriyari, and Gaurav Bharaj. 2024. Avff: Audio-visual feature fusion for video deepfake detection. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition . 27102–27112. [31] Siran Peng, Zipei Wang, Li Gao, Xiangyu Zhu, Tianshuo Zhang, Ajian Liu, Haoyuan Zhang, and Zhen Lei. 2025. Mllm-enhanced face forgery detection: A vision-language fusion solution. arXiv preprint arXiv:2505.02013 (2025). [32] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning . PmLR, 8748–8763. [33] Simiao Ren, Yao Yao, Kidus Zewde, Zisheng Liang, Ning-Yau Cheng, Xiaoou Zhan, Qinzhe Liu, Yifei Chen, Hengwei Xu, et al. 2025. Can Multi-modal (reasoning) LLMs work as deepfake detectors? arXiv preprint arXiv:2503.20084 (2025). [34] Google Research and Jigsaw. 2019. Contributing Data to Deepfake Detection Research . Technical Report. Google AI. https://ai.googleblog.com/2019/09/ contributing-data-to-deepfake-detection.html [35] Andreas Rossler, Davide Cozzolino, Luisa Verdoliva, Christian Riess, Justus Thies, and Matthias Nießner. 2019. Faceforensics++: Learning to detect manipulated facial images. In Proceedings of the IEEE/CVF international conference on computer vision . 1–11. [36] Kaede Shiohara and Toshihiko Yamasaki. 2022. Detecting deepfakes with self-blended images. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 18720–18729. [37] Ke Sun, Shen Chen, Taiping Yao, Hong Liu, Xiaoshuai Sun, Shouhong Ding, and Rongrong Ji. 2024. Diffusionfake: Enhancing generalization in deepfake detection via guided stable diffusion. Advances in Neural Information Processing Systems 37 (2024), 101474–101497. [38] Ke Sun, Shen Chen, Taiping Yao, Ziyin Zhou, Jiayi Ji, Xiaoshuai Sun, Chia-Wen Lin, and Rongrong Ji. 2025. Towards general visual-linguistic face forgery detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 19576–19586. [39] Ke Sun, Taiping Yao, Shen Chen, Shouhong Ding, Jilin Li, and Rongrong Ji. 2022. Dual contrastive learning for general face forgery detection. In Proceedings of the AAAI conference on artificial intelligence , Vol. 36. 2316–2324. [40] Hao Tan, Jun Lan, Zichang Tan, Ajian Liu, Chuanbiao Song, Senyuan Shi, Huijia Zhu, Weiqiang Wang, Jun Wan, and Zhen Lei. 2025. Veritas: Generalizable deepfake detection via pattern-aware reasoning. arXiv preprint arXiv:2508.21048 
+
+(2025). [41] Shahroz Tariq, David Nguyen, MAP Chamikara, Tingmin Wu, Alsharif Abuadbba, and Kristen Moore. 2025. Llms are not yet ready for deepfake image detection. 
+
+arXiv preprint arXiv:2506.10474 (2025). [42] Changshuo Wang, Jiangming Wang, Ke-Yue Zhang, Taiping Yao, Shouhong Ding, Shunli Wang, Ran Yi, and Lizhuang Ma. 2026. Beyond [CLS] Token: Query-Driven Token-Level Forgery Purification for Generalizable Deepfake Detection. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition .42922–42931. [43] Xi Wu, Zhen Xie, YuTao Gao, and Yu Xiao. 2020. Sstnet: Detecting manipulated faces through spatial, steganalysis and temporal features. In ICASSP 2020-2020 IEEE international conference on acoustics, speech and signal processing (ICASSP) .IEEE, 2952–2956. [44] Zhipei Xu, Xuanyu Zhang, Runyi Li, Zecheng Tang, Qing Huang, and Jian Zhang. 2025. Fakeshield: Explainable image forgery detection and localization via multi-modal large language models. In International Conference on Learning Represen-tations , Vol. 2025. 31186–31216. [45] Zhiyuan Yan, Yuhao Luo, Siwei Lyu, Qingshan Liu, and Baoyuan Wu. 2024. Transcending forgery specificity with latent space augmentation for generalizable deepfake detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 8984–8994. [46] Zhiyuan Yan, Jiangming Wang, Peng Jin, Ke-Yue Zhang, Chengchun Liu, Shen Chen, Taiping Yao, Shouhong Ding, Baoyuan Wu, and Li Yuan. 2024. Orthogonal subspace decomposition for generalizable ai-generated image detection. arXiv preprint arXiv:2411.15633 (2024). [47] Zhiyuan Yan, Jiangming Wang, Zhendong Wang, Peng Jin, Ke-Yue Zhang, Shen Chen, Taiping Yao, Shouhong Ding, Baoyuan Wu, and Li Yuan. 2024. Effort: Efficient orthogonal modeling for generalizable ai-generated image detection. 
+
+arXiv preprint arXiv:2411.15633 2, 6 (2024), 7. [48] Zhiyuan Yan, Taiping Yao, Shen Chen, Yandan Zhao, Xinghe Fu, Junwei Zhu, Donghao Luo, Chengjie Wang, Shouhong Ding, Yunsheng Wu, et al. 2024. Df40: Toward next-generation deepfake detection. Advances in Neural Information Processing Systems 37 (2024), 29387–29434. [49] Zhiyuan Yan, Yong Zhang, Yanbo Fan, and Baoyuan Wu. 2023. Ucf: Uncovering common features for generalizable deepfake detection. In Proceedings of the IEEE/CVF international conference on computer vision . 22412–22423. [50] Zhiyuan Yan, Yong Zhang, Xinhang Yuan, Siwei Lyu, and Baoyuan Wu. 2023. Deepfakebench: A comprehensive benchmark of deepfake detection. arXiv preprint arXiv:2307.01426 (2023). [51] Zhiyuan Yan, Yandan Zhao, Shen Chen, Mingyi Guo, Xinghe Fu, Taiping Yao, Shouhong Ding, Yunsheng Wu, and Li Yuan. 2025. Generalizing deepfake video detection with plug-and-play: Video-level blending and spatiotemporal adapter tuning. In Proceedings of the Computer Vision and Pattern Recognition Conference .12615–12625. [52] Xin Yang, Yuezun Li, and Siwei Lyu. 2019. Exposing deep fakes using inconsistent head poses. In ICASSP 2019-2019 IEEE international conference on acoustics, speech and signal processing (ICASSP) . IEEE, 8261–8265. [53] Yue Zhang, Ben Colman, Xiao Guo, Ali Shahriyari, and Gaurav Bharaj. 2024. Common sense reasoning for deepfake detection. In European conference on computer vision . Springer, 399–415. [54] Ziyin Zhou, Yunpeng Luo, Yuanchen Wu, Ke Sun, Jiayi Ji, Ke Yan, Shouhong Ding, Xiaoshuai Sun, Yunsheng Wu, and Rongrong Ji. 2025. Aigi-holmes: Towards explainable and generalizable ai-generated image detection via multimodal large language models. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 18746–18758.
